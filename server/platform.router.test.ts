@@ -63,6 +63,9 @@ describe("platform procedures", () => {
     await expect(waiter.admin.createSubscription({ restaurantId: 1, plan: "Growth", status: "trial" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(waiter.admin.updateSubscription({ id: 1, status: "active" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(waiter.admin.cancelSubscription({ id: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(waiter.admin.saasMetrics()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const metrics = await appRouter.createCaller(context("admin")).admin.saasMetrics();
+    expect(metrics).toEqual(expect.objectContaining({ currency: "SAR", mrr: expect.any(Number), arr: expect.any(Number), churnRate: expect.any(Number) }));
   });
   it("rejects a missing POS/KDS order before changing status", async () => {
     const caller = appRouter.createCaller(context("admin"));

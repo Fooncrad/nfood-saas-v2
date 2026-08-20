@@ -129,7 +129,9 @@ export const subscriptions = mysqlTable("subscriptions", {
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
   plan: varchar("plan", { length: 64 }).notNull(),
   status: mysqlEnum("status", ["trial", "active", "past_due", "cancelled"]).default("trial").notNull(),
+  monthlyPrice: decimal("monthlyPrice", { precision: 10, scale: 2 }).default("0").notNull(),
   startedAt: timestamp("startedAt").defaultNow().notNull(),
+  cancelledAt: timestamp("cancelledAt"),
   renewsAt: timestamp("renewsAt"),
 });
 
