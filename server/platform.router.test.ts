@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" | "waiter" | "customer" | "driver"): TrpcContext {
+function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver"): TrpcContext {
   return {
     user: { id: 7, openId: "platform-test", name: "اختبار", email: "test@nfood.local", loginMethod: "test", role, testRole, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
@@ -35,6 +35,12 @@ describe("platform procedures", () => {
     const driverSummary = await appRouter.createCaller(context("user", "driver")).platform.roleSummary({ restaurantId: 1 });
     expect(customerSummary.scope).toBe("customer");
     expect(driverSummary.scope).toBe("driver");
+  });
+
+  it("restricts inventory and purchase mutations to restaurant admins", async () => {
+    const waiter = appRouter.createCaller(context("user", "waiter"));
+    await expect(waiter.platform.createInventoryItem({ restaurantId: 1, name: "مادة اختبار", unit: "كجم", quantity: "1", minimumQuantity: "0" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(waiter.platform.createPurchase({ restaurantId: 1, supplier: "مورد اختبار", total: "10.00", status: "received" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("accepts the POS/KDS order lifecycle statuses", async () => {

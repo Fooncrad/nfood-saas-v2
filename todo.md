@@ -153,3 +153,8 @@
 - [x] إزالة أي إيحاء بإتمام الدفع من نصوص POS قبل دمج بوابة دفع فعلية
 - [x] ربط توثيق جاهزية الدفع وrealtime من README أو واجهة الإدارة
 - [x] منع تكرار sessionTokenHash في تسجيل الدخول الاختباري عند تكرار الاختبارات أو الجلسات
+- [x] إضافة create/update/delete للمخزون مع tenant guard وصلاحية restaurant_admin
+- [x] إضافة create/update/delete للمشتريات مع tenant guard وصلاحية restaurant_admin
+- [x] ربط قراءة المخزون وتحديث الكمية في InventoryView بـ tRPC وحالات الخطأ وإعادة المحاولة
+- [x] إضافة اختبار schema لجدول purchases وحقلي paymentMethod/paymentStatus في orders
+- [x] إضافة اختبار tRPC يحجب mutations المخزون والمشتريات عن دور waiter

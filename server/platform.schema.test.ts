@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants } from "../drizzle/schema";
+import { branches, employees, inventoryItems, menuCategories, menuItems, orders, purchases, restaurants } from "../drizzle/schema";
 
 describe("NFOOD platform schema", () => {
   it("exposes the core restaurant operating tables", () => {
@@ -10,6 +10,7 @@ describe("NFOOD platform schema", () => {
     expect(orders).toBeDefined();
     expect(inventoryItems).toBeDefined();
     expect(employees).toBeDefined();
+    expect(purchases).toBeDefined();
   });
 
   it("defines a unique barcode column for each restaurant account", () => {
@@ -21,5 +22,7 @@ describe("NFOOD platform schema", () => {
     expect(orders.status).toBeDefined();
     expect(orders.branchId).toBeDefined();
     expect(orders.updatedAt).toBeDefined();
+    expect(orders.paymentMethod).toBeDefined();
+    expect(orders.paymentStatus).toBeDefined();
   });
 });
