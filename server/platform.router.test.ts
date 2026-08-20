@@ -43,6 +43,11 @@ describe("platform procedures", () => {
     await expect(waiter.platform.createPurchase({ restaurantId: 1, supplier: "مورد اختبار", total: "10.00", status: "received" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("restricts employee mutations to restaurant admins", async () => {
+    const waiter = appRouter.createCaller(context("user", "waiter"));
+    await expect(waiter.platform.createEmployee({ restaurantId: 1, name: "موظف اختبار", role: "كاشير", status: "active" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("accepts the POS/KDS order lifecycle statuses", async () => {
     const caller = appRouter.createCaller(context("admin"));
     await expect(caller.platform.updateOrderStatus({ orderId: 999999, status: "ready" })).resolves.toMatchObject({ success: true, status: "ready" });
