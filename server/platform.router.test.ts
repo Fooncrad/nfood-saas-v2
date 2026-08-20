@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-function context(role: "admin" | "user" = "user"): TrpcContext {
+function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" | "waiter"): TrpcContext {
   return {
-    user: { id: 7, openId: "platform-test", name: "اختبار", email: "test@nfood.local", loginMethod: "test", role, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
+    user: { id: 7, openId: "platform-test", name: "اختبار", email: "test@nfood.local", loginMethod: "test", role, testRole, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
     res: { clearCookie: () => undefined } as TrpcContext["res"],
   };
@@ -16,6 +16,12 @@ describe("platform procedures", () => {
     await expect(caller.platform.restaurants()).resolves.toBeDefined();
     await expect(caller.platform.branches({ restaurantId: 1 })).resolves.toBeDefined();
     await expect(caller.platform.menuItems({})).resolves.toBeDefined();
+  });
+
+  it("blocks a test-role user from another restaurant tenant", async () => {
+    const caller = appRouter.createCaller(context("user", "waiter"));
+    await expect(caller.platform.restaurantById({ id: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.platform.menuItems({ restaurantId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("rejects unauthenticated access to protected platform procedures", async () => {
