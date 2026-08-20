@@ -43,13 +43,6 @@ const navItems: { key: NavKey; label: string; icon: typeof LayoutDashboard }[] =
   { key: "health", label: "صحة النظام", icon: Activity },
 ];
 
-const initialOrders: Order[] = [
-  { id: "#1048", table: "طاولة 12", items: "برجر كلاسيك × 2، بطاطس × 1", total: 86, status: "new", time: "منذ 2 د", channel: "داخل المطعم" },
-  { id: "#1047", table: "طاولة 04", items: "بيتزا خضار × 1، مياه × 2", total: 58, status: "preparing", time: "منذ 8 د", channel: "داخل المطعم" },
-  { id: "#1046", table: "سفري", items: "تشيكن راب × 2، كولا × 2", total: 64, status: "ready", time: "منذ 12 د", channel: "استلام" },
-  { id: "#1045", table: "طاولة 08", items: "سلطة سيزر × 1، باستا ألفريدو × 1", total: 74, status: "completed", time: "منذ 19 د", channel: "داخل المطعم" },
-];
-
 const statusLabels: Record<OrderStatus, string> = { new: "جديد", preparing: "قيد التحضير", ready: "جاهز", completed: "مكتمل" };
 const statusStyles: Record<OrderStatus, string> = { new: "bg-amber-50 text-amber-700 border-amber-200", preparing: "bg-blue-50 text-blue-700 border-blue-200", ready: "bg-emerald-50 text-emerald-700 border-emerald-200", completed: "bg-slate-100 text-slate-600 border-slate-200" };
 
