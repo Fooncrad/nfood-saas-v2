@@ -73,7 +73,7 @@
 - [ ] إضافة Google وApple وOTP وPasskey ضمن طبقة مصادقة موحدة عند توفير مفاتيح المزودات
 - [x] إضافة إدارة الأجهزة والجلسات وتاريخ IP وتسجيل الخروج من جميع الأجهزة و2FA
 - [x] بناء Command Center عبر Ctrl+K وGlobal Search حقيقي داخل النظام
-- [ ] بناء نظام Feature Dependencies وFeature Limits وFeature Add-ons وFeature Override لكل مطعم
+- [x] بناء نظام Feature Dependencies وFeature Limits وFeature Add-ons وFeature Override لكل مطعم
 - [ ] توسيع الصلاحيات إلى مستوى المطعم والفرع والصفحة والزر والإجراء Action
 - [ ] إضافة صفحات 403 ديناميكية للميزة أو الإجراء غير المسموح
 - [ ] إنشاء Dashboard مستقل لكل Role وBottom Navigation للموبايل
