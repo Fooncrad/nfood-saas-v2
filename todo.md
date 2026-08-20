@@ -259,3 +259,4 @@
 - [x] حماية createOrder بالتحقق من ارتباط branchId وmenuItemIds بالمطعم قبل إنشاء الطلب
 - [x] حماية createMenuItem بالتحقق من ارتباط categoryId بالمطعم قبل إنشاء الصنف
 - [x] اختبار منع cross-restaurant references في createOrder وcreateMenuItem قبل أي كتابة
+- [x] منع menuItems من إعادة جميع الأصناف عند غياب restaurantId لغير الأدمن
