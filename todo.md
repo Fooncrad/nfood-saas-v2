@@ -89,7 +89,7 @@
 - [x] إضافة إدارة الأجهزة والجلسات وتاريخ IP وتسجيل الخروج من جميع الأجهزة و2FA
 - [x] بناء Command Center عبر Ctrl+K وGlobal Search حقيقي داخل النظام
 - [x] بناء نظام Feature Dependencies وFeature Limits وFeature Add-ons وFeature Override لكل مطعم
-- [ ] توسيع الصلاحيات إلى مستوى المطعم والفرع والصفحة والزر والإجراء Action
+- [ ] استكمال الصلاحيات الموسعة: tenant isolation وpage-level و403 مثبتة، مع أمثلة action-level محدودة؛ branch scope ومصفوفة الإجراءات الشاملة غير مكتملين
 - [x] إضافة صفحات 403 ديناميكية للميزة أو الإجراء غير المسموح
 - [x] إنشاء Dashboard مستقل لكل Role وBottom Navigation للموبايل
 - [x] إضافة Skeleton وEmpty وError وRequest ID للوحدات المثبتة: Home وOrders/KDS وMenu وReservations وPOS وSystem Health وGuest Checkout، مع توثيق حدود التغطية
@@ -379,4 +379,7 @@
 
 - [x] إضافة مصفوفة UI states للوحدات المثبتة فعليًا تربط loading/empty/error/skeleton/retry/Request ID بمصدرها
 - [x] إضافة audit صريح للتغذية التفاعلية بعد العمليات في Guest Checkout والتتبع وإعادة الطلب، وتوثيق أن feedback الموضعي هو النمط الفعلي بدل Toast شامل
+
+- [ ] إضافة مصفوفة action-level موثقة للوحدات الأساسية تربط كل زر/إجراء بحارس الواجهة والـbackend مع اختبارات allow/deny
+- [ ] توثيق أو تنفيذ نطاق صلاحيات الفرع بوضوح، وعدم اعتبار tenant isolation بديلًا عن branch scope
 

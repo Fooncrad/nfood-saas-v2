@@ -39,6 +39,16 @@ describe("role-based backend permissions", () => {
     await expect(caller.features.setOverride({ restaurantId: 1, featureId: 1, enabled: true })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("blocks waiter from creating a remote worker", async () => {
+    const caller = appRouter.createCaller(context("waiter"));
+    await expect(caller.remote.createWorker({ restaurantId: 1, userId: 22, role: "social-media", isAvailable: true })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("allows restaurant admin to reach remote worker creation contract", async () => {
+    const caller = appRouter.createCaller(context("restaurant_admin"));
+    await expect(caller.remote.createWorker({ restaurantId: 1, userId: 22, role: "social-media", isAvailable: true })).rejects.not.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("allows the central admin to read another restaurant's audit trail", async () => {
     const caller = appRouter.createCaller(adminContext());
     await expect(caller.platform.auditLogs({ restaurantId: 99 })).resolves.toBeDefined();
