@@ -14,6 +14,7 @@ import { startLogin } from "@/const";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { executeLogoutFlow, executeSwitchAccountFlow } from "@/lib/profileActions";
+import { getWorkspaceState } from "@/lib/workspace";
 import Barcode from "react-barcode";
 
 type OrderStatus = "new" | "preparing" | "ready" | "completed";
@@ -61,7 +62,8 @@ export default function Home() {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState(() => { if (typeof window === "undefined") return 1; const stored = Number(window.localStorage.getItem("nfood-selected-restaurant")); return Number.isInteger(stored) && stored > 0 ? stored : 1; });
   const restaurantsQuery = trpc.platform.restaurants.useQuery(undefined, { enabled: Boolean(user), retry: false });
   useEffect(() => { const restaurants = restaurantsQuery.data ?? []; if (!restaurants.length) return; const available = restaurants.some((restaurant) => restaurant.id === selectedRestaurantId); const nextId = available ? selectedRestaurantId : restaurants[0].id; if (nextId !== selectedRestaurantId) setSelectedRestaurantId(nextId); window.localStorage.setItem("nfood-selected-restaurant", String(nextId)); }, [restaurantsQuery.data, selectedRestaurantId]);
-  const workspaceReady = Boolean(user && restaurantsQuery.data?.some((restaurant) => restaurant.id === selectedRestaurantId));
+  const workspaceState = getWorkspaceState(restaurantsQuery.data ?? [], selectedRestaurantId);
+  const workspaceReady = Boolean(user && workspaceState === "ready");
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -98,7 +100,7 @@ export default function Home() {
 
   if (loading) return <div dir="rtl" className="flex min-h-screen items-center justify-center bg-[#f6f7f9] text-slate-500">جارٍ التحقق من الجلسة...</div>;
     if (!user) return <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} />;
-  if (restaurantsQuery.isSuccess && restaurantsQuery.data.length === 0) return <div dir="rtl" className="flex min-h-screen items-center justify-center bg-[#f6f7f9] p-6"><Card className="w-full max-w-lg rounded-3xl border-slate-200 bg-white shadow-sm"><CardContent className="p-8 text-center"><Store className="mx-auto mb-4 h-12 w-12 text-[#e76f3c]" /><h1 className="text-2xl font-bold text-slate-900">لا توجد مساحة عمل مرتبطة</h1><p className="mt-3 text-sm leading-7 text-slate-500">حسابك مسجل بنجاح، لكن لا يوجد مطعم مرتبط به حتى الآن. اطلب من مسؤول المنصة إنشاء المطعم أو ربط حسابك به، ثم أعد المحاولة.</p><Button type="button" onClick={() => void restaurantsQuery.refetch()} className="mt-6 rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]">إعادة المحاولة</Button></CardContent></Card></div>;
+  if (restaurantsQuery.isSuccess && workspaceState === "empty") return <div dir="rtl" className="flex min-h-screen items-center justify-center bg-[#f6f7f9] p-6"><Card className="w-full max-w-lg rounded-3xl border-slate-200 bg-white shadow-sm"><CardContent className="p-8 text-center"><Store className="mx-auto mb-4 h-12 w-12 text-[#e76f3c]" /><h1 className="text-2xl font-bold text-slate-900">لا توجد مساحة عمل مرتبطة</h1><p className="mt-3 text-sm leading-7 text-slate-500">حسابك مسجل بنجاح، لكن لا يوجد مطعم مرتبط به حتى الآن. اطلب من مسؤول المنصة إنشاء المطعم أو ربط حسابك به، ثم أعد المحاولة.</p><Button type="button" onClick={() => void restaurantsQuery.refetch()} className="mt-6 rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]">إعادة المحاولة</Button></CardContent></Card></div>;
   const title = navItems.find((item) => item.key === active)?.label ?? "نظرة عامة";
   const roleDashboardTitle = ({ restaurant_admin: "صباح الخير، فريق NFOOD", waiter: "لوحة النادل · جاهز لخدمة الضيوف", kitchen: "لوحة المطبخ · الطلبات بانتظار التنفيذ", cashier: "لوحة الكاشير · راقب المدفوعات والطلبات", customer: "مرحباً بك في NFOOD", driver: "لوحة التوصيل · تابع مهامك الحالية" } as Record<string, string>)[user?.testRole ?? "restaurant_admin"] ?? "صباح الخير، فريق NFOOD";
   const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success("تم تسجيل الخروج"), notifyError: (message) => toast.error(message) }); };
