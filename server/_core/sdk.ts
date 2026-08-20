@@ -1,4 +1,4 @@
-import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS, decodeOAuthState } from "@shared/const";
+import { AXIOS_TIMEOUT_MS, COOKIE_NAME, TEST_SESSION_COOKIE, ONE_YEAR_MS, decodeOAuthState } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
@@ -258,7 +258,7 @@ class SDKServer {
   async authenticateRequest(req: Request): Promise<AuthenticatedUser> {
     // 1. Prefer the session cookie (regular OAuth login).
     const cookies = this.parseCookies(req.headers.cookie);
-    let sessionToken = cookies.get(COOKIE_NAME);
+    let sessionToken = cookies.get(TEST_SESSION_COOKIE) || cookies.get(COOKIE_NAME);
 
     // 2. Fallback to the Authorization header (Preview auto-login via
     //    sessionStorage), used when the browser blocks iframe cookies such as
@@ -274,6 +274,12 @@ class SDKServer {
 
     if (!session) {
       throw ForbiddenError("Invalid session cookie");
+    }
+
+    if (session.openId.startsWith("test_")) {
+      const testAccount = await db.getTestAccountById(Number(session.openId.slice(5)));
+      if (!testAccount) throw ForbiddenError("Test account not found");
+      return { id: -testAccount.id, openId: testAccount.email, name: testAccount.displayName, email: testAccount.email, loginMethod: "test", role: "user", testRole: testAccount.role, createdAt: testAccount.createdAt, updatedAt: testAccount.createdAt, lastSignedIn: new Date() } as AuthenticatedUser;
     }
 
     if (session.openId.startsWith(CRON_OPEN_ID_PREFIX)) {
@@ -324,6 +330,7 @@ const CRON_OPEN_ID_PREFIX = "cron_";
 
 /** Result of `sdk.authenticateRequest`. Cron callbacks set `isCron=true` and `taskUid`; see `/home/ubuntu/skills/webdev-periodic-updates/SKILL.md`. */
 export type AuthenticatedUser = User & {
+  testRole?: "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver";
   taskUid?: string;
   isCron?: boolean;
 };

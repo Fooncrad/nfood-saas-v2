@@ -164,6 +164,61 @@ export const employees = mysqlTable("employees", {
   status: mysqlEnum("status", ["active", "inactive"]).default("active").notNull(),
 });
 
+export const remoteWorkers = mysqlTable("remoteWorkers", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  userId: int("userId").notNull().references(() => users.id),
+  role: varchar("role", { length: 80 }).notNull(),
+  isAvailable: boolean("isAvailable").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const remoteTasks = mysqlTable("remoteTasks", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  createdByUserId: int("createdByUserId").notNull().references(() => users.id),
+  assignedWorkerId: int("assignedWorkerId").references(() => remoteWorkers.id),
+  type: mysqlEnum("type", ["orders", "reservations", "social", "support", "marketing", "other"]).default("other").notNull(),
+  title: varchar("title", { length: 180 }).notNull(),
+  description: text("description"),
+  amount: decimal("amount", { precision: 10, scale: 2 }).default("0").notNull(),
+  currency: varchar("currency", { length: 8 }).default("SAR").notNull(),
+  paymentMethod: mysqlEnum("paymentMethod", ["manual", "bank_transfer", "wallet", "pending_gateway"]).default("manual").notNull(),
+  paymentStatus: mysqlEnum("paymentStatus", ["unpaid", "pending", "paid", "cancelled"]).default("unpaid").notNull(),
+  status: mysqlEnum("status", ["published", "reviewing", "accepted", "in_progress", "submitted", "completed", "cancelled"]).default("published").notNull(),
+  dueAt: timestamp("dueAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const taskMessages = mysqlTable("taskMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull().references(() => remoteTasks.id),
+  senderUserId: int("senderUserId").notNull().references(() => users.id),
+  body: text("body").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const testAccounts = mysqlTable("testAccounts", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  displayName: varchar("displayName", { length: 120 }).notNull(),
+  role: mysqlEnum("role", ["restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"]).notNull(),
+  passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  taskId: int("taskId").references(() => remoteTasks.id),
+  type: mysqlEnum("type", ["task", "message", "payment", "system"]).default("task").notNull(),
+  title: varchar("title", { length: 180 }).notNull(),
+  body: text("body").notNull(),
+  readAt: timestamp("readAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Restaurant = typeof restaurants.$inferSelect;

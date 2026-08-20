@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -50,3 +50,9 @@ export async function listPurchases(restaurantId: number) { const db = await get
 export async function listAttendance(employeeId?: number) { const db = await getDb(); return db ? (employeeId ? db.select().from(attendance).where(eq(attendance.employeeId, employeeId)) : db.select().from(attendance)) : []; }
 export async function listCampaigns(restaurantId: number) { const db = await getDb(); return db ? db.select().from(campaigns).where(eq(campaigns.restaurantId, restaurantId)) : []; }
 export async function listCoupons(campaignId?: number) { const db = await getDb(); return db ? (campaignId ? db.select().from(coupons).where(eq(coupons.campaignId, campaignId)) : db.select().from(coupons)) : []; }
+export async function listRemoteWorkers(restaurantId: number) { const db = await getDb(); return db ? db.select().from(remoteWorkers).where(eq(remoteWorkers.restaurantId, restaurantId)) : []; }
+export async function listRemoteTasks(restaurantId: number) { const db = await getDb(); return db ? db.select().from(remoteTasks).where(eq(remoteTasks.restaurantId, restaurantId)).orderBy(desc(remoteTasks.createdAt)) : []; }
+export async function listTaskMessages(taskId: number) { const db = await getDb(); return db ? db.select().from(taskMessages).where(eq(taskMessages.taskId, taskId)).orderBy(taskMessages.createdAt) : []; }
+export async function listNotifications(userId: number) { const db = await getDb(); return db ? db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt)) : []; }
+export async function getTestAccountByEmail(email: string) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(testAccounts).where(eq(testAccounts.email, email.toLowerCase())).limit(1); return rows[0]; }
+export async function getTestAccountById(id: number) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(testAccounts).where(eq(testAccounts.id, id)).limit(1); return rows[0]; }
