@@ -77,6 +77,15 @@ describe("platform procedures", () => {
     const metrics = await appRouter.createCaller(context("admin")).admin.saasMetrics();
     expect(metrics).toEqual(expect.objectContaining({ currency: "SAR", mrr: expect.any(Number), arr: expect.any(Number), churnRate: expect.any(Number) }));
   });
+  it("allows admin to read customers without sensitive fields", async () => {
+    const customers = await appRouter.createCaller(context("admin")).admin.customers();
+    expect(Array.isArray(customers)).toBe(true);
+    if (customers[0]) {
+      expect(customers[0]).not.toHaveProperty("passwordHash");
+      expect(customers[0]).not.toHaveProperty("sessionToken");
+    }
+    await expect(appRouter.createCaller(context("user", "waiter")).admin.customers()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
   it("allows admin to read feature usage metrics", async () => {
     const metrics = await appRouter.createCaller(context("admin")).admin.featureUsageMetrics();
     expect(Array.isArray(metrics)).toBe(true);
