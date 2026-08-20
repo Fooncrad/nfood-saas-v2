@@ -82,3 +82,24 @@ export async function getFeatureAccess(restaurantId: number, featureKey: string)
 export async function getUserSecurity(userId: number) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(userSecurity).where(eq(userSecurity.userId, userId)).limit(1); return rows[0]; }
 export async function insertAuditLog(input: typeof auditLogs.$inferInsert) { const db = await getDb(); if (!db) return undefined; const result = await db.insert(auditLogs).values(input); return Number(result[0].insertId); }
 export async function listAuditLogs(restaurantId?: number) { const db = await getDb(); if (!db) return []; return restaurantId ? db.select().from(auditLogs).where(eq(auditLogs.restaurantId, restaurantId)).orderBy(desc(auditLogs.createdAt)).limit(100) : db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(100); }
+export async function globalSearch(restaurantId: number, query: string, limit = 20) {
+  const db = await getDb();
+  if (!db) return { results: [], available: false as const };
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return { results: [], available: true as const };
+  const [menu, orderRows, staff, branchRows, tasks] = await Promise.all([
+    db.select().from(menuItems).where(eq(menuItems.restaurantId, restaurantId)),
+    db.select().from(orders).where(eq(orders.restaurantId, restaurantId)).orderBy(desc(orders.createdAt)).limit(100),
+    db.select().from(employees).where(eq(employees.restaurantId, restaurantId)),
+    db.select().from(branches).where(eq(branches.restaurantId, restaurantId)),
+    db.select().from(remoteTasks).where(eq(remoteTasks.restaurantId, restaurantId)).orderBy(desc(remoteTasks.createdAt)).limit(100),
+  ]);
+  const results = [
+    ...menu.filter((item) => `${item.name} ${item.description ?? ""}`.toLowerCase().includes(normalized)).map((item) => ({ type: "menu" as const, id: item.id, title: item.name, subtitle: `${item.price} ر.س`, action: "menu" })),
+    ...orderRows.filter((item) => `${item.id} ${item.tableName ?? ""} ${item.status}`.toLowerCase().includes(normalized)).map((item) => ({ type: "order" as const, id: item.id, title: `طلب #${item.id}`, subtitle: `${item.status} · ${item.total} ر.س`, action: "orders" })),
+    ...staff.filter((item) => `${item.name} ${item.role}`.toLowerCase().includes(normalized)).map((item) => ({ type: "employee" as const, id: item.id, title: item.name, subtitle: item.role, action: "employees" })),
+    ...branchRows.filter((item) => `${item.name} ${item.city}`.toLowerCase().includes(normalized)).map((item) => ({ type: "branch" as const, id: item.id, title: item.name, subtitle: item.city, action: "branches" })),
+    ...tasks.filter((item) => `${item.title} ${item.description ?? ""}`.toLowerCase().includes(normalized)).map((item) => ({ type: "task" as const, id: item.id, title: item.title, subtitle: item.status, action: "remote" })),
+  ];
+  return { results: results.slice(0, limit), available: true as const };
+}
