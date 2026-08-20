@@ -59,4 +59,24 @@ export async function getTestAccountById(id: number) { const db = await getDb();
 export async function listAuthSessions(userId: number) { const db = await getDb(); return db ? db.select().from(authSessions).where(eq(authSessions.userId, userId)).orderBy(desc(authSessions.lastSeenAt)) : []; }
 export async function listFeatureDefinitions() { const db = await getDb(); return db ? db.select().from(featureDefinitions).orderBy(featureDefinitions.key) : []; }
 export async function listRestaurantFeatures(restaurantId: number) { const db = await getDb(); return db ? db.select().from(restaurantFeatures).where(eq(restaurantFeatures.restaurantId, restaurantId)) : []; }
+
+export async function getFeatureAccess(restaurantId: number, featureKey: string): Promise<{ key: string; enabled: boolean; limit: number | null; reason: "enabled" | "disabled" | "missing" | "dependency_disabled" | "database_unavailable" }> {
+  const db = await getDb();
+  if (!db) return { key: featureKey, enabled: false, limit: null, reason: "database_unavailable" };
+  const definitions = await db.select().from(featureDefinitions);
+  const overrides = await db.select().from(restaurantFeatures).where(eq(restaurantFeatures.restaurantId, restaurantId));
+  const byKey = new Map(definitions.map((definition) => [definition.key, definition]));
+  const byFeatureId = new Map(overrides.map((override) => [override.featureId, override]));
+  const evaluate = (key: string, visited = new Set<string>()): { enabled: boolean; limit: number | null; reason: "enabled" | "disabled" | "missing" | "dependency_disabled" } => {
+    if (visited.has(key)) return { enabled: false, limit: null, reason: "dependency_disabled" };
+    const definition = byKey.get(key);
+    if (!definition) return { enabled: false, limit: null, reason: "missing" };
+    const override = byFeatureId.get(definition.id);
+    if (definition.dependencyKey) { const dependency = evaluate(definition.dependencyKey, new Set(Array.from(visited).concat(key))); if (!dependency.enabled) return { enabled: false, limit: null, reason: "dependency_disabled" }; }
+    if (override?.enabled === false) return { enabled: false, limit: override.overrideLimit ?? definition.defaultLimit ?? null, reason: "disabled" };
+    return { enabled: true, limit: override?.overrideLimit ?? definition.defaultLimit ?? null, reason: "enabled" };
+  };
+  return { key: featureKey, ...evaluate(featureKey) };
+}
+
 export async function getUserSecurity(userId: number) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(userSecurity).where(eq(userSecurity.userId, userId)).limit(1); return rows[0]; }

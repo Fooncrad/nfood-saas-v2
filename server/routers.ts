@@ -3,9 +3,9 @@ import { COOKIE_NAME, TEST_SESSION_COOKIE } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, testRoleProcedure, adminProcedure, router } from "./_core/trpc";
-import { branches, orders, orderItems, restaurants, menuItems, purchases, restaurantTables, campaigns, remoteTasks, taskMessages, notifications, testAccounts, authSessions } from "../drizzle/schema";
-import { getDb, getRestaurantById, getRestaurantByBarcode, listBranches, listEmployees, listInventory, listMenuCategories, listMenuItems, listOrders, listRestaurants, listSubscriptions, listRoles, listPermissions, listTables, listPurchases, listAttendance, listCampaigns, listCoupons, listRemoteWorkers, listRemoteTasks, listTaskMessages, listNotifications, getTestAccountByEmail, listAuthSessions, upsertUser, getUserByOpenId, listFeatureDefinitions, listRestaurantFeatures, getUserSecurity } from "./db";
-import { eq } from "drizzle-orm";
+import { branches, orders, orderItems, restaurants, menuItems, purchases, restaurantTables, campaigns, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, restaurantFeatures } from "../drizzle/schema";
+import { getDb, getRestaurantById, getRestaurantByBarcode, listBranches, listEmployees, listInventory, listMenuCategories, listMenuItems, listOrders, listRestaurants, listSubscriptions, listRoles, listPermissions, listTables, listPurchases, listAttendance, listCampaigns, listCoupons, listRemoteWorkers, listRemoteTasks, listTaskMessages, listNotifications, getTestAccountByEmail, listAuthSessions, upsertUser, getUserByOpenId, listFeatureDefinitions, listRestaurantFeatures, getUserSecurity, getFeatureAccess } from "./db";
+import { and, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { createHash, scryptSync, timingSafeEqual } from "node:crypto";
@@ -67,10 +67,15 @@ export const appRouter = router({
   security: router({
     sessions: protectedProcedure.query(({ ctx }) => listAuthSessions(ctx.user.id)),
     security: protectedProcedure.query(({ ctx }) => getUserSecurity(ctx.user.id)),
+    revokeSession: protectedProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ ctx, input }) => { const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" }); await db.update(authSessions).set({ revokedAt: new Date() }).where(and(eq(authSessions.id, input.sessionId), eq(authSessions.userId, ctx.user.id))); return { success: true }; }),
+    revokeAllSessions: protectedProcedure.mutation(async ({ ctx }) => { const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" }); await db.update(authSessions).set({ revokedAt: new Date() }).where(eq(authSessions.userId, ctx.user.id)); return { success: true }; }),
+    setTwoFactor: protectedProcedure.input(z.object({ enabled: z.boolean() })).mutation(async ({ ctx, input }) => { const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" }); await db.insert(userSecurity).values({ userId: ctx.user.id, twoFactorEnabled: input.enabled }).onDuplicateKeyUpdate({ set: { twoFactorEnabled: input.enabled } }); return { success: true, enabled: input.enabled }; }),
   }),
   features: router({
     definitions: protectedProcedure.query(() => listFeatureDefinitions()),
     restaurant: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(({ input }) => listRestaurantFeatures(input.restaurantId)),
+    access: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive(), key: z.string().min(1).max(120) })).query(({ input }) => getFeatureAccess(input.restaurantId, input.key)),
+    setOverride: testRoleProcedure("restaurant_admin").input(z.object({ restaurantId: z.number().int().positive(), featureId: z.number().int().positive(), enabled: z.boolean(), limit: z.number().int().nonnegative().nullable().optional(), value: z.string().max(255).nullable().optional() })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" }); const existing = await db.select().from(restaurantFeatures).where(and(eq(restaurantFeatures.restaurantId, input.restaurantId), eq(restaurantFeatures.featureId, input.featureId))).limit(1); const values = { enabled: input.enabled, overrideLimit: input.limit ?? null, overrideValue: input.value ?? null }; if (existing[0]) await db.update(restaurantFeatures).set(values).where(eq(restaurantFeatures.id, existing[0].id)); else await db.insert(restaurantFeatures).values({ restaurantId: input.restaurantId, featureId: input.featureId, ...values }); return { success: true }; }),
   }),
   admin: router({
     restaurants: adminProcedure.query(() => listRestaurants()),
