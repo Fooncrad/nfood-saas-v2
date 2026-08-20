@@ -32,6 +32,8 @@ export const branches = mysqlTable("branches", {
   name: varchar("name", { length: 160 }).notNull(),
   city: varchar("city", { length: 120 }),
   status: mysqlEnum("status", ["open", "closed"]).default("open").notNull(),
+  openingTime: varchar("openingTime", { length: 5 }),
+  closingTime: varchar("closingTime", { length: 5 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

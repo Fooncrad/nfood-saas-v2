@@ -314,3 +314,4 @@
 - [x] إزالة fallbacks الثابتة من orders وtablesByBranch وفرض نطاق المطعم لغير الإداريين
 
 - [x] إضافة اختبارات عزل لـmenuItems وcoupons وauditLogs عند غياب restaurantId
+- [x] إضافة ساعات فتح وإغلاق محفوظة لكل فرع ضمن إعدادات branches
