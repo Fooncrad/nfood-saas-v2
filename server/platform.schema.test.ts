@@ -12,6 +12,11 @@ describe("NFOOD platform schema", () => {
     expect(employees).toBeDefined();
   });
 
+  it("defines a unique barcode column for each restaurant account", () => {
+    expect(restaurants.barcode).toBeDefined();
+    expect(restaurants.barcode.config.notNull).toBe(true);
+  });
+
   it("defines the order lifecycle columns used by POS and KDS", () => {
     expect(orders.status).toBeDefined();
     expect(orders.branchId).toBeDefined();

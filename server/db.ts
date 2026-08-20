@@ -34,6 +34,8 @@ export async function getUserByOpenId(openId: string) {
 }
 
 export async function listRestaurants() { const db = await getDb(); return db ? db.select().from(restaurants).orderBy(desc(restaurants.createdAt)) : []; }
+export async function getRestaurantById(id: number) { const db = await getDb(); if (!db) return undefined; const result = await db.select().from(restaurants).where(eq(restaurants.id, id)).limit(1); return result[0]; }
+export async function getRestaurantByBarcode(barcode: string) { const db = await getDb(); if (!db) return undefined; const result = await db.select().from(restaurants).where(eq(restaurants.barcode, barcode)).limit(1); return result[0]; }
 export async function listBranches(restaurantId: number) { const db = await getDb(); return db ? db.select().from(branches).where(eq(branches.restaurantId, restaurantId)) : []; }
 export async function listMenuCategories(restaurantId: number) { const db = await getDb(); return db ? db.select().from(menuCategories).where(eq(menuCategories.restaurantId, restaurantId)) : []; }
 export async function listMenuItems(categoryId?: number) { const db = await getDb(); return db ? (categoryId ? db.select().from(menuItems).where(eq(menuItems.categoryId, categoryId)) : db.select().from(menuItems)) : []; }

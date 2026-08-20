@@ -4,8 +4,9 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { branches, orders, restaurants, menuItems, purchases, restaurantTables, campaigns } from "../drizzle/schema";
-import { getDb, listBranches, listEmployees, listInventory, listMenuCategories, listMenuItems, listOrders, listRestaurants, listSubscriptions, listRoles, listPermissions, listTables, listPurchases, listAttendance, listCampaigns, listCoupons } from "./db";
+import { getDb, getRestaurantById, getRestaurantByBarcode, listBranches, listEmployees, listInventory, listMenuCategories, listMenuItems, listOrders, listRestaurants, listSubscriptions, listRoles, listPermissions, listTables, listPurchases, listAttendance, listCampaigns, listCoupons } from "./db";
 import { eq } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 export const appRouter = router({
   system: systemRouter,
@@ -19,6 +20,8 @@ export const appRouter = router({
   }),
   platform: router({
     restaurants: protectedProcedure.query(() => listRestaurants()),
+    restaurantById: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getRestaurantById(input.id)),
+    restaurantByBarcode: protectedProcedure.input(z.object({ barcode: z.string().min(6).max(64) })).query(({ input }) => getRestaurantByBarcode(input.barcode)),
     branches: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(({ input }) => listBranches(input.restaurantId)),
     menuCategories: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(({ input }) => listMenuCategories(input.restaurantId)),
     menuItems: protectedProcedure.input(z.object({ categoryId: z.number().int().positive().optional() }).optional()).query(({ input }) => listMenuItems(input?.categoryId)),
@@ -44,6 +47,7 @@ export const appRouter = router({
   }),
   admin: router({
     restaurants: adminProcedure.query(() => listRestaurants()),
+    createRestaurant: adminProcedure.input(z.object({ name: z.string().min(2), slug: z.string().min(2).max(160), plan: z.string().min(2).default("Growth") })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new Error("Database is not available"); const barcode = `NFOOD-${nanoid(10).toUpperCase()}`; const result = await db.insert(restaurants).values({ ...input, barcode, status: "trial" }); return { success: true, id: Number(result[0].insertId), barcode }; }),
     subscriptions: adminProcedure.input(z.object({ restaurantId: z.number().int().positive().optional() }).optional()).query(({ input }) => listSubscriptions(input?.restaurantId)),
     roles: adminProcedure.input(z.object({ restaurantId: z.number().int().positive().optional() }).optional()).query(({ input }) => listRoles(input?.restaurantId)),
     permissions: adminProcedure.query(() => listPermissions()),
