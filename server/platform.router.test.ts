@@ -67,6 +67,12 @@ describe("platform procedures", () => {
     const metrics = await appRouter.createCaller(context("admin")).admin.saasMetrics();
     expect(metrics).toEqual(expect.objectContaining({ currency: "SAR", mrr: expect.any(Number), arr: expect.any(Number), churnRate: expect.any(Number) }));
   });
+  it("protects web push subscriptions from anonymous access and invalid endpoints", async () => {
+    const unauthenticated = appRouter.createCaller({ ...context(), user: null } as TrpcContext);
+    await expect(unauthenticated.notifications.pushSubscribe({ endpoint: "https://push.example.test/sub", keys: { p256dh: "1234567890123456", auth: "12345678" } })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    const caller = appRouter.createCaller(context());
+    await expect(caller.notifications.pushSubscribe({ endpoint: "not-an-url", keys: { p256dh: "1234567890123456", auth: "12345678" } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
   it("protects restaurant branding by tenant and role", async () => {
     const waiter = appRouter.createCaller(context("user", "waiter"));
     await expect(waiter.platform.branding({ restaurantId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });

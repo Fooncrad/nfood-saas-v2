@@ -127,6 +127,13 @@
       "when": 1787243866886,
       "tag": "0017_yielding_korath",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1787244167629,
+      "tag": "0018_happy_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }
