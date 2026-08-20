@@ -267,3 +267,5 @@
 - [x] حماية attendance من إعادة حضور جميع الموظفين عند غياب employeeId لغير الأدمن
 - [x] حماية createReservation من branchId غير التابع للمطعم قبل الحفظ
 - [x] اختبار منع branchId العابر للمطاعم في createReservation قبل الحفظ
+- [x] استبدال branchId الثابت في POS بفرع فعلي من backend ومنع إرسال الطلب عند غيابه
+- [x] إزالة restaurantId الثابت من System Health واستخدام نطاق المستخدم أو الأدمن المركزي
