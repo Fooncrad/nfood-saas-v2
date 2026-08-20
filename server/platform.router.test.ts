@@ -67,6 +67,18 @@ describe("platform procedures", () => {
     const metrics = await appRouter.createCaller(context("admin")).admin.saasMetrics();
     expect(metrics).toEqual(expect.objectContaining({ currency: "SAR", mrr: expect.any(Number), arr: expect.any(Number), churnRate: expect.any(Number) }));
   });
+  it("protects restaurant branding by tenant and role", async () => {
+    const waiter = appRouter.createCaller(context("user", "waiter"));
+    await expect(waiter.platform.branding({ restaurantId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(waiter.platform.updateBranding({ restaurantId: 1, brandName: "غير مصرح", brandColor: "#123456", brandLogoUrl: "", brandDescription: "" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const restaurantAdmin = appRouter.createCaller(context("user", "restaurant_admin"));
+    const availableRestaurants = await restaurantAdmin.platform.restaurants();
+    if (availableRestaurants[0]) {
+      const restaurantId = availableRestaurants[0].id;
+      const current = await restaurantAdmin.platform.branding({ restaurantId });
+      await expect(restaurantAdmin.platform.updateBranding({ restaurantId, brandName: current.brandName, brandColor: current.brandColor, brandLogoUrl: current.brandLogoUrl, brandDescription: current.brandDescription })).resolves.toMatchObject({ success: true });
+    }
+  });
   it("rejects a missing POS/KDS order before changing status", async () => {
     const caller = appRouter.createCaller(context("admin"));
     await expect(caller.platform.updateOrderStatus({ restaurantId: 1, orderId: 999999, status: "ready" })).rejects.toMatchObject({ code: "FORBIDDEN" });

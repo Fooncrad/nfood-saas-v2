@@ -19,6 +19,10 @@ export const restaurants = mysqlTable("restaurants", {
   barcode: varchar("barcode", { length: 64 }).notNull().unique(),
   status: mysqlEnum("status", ["active", "trial", "suspended"]).default("trial").notNull(),
   plan: varchar("plan", { length: 64 }).default("Growth").notNull(),
+  brandName: varchar("brandName", { length: 160 }),
+  brandColor: varchar("brandColor", { length: 7 }).default("#e76f3c"),
+  brandLogoUrl: varchar("brandLogoUrl", { length: 500 }),
+  brandDescription: text("brandDescription"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
