@@ -81,7 +81,10 @@ describe("platform procedures", () => {
     await expect(waiter.admin.updateSubscription({ id: 1, status: "active" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(waiter.admin.cancelSubscription({ id: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(waiter.admin.saasMetrics()).rejects.toMatchObject({ code: "FORBIDDEN" });
-    const metrics = await appRouter.createCaller(context("admin")).admin.saasMetrics();
+    const admin = appRouter.createCaller(context("admin"));
+    await expect(admin.admin.updateRestaurant({ id: 999999, name: "اختبار" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(admin.admin.updateSubscription({ id: 999999, status: "active" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    const metrics = await admin.admin.saasMetrics();
     expect(metrics).toEqual(expect.objectContaining({ currency: "SAR", mrr: expect.any(Number), arr: expect.any(Number), churnRate: expect.any(Number) }));
   });
   it("blocks waiter, cashier, and kitchen from central administration", async () => {

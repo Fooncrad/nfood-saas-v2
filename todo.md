@@ -241,3 +241,4 @@
 - [x] ربط أزرار عرض المنيو والطلبات في Overview بتنقل فعلي بدل Toast غير منفذ
 - [x] اختبار قراءة admin المركزي للفروع والمنيو والحجوزات عبر مطعم آخر مع استمرار tenant guard للأدوار التشغيلية
 - [x] اختبار حجب waiter وcashier وkitchen من قراءة customers وsaasMetrics الإدارية
+- [x] اختبار مرور admin عبر بوابة updateRestaurant وupdateSubscription قبل تحقق المورد مع بقاء الأدوار التشغيلية محجوبة
