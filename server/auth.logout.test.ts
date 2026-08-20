@@ -49,8 +49,8 @@ describe("auth.logout", () => {
     const result = await caller.auth.logout();
 
     expect(result).toEqual({ success: true });
-    expect(clearedCookies).toHaveLength(1);
-    expect(clearedCookies[0]?.name).toBe(COOKIE_NAME);
+    expect(clearedCookies).toHaveLength(2);
+    expect(clearedCookies.map((cookie) => cookie.name)).toEqual(expect.arrayContaining([COOKIE_NAME, "nfood_test_session"]));
     expect(clearedCookies[0]?.options).toMatchObject({
       maxAge: -1,
       secure: true,
