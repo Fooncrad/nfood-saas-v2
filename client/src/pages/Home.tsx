@@ -71,6 +71,7 @@ export default function Home() {
   const roleSummaryQuery = trpc.platform.roleSummary.useQuery({ restaurantId: selectedRestaurantId }, { enabled: Boolean(user), retry: false });
   const [globalForbiddenAction, setGlobalForbiddenAction] = useState<string | null>(null);
   useEffect(() => { if (globalSearchQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("global.search"); else if (roleSummaryQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("dashboard.summary"); }, [globalSearchQuery.error, roleSummaryQuery.error]);
+  useEffect(() => { const onForbidden = (event: Event) => { const action = (event as CustomEvent<{ action?: string }>).detail?.action; setGlobalForbiddenAction(action || "protected.action"); }; window.addEventListener("nfood:forbidden", onForbidden); return () => window.removeEventListener("nfood:forbidden", onForbidden); }, []);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [pushStatus, setPushStatus] = useState<NotificationPermission | "unsupported">(() => typeof Notification === "undefined" ? "unsupported" : Notification.permission);
   const pushSubscribe = trpc.notifications.pushSubscribe.useMutation();

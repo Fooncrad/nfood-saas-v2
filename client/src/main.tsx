@@ -25,6 +25,7 @@ queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
     redirectToLoginIfUnauthorized(error);
+    if (error instanceof TRPCClientError && error.data?.code === "FORBIDDEN" && typeof window !== "undefined") window.dispatchEvent(new CustomEvent("nfood:forbidden", { detail: { action: error.data?.path ?? "protected.action" } }));
     console.error("[API Query Error]", error);
   }
 });
@@ -33,6 +34,7 @@ queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
     redirectToLoginIfUnauthorized(error);
+    if (error instanceof TRPCClientError && error.data?.code === "FORBIDDEN" && typeof window !== "undefined") window.dispatchEvent(new CustomEvent("nfood:forbidden", { detail: { action: error.data?.path ?? "protected.action" } }));
     console.error("[API Mutation Error]", error);
   }
 });
