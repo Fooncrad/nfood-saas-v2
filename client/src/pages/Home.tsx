@@ -68,6 +68,7 @@ export default function Home() {
   const globalSearchQuery = trpc.platform.globalSearch.useQuery({ restaurantId: selectedRestaurantId, query: commandQuery, limit: 20 }, { enabled: commandOpen && commandQuery.trim().length >= 2 && workspaceReady, retry: false });
   const roleSummaryQuery = trpc.platform.roleSummary.useQuery({ restaurantId: selectedRestaurantId }, { enabled: workspaceReady, retry: false });
   const workspaceBranches = trpc.platform.branches.useQuery({ restaurantId: selectedRestaurantId }, { enabled: workspaceReady, retry: false });
+  const brandingQuery = trpc.platform.branding.useQuery({ restaurantId: selectedRestaurantId }, { enabled: workspaceReady, retry: false });
   const [globalForbiddenAction, setGlobalForbiddenAction] = useState<string | null>(null);
   useEffect(() => { if (globalSearchQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("global.search"); else if (roleSummaryQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("dashboard.summary"); }, [globalSearchQuery.error, roleSummaryQuery.error]);
   useEffect(() => { const onForbidden = (event: Event) => { const action = (event as CustomEvent<{ action?: string }>).detail?.action; setGlobalForbiddenAction(action || "protected.action"); }; window.addEventListener("nfood:forbidden", onForbidden); return () => window.removeEventListener("nfood:forbidden", onForbidden); }, []);
@@ -76,7 +77,37 @@ export default function Home() {
   const pushSubscribe = trpc.notifications.pushSubscribe.useMutation();
   const enablePush = async () => { if (typeof Notification === "undefined" || !("serviceWorker" in navigator)) { toast.error("المتصفح الحالي لا يدعم إشعارات Push"); return; } const permission = await Notification.requestPermission(); setPushStatus(permission); if (permission !== "granted") { toast.info("لم يتم تفعيل الإشعارات"); return; } try { const registration = await navigator.serviceWorker.ready; const subscription = await registration.pushManager.getSubscription(); if (subscription) { const json = subscription.toJSON(); if (json.endpoint && json.keys?.p256dh && json.keys.auth) { await pushSubscribe.mutateAsync({ endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth }, userAgent: navigator.userAgent }); toast.success("تم تفعيل إشعارات NFOOD وحفظ الجهاز"); return; } } toast.info("تم السماح بالإشعارات. يلزم ربط مفتاح Push للإرسال الإنتاجي."); } catch { toast.error("تعذر حفظ اشتراك الإشعارات"); } };
   useEffect(() => { const capture = (event: Event) => { event.preventDefault(); setInstallPrompt(event as InstallPromptEvent); }; window.addEventListener("beforeinstallprompt", capture); return () => window.removeEventListener("beforeinstallprompt", capture); }, []);
-  useEffect(() => { const manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]'); if (!manifestLink) return; if (!user) { manifestLink.href = "/manifest.webmanifest"; return; } const role = user.testRole ?? (user.role === "admin" ? "restaurant_admin" : "customer"); manifestLink.href = `/manifest.${role}.webmanifest`; return () => { manifestLink.href = "/manifest.webmanifest"; }; }, [user?.role, user?.testRole]);
+  useEffect(() => {
+    const manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    const themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (!manifestLink) return;
+    const defaultTitle = "NFOOD Restaurant SaaS";
+    if (!user) {
+      document.title = defaultTitle;
+      if (themeMeta) themeMeta.content = "#e76f3c";
+      manifestLink.href = "/manifest.webmanifest";
+      return;
+    }
+    const role = user.testRole ?? (user.role === "admin" ? "restaurant_admin" : "customer");
+    const brand = brandingQuery.data;
+    document.title = brand?.brandName || defaultTitle;
+    if (themeMeta) themeMeta.content = brand?.brandColor || "#e76f3c";
+    let objectUrl: string | null = null;
+    if (brand?.brandName) {
+      const icon = brand.brandLogoUrl || "/icon-maskable.svg";
+      const manifest = { name: brand.brandName, short_name: brand.brandName.slice(0, 32), lang: "ar", dir: "rtl", start_url: "/", display: "standalone", theme_color: brand.brandColor || "#e76f3c", background_color: "#f6f7f9", description: brand.brandDescription || `تطبيق ${brand.brandName}`, icons: [{ src: icon, sizes: "512x512", type: "image/png", purpose: "any maskable" }] };
+      objectUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" }));
+      manifestLink.href = objectUrl;
+    } else {
+      manifestLink.href = `/manifest.${role}.webmanifest`;
+    }
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      manifestLink.href = "/manifest.webmanifest";
+      document.title = defaultTitle;
+      if (themeMeta) themeMeta.content = "#e76f3c";
+    };
+  }, [brandingQuery.data, user?.role, user?.testRole, Boolean(workspaceReady)]);
   useEffect(() => { const onKeyDown = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setCommandOpen(true); } if (event.key === "Escape") setCommandOpen(false); }; window.addEventListener("keydown", onKeyDown); return () => window.removeEventListener("keydown", onKeyDown); }, []);
   const notificationsQuery = trpc.notifications.mine.useQuery(undefined, { enabled: Boolean(user), retry: false, refetchInterval: 5000 });
   const markNotificationRead = trpc.notifications.markRead.useMutation({ onSuccess: () => notificationsQuery.refetch() });

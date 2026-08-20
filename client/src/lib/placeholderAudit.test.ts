@@ -25,6 +25,13 @@ describe("UI placeholder audit", () => {
     expect(homeSource).not.toContain("ميزة قادمة");
   });
 
+  it("keeps restaurant branding wired into the PWA shell", () => {
+    expect(homeSource).toContain("trpc.platform.branding.useQuery");
+    expect(homeSource).toContain("document.title = brand?.brandName");
+    expect(homeSource).toContain("meta[name=\"theme-color\"]");
+    expect(homeSource).toContain("application/manifest+json");
+  });
+
   it("keeps System Health wired into Super Admin", () => {
     expect(homeSource).toContain("trpc.admin.systemHealth.useQuery");
     expect(homeSource).toContain("صحة النظام");

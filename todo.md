@@ -356,3 +356,5 @@
 
 - [x] إضافة audit لحالات Skeleton وloading وempty وerror وRequest ID في Home وReservationsView
 
+- [x] ربط branding المحفوظ للمطعم بعنوان الصفحة وtheme-color وmanifest PWA ديناميكي، مع fallback آمن للـmanifest العام
+
