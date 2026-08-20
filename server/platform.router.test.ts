@@ -134,6 +134,12 @@ describe("platform procedures", () => {
       await expect(restaurantAdmin.platform.updateBranding({ restaurantId, brandName: current.brandName, brandColor: current.brandColor, brandLogoUrl: current.brandLogoUrl, brandDescription: current.brandDescription })).resolves.toMatchObject({ success: true });
     }
   });
+  it("rejects cross-restaurant branch and category references before writes", async () => {
+    const admin = appRouter.createCaller(context("admin"));
+    await expect(admin.platform.createOrder({ restaurantId: 2, branchId: 1, channel: "takeaway", paymentMethod: "cash", items: [{ menuItemId: 1, quantity: 1, unitPrice: "10.00" }], total: "10.00" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(admin.platform.createMenuItem({ restaurantId: 2, categoryId: 1, name: "صنف اختبار", price: "10.00" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("rejects a missing POS/KDS order before changing status", async () => {
     const caller = appRouter.createCaller(context("admin"));
     await expect(caller.platform.updateOrderStatus({ restaurantId: 1, orderId: 999999, status: "ready" })).rejects.toMatchObject({ code: "FORBIDDEN" });
