@@ -66,6 +66,8 @@ export const appRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const restaurant = (await db.select({ id: restaurants.id, status: restaurants.status }).from(restaurants).where(and(eq(restaurants.slug, input.slug), eq(restaurants.status, "active"))).limit(1))[0];
       if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير متاح" });
+      const platformSettings = await getPlatformSettings();
+      if (platformSettings.allowGuestCheckout !== "true") throw new TRPCError({ code: "FORBIDDEN", message: "الطلب العام متوقف مؤقتًا من إدارة المنصة" });
       const branch = (await db.select({ id: branches.id }).from(branches).where(and(eq(branches.id, input.branchId), eq(branches.restaurantId, restaurant.id), eq(branches.status, "open"))).limit(1))[0];
       if (!branch) throw new TRPCError({ code: "BAD_REQUEST", message: "الفرع غير متاح" });
       const requested = new Map<number, number>();
