@@ -15,7 +15,8 @@ describe("platform procedures", () => {
     const caller = appRouter.createCaller(context());
     await expect(caller.platform.restaurants()).resolves.toBeDefined();
     await expect(caller.platform.branches({ restaurantId: 1 })).resolves.toBeDefined();
-    await expect(caller.platform.menuItems({})).resolves.toBeDefined();
+    await expect(caller.platform.menuItems({})).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.platform.menuItems({ restaurantId: 1 })).resolves.toBeDefined();
   });
 
   it("scopes restaurant collection for operational roles while central admin remains broad", async () => {
