@@ -24,6 +24,12 @@ describe("UI placeholder audit", () => {
     expect(homeSource).not.toContain("ميزة قادمة");
   });
 
+  it("keeps System Health wired into Super Admin", () => {
+    expect(homeSource).toContain("trpc.admin.systemHealth.useQuery");
+    expect(homeSource).toContain("صحة النظام");
+    expect(homeSource).toContain("تحديث كل 30 ثانية");
+  });
+
   it("keeps role-specific PWA manifests wired to authenticated role", () => {
     expect(homeSource).toContain("manifest.${role}.webmanifest");
     expect(homeSource).toContain("/manifest.webmanifest");
