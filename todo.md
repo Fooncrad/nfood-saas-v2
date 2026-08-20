@@ -306,3 +306,5 @@
 
 - [x] تنفيذ CRUD أساسي للأدوار في Super Admin مع إجراءات backend محمية
 - [x] ربط الصلاحيات بالأدوار وإدارة rolePermissions من واجهة Super Admin
+
+- [x] إضافة CRUD فعلي للعملاء في Super Admin مع منع البريد المكرر
