@@ -56,6 +56,8 @@ export const orders = mysqlTable("orders", {
   tableName: varchar("tableName", { length: 80 }),
   status: mysqlEnum("status", ["new", "preparing", "ready", "completed", "cancelled"]).default("new").notNull(),
   channel: mysqlEnum("channel", ["dine_in", "takeaway", "delivery"]).default("dine_in").notNull(),
+  customerId: int("customerId").references(() => users.id),
+  driverId: int("driverId").references(() => users.id),
   total: decimal("total", { precision: 10, scale: 2 }).default("0").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

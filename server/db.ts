@@ -103,3 +103,12 @@ export async function globalSearch(restaurantId: number, query: string, limit = 
   ];
   return { results: results.slice(0, limit), available: true as const };
 }
+export async function getRoleSummary(restaurantId: number, role?: string, userId?: number) {
+  const db = await getDb();
+  if (!db) return { available: false as const, sales: 0, orders: 0, average: 0, newOrders: 0, preparing: 0, ready: 0, completed: 0, tables: 0, scope: "unavailable" as const };
+  const scope = role === "customer" ? "customer" : role === "driver" ? "driver" : "restaurant";
+  const rows = role === "customer" && userId ? await db.select().from(orders).where(and(eq(orders.restaurantId, restaurantId), eq(orders.customerId, userId))) : role === "driver" && userId ? await db.select().from(orders).where(and(eq(orders.restaurantId, restaurantId), eq(orders.driverId, userId))) : await db.select().from(orders).where(eq(orders.restaurantId, restaurantId));
+  const total = rows.reduce((sum, order) => sum + Number(order.total ?? 0), 0);
+  const tables = new Set(rows.filter((order) => order.status !== "completed").map((order) => order.tableName).filter(Boolean)).size;
+  return { available: true as const, sales: total, orders: rows.length, average: rows.length ? total / rows.length : 0, newOrders: rows.filter((order) => order.status === "new").length, preparing: rows.filter((order) => order.status === "preparing").length, ready: rows.filter((order) => order.status === "ready").length, completed: rows.filter((order) => order.status === "completed").length, tables, scope };
+}
