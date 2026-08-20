@@ -176,3 +176,6 @@
 - [x] استخراج قواعد انتقال Remote Work واختبار الانتقالات المسموحة والممنوعة
 - [x] تقييد updateTaskStatus لجميع الأدوار—including restaurant_admin—بمسار انتقالات Remote Work المسموح فقط أو توثيق الاستثناء المقصود بوضوح
 - [x] إضافة اختبار تكامل يحفظ مهمة فعلية ثم يثبت الانتقالات المسموحة والمرفوضة عبر acceptTask/updateTaskStatus حتى الوصول إلى completed/cancelled
+- [x] إضافة update/delete للفروع مع tenant guard وصلاحية restaurant_admin
+- [x] ربط BranchesView بقراءة الفروع وإنشائها وتبديل حالتها وحذفها وحالات الخطأ
+- [x] توسيع اختبار حجب mutations ليشمل إنشاء الفروع والحملات عن دور waiter
