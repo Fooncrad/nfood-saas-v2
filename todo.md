@@ -90,7 +90,7 @@
 - [x] بناء Command Center عبر Ctrl+K وGlobal Search حقيقي داخل النظام
 - [x] بناء نظام Feature Dependencies وFeature Limits وFeature Add-ons وFeature Override لكل مطعم
 - [ ] توسيع الصلاحيات إلى مستوى المطعم والفرع والصفحة والزر والإجراء Action
-- [ ] إضافة صفحات 403 ديناميكية للميزة أو الإجراء غير المسموح
+- [x] إضافة صفحات 403 ديناميكية للميزة أو الإجراء غير المسموح
 - [ ] إنشاء Dashboard مستقل لكل Role وBottom Navigation للموبايل
 - [ ] إضافة Skeleton Loading وEmpty States وError States مع Request ID
 - [ ] بناء System Health وتشخيص الأخطاء ومراقبة الخدمات وAudit Trail متقدم
@@ -227,3 +227,5 @@
 - [x] إصلاح خطأ restaurantById الذي يعيد data undefined عند فتح الصفحة الرئيسية، مع اختبار نتيجة المطعم المفقود
 - [x] عرض Empty State للحساب الذي لا يملك مطعمًا مرتبطًا وتعطيل استعلامات workspace حتى اختيار مطعم صالح
 - [x] إضافة اختبار منطق workspaceReady لحالتي عدم وجود مطاعم ومعرّف مطعم قديم
+- [x] توسيع Dashboard لكل Role إلى تخطيطات وبطاقات وإجراءات مستقلة بوضوح للأدمن والنادل والمطبخ والكاشير والعميل والسائق
+- [x] إضافة اختبار أو توثيق يثبت اختلاف محتوى Dashboard فعليًا لكل Role إلى جانب Bottom Navigation الحالي
