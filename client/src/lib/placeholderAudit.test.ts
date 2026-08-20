@@ -40,6 +40,12 @@ describe("UI placeholder audit", () => {
     }
   });
 
+  it("keeps reservation creation behind action-level permission", () => {
+    expect(reservationsSource).toContain("isRoleActionAllowed");
+    expect(reservationsSource).toContain("reservations.create");
+    expect(reservationsSource).toContain("canCreateReservation");
+  });
+
   it("keeps explicit states in ReservationsView", () => {
     expect(reservationsSource).toContain("isLoading");
     expect(reservationsSource).toContain("isError");
