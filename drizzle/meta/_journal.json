@@ -134,6 +134,13 @@
       "when": 1787244167629,
       "tag": "0018_happy_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1787249336696,
+      "tag": "0019_big_warstar",
+      "breakpoints": true
     }
   ]
 }

@@ -222,6 +222,21 @@ export const taskMessages = mysqlTable("taskMessages", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const reservations = mysqlTable("reservations", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").references(() => branches.id),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  kind: mysqlEnum("kind", ["reservation", "waitlist"]).default("reservation").notNull(),
+  customerName: varchar("customerName", { length: 160 }).notNull(),
+  phone: varchar("phone", { length: 40 }),
+  partySize: int("partySize").default(1).notNull(),
+  reservedFor: timestamp("reservedFor").notNull(),
+  status: mysqlEnum("status", ["pending", "confirmed", "seated", "completed", "cancelled", "no_show"]).default("pending").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
 export const testAccounts = mysqlTable("testAccounts", {
   id: int("id").autoincrement().primaryKey(),
   email: varchar("email", { length: 320 }).notNull().unique(),
