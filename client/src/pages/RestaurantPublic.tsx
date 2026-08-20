@@ -25,7 +25,7 @@ export default function RestaurantPublic() {
   const branches = page.data?.branches ?? [];
   const brandColor = page.data?.restaurant.brandColor ?? "#e76f3c";
   const trackingQuery = trpc.platform.trackGuestOrder.useQuery({ slug, orderId: Number(lookupOrderId), guestPhone: lookupPhone.trim() }, { enabled: Boolean(slug) && Number(lookupOrderId) > 0 && lookupPhone.trim().length >= 7, retry: false });
-  const reorder = trpc.platform.reorderGuestOrder.useMutation({ onSuccess: (result) => setReceipt({ orderId: result.orderId, total: result.total }) });
+  const reorder = trpc.platform.reorderGuestOrder.useMutation({ onSuccess: (result) => { setReceipt({ orderId: result.orderId, total: result.total }); setCart({}); setGuestName(""); setGuestPhone(""); } });
 
   useEffect(() => {
     if (selectedBranchId === null && branches[0]) setSelectedBranchId(branches[0].id);

@@ -79,6 +79,8 @@ describe("UI placeholder audit", () => {
     expect(publicRestaurantSource).toContain("إعادة الطلب");
     expect(publicRestaurantSource).toContain("guestStatusLabels");
     expect(publicRestaurantSource).toContain("قيد التحضير");
+    expect(publicRestaurantSource).toContain("setCart({});");
+    expect(publicRestaurantSource).toContain("setGuestPhone(\"\")");
     expect(publicRestaurantSource).toContain("guest-track");
     expect(publicRestaurantSource).toContain("guestName");
     expect(publicRestaurantSource).toContain("guestPhone");
