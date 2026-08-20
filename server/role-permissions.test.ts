@@ -10,6 +10,14 @@ function context(testRole: "restaurant_admin" | "waiter" | "kitchen"): TrpcConte
   };
 }
 
+function adminContext(): TrpcContext {
+  return {
+    user: { id: 1, openId: "admin", name: "Admin", email: "admin@nfood.local", loginMethod: "test", role: "admin", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: { clearCookie: () => undefined } as TrpcContext["res"],
+  };
+}
+
 describe("role-based backend permissions", () => {
   it("blocks waiter from changing feature overrides", async () => {
     const caller = appRouter.createCaller(context("waiter"));
@@ -23,12 +31,17 @@ describe("role-based backend permissions", () => {
 
   it("allows restaurant admin to reach the override procedure contract", async () => {
     const caller = appRouter.createCaller(context("restaurant_admin"));
-    await expect(caller.features.setOverride({ restaurantId: 2, featureId: 1, enabled: true })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.features.setOverride({ restaurantId: 2, featureId: 1, enabled: true })).rejects.not.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it.each(["cashier", "customer", "driver"] as const)("blocks %s from changing feature overrides", async (role) => {
     const caller = appRouter.createCaller(context(role));
     await expect(caller.features.setOverride({ restaurantId: 1, featureId: 1, enabled: true })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("allows the central admin to read another restaurant's audit trail", async () => {
+    const caller = appRouter.createCaller(adminContext());
+    await expect(caller.platform.auditLogs({ restaurantId: 99 })).resolves.toBeDefined();
   });
 
   it("blocks a waiter from reading another restaurant's audit trail", async () => {
