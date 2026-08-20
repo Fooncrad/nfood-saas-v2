@@ -265,3 +265,4 @@
 - [x] حماية platform.orders من قراءة طلبات فرع غير تابع للمطعم عبر تحقق branchId وtenant
 - [x] حماية tablesByBranch من قراءة طاولات فرع غير تابع للمطعم
 - [x] حماية attendance من إعادة حضور جميع الموظفين عند غياب employeeId لغير الأدمن
+- [x] حماية createReservation من branchId غير التابع للمطعم قبل الحفظ
