@@ -73,6 +73,15 @@ export const appRouter = router({
         return { success: true, orderId, total: total.toFixed(2), paymentMethod: "cash" as const, paymentStatus: "unpaid" as const, status: "new" as const };
       });
     }),
+    trackGuestOrder: publicProcedure.input(z.object({ slug: z.string().min(2).max(160).regex(/^[a-z0-9-]+$/), orderId: z.number().int().positive(), guestPhone: z.string().trim().min(7).max(32) })).query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and(eq(restaurants.slug, input.slug), eq(restaurants.status, "active"))).limit(1))[0];
+      if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير متاح" });
+      const order = (await db.select({ id: orders.id, status: orders.status, paymentStatus: orders.paymentStatus, total: orders.total, channel: orders.channel, createdAt: orders.createdAt }).from(orders).where(and(eq(orders.id, input.orderId), eq(orders.restaurantId, restaurant.id), eq(orders.guestPhone, input.guestPhone))).limit(1))[0];
+      if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "لم يتم العثور على الطلب" });
+      return order;
+    }),
     restaurants: protectedProcedure.query(({ ctx }) => isAdminContext(ctx) ? listRestaurants() : listRestaurants(1)),
     restaurantById: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ ctx, input }) => { assertRestaurantAccess(ctx, input.id); const restaurant = await getRestaurantById(input.id); if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير موجود" }); return restaurant; }),
     branding: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(async ({ ctx, input }) => { assertRestaurantAccess(ctx, input.restaurantId); const restaurant = await getRestaurantById(input.restaurantId); if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "Restaurant not found" }); return { restaurantId: restaurant.id, slug: restaurant.slug, brandName: restaurant.brandName ?? restaurant.name, brandColor: restaurant.brandColor ?? "#e76f3c", brandLogoUrl: restaurant.brandLogoUrl ?? "", brandDescription: restaurant.brandDescription ?? "" }; }),

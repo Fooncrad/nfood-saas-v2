@@ -34,6 +34,8 @@ describe("platform procedures", () => {
     expect(result).toEqual(expect.objectContaining({ success: true, paymentMethod: "cash", paymentStatus: "unpaid", status: "new", total: (Number(menuItem.price) * 2).toFixed(2) }));
     const created = (await db.select({ restaurantId: orders.restaurantId, guestName: orders.guestName, guestPhone: orders.guestPhone, paymentStatus: orders.paymentStatus, total: orders.total }).from(orders).where(eq(orders.id, result.orderId)).limit(1))[0];
     expect(created).toEqual(expect.objectContaining({ restaurantId: restaurant.id, guestName: "ضيف اختبار", guestPhone: "0500000000", paymentStatus: "unpaid", total: result.total }));
+    await expect(appRouter.createCaller(context()).platform.trackGuestOrder({ slug: restaurant.slug, orderId: result.orderId, guestPhone: "0500000000" })).resolves.toEqual(expect.objectContaining({ id: result.orderId, status: "new", paymentStatus: "unpaid", total: result.total }));
+    await expect(appRouter.createCaller(context()).platform.trackGuestOrder({ slug: restaurant.slug, orderId: result.orderId, guestPhone: "0500000001" })).rejects.toMatchObject({ code: "NOT_FOUND" });
     await db.delete(orderItems).where(eq(orderItems.orderId, result.orderId));
     await db.delete(orders).where(eq(orders.id, result.orderId));
   });

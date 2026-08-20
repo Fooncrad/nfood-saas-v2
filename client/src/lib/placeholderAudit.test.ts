@@ -74,6 +74,8 @@ describe("UI placeholder audit", () => {
 
   it("keeps guest checkout wired to the public restaurant page", () => {
     expect(publicRestaurantSource).toContain("trpc.platform.guestCheckout.useMutation");
+    expect(publicRestaurantSource).toContain("trpc.platform.trackGuestOrder.useQuery");
+    expect(publicRestaurantSource).toContain("guest-track");
     expect(publicRestaurantSource).toContain("guestName");
     expect(publicRestaurantSource).toContain("guestPhone");
     expect(publicRestaurantSource).toContain("الدفع نقدي عند الاستلام");
