@@ -335,3 +335,5 @@
 
 - [x] إزالة menuProducts الثابتة من MenuView وربط المنتجات والتصنيفات مباشرة ببيانات backend
 
+- [x] إضافة audit يمنع عودة قوائم menuProducts وorders المحلية ويثبت اعتماد MenuView وOrders على remote queries
+

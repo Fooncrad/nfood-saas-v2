@@ -21,4 +21,12 @@ describe("UI placeholder audit", () => {
     expect(homeSource).not.toContain("Feature coming soon");
     expect(homeSource).not.toContain("ميزة قادمة");
   });
+
+  it("keeps operational menu and order lists backend-only", () => {
+    expect(homeSource).not.toContain("const menuProducts");
+    expect(homeSource).not.toContain("const [products, setProducts]");
+    expect(homeSource).not.toContain("const [orders, setOrders]");
+    expect(homeSource).toContain("trpc.platform.menuItems.useQuery");
+    expect(homeSource).toContain("trpc.platform.ordersByRestaurant.useQuery");
+  });
 });
