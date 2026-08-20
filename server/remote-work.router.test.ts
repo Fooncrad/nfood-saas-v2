@@ -68,7 +68,11 @@ describe("remote work procedures", () => {
     if (!restaurant || !actor) return;
     const base = context("restaurant_admin");
     const caller = appRouter.createCaller({ ...base, user: { ...base.user!, id: actor.id } });
-    const created = await caller.remote.createTask({ restaurantId: restaurant.id, type: "support", title: "اختبار انتقال", amount: "10.00", currency: "SAR", paymentMethod: "manual" });
+      const created = await caller.remote.createTask({ restaurantId: restaurant.id, type: "support", title: "اختبار انتقال", amount: "10.00", currency: "SAR", paymentMethod: "manual" });
+      expect(created.paymentStatus).toBe("unpaid");
+      const persisted = (await db.select({ paymentMethod: remoteTasks.paymentMethod, paymentStatus: remoteTasks.paymentStatus }).from(remoteTasks).where(eq(remoteTasks.id, created.id)).limit(1))[0];
+      expect(persisted?.paymentMethod).toBe("manual");
+      expect(persisted?.paymentStatus).toBe("unpaid");
     try {
       await expect(caller.remote.updateTaskStatus({ taskId: created.id, status: "reviewing" })).resolves.toMatchObject({ success: true, status: "reviewing" });
       await expect(caller.remote.updateTaskStatus({ taskId: created.id, status: "completed" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
