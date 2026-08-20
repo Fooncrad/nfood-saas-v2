@@ -1,6 +1,16 @@
 export type DashboardNavKey = "overview" | "admin" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "reservations" | "remote" | "security" | "health";
 
 export type DashboardRole = "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver";
+export type DashboardAction = "orders.create" | "orders.status.update" | "inventory.manage" | "marketing.manage" | "reservations.create";
+
+export const roleActions: Record<DashboardRole, DashboardAction[]> = {
+  restaurant_admin: ["orders.create", "orders.status.update", "inventory.manage", "marketing.manage", "reservations.create"],
+  waiter: ["orders.create", "reservations.create"],
+  kitchen: ["orders.status.update"],
+  cashier: ["orders.create", "orders.status.update"],
+  customer: [],
+  driver: [],
+};
 
 export const roleNavigation: Record<DashboardRole, DashboardNavKey[]> = {
   restaurant_admin: ["overview", "admin", "branches", "orders", "pos", "kds", "menu", "tables", "inventory", "team", "marketing", "reservations", "remote", "security", "health"],
@@ -14,4 +24,9 @@ export const roleNavigation: Record<DashboardRole, DashboardNavKey[]> = {
 export function isRoleNavigationAllowed(role: DashboardRole | undefined, key: DashboardNavKey): boolean {
   if (!role) return false;
   return roleNavigation[role].includes(key);
+}
+
+export function isRoleActionAllowed(role: DashboardRole | undefined, action: DashboardAction): boolean {
+  if (!role) return false;
+  return roleActions[role].includes(action);
 }
