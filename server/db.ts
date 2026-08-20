@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -80,3 +80,5 @@ export async function getFeatureAccess(restaurantId: number, featureKey: string)
 }
 
 export async function getUserSecurity(userId: number) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(userSecurity).where(eq(userSecurity.userId, userId)).limit(1); return rows[0]; }
+export async function insertAuditLog(input: typeof auditLogs.$inferInsert) { const db = await getDb(); if (!db) return undefined; const result = await db.insert(auditLogs).values(input); return Number(result[0].insertId); }
+export async function listAuditLogs(restaurantId?: number) { const db = await getDb(); if (!db) return []; return restaurantId ? db.select().from(auditLogs).where(eq(auditLogs.restaurantId, restaurantId)).orderBy(desc(auditLogs.createdAt)).limit(100) : db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(100); }

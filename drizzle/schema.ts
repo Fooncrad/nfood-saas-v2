@@ -269,3 +269,17 @@ export const restaurantFeatures = mysqlTable("restaurantFeatures", {
   overrideValue: varchar("overrideValue", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+export const auditLogs = mysqlTable("auditLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  branchId: int("branchId").references(() => branches.id),
+  actorUserId: int("actorUserId").references(() => users.id),
+  actorRole: varchar("actorRole", { length: 80 }),
+  action: varchar("action", { length: 160 }).notNull(),
+  entityType: varchar("entityType", { length: 80 }),
+  entityId: varchar("entityId", { length: 80 }),
+  outcome: mysqlEnum("outcome", ["success", "failure", "denied"]).default("success").notNull(),
+  requestId: varchar("requestId", { length: 120 }),
+  metadata: text("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
