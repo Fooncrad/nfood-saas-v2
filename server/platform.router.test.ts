@@ -81,6 +81,19 @@ describe("platform procedures", () => {
     await expect(caller.platform.publicRestaurantPage({ slug: "غير-صالح" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
+  it("returns a privacy-safe customer display payload for an active restaurant", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const restaurant = (await db.select({ slug: restaurants.slug }).from(restaurants).where(eq(restaurants.status, "active")).limit(1))[0];
+    if (!restaurant) return;
+    const caller = appRouter.createCaller({ ...context(), user: null } as TrpcContext);
+    const result = await caller.platform.customerDisplay({ slug: restaurant.slug });
+    expect(result.restaurant).toEqual(expect.objectContaining({ name: expect.any(String), brandColor: expect.any(String) }));
+    for (const order of result.orders) expect(order).toEqual(expect.objectContaining({ id: expect.any(Number), status: expect.any(String), createdAt: expect.anything() }));
+    expect(JSON.stringify(result)).not.toContain("guestPhone");
+    expect(JSON.stringify(result)).not.toContain("guestName");
+  });
+
   it("rejects unauthenticated access to protected platform procedures", async () => {
     const unauthenticated = { ...context(), user: null } as TrpcContext;
     const caller = appRouter.createCaller(unauthenticated);

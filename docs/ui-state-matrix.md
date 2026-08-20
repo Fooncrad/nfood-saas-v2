@@ -14,6 +14,7 @@
 | System Health | نعم | بطاقة تحميل | حالة عدم توفر | نعم مع Request ID | نعم | status badge للحالة |
 | RestaurantPublic / Guest Checkout | نعم | skeleton الصفحة العامة | نعم للمنيو والفروع | نعم مع Request ID | نعم | بطاقة إيصال ورسائل فشل checkout/reorder |
 | Super Admin | نعم للقوائم والمؤشرات | حالات تحميل موضعية | نعم | نعم مع Request ID | نعم | feedback للإجراءات المركزية |
+| Customer Display | `platform.customerDisplay` مع تحديث كل 5 ثوانٍ | Skeleton شاشة كاملة | لا توجد طلبات `preparing` أو `ready` | رسالة خطأ مع Request ID | عبر إعادة تحميل الصفحة | لا تُعرض بيانات شخصية |
 
 ## تفسير التغذية التفاعلية
 
@@ -21,4 +22,4 @@
 
 ## حدود النطاق
 
-هذه مصفوفة توثيقية مرتبطة بفحص المصدر وملفات الاختبار الحالية، وليست اختبار متصفح E2E لكل خلية. الميزات غير الموجودة في الجدول، مثل Driver Workflow وCustomer Display وKitchen Printers وSSO، لا تُعد مغطاة بهذه المصفوفة.
+هذه مصفوفة توثيقية مرتبطة بفحص المصدر وملفات الاختبار الحالية، وليست اختبار متصفح E2E لكل خلية. الميزات غير الموجودة في الجدول، مثل Driver Workflow وKitchen Printers وSSO، لا تُعد مغطاة بهذه المصفوفة.

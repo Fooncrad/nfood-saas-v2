@@ -5,7 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, testRoleProcedure, adminProcedure, router } from "./_core/trpc";
 import { branches, orders, orderItems, inventoryItems, employees, attendance, remoteWorkers, restaurants, users, subscriptions, roles, rolePermissions, permissions, menuCategories, menuItems, purchases, restaurantTables, campaigns, coupons, reservations, remoteTasks, remoteWorkerApplications, taskMessages, notifications, pushSubscriptions, testAccounts, authSessions, userSecurity, restaurantFeatures, featureDefinitions } from "../drizzle/schema";
 import { getDb, getRestaurantById, getRestaurantByBarcode, listBranches, listEmployees, listInventory, listMenuCategories, listMenuItems, listOrders, listOrdersByRestaurant, listRestaurants, listSubscriptions, listRoles, listPermissions, listTables, listPurchases, listAttendance, listCampaigns, listCoupons, listRemoteWorkers, listRemoteTasks, listTaskMessages, listNotifications, getTestAccountByEmail, listAuthSessions, upsertUser, getUserByOpenId, listFeatureDefinitions, listRestaurantFeatures, getUserSecurity, getFeatureAccess, insertAuditLog, listAuditLogs, globalSearch, getRoleSummary, getPublicRestaurantPage, listRestaurantsWithBranchCount } from "./db";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { sendPushToUser } from "./push";
@@ -51,6 +51,14 @@ export const appRouter = router({
   }),
   platform: router({
     publicRestaurantPage: publicProcedure.input(z.object({ slug: z.string().min(2).max(160).regex(/^[a-z0-9-]+$/) })).query(async ({ input }) => { const page = await getPublicRestaurantPage(input.slug); if (!page) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير متاح" }); return page; }),
+    customerDisplay: publicProcedure.input(z.object({ slug: z.string().min(2).max(160).regex(/^[a-z0-9-]+$/), branchId: z.number().int().positive().optional() })).query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const restaurant = (await db.select({ id: restaurants.id, name: restaurants.name, brandName: restaurants.brandName, brandColor: restaurants.brandColor }).from(restaurants).where(and(eq(restaurants.slug, input.slug), eq(restaurants.status, "active"))).limit(1))[0];
+      if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير متاح" });
+      const rows = await db.select({ id: orders.id, status: orders.status, createdAt: orders.createdAt, branchId: orders.branchId }).from(orders).where(and(eq(orders.restaurantId, restaurant.id), ...(input.branchId ? [eq(orders.branchId, input.branchId)] : []), inArray(orders.status, ["preparing", "ready"]))).orderBy(desc(orders.createdAt)).limit(30);
+      return { restaurant: { name: restaurant.brandName ?? restaurant.name, brandColor: restaurant.brandColor ?? "#e76f3c" }, orders: rows.map(({ id, status, createdAt }) => ({ id, status, createdAt })) };
+    }),
     guestCheckout: publicProcedure.input(z.object({ slug: z.string().min(2).max(160).regex(/^[a-z0-9-]+$/), branchId: z.number().int().positive(), guestName: z.string().trim().min(2).max(160), guestPhone: z.string().trim().min(7).max(32), channel: z.enum(["dine_in", "takeaway", "delivery"]).default("takeaway"), tableName: z.string().trim().max(80).optional(), items: z.array(z.object({ menuItemId: z.number().int().positive(), quantity: z.number().int().positive().max(99) })).min(1).max(100) })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
