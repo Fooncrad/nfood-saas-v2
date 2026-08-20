@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
+import { getDb } from "./db";
+import { branches, menuItems, orderItems, orders, restaurants } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
 function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver"): TrpcContext {
@@ -146,7 +149,33 @@ describe("platform procedures", () => {
   it("rejects a missing POS/KDS order before changing status", async () => {
     const caller = appRouter.createCaller(context("admin"));
     await expect(caller.platform.updateOrderStatus({ restaurantId: 1, orderId: 999999, status: "ready" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const waiter = appRouter.createCaller(context("user", "waiter"));
+    await expect(waiter.platform.updateOrderStatus({ restaurantId: 1, orderId: 999999, status: "ready" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
+  it("persists a POS order and reflects the KDS status update", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).limit(1))[0];
+    if (!restaurant) return;
+    const branch = (await db.select({ id: branches.id }).from(branches).where(eq(branches.restaurantId, restaurant.id)).limit(1))[0];
+    const menuItem = (await db.select({ id: menuItems.id, price: menuItems.price }).from(menuItems).where(eq(menuItems.restaurantId, restaurant.id)).limit(1))[0];
+    if (!branch || !menuItem) return;
+    const caller = appRouter.createCaller(context("admin"));
+    const created = await caller.platform.createOrder({ restaurantId: restaurant.id, branchId: branch.id, channel: "takeaway", paymentMethod: "cash", items: [{ menuItemId: menuItem.id, quantity: 1, unitPrice: String(menuItem.price) }], total: String(menuItem.price) });
+    try {
+      const persisted = (await db.select({ id: orders.id, branchId: orders.branchId }).from(orders).where(eq(orders.id, created.id)).limit(1))[0];
+      expect(persisted?.branchId).toBe(branch.id);
+      const persistedItem = (await db.select({ orderId: orderItems.orderId }).from(orderItems).where(eq(orderItems.orderId, created.id)).limit(1))[0];
+      expect(persistedItem?.orderId).toBe(created.id);
+      await expect(caller.platform.updateOrderStatus({ restaurantId: restaurant.id, orderId: created.id, status: "ready" })).resolves.toMatchObject({ success: true, status: "ready" });
+      const updated = (await db.select({ status: orders.status }).from(orders).where(eq(orders.id, created.id)).limit(1))[0];
+      expect(updated?.status).toBe("ready");
+    } finally {
+      await db.delete(orderItems).where(eq(orderItems.orderId, created.id));
+      await db.delete(orders).where(eq(orders.id, created.id));
+    }
+  });
+
   it("rejects cross-restaurant reservation branches before write", async () => {
     const admin = appRouter.createCaller(context("admin"));
     await expect(admin.platform.createReservation({ restaurantId: 2, branchId: 1, kind: "reservation", customerName: "اختبار عزل", partySize: 2, reservedFor: new Date("2026-09-01T18:00:00.000Z") })).rejects.toMatchObject({ code: "FORBIDDEN" });
