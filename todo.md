@@ -242,3 +242,4 @@
 - [x] اختبار قراءة admin المركزي للفروع والمنيو والحجوزات عبر مطعم آخر مع استمرار tenant guard للأدوار التشغيلية
 - [x] اختبار حجب waiter وcashier وkitchen من قراءة customers وsaasMetrics الإدارية
 - [x] اختبار مرور admin عبر بوابة updateRestaurant وupdateSubscription قبل تحقق المورد مع بقاء الأدوار التشغيلية محجوبة
+- [x] إضافة واجهة تعديل اسم ومدينة الفرع وربطها بـ updateBranch الفعلي
