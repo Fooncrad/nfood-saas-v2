@@ -272,3 +272,4 @@
 - [x] إزالة fallback menuProducts الثابت من MenuView وPOS والاعتماد على أصناف backend فقط
 - [x] إزالة initialOrders الثابتة غير المستخدمة من Home
 - [x] إضافة حالات loading وerror وempty لشبكة MenuView مع إعادة المحاولة
+- [x] إضافة حالات loading وerror وempty واضحة في POS للأصناف والفروع
