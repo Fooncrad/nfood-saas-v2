@@ -19,6 +19,15 @@ function adminContext(): TrpcContext {
 }
 
 describe("role-based backend permissions", () => {
+  it("allows central admin to read platform settings and blocks waiter", async () => {
+    const admin = appRouter.createCaller(adminContext());
+    const settings = await admin.platform.platformSettings();
+    expect(settings).toEqual(expect.objectContaining({ defaultCurrency: expect.any(String), defaultTimezone: expect.any(String) }));
+    const waiter = appRouter.createCaller(context("waiter"));
+    await expect(waiter.platform.platformSettings()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(waiter.platform.updatePlatformSetting({ key: "supportEmail", value: "blocked@example.com" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("blocks waiter from changing feature overrides", async () => {
     const caller = appRouter.createCaller(context("waiter"));
     await expect(caller.features.setOverride({ restaurantId: 1, featureId: 1, enabled: true })).rejects.toMatchObject({ code: "FORBIDDEN" });

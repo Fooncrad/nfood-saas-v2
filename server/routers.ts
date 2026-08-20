@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, testRoleProcedure, adminProcedure, router } from "./_core/trpc";
 import { branches, orders, orderItems, inventoryItems, employees, attendance, remoteWorkers, restaurants, users, subscriptions, roles, rolePermissions, permissions, menuCategories, menuItems, purchases, restaurantTables, campaigns, coupons, reservations, remoteTasks, remoteWorkerApplications, taskMessages, notifications, pushSubscriptions, testAccounts, authSessions, userSecurity, restaurantFeatures, featureDefinitions } from "../drizzle/schema";
-import { getDb, getRestaurantById, getRestaurantByBarcode, listBranches, listEmployees, listInventory, listMenuCategories, listMenuItems, listOrders, listOrdersByRestaurant, listRestaurants, listSubscriptions, listRoles, listPermissions, listTables, listPurchases, listAttendance, listCampaigns, listCoupons, listRemoteWorkers, listRemoteTasks, listTaskMessages, listNotifications, getTestAccountByEmail, listAuthSessions, upsertUser, getUserByOpenId, listFeatureDefinitions, listRestaurantFeatures, getUserSecurity, getFeatureAccess, getBranchAllowance, getEmployeeAllowance, insertAuditLog, listAuditLogs, globalSearch, getRoleSummary, getPublicRestaurantPage, listRestaurantsWithBranchCount } from "./db";
+import { getDb, getRestaurantById, getRestaurantByBarcode, listBranches, listEmployees, listInventory, listMenuCategories, listMenuItems, listOrders, listOrdersByRestaurant, listRestaurants, listSubscriptions, listRoles, listPermissions, listTables, listPurchases, listAttendance, listCampaigns, listCoupons, listRemoteWorkers, listRemoteTasks, listTaskMessages, listNotifications, getTestAccountByEmail, listAuthSessions, upsertUser, getUserByOpenId, listFeatureDefinitions, listRestaurantFeatures, getUserSecurity, getFeatureAccess, getBranchAllowance, getEmployeeAllowance, insertAuditLog, listAuditLogs, globalSearch, getRoleSummary, getPublicRestaurantPage, listRestaurantsWithBranchCount, getPlatformSettings, setPlatformSetting, PLATFORM_SETTING_KEYS } from "./db";
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
@@ -50,6 +50,8 @@ export const appRouter = router({
     }),
   }),
   platform: router({
+    platformSettings: adminProcedure.query(async () => getPlatformSettings()),
+    updatePlatformSetting: adminProcedure.input(z.object({ key: z.enum(PLATFORM_SETTING_KEYS), value: z.string().max(2000) })).mutation(async ({ ctx, input }) => { await setPlatformSetting(input.key, input.value, ctx.user.id); await insertAuditLog({ actorUserId: ctx.user.id, action: "platform.setting.updated", entityType: "platform_setting", entityId: String(input.key), metadata: JSON.stringify({ key: input.key }) }); return { ok: true, key: input.key }; }),
     publicRestaurantPage: publicProcedure.input(z.object({ slug: z.string().min(2).max(160).regex(/^[a-z0-9-]+$/) })).query(async ({ input }) => { const page = await getPublicRestaurantPage(input.slug); if (!page) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير متاح" }); return page; }),
     customerDisplay: publicProcedure.input(z.object({ slug: z.string().min(2).max(160).regex(/^[a-z0-9-]+$/), branchId: z.number().int().positive().optional() })).query(async ({ input }) => {
       const db = await getDb();

@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs, platformSettings } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -10,6 +10,23 @@ export async function getDb() {
     try { _db = drizzle(process.env.DATABASE_URL); } catch (error) { console.warn("[Database] Failed to connect:", error); _db = null; }
   }
   return _db;
+}
+
+export const PLATFORM_SETTING_KEYS = ["supportEmail", "supportPhone", "defaultCurrency", "defaultTimezone", "maintenanceMode", "allowGuestCheckout"] as const;
+export type PlatformSettingKey = typeof PLATFORM_SETTING_KEYS[number];
+
+export async function getPlatformSettings() {
+  const db = await getDb();
+  const defaults: Record<PlatformSettingKey, string> = { supportEmail: "", supportPhone: "", defaultCurrency: "SAR", defaultTimezone: "Asia/Riyadh", maintenanceMode: "false", allowGuestCheckout: "true" };
+  if (!db) return defaults;
+  const rows = await db.select({ key: platformSettings.settingKey, value: platformSettings.settingValue }).from(platformSettings);
+  for (const row of rows) { if (row.key in defaults) defaults[row.key as PlatformSettingKey] = row.value; }
+  return defaults;
+}
+
+export async function setPlatformSetting(key: PlatformSettingKey, value: string, updatedByUserId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  await db.insert(platformSettings).values({ settingKey: key, settingValue: value, updatedByUserId }).onDuplicateKeyUpdate({ set: { settingValue: value, updatedByUserId, updatedAt: new Date() } });
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
