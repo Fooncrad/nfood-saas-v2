@@ -56,12 +56,12 @@ export default function Home() {
   const [testPassword, setTestPassword] = useState("");
   const testLogin = trpc.auth.testLogin.useMutation({ onSuccess: () => { toast.success("تم تسجيل الدخول لحساب الاختبار"); window.location.reload(); }, onError: (error) => toast.error(error.message || "بيانات الدخول غير صحيحة") });
   const [active, setActive] = useState<NavKey>("overview");
-  const visibleNavItems = useMemo(() => { const role = user?.testRole; if (!role) return navItems; const keys = roleNavigation[role as keyof typeof roleNavigation] ?? ["overview"]; return navItems.filter((item) => keys.includes(item.key)); }, [user?.testRole]);
+  const visibleNavItems = useMemo(() => { const role = user?.testRole as string | undefined; if (!role || role === "admin" || user?.role === "admin") return navItems; const keys = roleNavigation[role as keyof typeof roleNavigation] ?? ["overview"]; return navItems.filter((item) => keys.includes(item.key)); }, [user?.role, user?.testRole]);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState(() => { if (typeof window === "undefined") return 1; const stored = Number(window.localStorage.getItem("nfood-selected-restaurant")); return Number.isInteger(stored) && stored > 0 ? stored : 1; });
   const restaurantsQuery = trpc.platform.restaurants.useQuery(undefined, { enabled: Boolean(user), retry: false });
   useEffect(() => { const restaurants = restaurantsQuery.data ?? []; if (!restaurants.length) return; const available = restaurants.some((restaurant) => restaurant.id === selectedRestaurantId); const nextId = available ? selectedRestaurantId : restaurants[0].id; if (nextId !== selectedRestaurantId) setSelectedRestaurantId(nextId); window.localStorage.setItem("nfood-selected-restaurant", String(nextId)); }, [restaurantsQuery.data, selectedRestaurantId]);
   const workspaceState = getWorkspaceState(restaurantsQuery.data ?? [], selectedRestaurantId);
-  const isCentralAdmin = user?.role === "admin" && !user?.testRole;
+  const isCentralAdmin = user?.role === "admin" || (user?.testRole as string | undefined) === "admin";
   const workspaceReady = Boolean(user && workspaceState === "ready");
   useEffect(() => { if (isCentralAdmin) setActive("admin"); }, [isCentralAdmin]);
   const [profileOpen, setProfileOpen] = useState(false);
