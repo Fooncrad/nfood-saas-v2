@@ -11,6 +11,10 @@ import { nanoid } from "nanoid";
 import { createHash, scryptSync, timingSafeEqual } from "node:crypto";
 import { sdk } from "./_core/sdk";
 
+function assertRestaurantAccess(ctx: { user: { testRole?: string } | null }, restaurantId: number) {
+  if (ctx.user?.testRole && restaurantId !== 1) throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك صلاحية الوصول إلى هذا المطعم" });
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -25,11 +29,11 @@ export const appRouter = router({
   }),
   platform: router({
     restaurants: protectedProcedure.query(() => listRestaurants()),
-    restaurantById: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getRestaurantById(input.id)),
+    restaurantById: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(({ ctx, input }) => { assertRestaurantAccess(ctx, input.id); return getRestaurantById(input.id); }),
     restaurantByBarcode: protectedProcedure.input(z.object({ barcode: z.string().min(6).max(64) })).query(({ input }) => getRestaurantByBarcode(input.barcode)),
     branches: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(({ input }) => listBranches(input.restaurantId)),
     menuCategories: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(({ input }) => listMenuCategories(input.restaurantId)),
-    menuItems: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive().optional(), categoryId: z.number().int().positive().optional() }).optional()).query(({ input }) => listMenuItems(input?.restaurantId, input?.categoryId)),
+    menuItems: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive().optional(), categoryId: z.number().int().positive().optional() }).optional()).query(({ ctx, input }) => { if (input?.restaurantId) assertRestaurantAccess(ctx, input.restaurantId); return listMenuItems(input?.restaurantId, input?.categoryId); }),
     orders: protectedProcedure.input(z.object({ branchId: z.number().int().positive() })).query(({ input }) => listOrders(input.branchId)),
     inventory: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(({ input }) => listInventory(input.restaurantId)),
     employees: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(({ input }) => listEmployees(input.restaurantId)),
@@ -43,7 +47,7 @@ export const appRouter = router({
     createPurchase: testRoleProcedure("restaurant_admin").input(z.object({ restaurantId: z.number().int().positive(), supplier: z.string().min(2), total: z.string() })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.insert(purchases).values(input); return { success: true, id: Number(result[0].insertId) }; }),
     updateTableStatus: testRoleProcedure("restaurant_admin", "waiter", "cashier").input(z.object({ tableId: z.number().int().positive(), status: z.enum(["available", "occupied", "reserved"]) })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new Error("Database is not available"); await db.update(restaurantTables).set({ status: input.status }).where(eq(restaurantTables.id, input.tableId)); return { success: true, status: input.status }; }),
     createCampaign: testRoleProcedure("restaurant_admin").input(z.object({ restaurantId: z.number().int().positive(), name: z.string().min(2), status: z.enum(["draft", "scheduled", "active", "ended"]).default("draft") })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.insert(campaigns).values(input); return { success: true, id: Number(result[0].insertId) }; }),
-    createOrder: testRoleProcedure("restaurant_admin", "waiter", "cashier").input(z.object({ restaurantId: z.number().int().positive(), branchId: z.number().int().positive(), tableName: z.string().max(80).optional(), channel: z.enum(["dine_in", "takeaway", "delivery"]), items: z.array(z.object({ menuItemId: z.number().int().positive(), quantity: z.number().int().positive(), unitPrice: z.string().regex(/^\d+(\.\d{1,2})?$/) })).min(1), total: z.string().regex(/^\d+(\.\d{1,2})?$/) })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new Error("Database is not available"); return db.transaction(async (tx) => { const [orderResult] = await tx.insert(orders).values({ restaurantId: input.restaurantId, branchId: input.branchId, tableName: input.tableName ?? null, channel: input.channel, total: input.total, status: "new" }); const orderId = Number(orderResult.insertId); const rows = input.items.map((item) => ({ orderId, menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: item.unitPrice })); await tx.insert(orderItems).values(rows); return { success: true, orderId, status: "new" as const }; }); }),
+    createOrder: testRoleProcedure("restaurant_admin", "waiter", "cashier").input(z.object({ restaurantId: z.number().int().positive(), branchId: z.number().int().positive(), tableName: z.string().max(80).optional(), channel: z.enum(["dine_in", "takeaway", "delivery"]), items: z.array(z.object({ menuItemId: z.number().int().positive(), quantity: z.number().int().positive(), unitPrice: z.string().regex(/^\d+(\.\d{1,2})?$/) })).min(1), total: z.string().regex(/^\d+(\.\d{1,2})?$/) })).mutation(    async ({ ctx, input }) => { assertRestaurantAccess(ctx, input.restaurantId); const db = await getDb(); if (!db) throw new Error("Database is not available"); return db.transaction(async (tx) => { const [orderResult] = await tx.insert(orders).values({ restaurantId: input.restaurantId, branchId: input.branchId, tableName: input.tableName ?? null, channel: input.channel, total: input.total, status: "new" }); const orderId = Number(orderResult.insertId); const rows = input.items.map((item) => ({ orderId, menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: item.unitPrice })); await tx.insert(orderItems).values(rows); return { success: true, orderId, status: "new" as const }; }); }),
     updateOrderStatus: testRoleProcedure("restaurant_admin", "kitchen", "cashier").input(z.object({ orderId: z.number().int().positive(), status: z.enum(["new", "preparing", "ready", "completed", "cancelled"]) })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
@@ -74,7 +78,7 @@ export const appRouter = router({
   features: router({
     definitions: protectedProcedure.query(() => listFeatureDefinitions()),
     restaurant: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(({ input }) => listRestaurantFeatures(input.restaurantId)),
-    access: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive(), key: z.string().min(1).max(120) })).query(({ input }) => getFeatureAccess(input.restaurantId, input.key)),
+    access: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive(), key: z.string().min(1).max(120) })).query(({ ctx, input }) => { assertRestaurantAccess(ctx, input.restaurantId); return getFeatureAccess(input.restaurantId, input.key); }),
     setOverride: testRoleProcedure("restaurant_admin").input(z.object({ restaurantId: z.number().int().positive(), featureId: z.number().int().positive(), enabled: z.boolean(), limit: z.number().int().nonnegative().nullable().optional(), value: z.string().max(255).nullable().optional() })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" }); const existing = await db.select().from(restaurantFeatures).where(and(eq(restaurantFeatures.restaurantId, input.restaurantId), eq(restaurantFeatures.featureId, input.featureId))).limit(1); const values = { enabled: input.enabled, overrideLimit: input.limit ?? null, overrideValue: input.value ?? null }; if (existing[0]) await db.update(restaurantFeatures).set(values).where(eq(restaurantFeatures.id, existing[0].id)); else await db.insert(restaurantFeatures).values({ restaurantId: input.restaurantId, featureId: input.featureId, ...values }); return { success: true }; }),
   }),
   admin: router({
