@@ -33,6 +33,11 @@ describe("remote work procedures", () => {
     expect(() => assertRemoteTaskTransition("completed", "cancelled", true)).toThrow(/انتقال حالة المهمة غير مسموح/);
   });
 
+  it("rejects messages when the task is missing", async () => {
+    const caller = appRouter.createCaller(context("waiter"));
+    await expect(caller.remote.messages({ taskId: 999999 })).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
   it("rejects lifecycle updates when the task is missing", async () => {
     const caller = appRouter.createCaller(context("waiter"));
     await expect(caller.remote.updateTaskStatus({ taskId: 999999, status: "submitted" })).rejects.toMatchObject({ code: "NOT_FOUND" });
