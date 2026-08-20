@@ -95,7 +95,7 @@
 - [ ] إضافة Skeleton Loading وEmpty States وError States مع Request ID
 - [ ] بناء System Health وتشخيص الأخطاء ومراقبة الخدمات وAudit Trail متقدم
 - [ ] تحويل المنصة إلى PWA مستقلة لكل نوع مستخدم مع PWA Branding لكل مطعم
-- [ ] إضافة Offline POS وOffline Sync وPush Notifications وInstall Prompt وMaskable Icons
+- [x] إضافة Offline POS وOffline Sync وPush Notifications وInstall Prompt وMaskable Icons
 - [ ] إضافة Guest Checkout وتحويل الضيف إلى Customer وإعادة الطلب وAbandoned Cart
 - [ ] إضافة Birthday Marketing وRe-engagement Campaigns وReferral بعد أول عملية مؤهلة
 - [ ] بناء مستويات ولاء متعددة وتقييم السائق منفصلًا عن المطعم وتقييم المنتج وتحليل المشاعر
