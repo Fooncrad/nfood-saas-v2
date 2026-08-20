@@ -97,6 +97,14 @@ describe("platform procedures", () => {
     const driverSummary = await appRouter.createCaller(context("user", "driver")).platform.roleSummary({ restaurantId: 1 });
     expect(customerSummary.scope).toBe("customer");
     expect(driverSummary.scope).toBe("driver");
+    for (const summary of [customerSummary, driverSummary]) {
+      expect(typeof summary.avgFulfillmentMinutes).toBe("number");
+      expect(typeof summary.deliveryOrders).toBe("number");
+      expect(typeof summary.customerOrders).toBe("number");
+      expect(summary.avgFulfillmentMinutes).toBeGreaterThanOrEqual(0);
+      expect(summary.deliveryOrders).toBeGreaterThanOrEqual(0);
+      expect(summary.customerOrders).toBeGreaterThanOrEqual(0);
+    }
   });
 
   it("restricts inventory and purchase mutations to restaurant admins", async () => {
