@@ -271,3 +271,4 @@
 - [x] إزالة restaurantId الثابت من System Health واستخدام نطاق المستخدم أو الأدمن المركزي
 - [x] إزالة fallback menuProducts الثابت من MenuView وPOS والاعتماد على أصناف backend فقط
 - [x] إزالة initialOrders الثابتة غير المستخدمة من Home
+- [x] إضافة حالات loading وerror وempty لشبكة MenuView مع إعادة المحاولة
