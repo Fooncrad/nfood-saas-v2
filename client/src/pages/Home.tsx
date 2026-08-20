@@ -69,7 +69,7 @@ export default function Home() {
   const globalSearchQuery = trpc.platform.globalSearch.useQuery({ restaurantId: selectedRestaurantId, query: commandQuery, limit: 20 }, { enabled: commandOpen && commandQuery.trim().length >= 2 && Boolean(user), retry: false });
   const roleSummaryQuery = trpc.platform.roleSummary.useQuery({ restaurantId: selectedRestaurantId }, { enabled: Boolean(user), retry: false });
   const [globalForbiddenAction, setGlobalForbiddenAction] = useState<string | null>(null);
-  useEffect(() => { if (globalSearchQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("global.search"); }, [globalSearchQuery.error]);
+  useEffect(() => { if (globalSearchQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("global.search"); else if (roleSummaryQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("dashboard.summary"); }, [globalSearchQuery.error, roleSummaryQuery.error]);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [pushStatus, setPushStatus] = useState<NotificationPermission | "unsupported">(() => typeof Notification === "undefined" ? "unsupported" : Notification.permission);
   const enablePush = async () => { if (typeof Notification === "undefined") { toast.error("المتصفح الحالي لا يدعم الإشعارات"); return; } const permission = await Notification.requestPermission(); setPushStatus(permission); toast[permission === "granted" ? "success" : "info"] (permission === "granted" ? "تم تفعيل إشعارات NFOOD" : "لم يتم تفعيل الإشعارات"); };
