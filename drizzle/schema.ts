@@ -178,6 +178,18 @@ export const remoteWorkers = mysqlTable("remoteWorkers", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const remoteWorkerApplications = mysqlTable("remoteWorkerApplications", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  applicantUserId: int("applicantUserId").notNull().references(() => users.id),
+  role: varchar("role", { length: 80 }).notNull(),
+  message: text("message"),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  reviewedByUserId: int("reviewedByUserId").references(() => users.id),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const remoteTasks = mysqlTable("remoteTasks", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
