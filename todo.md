@@ -312,3 +312,5 @@
 - [x] إزالة fallback restaurantId=1 من قراءة coupons وفرض نطاق المطعم للمستخدمين غير الإداريين
 - [x] إزالة fallbacks الثابتة من menuItems وattendance وauditLogs وفرض نطاق المطعم لغير الإداريين
 - [x] إزالة fallbacks الثابتة من orders وtablesByBranch وفرض نطاق المطعم لغير الإداريين
+
+- [x] إضافة اختبارات عزل لـmenuItems وcoupons وauditLogs عند غياب restaurantId
