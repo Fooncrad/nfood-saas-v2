@@ -65,6 +65,8 @@ export const orders = mysqlTable("orders", {
   paymentMethod: mysqlEnum("paymentMethod", ["cash", "card", "bank_transfer", "online", "other"]).default("cash").notNull(),
   paymentStatus: mysqlEnum("paymentStatus", ["unpaid", "paid", "failed", "refunded"]).default("unpaid").notNull(),
   customerId: int("customerId").references(() => users.id),
+  guestName: varchar("guestName", { length: 160 }),
+  guestPhone: varchar("guestPhone", { length: 32 }),
   driverId: int("driverId").references(() => users.id),
   total: decimal("total", { precision: 10, scale: 2 }).default("0").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

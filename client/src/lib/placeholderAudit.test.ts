@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const homeSource = readFileSync(new URL("../pages/Home.tsx", import.meta.url), "utf8");
 const reservationsSource = readFileSync(new URL("../pages/ReservationsView.tsx", import.meta.url), "utf8");
+const publicRestaurantSource = readFileSync(new URL("../pages/RestaurantPublic.tsx", import.meta.url), "utf8");
 const skeletonSource = readFileSync(new URL("../components/DashboardLayoutSkeleton.tsx", import.meta.url), "utf8");
 const roleManifests = ["restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"].map((role) => readFileSync(new URL(`../../public/manifest.${role}.webmanifest`, import.meta.url), "utf8"));
 
@@ -69,6 +70,14 @@ describe("UI placeholder audit", () => {
     expect(reservationsSource).toContain("isError");
     expect(reservationsSource).toContain("Request ID");
     expect(reservationsSource).toContain("لا توجد");
+  });
+
+  it("keeps guest checkout wired to the public restaurant page", () => {
+    expect(publicRestaurantSource).toContain("trpc.platform.guestCheckout.useMutation");
+    expect(publicRestaurantSource).toContain("guestName");
+    expect(publicRestaurantSource).toContain("guestPhone");
+    expect(publicRestaurantSource).toContain("الدفع نقدي عند الاستلام");
+    expect(publicRestaurantSource).toContain("Request ID: guest-checkout");
   });
 
   it("keeps operational menu and order lists backend-only", () => {

@@ -22,6 +22,22 @@ describe("platform procedures", () => {
     await expect(appRouter.createCaller(context("user", "waiter")).admin.systemHealth()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("creates a safe public guest checkout from server-side menu prices", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug }).from(restaurants).where(eq(restaurants.status, "active")).limit(1))[0];
+    if (!restaurant) return;
+    const branch = (await db.select({ id: branches.id }).from(branches).where(eq(branches.restaurantId, restaurant.id)).limit(1))[0];
+    const menuItem = (await db.select({ id: menuItems.id, price: menuItems.price }).from(menuItems).where(eq(menuItems.restaurantId, restaurant.id)).limit(1))[0];
+    if (!branch || !menuItem) return;
+    const result = await appRouter.createCaller(context("user", "customer")).platform.guestCheckout({ slug: restaurant.slug, branchId: branch.id, guestName: "ضيف اختبار", guestPhone: "0500000000", channel: "takeaway", items: [{ menuItemId: menuItem.id, quantity: 2 }] });
+    expect(result).toEqual(expect.objectContaining({ success: true, paymentMethod: "cash", paymentStatus: "unpaid", status: "new", total: (Number(menuItem.price) * 2).toFixed(2) }));
+    const created = (await db.select({ restaurantId: orders.restaurantId, guestName: orders.guestName, guestPhone: orders.guestPhone, paymentStatus: orders.paymentStatus, total: orders.total }).from(orders).where(eq(orders.id, result.orderId)).limit(1))[0];
+    expect(created).toEqual(expect.objectContaining({ restaurantId: restaurant.id, guestName: "ضيف اختبار", guestPhone: "0500000000", paymentStatus: "unpaid", total: result.total }));
+    await db.delete(orderItems).where(eq(orderItems.orderId, result.orderId));
+    await db.delete(orders).where(eq(orders.id, result.orderId));
+  });
+
   it("allows an authenticated user to read the platform collections", async () => {
     const caller = appRouter.createCaller(context());
     await expect(caller.platform.restaurants()).resolves.toBeDefined();
