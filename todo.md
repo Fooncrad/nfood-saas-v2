@@ -96,7 +96,7 @@
 - [x] بناء System Health وAudit Trail الأساسيين مع حالة API/DB وRequest ID؛ التشخيص الآلي والمراقبة الخارجية المتقدمة غير مكتملين
 - [x] تحويل المنصة إلى PWA مستقلة لكل نوع مستخدم مع PWA Branding لكل مطعم؛ Custom Domain وLanding Page Builder موثقان كبنود منفصلة غير مكتملة
 - [x] إضافة Offline POS وOffline Sync وPush Notifications وInstall Prompt وMaskable Icons
-- [ ] إضافة Guest Checkout وتحويل الضيف إلى Customer وإعادة الطلب وAbandoned Cart
+- [x] تنفيذ Guest Checkout وتتبع الطلب وإعادة الطلب للضيف؛ تحويل الضيف إلى Customer وAbandoned Cart ما زالا غير مكتملين
 - [ ] إضافة Birthday Marketing وRe-engagement Campaigns وReferral بعد أول عملية مؤهلة
 - [ ] بناء مستويات ولاء متعددة وتقييم السائق منفصلًا عن المطعم وتقييم المنتج وتحليل المشاعر
 - [ ] ربط أقسام المطبخ بالطابعات وقواعد توجيه الطلب وتقسيم الطلب بين الأقسام
