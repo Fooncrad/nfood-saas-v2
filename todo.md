@@ -98,3 +98,4 @@
 - [x] إضافة محلل وصول للميزات يحسب التفعيل والحد والتبعية وسبب الحجب
 - [x] إضافة إجراءات tRPC لقراءة Feature Access وتعديل Feature Override للمطعم
 - [x] بناء Command Center عبر Ctrl+K وGlobal Search للوحدات والطلبات المتاحة
+- [x] إضافة manifest عربي RTL وService Worker لتشغيل shell عند انقطاع الشبكة وتسجيل PWA في الإنتاج
