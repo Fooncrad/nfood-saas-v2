@@ -25,4 +25,9 @@ describe("role-based backend permissions", () => {
     const caller = appRouter.createCaller(context("restaurant_admin"));
     await expect(caller.features.setOverride({ restaurantId: 2, featureId: 1, enabled: true })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
+
+  it.each(["cashier", "customer", "driver"] as const)("blocks %s from changing feature overrides", async (role) => {
+    const caller = appRouter.createCaller(context(role));
+    await expect(caller.features.setOverride({ restaurantId: 1, featureId: 1, enabled: true })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
 });

@@ -115,3 +115,4 @@
 - [x] تخصيص عنوان وترحيب لوحة النظرة العامة حسب الدور التشغيلي
 - [x] إنشاء أساس Audit Trail متعدد المستأجرين مع migration وقراءة tRPC وتسجيل إنشاء الطلبات
 - [x] عرض آخر أحداث Audit Trail داخل System Health مع حالات التحميل والفراغ والخطأ
+- [x] توسيع اختبارات صلاحيات Feature Override لتشمل restaurant_admin وwaiter وkitchen وcashier وcustomer وdriver
