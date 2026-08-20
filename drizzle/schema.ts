@@ -40,6 +40,7 @@ export const menuCategories = mysqlTable("menuCategories", {
 
 export const menuItems = mysqlTable("menuItems", {
   id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
   categoryId: int("categoryId").notNull(),
   name: varchar("name", { length: 160 }).notNull(),
   description: text("description"),

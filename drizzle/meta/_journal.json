@@ -64,6 +64,13 @@
       "when": 1787225442154,
       "tag": "0008_soft_iron_monger",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1787225860657,
+      "tag": "0009_past_mongoose",
+      "breakpoints": true
     }
   ]
 }
