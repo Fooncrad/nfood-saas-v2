@@ -177,7 +177,7 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
   const remoteMenu = trpc.platform.menuItems.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
   const remoteCategories = trpc.platform.menuCategories.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
-  const [products, setProducts] = useState(menuProducts);
+  const [products, setProducts] = useState<MenuProduct[]>([]);
   const [category, setCategory] = useState("الكل");
   const [showCreate, setShowCreate] = useState(false);
   const [showCategoryCreate, setShowCategoryCreate] = useState(false);
@@ -203,7 +203,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const remoteMenu = trpc.platform.menuItems.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
   const remoteBranches = trpc.platform.branches.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
   const branchId = remoteBranches.data?.[0]?.id;
-  const posProducts: MenuProduct[] = remoteMenu.data?.length ? remoteMenu.data.map((item) => ({ id: item.id, name: item.name, category: String(item.categoryId), price: Number(item.price), available: item.isAvailable })) : menuProducts;
+  const posProducts: MenuProduct[] = (remoteMenu.data ?? []).map((item) => ({ id: item.id, name: item.name, category: String(item.categoryId), price: Number(item.price), available: item.isAvailable }));
   const [cart, setCart] = useState<{ product: MenuProduct; quantity: number }[]>([]);
   const [isOnline, setIsOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
   const [queuedCount, setQueuedCount] = useState(0);

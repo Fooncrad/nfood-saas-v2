@@ -269,3 +269,4 @@
 - [x] اختبار منع branchId العابر للمطاعم في createReservation قبل الحفظ
 - [x] استبدال branchId الثابت في POS بفرع فعلي من backend ومنع إرسال الطلب عند غيابه
 - [x] إزالة restaurantId الثابت من System Health واستخدام نطاق المستخدم أو الأدمن المركزي
+- [x] إزالة fallback menuProducts الثابت من MenuView وPOS والاعتماد على أصناف backend فقط
