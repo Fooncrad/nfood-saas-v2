@@ -22,4 +22,17 @@ describe("auth.testLogin", () => {
     const caller = appRouter.createCaller(loginContext());
     await expect(caller.auth.testLogin({ email: "nfood@ret.com", password: "wrong-password" })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
+
+  it.each([
+    ["nfood@ret.com", "restaurant_admin"],
+    ["nfood.waiter@ret.com", "waiter"],
+    ["nfood.kitchen@ret.com", "kitchen"],
+    ["nfood.cashier@ret.com", "cashier"],
+    ["nfood.client@ret.com", "customer"],
+    ["nfood.driver@ret.com", "driver"],
+  ] as const)("returns the correct dashboard role for %s", async (email, role) => {
+    const caller = appRouter.createCaller(loginContext());
+    const result = await caller.auth.testLogin({ email, password: "123456" });
+    expect(result).toMatchObject({ success: true, role });
+  });
 });

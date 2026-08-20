@@ -116,3 +116,4 @@
 - [x] إنشاء أساس Audit Trail متعدد المستأجرين مع migration وقراءة tRPC وتسجيل إنشاء الطلبات
 - [x] عرض آخر أحداث Audit Trail داخل System Health مع حالات التحميل والفراغ والخطأ
 - [x] توسيع اختبارات صلاحيات Feature Override لتشمل restaurant_admin وwaiter وkitchen وcashier وcustomer وdriver
+- [x] إضافة اختبارات login وتحديد الدور لجميع حسابات الاختبار الستة
