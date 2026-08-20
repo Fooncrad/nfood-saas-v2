@@ -109,3 +109,4 @@
 - [x] إضافة لوحة Super Admin لعرض Feature Access والتبعيات والحدود وحفظ Feature Override للمطعم
 - [x] إضافة اختبارات صلاحيات backend للأدوار ومنع النادل والمطبخ من Feature Override وتأكيد عزل الأدمن بين المطاعم
 - [x] إضافة صفحة 403 ديناميكية للوحدات والميزات غير المسموح بها بدل الاعتماد على إخفاء التنقل فقط
+- [x] إضافة Skeleton Loading وEmpty State وError State مع إعادة المحاولة لقائمة مهام Remote Work
