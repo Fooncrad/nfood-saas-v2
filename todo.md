@@ -190,3 +190,5 @@
 - [x] استكمال TablesView لتسجيل طاولة وحذفها وتحديث حالتها عبر mutations حقيقية
 - [x] إضافة اختبارات صلاحيات إنشاء وحذف الطاولات عن waiter
 - [x] إضافة updateRestaurant وdeleteRestaurant محميين بصلاحية admin مع حذف منطقي إلى suspended
+- [x] ربط SuperAdminView بإنشاء المطاعم وتعديلها وتعليقها منطقيًا عبر mutations حقيقية
+- [x] إضافة اختبار حجب update/delete المطاعم عن waiter
