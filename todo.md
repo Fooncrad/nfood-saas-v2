@@ -308,3 +308,4 @@
 - [x] ربط الصلاحيات بالأدوار وإدارة rolePermissions من واجهة Super Admin
 
 - [x] إضافة CRUD فعلي للعملاء في Super Admin مع منع البريد المكرر
+- [x] إزالة fallback Toast الوهمي من أزرار SectionHeading غير الموصولة بإجراء فعلي
