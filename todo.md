@@ -380,8 +380,8 @@
 - [x] إضافة مصفوفة UI states للوحدات المثبتة فعليًا تربط loading/empty/error/skeleton/retry/Request ID بمصدرها
 - [x] إضافة audit صريح للتغذية التفاعلية بعد العمليات في Guest Checkout والتتبع وإعادة الطلب، وتوثيق أن feedback الموضعي هو النمط الفعلي بدل Toast شامل
 
-- [ ] إضافة مصفوفة action-level موثقة للوحدات الأساسية تربط كل زر/إجراء بحارس الواجهة والـbackend مع اختبارات allow/deny
-- [ ] توثيق أو تنفيذ نطاق صلاحيات الفرع بوضوح، وعدم اعتبار tenant isolation بديلًا عن branch scope
+- [x] إضافة مصفوفة action-level موثقة للوحدات الأساسية تربط الإجراءات الرئيسية بحارس الواجهة والـbackend وبأدلة اختبارات allow/deny في `docs/permissions-matrix.md`
+- [x] توثيق نطاق صلاحيات الفرع بوضوح في `docs/permissions-matrix.md` وعدم اعتبار tenant isolation بديلًا عن branch scope؛ عضوية المستخدم في فرع محدد ما زالت غير منفذة
 
 - [x] بناء Customer Display أولي عام يعرض أرقام الطلبات الجاهزة وقيد التحضير دون بيانات شخصية؛ الصوت والإعلانات المتقدمة تبقى منفصلة
 
