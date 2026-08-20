@@ -1,0 +1,2 @@
+ALTER TABLE `orders` ADD `paymentMethod` enum('cash','card','bank_transfer','online','other') DEFAULT 'cash' NOT NULL;--> statement-breakpoint
+ALTER TABLE `orders` ADD `paymentStatus` enum('unpaid','paid','failed','refunded') DEFAULT 'unpaid' NOT NULL;
