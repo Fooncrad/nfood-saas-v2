@@ -9,6 +9,17 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+self.addEventListener("push", (event) => {
+  let data = { title: "NFOOD", body: "لديك تحديث جديد في مساحة العمل." };
+  try { if (event.data) data = { ...data, ...event.data.json() }; } catch { /* fallback text intentionally omitted */ }
+  event.waitUntil(self.registration.showNotification(data.title, { body: data.body, dir: "rtl", lang: "ar", tag: "nfood-update" }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => { const first = clients[0]; if (first) return first.focus(); return self.clients.openWindow("/"); }));
+});
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
