@@ -303,3 +303,6 @@
 - [ ] ترقية مزامنة الطلبات وKDS من polling إلى SSE أو WebSocket عند اعتماد قناة realtime إنتاجية
 
 - [x] ربط عدادات كتالوج الأدوار والصلاحيات في Super Admin ببيانات backend الفعلية
+
+- [x] تنفيذ CRUD أساسي للأدوار في Super Admin مع إجراءات backend محمية
+- [ ] ربط الصلاحيات بالأدوار وإدارة rolePermissions من واجهة Super Admin
