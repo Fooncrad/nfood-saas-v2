@@ -251,3 +251,4 @@
 - [x] إزالة const restaurantId = 1 غير المستخدم من SuperAdminView
 - [x] إضافة محدد مطعم فعلي إلى لوحة Feature Override في Super Admin
 - [x] إضافة حالات تحميل وفشل وإعادة محاولة واضحة لقائمة المطاعم في Super Admin
+- [ ] إزالة متغير restaurantsList الفارغ من Super Admin وتبسيط مصدر الصفوف إلى backend-only
