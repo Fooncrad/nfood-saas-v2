@@ -28,6 +28,12 @@ export default function RestaurantPublic() {
   const reorder = trpc.platform.reorderGuestOrder.useMutation({ onSuccess: (result) => { setReceipt({ orderId: result.orderId, total: result.total }); setCart({}); setGuestName(""); setGuestPhone(""); } });
 
   useEffect(() => {
+    if (!trackingQuery.data || trackingQuery.isError) return;
+    const interval = window.setInterval(() => { void trackingQuery.refetch(); }, 5000);
+    return () => window.clearInterval(interval);
+  }, [trackingQuery.data, trackingQuery.isError, trackingQuery.refetch]);
+
+  useEffect(() => {
     if (selectedBranchId === null && branches[0]) setSelectedBranchId(branches[0].id);
     if (selectedBranchId !== null && !branches.some((branch) => branch.id === selectedBranchId)) setSelectedBranchId(branches[0]?.id ?? null);
   }, [branches, selectedBranchId]);

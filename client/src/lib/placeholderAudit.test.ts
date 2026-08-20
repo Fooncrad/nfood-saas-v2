@@ -78,6 +78,8 @@ describe("UI placeholder audit", () => {
     expect(publicRestaurantSource).toContain("trpc.platform.reorderGuestOrder.useMutation");
     expect(publicRestaurantSource).toContain("إعادة الطلب");
     expect(publicRestaurantSource).toContain("guestStatusLabels");
+    expect(publicRestaurantSource).toContain("setInterval");
+    expect(publicRestaurantSource).toContain("trackingQuery.refetch");
     expect(publicRestaurantSource).toContain("قيد التحضير");
     expect(publicRestaurantSource).toContain("setCart({});");
     expect(publicRestaurantSource).toContain("setGuestPhone(\"\")");
