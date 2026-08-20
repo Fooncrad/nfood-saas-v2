@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -40,3 +40,11 @@ export async function listMenuItems(categoryId?: number) { const db = await getD
 export async function listOrders(branchId: number) { const db = await getDb(); return db ? db.select().from(orders).where(eq(orders.branchId, branchId)).orderBy(desc(orders.createdAt)) : []; }
 export async function listInventory(restaurantId: number) { const db = await getDb(); return db ? db.select().from(inventoryItems).where(eq(inventoryItems.restaurantId, restaurantId)) : []; }
 export async function listEmployees(restaurantId: number) { const db = await getDb(); return db ? db.select().from(employees).where(eq(employees.restaurantId, restaurantId)) : []; }
+export async function listSubscriptions(restaurantId?: number) { const db = await getDb(); return db ? (restaurantId ? db.select().from(subscriptions).where(eq(subscriptions.restaurantId, restaurantId)) : db.select().from(subscriptions)) : []; }
+export async function listRoles(restaurantId?: number) { const db = await getDb(); return db ? (restaurantId ? db.select().from(roles).where(eq(roles.restaurantId, restaurantId)) : db.select().from(roles)) : []; }
+export async function listPermissions() { const db = await getDb(); return db ? db.select().from(permissions) : []; }
+export async function listTables(branchId: number) { const db = await getDb(); return db ? db.select().from(restaurantTables).where(eq(restaurantTables.branchId, branchId)) : []; }
+export async function listPurchases(restaurantId: number) { const db = await getDb(); return db ? db.select().from(purchases).where(eq(purchases.restaurantId, restaurantId)).orderBy(desc(purchases.createdAt)) : []; }
+export async function listAttendance(employeeId?: number) { const db = await getDb(); return db ? (employeeId ? db.select().from(attendance).where(eq(attendance.employeeId, employeeId)) : db.select().from(attendance)) : []; }
+export async function listCampaigns(restaurantId: number) { const db = await getDb(); return db ? db.select().from(campaigns).where(eq(campaigns.restaurantId, restaurantId)) : []; }
+export async function listCoupons(campaignId?: number) { const db = await getDb(); return db ? (campaignId ? db.select().from(coupons).where(eq(coupons.campaignId, campaignId)) : db.select().from(coupons)) : []; }

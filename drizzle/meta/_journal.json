@@ -15,6 +15,27 @@
       "when": 1787222044107,
       "tag": "0001_woozy_black_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1787222543530,
+      "tag": "0002_far_rockslide",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1787222661155,
+      "tag": "0003_remarkable_betty_brant",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1787222911159,
+      "tag": "0004_redundant_mongu",
+      "breakpoints": true
     }
   ]
 }
