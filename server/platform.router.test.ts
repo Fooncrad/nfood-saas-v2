@@ -22,6 +22,7 @@ describe("platform procedures", () => {
     const caller = appRouter.createCaller(context("user", "waiter"));
     await expect(caller.platform.restaurantById({ id: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller.platform.menuItems({ restaurantId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.platform.ordersByRestaurant({ restaurantId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("rejects unauthenticated access to protected platform procedures", async () => {

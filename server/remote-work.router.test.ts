@@ -14,6 +14,12 @@ function context(testRole?: "restaurant_admin" | "waiter" | "kitchen" | "cashier
 }
 
 describe("remote work procedures", () => {
+  it("restricts remote worker mutations to restaurant admins", async () => {
+    const waiter = appRouter.createCaller(context("waiter"));
+    await expect(waiter.remote.createWorker({ restaurantId: 1, userId: 7, role: "متابع" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(waiter.remote.updateWorker({ restaurantId: 1, id: 1, isAvailable: false })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(waiter.remote.deleteWorker({ restaurantId: 1, id: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
   it("protects tasks, messages, and notifications from unauthenticated access", async () => {
     const caller = appRouter.createCaller({ ...context(), user: null } as TrpcContext);
     await expect(caller.remote.tasks({ restaurantId: 1 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });

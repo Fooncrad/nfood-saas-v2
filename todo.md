@@ -197,3 +197,7 @@
 - [x] إضافة واجهة إدارة الاشتراكات لعرضها وإنشائها وتحديثها وإلغائها عبر mutations حقيقية
 - [x] إضافة ordersByRestaurant بعزل المطعم عبر branches بدل استعلام branchId غير المحمي
 - [x] ربط OrdersView وKDS بـ selectedRestaurantId واستعلام الطلبات المعزول
+- [x] إضافة اختبار رفض ordersByRestaurant لمطعم خارج نطاق waiter
+- [x] إضافة create/update/delete للعاملين عن بُعد مع tenant guard وربط المستخدم بالدور والتوفر
+- [x] ربط RemoteWorkView بإدارة العاملين عن بُعد وحالات التحميل والخطأ وإعادة المحاولة
+- [x] إضافة اختبار حجب mutations العاملين عن بُعد عن waiter
