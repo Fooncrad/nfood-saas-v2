@@ -354,3 +354,5 @@
 
 - [x] ربط ReservationsView بصلاحية reservations.create لإخفاء نموذج الإنشاء عن الأدوار غير المسموحة مع إبقاء الحارس الخلفي
 
+- [x] إضافة audit لحالات Skeleton وloading وempty وerror وRequest ID في Home وReservationsView
+

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const homeSource = readFileSync(new URL("../pages/Home.tsx", import.meta.url), "utf8");
 const reservationsSource = readFileSync(new URL("../pages/ReservationsView.tsx", import.meta.url), "utf8");
+const skeletonSource = readFileSync(new URL("../components/DashboardLayoutSkeleton.tsx", import.meta.url), "utf8");
 const roleManifests = ["restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"].map((role) => readFileSync(new URL(`../../public/manifest.${role}.webmanifest`, import.meta.url), "utf8"));
 
 describe("UI placeholder audit", () => {
@@ -44,6 +45,16 @@ describe("UI placeholder audit", () => {
     expect(reservationsSource).toContain("isRoleActionAllowed");
     expect(reservationsSource).toContain("reservations.create");
     expect(reservationsSource).toContain("canCreateReservation");
+  });
+
+  it("keeps loading, empty, error and request-id coverage in core surfaces", () => {
+    expect(skeletonSource).toContain("Skeleton");
+    for (const source of [homeSource, reservationsSource]) {
+      expect(source).toContain("isLoading");
+      expect(source).toContain("isError");
+      expect(source).toContain("Request ID");
+      expect(source).toMatch(/لا توجد|لا يوجد/);
+    }
   });
 
   it("keeps explicit states in ReservationsView", () => {
