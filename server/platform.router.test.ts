@@ -58,6 +58,9 @@ describe("platform procedures", () => {
     const waiter = appRouter.createCaller(context("user", "waiter"));
     await expect(waiter.admin.updateRestaurant({ id: 1, name: "غير مصرح" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(waiter.admin.deleteRestaurant({ id: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(waiter.admin.createSubscription({ restaurantId: 1, plan: "Growth", status: "trial" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(waiter.admin.updateSubscription({ id: 1, status: "active" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(waiter.admin.cancelSubscription({ id: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
   it("accepts the POS/KDS order lifecycle statuses", async () => {
     const caller = appRouter.createCaller(context("admin"));

@@ -192,3 +192,5 @@
 - [x] إضافة updateRestaurant وdeleteRestaurant محميين بصلاحية admin مع حذف منطقي إلى suspended
 - [x] ربط SuperAdminView بإنشاء المطاعم وتعديلها وتعليقها منطقيًا عبر mutations حقيقية
 - [x] إضافة اختبار حجب update/delete المطاعم عن waiter
+- [x] إضافة create/update/cancel للاشتراكات بصلاحية admin مع الحفاظ على السجل وعدم الحذف المادي
+- [x] إضافة اختبار حجب mutations الاشتراكات عن waiter
