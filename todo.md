@@ -251,7 +251,7 @@
 - [x] إزالة const restaurantId = 1 غير المستخدم من SuperAdminView
 - [x] إضافة محدد مطعم فعلي إلى لوحة Feature Override في Super Admin
 - [x] إضافة حالات تحميل وفشل وإعادة محاولة واضحة لقائمة المطاعم في Super Admin
-- [ ] إزالة متغير restaurantsList الفارغ من Super Admin وتبسيط مصدر الصفوف إلى backend-only
+- [x] إزالة متغير restaurantsList الفارغ من Super Admin وتبسيط مصدر الصفوف إلى backend-only
 - [ ] استكمال فرض صلاحيات backend لكل إجراءات المنصة المتبقية مع مصفوفة اختبارات شاملة لكل دور ولكل مورد
 - [ ] تدقيق جميع إجراءات tRPC المتبقية للتأكد من وجود حارس backend مناسب وعدم الاعتماد على إخفاء الواجهة فقط
 - [x] حماية platform.restaurants وrestaurantByBarcode بحارس tenant للأدوار غير الإدارية
