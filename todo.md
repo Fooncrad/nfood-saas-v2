@@ -256,3 +256,4 @@
 - [ ] تدقيق جميع إجراءات tRPC المتبقية للتأكد من وجود حارس backend مناسب وعدم الاعتماد على إخفاء الواجهة فقط
 - [x] حماية platform.restaurants وrestaurantByBarcode بحارس tenant للأدوار غير الإدارية
 - [x] اختبار نطاق قائمة platform.restaurants للدور التشغيلي مقابل وصول الأدمن المركزي
+- [x] حماية createOrder بالتحقق من ارتباط branchId وmenuItemIds بالمطعم قبل إنشاء الطلب
