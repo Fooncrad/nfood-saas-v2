@@ -14,6 +14,14 @@ function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" 
 }
 
 describe("platform procedures", () => {
+  it("exposes system health only to central admin", async () => {
+    const adminHealth = await appRouter.createCaller(context("admin")).admin.systemHealth();
+    expect(["healthy", "degraded"]).toContain(adminHealth.status);
+    expect(["ok", "error", "unavailable"]).toContain(adminHealth.database);
+    expect(adminHealth.api).toBe("ok");
+    await expect(appRouter.createCaller(context("user", "waiter")).admin.systemHealth()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("allows an authenticated user to read the platform collections", async () => {
     const caller = appRouter.createCaller(context());
     await expect(caller.platform.restaurants()).resolves.toBeDefined();
