@@ -137,6 +137,22 @@ describe("platform procedures", () => {
       await expect(caller.admin.saasMetrics()).rejects.toMatchObject({ code: "FORBIDDEN" });
     }
   });
+  it("allows central admin to read the administration collections", async () => {
+    const admin = appRouter.createCaller(context("admin"));
+    await expect(admin.admin.restaurants()).resolves.toBeDefined();
+    await expect(admin.admin.customers()).resolves.toBeDefined();
+    await expect(admin.admin.roles({})).resolves.toBeDefined();
+    await expect(admin.admin.permissions()).resolves.toBeDefined();
+    await expect(admin.admin.subscriptions({})).resolves.toBeDefined();
+    await expect(admin.admin.featureUsageMetrics()).resolves.toBeDefined();
+    await expect(admin.admin.saasMetrics()).resolves.toBeDefined();
+    for (const testRole of ["waiter", "cashier", "kitchen"] as const) {
+      const caller = appRouter.createCaller(context("user", testRole));
+      await expect(caller.admin.restaurants()).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(caller.admin.subscriptions({})).rejects.toMatchObject({ code: "FORBIDDEN" });
+    }
+  });
+
   it("allows admin to read customers without sensitive fields", async () => {
     const customers = await appRouter.createCaller(context("admin")).admin.customers();
     expect(Array.isArray(customers)).toBe(true);
