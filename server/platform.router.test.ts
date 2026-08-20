@@ -84,6 +84,13 @@ describe("platform procedures", () => {
     const metrics = await appRouter.createCaller(context("admin")).admin.saasMetrics();
     expect(metrics).toEqual(expect.objectContaining({ currency: "SAR", mrr: expect.any(Number), arr: expect.any(Number), churnRate: expect.any(Number) }));
   });
+  it("blocks waiter, cashier, and kitchen from central administration", async () => {
+    for (const testRole of ["waiter", "cashier", "kitchen"] as const) {
+      const caller = appRouter.createCaller(context("user", testRole));
+      await expect(caller.admin.customers()).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(caller.admin.saasMetrics()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    }
+  });
   it("allows admin to read customers without sensitive fields", async () => {
     const customers = await appRouter.createCaller(context("admin")).admin.customers();
     expect(Array.isArray(customers)).toBe(true);
