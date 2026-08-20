@@ -44,6 +44,7 @@ describe("platform procedures", () => {
     await expect(waiter.platform.createBranch({ restaurantId: 1, name: "فرع اختبار", city: "الرياض", status: "open" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(waiter.platform.createCampaign({ restaurantId: 1, name: "حملة اختبار", status: "draft" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(waiter.platform.recordAttendance({ restaurantId: 1, employeeId: 1, workDate: "2026-08-20", status: "present" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(waiter.platform.updateTableStatus({ restaurantId: 1, tableId: 999999, status: "occupied" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("restricts employee mutations to restaurant admins", async () => {

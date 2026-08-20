@@ -182,3 +182,5 @@
 - [x] إضافة recordAttendance مع تحقق tenant وملكية الموظف وصلاحية restaurant_admin
 - [x] ربط TeamView بزر تسجيل حضور اليوم عبر mutation حقيقية وحالات النجاح والفشل
 - [x] إضافة اختبار حجب recordAttendance عن waiter
+- [x] تقوية updateTableStatus بعزل المطعم عبر branchId والتحقق من ملكية الطاولة
+- [x] إضافة اختبار رفض تحديث طاولة غير موجودة أو خارج نطاق المطعم
