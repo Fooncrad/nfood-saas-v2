@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { getDb } from "./db";
-import { branches, menuItems, orderItems, orders, restaurants } from "../drizzle/schema";
+import { branches, menuCategories, menuItems, orderItems, orders, restaurants } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
@@ -74,9 +74,17 @@ describe("platform procedures", () => {
 
   it("enforces the action-role matrix before touching operational data", async () => {
     const cases = [
-      ["createBranch", ["restaurant_admin"]], ["createMenuItem", ["restaurant_admin"]],
-      ["createInventoryItem", ["restaurant_admin"]], ["createPurchase", ["restaurant_admin"]],
-      ["createEmployee", ["restaurant_admin"]], ["createCampaign", ["restaurant_admin"]],
+      ["createBranch", ["restaurant_admin"]], ["updateBranch", ["restaurant_admin"]], ["deleteBranch", ["restaurant_admin"]],
+      ["createMenuCategory", ["restaurant_admin"]], ["updateMenuCategory", ["restaurant_admin"]], ["deleteMenuCategory", ["restaurant_admin"]],
+      ["createMenuItem", ["restaurant_admin"]], ["updateMenuItem", ["restaurant_admin"]], ["deleteMenuItem", ["restaurant_admin"]],
+      ["createInventoryItem", ["restaurant_admin"]], ["updateInventoryItem", ["restaurant_admin"]], ["deleteInventoryItem", ["restaurant_admin"]],
+      ["createPurchase", ["restaurant_admin"]], ["updatePurchase", ["restaurant_admin"]], ["deletePurchase", ["restaurant_admin"]],
+      ["createEmployee", ["restaurant_admin"]], ["updateEmployee", ["restaurant_admin"]], ["deleteEmployee", ["restaurant_admin"]],
+      ["createCampaign", ["restaurant_admin"]], ["updateCampaign", ["restaurant_admin"]], ["deleteCampaign", ["restaurant_admin"]],
+      ["createCoupon", ["restaurant_admin"]], ["updateCoupon", ["restaurant_admin"]], ["deleteCoupon", ["restaurant_admin"]],
+      ["createTable", ["restaurant_admin"]], ["deleteTable", ["restaurant_admin"]],
+      ["createRestaurantRole", ["restaurant_admin"]], ["updateRestaurantRole", ["restaurant_admin"]], ["deleteRestaurantRole", ["restaurant_admin"]],
+      ["updateBranding", ["restaurant_admin"]], ["setRestaurantRolePermissions", ["restaurant_admin"]],
       ["createOrder", ["restaurant_admin", "waiter", "cashier"]],
       ["updateOrderStatus", ["restaurant_admin", "kitchen", "cashier"]],
       ["updateTableStatus", ["restaurant_admin", "waiter", "cashier"]],
@@ -228,6 +236,32 @@ describe("platform procedures", () => {
     } finally {
       await db.delete(orderItems).where(eq(orderItems.orderId, created.id));
       await db.delete(orders).where(eq(orders.id, created.id));
+    }
+  });
+
+  it("persists and removes admin menu category and item CRUD", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).limit(1))[0];
+    if (!restaurant) return;
+    const caller = appRouter.createCaller(context("admin"));
+    const suffix = Date.now();
+    const category = await caller.platform.createMenuCategory({ restaurantId: restaurant.id, name: `اختبار CRUD ${suffix}`, sortOrder: 999 });
+    let itemId: number | undefined;
+    try {
+      const persistedCategory = (await db.select({ id: menuCategories.id, name: menuCategories.name }).from(menuCategories).where(eq(menuCategories.id, category.id)).limit(1))[0];
+      expect(persistedCategory?.name).toBe(`اختبار CRUD ${suffix}`);
+      const item = await caller.platform.createMenuItem({ restaurantId: restaurant.id, categoryId: category.id, name: `صنف CRUD ${suffix}`, price: "9.99" });
+      itemId = item.id;
+      await expect(caller.platform.updateMenuItem({ restaurantId: restaurant.id, id: item.id, name: `صنف CRUD محدث ${suffix}`, price: "11.99" })).resolves.toMatchObject({ success: true, id: item.id });
+      const persistedItem = (await db.select({ name: menuItems.name, price: menuItems.price }).from(menuItems).where(eq(menuItems.id, item.id)).limit(1))[0];
+      expect(persistedItem?.name).toBe(`صنف CRUD محدث ${suffix}`);
+      expect(String(persistedItem?.price)).toBe("11.99");
+      await expect(caller.platform.deleteMenuItem({ restaurantId: restaurant.id, id: item.id })).resolves.toMatchObject({ success: true, id: item.id });
+      itemId = undefined;
+    } finally {
+      if (itemId) await db.delete(menuItems).where(eq(menuItems.id, itemId));
+      await db.delete(menuCategories).where(eq(menuCategories.id, category.id));
     }
   });
 
