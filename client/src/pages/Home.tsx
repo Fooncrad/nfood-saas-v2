@@ -78,7 +78,7 @@ export default function Home() {
   const notificationsQuery = trpc.notifications.mine.useQuery(undefined, { enabled: Boolean(user), retry: false, refetchInterval: 5000 });
   const markNotificationRead = trpc.notifications.markRead.useMutation({ onSuccess: () => notificationsQuery.refetch() });
   const [orders, setOrders] = useState<Order[]>([]);
-  const remoteOrders = trpc.platform.orders.useQuery({ branchId: 1 }, { enabled: Boolean(user), retry: false, refetchInterval: 5000 });
+  const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId }, { enabled: Boolean(user), retry: false, refetchInterval: 5000 });
   const updateOrderStatus = trpc.platform.updateOrderStatus.useMutation({ onSuccess: () => { remoteOrders.refetch(); toast.success("تم حفظ حالة الطلب في قاعدة البيانات"); }, onError: (error) => toast.error(`تعذر تحديث الطلب: ${error.message}`) });
   const [branch, setBranch] = useState("فرع العليا");
   const [query, setQuery] = useState("");

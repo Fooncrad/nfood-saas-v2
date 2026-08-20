@@ -195,3 +195,5 @@
 - [x] إضافة create/update/cancel للاشتراكات بصلاحية admin مع الحفاظ على السجل وعدم الحذف المادي
 - [x] إضافة اختبار حجب mutations الاشتراكات عن waiter
 - [x] إضافة واجهة إدارة الاشتراكات لعرضها وإنشائها وتحديثها وإلغائها عبر mutations حقيقية
+- [x] إضافة ordersByRestaurant بعزل المطعم عبر branches بدل استعلام branchId غير المحمي
+- [x] ربط OrdersView وKDS بـ selectedRestaurantId واستعلام الطلبات المعزول
