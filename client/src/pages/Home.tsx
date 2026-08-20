@@ -79,14 +79,12 @@ export default function Home() {
   useEffect(() => { const onKeyDown = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setCommandOpen(true); } if (event.key === "Escape") setCommandOpen(false); }; window.addEventListener("keydown", onKeyDown); return () => window.removeEventListener("keydown", onKeyDown); }, []);
   const notificationsQuery = trpc.notifications.mine.useQuery(undefined, { enabled: Boolean(user), retry: false, refetchInterval: 5000 });
   const markNotificationRead = trpc.notifications.markRead.useMutation({ onSuccess: () => notificationsQuery.refetch() });
-  const [orders, setOrders] = useState<Order[]>([]);
   const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId }, { enabled: workspaceReady, retry: false, refetchInterval: 5000 });
   const updateOrderStatus = trpc.platform.updateOrderStatus.useMutation({ onSuccess: () => { remoteOrders.refetch(); toast.success("تم حفظ حالة الطلب في قاعدة البيانات"); }, onError: (error) => toast.error(`تعذر تحديث الطلب: ${error.message}`) });
   const [branch, setBranch] = useState("");
   useEffect(() => { const firstBranch = workspaceBranches.data?.[0]; setBranch((current) => current && workspaceBranches.data?.some((item) => item.name === current) ? current : firstBranch?.name ?? ""); }, [workspaceBranches.data]);
   const [query, setQuery] = useState("");
-  useEffect(() => {
-    if (remoteOrders.data) setOrders(remoteOrders.data.map((order) => ({ id: `#${order.id}`, table: order.tableName ?? "بدون طاولة", items: "بنود محفوظة في الطلب", total: Number(order.total), status: order.status === "cancelled" ? "completed" : order.status, time: new Date(order.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" }), channel: order.channel === "dine_in" ? "داخل المطعم" : order.channel === "takeaway" ? "استلام" : "توصيل" }))); }, [remoteOrders.data]);
+  const orders = useMemo(() => (remoteOrders.data ?? []).map((order) => ({ id: `#${order.id}`, table: order.tableName ?? "بدون طاولة", items: "بنود محفوظة في الطلب", total: Number(order.total), status: order.status === "cancelled" ? "completed" : order.status, time: new Date(order.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" }), channel: order.channel === "dine_in" ? "داخل المطعم" : order.channel === "takeaway" ? "استلام" : "توصيل" })), [remoteOrders.data]);
   const visibleOrders = useMemo(() => orders.filter((order) => `${order.id} ${order.table} ${order.items}`.includes(query)), [orders, query]);
   const advanceOrder = (id: string) => {
     const current = orders.find((order) => order.id === id);
