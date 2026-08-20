@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { branches, employees, inventoryItems, menuCategories, menuItems, orders, purchases, restaurants } from "../drizzle/schema";
+import { branches, coupons, employees, inventoryItems, menuCategories, menuItems, orders, purchases, restaurants } from "../drizzle/schema";
 
 describe("NFOOD platform schema", () => {
   it("exposes the core restaurant operating tables", () => {
@@ -21,6 +21,13 @@ describe("NFOOD platform schema", () => {
   it("defines persisted branch operating hours", () => {
     expect(branches.openingTime).toBeDefined();
     expect(branches.closingTime).toBeDefined();
+  });
+
+  it("defines persisted coupon fields for tenant-scoped marketing", () => {
+    expect(coupons).toBeDefined();
+    expect(coupons.campaignId).toBeDefined();
+    expect(coupons.code).toBeDefined();
+    expect(coupons.discountPercent).toBeDefined();
   });
 
   it("defines the order lifecycle columns used by POS and KDS", () => {
