@@ -1,0 +1,20 @@
+import { describe, expect, it } from "vitest";
+import { branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants } from "../drizzle/schema";
+
+describe("NFOOD platform schema", () => {
+  it("exposes the core restaurant operating tables", () => {
+    expect(restaurants).toBeDefined();
+    expect(branches).toBeDefined();
+    expect(menuCategories).toBeDefined();
+    expect(menuItems).toBeDefined();
+    expect(orders).toBeDefined();
+    expect(inventoryItems).toBeDefined();
+    expect(employees).toBeDefined();
+  });
+
+  it("defines the order lifecycle columns used by POS and KDS", () => {
+    expect(orders.status).toBeDefined();
+    expect(orders.branchId).toBeDefined();
+    expect(orders.updatedAt).toBeDefined();
+  });
+});

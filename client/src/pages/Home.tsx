@@ -1,33 +1,98 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useMemo, useState } from "react";
+import {
+  Activity, Bell, ChefHat, ChevronDown, CircleDollarSign, Clock3, Eye, LayoutDashboard,
+  Menu as MenuIcon, Package, Plus, Search, Settings2, ShoppingBag, Store, Table2,
+  Users, Utensils, WalletCards, Zap, CheckCircle2, ArrowUpLeft, MoreHorizontal,
+  Truck, Megaphone, Boxes, ShieldCheck
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
+import { toast } from "sonner";
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
+type OrderStatus = "new" | "preparing" | "ready" | "completed";
+type NavKey = "overview" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing";
+
+type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string };
+
+const navItems: { key: NavKey; label: string; icon: typeof LayoutDashboard }[] = [
+  { key: "overview", label: "نظرة عامة", icon: LayoutDashboard },
+  { key: "orders", label: "الطلبات", icon: ShoppingBag },
+  { key: "pos", label: "نقطة البيع POS", icon: WalletCards },
+  { key: "kds", label: "شاشة المطبخ KDS", icon: ChefHat },
+  { key: "menu", label: "المنيو والأصناف", icon: Utensils },
+  { key: "tables", label: "الطاولات", icon: Table2 },
+  { key: "inventory", label: "المخزون والمشتريات", icon: Boxes },
+  { key: "team", label: "الموظفون والحضور", icon: Users },
+  { key: "marketing", label: "التسويق والحملات", icon: Megaphone },
+];
+
+const initialOrders: Order[] = [
+  { id: "#1048", table: "طاولة 12", items: "برجر كلاسيك × 2، بطاطس × 1", total: 86, status: "new", time: "منذ 2 د", channel: "داخل المطعم" },
+  { id: "#1047", table: "طاولة 04", items: "بيتزا خضار × 1، مياه × 2", total: 58, status: "preparing", time: "منذ 8 د", channel: "داخل المطعم" },
+  { id: "#1046", table: "سفري", items: "تشيكن راب × 2، كولا × 2", total: 64, status: "ready", time: "منذ 12 د", channel: "استلام" },
+  { id: "#1045", table: "طاولة 08", items: "سلطة سيزر × 1، باستا ألفريدو × 1", total: 74, status: "completed", time: "منذ 19 د", channel: "داخل المطعم" },
+];
+
+const statusLabels: Record<OrderStatus, string> = { new: "جديد", preparing: "قيد التحضير", ready: "جاهز", completed: "مكتمل" };
+const statusStyles: Record<OrderStatus, string> = { new: "bg-amber-50 text-amber-700 border-amber-200", preparing: "bg-blue-50 text-blue-700 border-blue-200", ready: "bg-emerald-50 text-emerald-700 border-emerald-200", completed: "bg-slate-100 text-slate-600 border-slate-200" };
+
+function money(value: number) { return `${value.toLocaleString("ar-SA")} ر.س`; }
+
 export default function Home() {
-  // The useAuth hook provides authentication state.
-  // To implement login/logout, call logout(), or start login from an event
-  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
-  // startLogin() during render (no href={startLogin()}) — it mints a one-time
-  // nonce cookie and must run only at the moment of navigation.
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+  const { user } = useAuth();
+  const [active, setActive] = useState<NavKey>("overview");
+  const [orders, setOrders] = useState(initialOrders);
+  const [branch, setBranch] = useState("فرع العليا");
+  const [query, setQuery] = useState("");
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
+  const visibleOrders = useMemo(() => orders.filter((order) => `${order.id} ${order.table} ${order.items}`.includes(query)), [orders, query]);
+  const advanceOrder = (id: string) => {
+    setOrders((current) => current.map((order) => {
+      if (order.id !== id) return order;
+      const next: OrderStatus = order.status === "new" ? "preparing" : order.status === "preparing" ? "ready" : "completed";
+      toast.success(`تم تحديث الطلب ${id} إلى ${statusLabels[next]}`);
+      return { ...order, status: next };
+    }));
+  };
 
+  const title = navItems.find((item) => item.key === active)?.label ?? "نظرة عامة";
   return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
+    <div dir="rtl" className="min-h-screen bg-[#f6f7f9] text-[#182230]">
+      <aside className="fixed inset-y-0 right-0 z-20 hidden w-[272px] border-l border-slate-200 bg-[#111c2e] text-white lg:flex lg:flex-col">
+        <div className="flex h-20 items-center gap-3 border-b border-white/10 px-7">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#e76f3c] shadow-lg shadow-orange-900/20"><Utensils className="h-5 w-5" /></div>
+          <div><div className="text-[17px] font-bold tracking-tight">NFOOD</div><div className="text-[10px] font-medium text-slate-400">RESTAURANT OPERATING SYSTEM</div></div>
+        </div>
+        <div className="px-5 pt-7"><p className="mb-3 px-3 text-[10px] font-bold tracking-[.18em] text-slate-500">مساحة العمل</p>
+          <nav className="space-y-1">{navItems.map((item) => { const Icon = item.icon; const isActive = item.key === active; return <button key={item.key} onClick={() => setActive(item.key)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-right text-[13px] transition-all ${isActive ? "bg-[#e76f3c] font-semibold text-white shadow-lg shadow-orange-950/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}><Icon className="h-[18px] w-[18px]" /><span>{item.label}</span>{item.key === "orders" && <span className="mr-auto rounded-full bg-white/15 px-2 py-0.5 text-[10px] text-white">4</span>}</button>; })}</nav>
+        </div>
+        <div className="mt-auto space-y-4 p-5"><div className="rounded-2xl border border-white/10 bg-white/[.04] p-4"><div className="mb-2 flex items-center gap-2 text-xs font-semibold"><Zap className="h-4 w-4 text-[#f0ad65]" /> الباقة الحالية</div><p className="text-sm font-bold">Growth Plan</p><p className="mt-1 text-[11px] text-slate-400">24 يوماً متبقية في التجربة</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-[68%] rounded-full bg-[#f0ad65]" /></div></div><button className="flex w-full items-center gap-3 px-3 py-2 text-sm text-slate-400 hover:text-white"><Settings2 className="h-4 w-4" /> الإعدادات العامة</button></div>
+      </aside>
+      <main className="lg:mr-[272px]">
+        <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b border-slate-200/80 bg-[#f6f7f9]/90 px-5 backdrop-blur-xl md:px-8"><div><div className="mb-1 flex items-center gap-2 text-xs text-slate-500"><span>مساحة العمل</span><span>/</span><span className="font-medium text-slate-700">{title}</span></div><h1 className="text-xl font-bold tracking-tight md:text-2xl">{title}</h1></div><div className="flex items-center gap-3"><div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold shadow-sm sm:flex"><Store className="h-4 w-4 text-[#e76f3c]" /><select value={branch} onChange={(e) => setBranch(e.target.value)} className="bg-transparent outline-none"><option>فرع العليا</option><option>فرع الملز</option><option>فرع النخيل</option></select></div><button className="relative rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 shadow-sm hover:text-[#e76f3c]"><Bell className="h-[18px] w-[18px]" /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#e76f3c]" /></button><div className="hidden h-9 w-9 items-center justify-center rounded-xl bg-[#e76f3c] text-sm font-bold text-white sm:flex">{user?.name?.[0] || "م"}</div></div></header>
+        <div className="border-b border-slate-200 bg-white px-4 py-2 lg:hidden"><div className="flex gap-2 overflow-x-auto pb-1">{navItems.map((item) => { const Icon = item.icon; return <button key={item.key} onClick={() => setActive(item.key)} className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold ${active === item.key ? "bg-orange-50 text-[#e76f3c]" : "text-slate-500"}`}><Icon className="h-3.5 w-3.5" />{item.label}</button>; })}</div></div><div className="p-5 md:p-8"><div className="mb-7 flex items-end justify-between"><div><p className="text-sm text-slate-500">الأربعاء، 20 أغسطس 2026</p><h2 className="mt-1 text-2xl font-bold">صباح الخير، فريق NFOOD</h2></div><Button onClick={() => { setActive("pos"); toast.success("تم فتح نقطة البيع"); }} className="hidden gap-2 rounded-xl bg-[#e76f3c] px-4 shadow-lg shadow-orange-200 hover:bg-[#d85f2e] sm:flex"><Plus className="h-4 w-4" /> طلب جديد</Button></div>
+          {active === "overview" ? <Overview orders={visibleOrders} advanceOrder={advanceOrder} query={query} setQuery={setQuery} /> : <ModuleView active={active} orders={visibleOrders} advanceOrder={advanceOrder} setActive={setActive} />}
+        </div>
       </main>
     </div>
   );
+}
+
+function Overview({ orders, advanceOrder, query, setQuery }: { orders: Order[]; advanceOrder: (id: string) => void; query: string; setQuery: (value: string) => void }) {
+  const stats = [{ label: "مبيعات اليوم", value: "12,840 ر.س", change: "+18.4%", icon: CircleDollarSign, tint: "orange" }, { label: "الطلبات اليوم", value: "186", change: "+12.2%", icon: ShoppingBag, tint: "blue" }, { label: "متوسط قيمة الطلب", value: "69.03 ر.س", change: "+5.6%", icon: WalletCards, tint: "violet" }, { label: "الطاولات المشغولة", value: "18 / 32", change: "56% إشغال", icon: Table2, tint: "emerald" }];
+  return <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map((stat) => { const Icon = stat.icon; return <Card key={stat.label} className="rounded-2xl border-slate-200/80 bg-white shadow-sm"><CardContent className="p-5"><div className="flex items-start justify-between"><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.tint === "orange" ? "bg-orange-50 text-orange-600" : stat.tint === "blue" ? "bg-blue-50 text-blue-600" : stat.tint === "violet" ? "bg-violet-50 text-violet-600" : "bg-emerald-50 text-emerald-600"}`}><Icon className="h-5 w-5" /></div><span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600"><ArrowUpLeft className="h-3 w-3" />{stat.change}</span></div><p className="mt-5 text-xs font-medium text-slate-500">{stat.label}</p><p className="mt-1 text-2xl font-bold tracking-tight">{stat.value}</p></CardContent></Card>; })}</div>
+    <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]"><Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm"><CardHeader className="flex-row items-center justify-between border-b border-slate-100 px-5 py-4"><div><CardTitle className="text-base">أداء المبيعات</CardTitle><p className="mt-1 text-xs text-slate-500">نظرة على مبيعات آخر 7 أيام</p></div><Badge variant="outline" className="rounded-lg border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">هذا الأسبوع <ChevronDown className="mr-1 inline h-3 w-3" /></Badge></CardHeader><CardContent className="p-5"><div className="flex h-[180px] items-end gap-3 pt-5">{[42, 58, 48, 72, 63, 84, 96].map((height, index) => <div key={index} className="flex flex-1 flex-col items-center gap-3"><div className={`w-full rounded-t-lg transition-all hover:opacity-80 ${index === 6 ? "bg-[#e76f3c]" : "bg-orange-100"}`} style={{ height: `${height}%` }} /><span className="text-[10px] text-slate-400">{["الخميس", "الجمعة", "السبت", "الأحد", "الإثنين", "الثلاثاء", "اليوم"][index]}</span></div>)}</div><div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-4 text-xs text-slate-500"><span className="h-2 w-2 rounded-full bg-[#e76f3c]" /> إجمالي المبيعات <strong className="mr-auto text-sm text-slate-800">78,420 ر.س</strong></div></CardContent></Card>
+      <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm"><CardHeader className="flex-row items-center justify-between border-b border-slate-100 px-5 py-4"><div><CardTitle className="text-base">الأصناف الأكثر مبيعاً</CardTitle><p className="mt-1 text-xs text-slate-500">حسب عدد الطلبات</p></div><Button variant="ghost" size="sm" className="text-xs text-[#e76f3c]" onClick={() => toast.info("سيتم فتح تقرير المنيو قريباً")}>عرض الكل</Button></CardHeader><CardContent className="space-y-4 p-5">{[["برجر كلاسيك", "86 طلب", "bg-orange-500", "82%"], ["بيتزا خضار", "64 طلب", "bg-amber-400", "64%"], ["تشيكن راب", "52 طلب", "bg-blue-400", "52%"], ["باستا ألفريدو", "41 طلب", "bg-violet-400", "41%"]].map(([name, count, color, width], index) => <div key={name} className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500">0{index + 1}</span><div className="min-w-0 flex-1"><div className="mb-1 flex justify-between text-xs"><span className="font-semibold">{name}</span><span className="text-slate-400">{count}</span></div><div className="h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${color}`} style={{ width }} /></div></div></div>)}</CardContent></Card></div>
+    <Card className="mt-6 rounded-2xl border-slate-200/80 bg-white shadow-sm"><CardHeader className="flex-row items-center justify-between border-b border-slate-100 px-5 py-4"><div><CardTitle className="text-base">آخر الطلبات</CardTitle><p className="mt-1 text-xs text-slate-500">تحديث مباشر من نقطة البيع والمطبخ</p></div><div className="flex items-center gap-2"><div className="relative hidden sm:block"><Search className="absolute right-3 top-2.5 h-4 w-4 text-slate-400" /><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="بحث في الطلبات" className="h-9 w-44 rounded-lg border-slate-200 pr-9 text-xs" /></div><Button variant="outline" size="sm" className="rounded-lg text-xs">عرض الكل <ArrowUpLeft className="mr-1 h-3 w-3" /></Button></div></CardHeader><CardContent className="p-0"><div className="overflow-x-auto"><table className="w-full min-w-[650px] text-right text-sm"><thead className="bg-slate-50/70 text-[11px] text-slate-500"><tr><th className="px-5 py-3 font-medium">رقم الطلب</th><th className="px-5 py-3 font-medium">الطاولة / القناة</th><th className="px-5 py-3 font-medium">الأصناف</th><th className="px-5 py-3 font-medium">الإجمالي</th><th className="px-5 py-3 font-medium">الحالة</th><th className="px-5 py-3 font-medium">إجراء</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/60"><td className="px-5 py-4 font-bold">{order.id}<div className="mt-0.5 text-[10px] font-normal text-slate-400">{order.time}</div></td><td className="px-5 py-4"><div className="font-medium">{order.table}</div><div className="mt-0.5 text-[11px] text-slate-400">{order.channel}</div></td><td className="max-w-[240px] truncate px-5 py-4 text-xs text-slate-500">{order.items}</td><td className="px-5 py-4 font-bold">{money(order.total)}</td><td className="px-5 py-4"><Badge variant="outline" className={`rounded-lg px-2.5 py-1 text-[11px] ${statusStyles[order.status]}`}>{statusLabels[order.status]}</Badge></td><td className="px-5 py-4"><button onClick={() => order.status !== "completed" ? advanceOrder(order.id) : toast.info("الطلب مكتمل بالفعل")} className="rounded-lg p-2 text-slate-400 hover:bg-orange-50 hover:text-[#e76f3c]" title="تحديث الحالة">{order.status !== "completed" ? <CheckCircle2 className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></td></tr>)}</tbody></table></div></CardContent></Card></>;
+}
+
+function ModuleView({ active, orders, advanceOrder, setActive }: { active: NavKey; orders: Order[]; advanceOrder: (id: string) => void; setActive: (key: NavKey) => void }) {
+  const labels: Record<NavKey, { title: string; description: string; icon: typeof LayoutDashboard }> = { overview: { title: "نظرة عامة", description: "", icon: LayoutDashboard }, orders: { title: "إدارة الطلبات", description: "تابع الطلبات وحدّث مراحلها من شاشة واحدة.", icon: ShoppingBag }, pos: { title: "نقطة البيع POS", description: "أنشئ طلباً جديداً بسرعة واربطه بالفرع والطاولة.", icon: WalletCards }, kds: { title: "شاشة المطبخ KDS", description: "تنظيم الطلبات الواردة ومتابعة زمن التحضير لحظياً.", icon: ChefHat }, menu: { title: "المنيو والأصناف", description: "إدارة التصنيفات والأصناف والأسعار والتوفر.", icon: Utensils }, tables: { title: "الطاولات", description: "عرض إشغال الطاولات وربطها بالطلبات الحالية.", icon: Table2 }, inventory: { title: "المخزون والمشتريات", description: "متابعة المواد الخام والتنبيهات وتسجيل المشتريات.", icon: Package }, team: { title: "الموظفون والحضور", description: "إدارة الفريق والأدوار وسجل الحضور.", icon: Users }, marketing: { title: "التسويق والحملات", description: "العروض والكوبونات والحملات في مكان واحد.", icon: Megaphone } };
+  const info = labels[active]; const Icon = info.icon;
+  if (active === "orders" || active === "kds") return <div><div className="mb-6 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-[#e76f3c]"><Icon className="h-6 w-6" /></div><div><h2 className="text-xl font-bold">{info.title}</h2><p className="text-sm text-slate-500">{info.description}</p></div></div><div className="grid gap-4 md:grid-cols-4">{(["new", "preparing", "ready", "completed"] as OrderStatus[]).map((status) => <Card key={status} className="rounded-2xl border-slate-200 bg-white shadow-sm"><CardHeader className="px-4 pb-2 pt-4"><CardTitle className="flex items-center justify-between text-sm">{statusLabels[status]}<span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{orders.filter((o) => o.status === status).length}</span></CardTitle></CardHeader><CardContent className="space-y-3 p-4 pt-2">{orders.filter((o) => o.status === status).map((order) => <div key={order.id} className="rounded-xl border border-slate-100 bg-slate-50/70 p-3"><div className="flex justify-between text-xs font-bold"><span>{order.id}</span><span className="text-slate-400">{order.time}</span></div><p className="mt-2 text-xs font-medium">{order.table}</p><p className="mt-1 text-[11px] leading-5 text-slate-500">{order.items}</p>{status !== "completed" && <Button onClick={() => advanceOrder(order.id)} size="sm" className="mt-3 h-8 w-full rounded-lg bg-[#e76f3c] text-xs hover:bg-[#d85f2e]">نقل إلى {statusLabels[status === "new" ? "preparing" : status === "preparing" ? "ready" : "completed"]}</Button>}</div>)}</CardContent></Card>)}</div></div>;
+  return <div><div className="mb-6 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-[#e76f3c]"><Icon className="h-6 w-6" /></div><div><h2 className="text-xl font-bold">{info.title}</h2><p className="text-sm text-slate-500">{info.description}</p></div></div><Card className="rounded-2xl border-slate-200 bg-white shadow-sm"><CardContent className="flex min-h-[380px] flex-col items-center justify-center p-8 text-center"><div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-orange-50 text-[#e76f3c]"><Icon className="h-8 w-8" /></div><h3 className="text-lg font-bold">وحدة {info.title}</h3><p className="mt-2 max-w-md text-sm leading-7 text-slate-500">تم تجهيز مساحة العمل لهذه الوحدة ضمن النظام الموحد. ستظهر هنا أدوات الإدارة والتقارير والعمليات المرتبطة بالفرع المختار.</p><Button onClick={() => { setActive("overview"); toast.success("تم الرجوع إلى لوحة النظرة العامة"); }} className="mt-6 rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]">العودة للوحة الرئيسية</Button></CardContent></Card></div>;
 }
