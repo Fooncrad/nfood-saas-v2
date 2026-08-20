@@ -158,3 +158,4 @@
 - [x] ربط قراءة المخزون وتحديث الكمية في InventoryView بـ tRPC وحالات الخطأ وإعادة المحاولة
 - [x] إضافة اختبار schema لجدول purchases وحقلي paymentMethod/paymentStatus في orders
 - [x] إضافة اختبار tRPC يحجب mutations المخزون والمشتريات عن دور waiter
+- [x] ربط إضافة وتحديث وحذف مواد المخزون من InventoryView بـ tRPC وحالات النجاح والفشل
