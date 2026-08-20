@@ -261,3 +261,4 @@
 - [x] اختبار منع cross-restaurant references في createOrder وcreateMenuItem قبل أي كتابة
 - [x] منع menuItems من إعادة جميع الأصناف عند غياب restaurantId لغير الأدمن
 - [x] منع auditLogs من إعادة كل سجلات التدقيق عند غياب restaurantId لغير الأدمن
+- [x] ربط قراءة coupons بالمطعم عبر campaigns ومنع القراءة العامة للأدوار غير الإدارية
