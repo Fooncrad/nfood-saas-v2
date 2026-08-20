@@ -103,3 +103,4 @@
 - [x] إضافة Install Prompt لتثبيت تطبيق NFOOD من داخل اللوحة
 - [x] إضافة دعم Push Notifications في Service Worker وزر طلب إذن الإشعارات داخل اللوحة
 - [x] إنشاء Bottom Navigation ثابتة للموبايل من الوحدات المسموح بها حسب الدور
+- [x] بناء شاشة System Health تعرض API وقاعدة البيانات وحالات التحميل والخطأ مع Request ID
