@@ -99,3 +99,4 @@
 - [x] إضافة إجراءات tRPC لقراءة Feature Access وتعديل Feature Override للمطعم
 - [x] بناء Command Center عبر Ctrl+K وGlobal Search للوحدات والطلبات المتاحة
 - [x] إضافة manifest عربي RTL وService Worker لتشغيل shell عند انقطاع الشبكة وتسجيل PWA في الإنتاج
+- [x] إضافة Offline POS بطابور محلي للطلبات ومؤشر اتصال ومزامنة تلقائية عند عودة الشبكة
