@@ -309,3 +309,4 @@
 
 - [x] إضافة CRUD فعلي للعملاء في Super Admin مع منع البريد المكرر
 - [x] إزالة fallback Toast الوهمي من أزرار SectionHeading غير الموصولة بإجراء فعلي
+- [x] إزالة fallback restaurantId=1 من قراءة coupons وفرض نطاق المطعم للمستخدمين غير الإداريين
