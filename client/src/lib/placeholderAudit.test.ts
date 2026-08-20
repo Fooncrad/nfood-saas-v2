@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const homeSource = readFileSync(new URL("../pages/Home.tsx", import.meta.url), "utf8");
 const reservationsSource = readFileSync(new URL("../pages/ReservationsView.tsx", import.meta.url), "utf8");
+const roleManifests = ["restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"].map((role) => readFileSync(new URL(`../../public/manifest.${role}.webmanifest`, import.meta.url), "utf8"));
 
 describe("UI placeholder audit", () => {
   it("keeps role navigation filtering and a 403 fallback in the dashboard shell", () => {
@@ -21,6 +22,16 @@ describe("UI placeholder audit", () => {
   it("does not expose the removed generic action fallback", () => {
     expect(homeSource).not.toContain("Feature coming soon");
     expect(homeSource).not.toContain("ميزة قادمة");
+  });
+
+  it("keeps role-specific PWA manifests wired to authenticated role", () => {
+    expect(homeSource).toContain("manifest.${role}.webmanifest");
+    expect(homeSource).toContain("/manifest.webmanifest");
+    for (const manifest of roleManifests) {
+      expect(manifest).toContain('"lang": "ar"');
+      expect(manifest).toContain('"dir": "rtl"');
+      expect(manifest).toContain("icon-maskable.svg");
+    }
   });
 
   it("keeps explicit states in ReservationsView", () => {

@@ -342,3 +342,5 @@
 
 - [x] إضافة اختبار صريح لحالات loading وempty وerror وRequest ID في ReservationsView بجانب حالات Home
 
+- [x] إضافة manifests مستقلة للأدوار وتبديل manifest بعد تسجيل الدخول، مع إبقاء branding لكل مطعم وCustom Domain خارج هذا التغيير
+
