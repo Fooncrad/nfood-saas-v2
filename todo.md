@@ -93,7 +93,7 @@
 - [x] إضافة صفحات 403 ديناميكية للميزة أو الإجراء غير المسموح
 - [x] إنشاء Dashboard مستقل لكل Role وBottom Navigation للموبايل
 - [ ] إضافة Skeleton Loading وEmpty States وError States مع Request ID
-- [ ] بناء System Health وتشخيص الأخطاء ومراقبة الخدمات وAudit Trail متقدم
+- [x] بناء System Health وAudit Trail الأساسيين مع حالة API/DB وRequest ID؛ التشخيص الآلي والمراقبة الخارجية المتقدمة غير مكتملين
 - [x] تحويل المنصة إلى PWA مستقلة لكل نوع مستخدم مع PWA Branding لكل مطعم؛ Custom Domain وLanding Page Builder موثقان كبنود منفصلة غير مكتملة
 - [x] إضافة Offline POS وOffline Sync وPush Notifications وInstall Prompt وMaskable Icons
 - [ ] إضافة Guest Checkout وتحويل الضيف إلى Customer وإعادة الطلب وAbandoned Cart
