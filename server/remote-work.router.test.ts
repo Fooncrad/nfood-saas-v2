@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appRouter, assertRemoteTaskTransition } from "./routers";
+import { appRouter, assertRemoteTaskTransition, getTaskNotificationRecipient } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import { getDb } from "./db";
 import { remoteTasks, remoteWorkerApplications, remoteWorkers, restaurants, users } from "../drizzle/schema";
@@ -36,6 +36,12 @@ describe("remote work procedures", () => {
     await expect(caller.remote.tasks({ restaurantId: 1 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     await expect(caller.remote.messages({ taskId: 1 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     await expect(caller.notifications.mine()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("routes internal task notifications to the other participant", () => {
+    expect(getTaskNotificationRecipient({ createdByUserId: 10, assignedWorkerUserId: 20 }, 10)).toBe(20);
+    expect(getTaskNotificationRecipient({ createdByUserId: 10, assignedWorkerUserId: 20 }, 20)).toBe(10);
+    expect(getTaskNotificationRecipient({ createdByUserId: 10, assignedWorkerUserId: null }, 10)).toBe(10);
   });
 
   it("enforces the Remote Work transition graph", () => {
