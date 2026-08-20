@@ -117,3 +117,4 @@
 - [x] عرض آخر أحداث Audit Trail داخل System Health مع حالات التحميل والفراغ والخطأ
 - [x] توسيع اختبارات صلاحيات Feature Override لتشمل restaurant_admin وwaiter وkitchen وcashier وcustomer وdriver
 - [x] إضافة اختبارات login وتحديد الدور لجميع حسابات الاختبار الستة
+- [x] إضافة أيقونة PWA مقنّعة وربطها بالـ manifest بأحجام 192 و512
