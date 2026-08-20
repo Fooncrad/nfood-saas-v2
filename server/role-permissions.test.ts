@@ -30,4 +30,9 @@ describe("role-based backend permissions", () => {
     const caller = appRouter.createCaller(context(role));
     await expect(caller.features.setOverride({ restaurantId: 1, featureId: 1, enabled: true })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
+
+  it("blocks a waiter from reading another restaurant's audit trail", async () => {
+    const caller = appRouter.createCaller(context("waiter"));
+    await expect(caller.platform.auditLogs({ restaurantId: 99 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
 });

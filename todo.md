@@ -118,3 +118,4 @@
 - [x] توسيع اختبارات صلاحيات Feature Override لتشمل restaurant_admin وwaiter وkitchen وcashier وcustomer وdriver
 - [x] إضافة اختبارات login وتحديد الدور لجميع حسابات الاختبار الستة
 - [x] إضافة أيقونة PWA مقنّعة وربطها بالـ manifest بأحجام 192 و512
+- [x] إضافة اختبار يمنع قراءة Audit Trail لمطعم مختلف من حساب تشغيلي
