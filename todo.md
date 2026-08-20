@@ -163,3 +163,5 @@
 - [x] إضافة create/update/delete للموظفين مع tenant guard وصلاحية restaurant_admin
 - [x] ربط TeamView بقراءة الموظفين وإضافة الموظف وتفعيل/تعطيل الحساب وحذفه وحالات الخطأ
 - [x] إضافة اختبار صلاحيات يحجب mutations الموظفين عن دور waiter
+- [x] إضافة update/delete للحملات مع tenant guard وصلاحية restaurant_admin
+- [x] ربط MarketingView بقراءة الحملات وإنشائها وتحديث حالتها وحذفها وحالات الخطأ
