@@ -23,6 +23,14 @@ export const restaurants = mysqlTable("restaurants", {
   brandColor: varchar("brandColor", { length: 7 }).default("#e76f3c"),
   brandLogoUrl: varchar("brandLogoUrl", { length: 500 }),
   brandDescription: text("brandDescription"),
+  phone: varchar("phone", { length: 40 }),
+  whatsapp: varchar("whatsapp", { length: 40 }),
+  instagramUrl: varchar("instagramUrl", { length: 500 }),
+  facebookUrl: varchar("facebookUrl", { length: 500 }),
+  tiktokUrl: varchar("tiktokUrl", { length: 500 }),
+  websiteUrl: varchar("websiteUrl", { length: 500 }),
+  address: varchar("address", { length: 500 }),
+  reservationEnabled: boolean("reservationEnabled").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

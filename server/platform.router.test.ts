@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { getDb } from "./db";
-import { branches, menuCategories, menuItems, orderItems, orders, restaurants } from "../drizzle/schema";
+import { branches, menuCategories, menuItems, orderItems, orders, reservations, restaurants } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
@@ -38,6 +38,21 @@ describe("platform procedures", () => {
     await expect(appRouter.createCaller(context()).platform.trackGuestOrder({ slug: restaurant.slug, orderId: result.orderId, guestPhone: "0500000001" })).rejects.toMatchObject({ code: "NOT_FOUND" });
     await db.delete(orderItems).where(eq(orderItems.orderId, result.orderId));
     await db.delete(orders).where(eq(orders.id, result.orderId));
+  });
+
+  it("creates a public reservation and returns public contact and branch-hour fields", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug, phone: restaurants.phone, reservationEnabled: restaurants.reservationEnabled }).from(restaurants).where(eq(restaurants.status, "active")).limit(1))[0];
+    if (!restaurant || !restaurant.reservationEnabled) return;
+    const branch = (await db.select({ id: branches.id, openingTime: branches.openingTime, closingTime: branches.closingTime }).from(branches).where(eq(branches.restaurantId, restaurant.id)).limit(1))[0];
+    if (!branch) return;
+    const publicPage = await appRouter.createCaller(context()).platform.publicRestaurantPage({ slug: restaurant.slug });
+    expect(publicPage?.restaurant).toEqual(expect.objectContaining({ id: restaurant.id, reservationEnabled: true }));
+    expect(publicPage?.branches[0]).toEqual(expect.objectContaining({ id: branch.id, openingTime: branch.openingTime, closingTime: branch.closingTime }));
+    const created = await appRouter.createCaller(context()).platform.createPublicReservation({ slug: restaurant.slug, branchId: branch.id, customerName: "ضيف حجز", phone: "0500000000", partySize: 2, reservedFor: new Date(Date.now() + 86400000), notes: "اختبار" });
+    expect(created).toEqual(expect.objectContaining({ success: true, status: "pending" }));
+    await db.delete(reservations).where(eq(reservations.id, created.id));
   });
 
   it("allows an authenticated user to read the platform collections", async () => {
@@ -246,6 +261,17 @@ describe("platform procedures", () => {
     const admin = appRouter.createCaller(context("admin"));
     await expect(admin.platform.createOrder({ restaurantId: 2, branchId: 1, channel: "takeaway", paymentMethod: "cash", items: [{ menuItemId: 1, quantity: 1, unitPrice: "10.00" }], total: "10.00" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(admin.platform.createMenuItem({ restaurantId: 2, categoryId: 1, name: "صنف اختبار", price: "10.00" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("exposes branch allowance and protects branch creation by role", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).limit(1))[0];
+    if (!restaurant) return;
+    const admin = appRouter.createCaller(context("admin"));
+    const allowance = await admin.platform.branchLimit({ restaurantId: restaurant.id });
+    expect(allowance).toEqual(expect.objectContaining({ used: expect.any(Number), canCreate: expect.any(Boolean) }));
+    await expect(appRouter.createCaller(context("user", "waiter")).platform.createBranch({ restaurantId: restaurant.id, name: "فرع غير مصرح", city: "الرياض", status: "open" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("rejects a missing POS/KDS order before changing status", async () => {
