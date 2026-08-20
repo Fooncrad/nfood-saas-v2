@@ -61,6 +61,37 @@ describe("platform procedures", () => {
     await expect(caller.platform.restaurants()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 
+  it("covers allowed reads and cross-tenant denial for every operational role", async () => {
+    const roles = ["restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"] as const;
+    for (const testRole of roles) {
+      const caller = appRouter.createCaller(context("user", testRole));
+      await expect(caller.platform.branches({ restaurantId: 1 })).resolves.toBeDefined();
+      await expect(caller.platform.menuItems({ restaurantId: 1 })).resolves.toBeDefined();
+      if (testRole === "restaurant_admin") await expect(caller.platform.ordersByRestaurant({ restaurantId: 2 })).resolves.toBeDefined();
+      else await expect(caller.platform.ordersByRestaurant({ restaurantId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    }
+  });
+
+  it("enforces the action-role matrix before touching operational data", async () => {
+    const cases = [
+      ["createBranch", ["restaurant_admin"]], ["createMenuItem", ["restaurant_admin"]],
+      ["createInventoryItem", ["restaurant_admin"]], ["createPurchase", ["restaurant_admin"]],
+      ["createEmployee", ["restaurant_admin"]], ["createCampaign", ["restaurant_admin"]],
+      ["createOrder", ["restaurant_admin", "waiter", "cashier"]],
+      ["updateOrderStatus", ["restaurant_admin", "kitchen", "cashier"]],
+      ["updateTableStatus", ["restaurant_admin", "waiter", "cashier"]],
+    ] as const;
+    const roles = ["restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"] as const;
+    for (const [procedure, allowedRoles] of cases) {
+      for (const testRole of roles) {
+        const caller = appRouter.createCaller(context("user", testRole));
+        const action = (caller.platform as unknown as Record<string, (input: Record<string, never>) => Promise<unknown>>)[procedure];
+        if (allowedRoles.includes(testRole)) await expect(action({})).rejects.not.toMatchObject({ code: "FORBIDDEN" });
+        else await expect(action({})).rejects.toMatchObject({ code: "FORBIDDEN" });
+      }
+    }
+  });
+
   it("uses account-scoped summaries for customer and driver roles", async () => {
     const customerSummary = await appRouter.createCaller(context("user", "customer")).platform.roleSummary({ restaurantId: 1 });
     const driverSummary = await appRouter.createCaller(context("user", "driver")).platform.roleSummary({ restaurantId: 1 });
