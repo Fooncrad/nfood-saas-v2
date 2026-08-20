@@ -94,7 +94,7 @@
 - [x] إنشاء Dashboard مستقل لكل Role وBottom Navigation للموبايل
 - [ ] إضافة Skeleton Loading وEmpty States وError States مع Request ID
 - [ ] بناء System Health وتشخيص الأخطاء ومراقبة الخدمات وAudit Trail متقدم
-- [ ] تحويل المنصة إلى PWA مستقلة لكل نوع مستخدم مع PWA Branding لكل مطعم
+- [x] تحويل المنصة إلى PWA مستقلة لكل نوع مستخدم مع PWA Branding لكل مطعم؛ Custom Domain وLanding Page Builder موثقان كبنود منفصلة غير مكتملة
 - [x] إضافة Offline POS وOffline Sync وPush Notifications وInstall Prompt وMaskable Icons
 - [ ] إضافة Guest Checkout وتحويل الضيف إلى Customer وإعادة الطلب وAbandoned Cart
 - [ ] إضافة Birthday Marketing وRe-engagement Campaigns وReferral بعد أول عملية مؤهلة
