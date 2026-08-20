@@ -257,6 +257,8 @@ export const featureDefinitions = mysqlTable("featureDefinitions", {
   label: varchar("label", { length: 160 }).notNull(),
   dependencyKey: varchar("dependencyKey", { length: 120 }),
   defaultLimit: int("defaultLimit"),
+  isAddOn: boolean("isAddOn").default(false).notNull(),
+  addonPrice: decimal("addonPrice", { precision: 10, scale: 2 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
