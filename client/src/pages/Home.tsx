@@ -13,7 +13,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { shouldRedirectAfterLogout } from "@/lib/profileActions";
+import { executeLogoutFlow, executeSwitchAccountFlow } from "@/lib/profileActions";
 import Barcode from "react-barcode";
 
 type OrderStatus = "new" | "preparing" | "ready" | "completed";
@@ -102,8 +102,8 @@ export default function Home() {
 
   const title = navItems.find((item) => item.key === active)?.label ?? "نظرة عامة";
   const roleDashboardTitle = ({ restaurant_admin: "صباح الخير، فريق NFOOD", waiter: "لوحة النادل · جاهز لخدمة الضيوف", kitchen: "لوحة المطبخ · الطلبات بانتظار التنفيذ", cashier: "لوحة الكاشير · راقب المدفوعات والطلبات", customer: "مرحباً بك في NFOOD", driver: "لوحة التوصيل · تابع مهامك الحالية" } as Record<string, string>)[user?.testRole ?? "restaurant_admin"] ?? "صباح الخير، فريق NFOOD";
-  const handleLogout = async () => { try { await logout(); setProfileOpen(false); toast.success("تم تسجيل الخروج"); if (shouldRedirectAfterLogout(true)) window.location.href = "/"; } catch (error) { toast.error(error instanceof Error ? error.message : "تعذر تسجيل الخروج"); } };
-  const handleSwitchAccount = async () => { try { await logout(); setProfileOpen(false); startLogin(); } catch (error) { toast.error(error instanceof Error ? error.message : "تعذر تبديل الحساب"); } };
+  const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success("تم تسجيل الخروج"), notifyError: (message) => toast.error(message) }); };
+  const handleSwitchAccount = async () => { await executeSwitchAccountFlow({ logout, closeMenu: () => setProfileOpen(false), startLogin, redirect: () => undefined, notifyError: (message) => toast.error(message) }); };
   return (
     <div dir="rtl" className="min-h-screen bg-[#f6f7f9] text-[#182230]">
       <aside className="fixed inset-y-0 right-0 z-20 hidden w-[272px] border-l border-slate-200 bg-[#111c2e] text-white lg:flex lg:flex-col">
