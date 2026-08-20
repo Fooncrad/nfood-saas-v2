@@ -27,6 +27,16 @@ const requireUser = t.middleware(async opts => {
 
 export const protectedProcedure = t.procedure.use(requireUser);
 
+export const testRoleProcedure = (...roles: string[]) => protectedProcedure.use(
+  t.middleware(async opts => {
+    const role = opts.ctx.user?.testRole;
+    if (role && !roles.includes(role)) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك صلاحية تنفيذ هذا الإجراء" });
+    }
+    return opts.next({ ctx: { ...opts.ctx, user: opts.ctx.user } });
+  }),
+);
+
 export const adminProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;

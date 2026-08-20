@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { notifyOwner } from "./notification";
+import { getDb } from "../db";
 import { adminProcedure, publicProcedure, router } from "./trpc";
 
 export const systemRouter = router({
@@ -9,9 +10,10 @@ export const systemRouter = router({
         timestamp: z.number().min(0, "timestamp cannot be negative"),
       })
     )
-    .query(() => ({
-      ok: true,
-    })),
+    .query(async () => {
+      const db = await getDb();
+      return { ok: true, api: "healthy" as const, database: db ? "configured" as const : "unavailable" as const, checkedAt: new Date().toISOString() };
+    }),
 
   notifyOwner: adminProcedure
     .input(

@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -56,3 +56,7 @@ export async function listTaskMessages(taskId: number) { const db = await getDb(
 export async function listNotifications(userId: number) { const db = await getDb(); return db ? db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt)) : []; }
 export async function getTestAccountByEmail(email: string) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(testAccounts).where(eq(testAccounts.email, email.toLowerCase())).limit(1); return rows[0]; }
 export async function getTestAccountById(id: number) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(testAccounts).where(eq(testAccounts.id, id)).limit(1); return rows[0]; }
+export async function listAuthSessions(userId: number) { const db = await getDb(); return db ? db.select().from(authSessions).where(eq(authSessions.userId, userId)).orderBy(desc(authSessions.lastSeenAt)) : []; }
+export async function listFeatureDefinitions() { const db = await getDb(); return db ? db.select().from(featureDefinitions).orderBy(featureDefinitions.key) : []; }
+export async function listRestaurantFeatures(restaurantId: number) { const db = await getDb(); return db ? db.select().from(restaurantFeatures).where(eq(restaurantFeatures.restaurantId, restaurantId)) : []; }
+export async function getUserSecurity(userId: number) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(userSecurity).where(eq(userSecurity.userId, userId)).limit(1); return rows[0]; }

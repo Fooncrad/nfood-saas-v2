@@ -226,3 +226,46 @@ export type Restaurant = typeof restaurants.$inferSelect;
 export type Branch = typeof branches.$inferSelect;
 export type MenuItem = typeof menuItems.$inferSelect;
 export type Order = typeof orders.$inferSelect;
+
+
+export const authSessions = mysqlTable("authSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  sessionTokenHash: varchar("sessionTokenHash", { length: 128 }).notNull().unique(),
+  deviceLabel: varchar("deviceLabel", { length: 160 }),
+  userAgent: text("userAgent"),
+  ipAddress: varchar("ipAddress", { length: 64 }),
+  lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  revokedAt: timestamp("revokedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const userSecurity = mysqlTable("userSecurity", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique().references(() => users.id),
+  twoFactorEnabled: boolean("twoFactorEnabled").default(false).notNull(),
+  passkeyEnabled: boolean("passkeyEnabled").default(false).notNull(),
+  phone: varchar("phone", { length: 32 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const featureDefinitions = mysqlTable("featureDefinitions", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 120 }).notNull().unique(),
+  label: varchar("label", { length: 160 }).notNull(),
+  dependencyKey: varchar("dependencyKey", { length: 120 }),
+  defaultLimit: int("defaultLimit"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const restaurantFeatures = mysqlTable("restaurantFeatures", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  featureId: int("featureId").notNull().references(() => featureDefinitions.id),
+  enabled: boolean("enabled").default(true).notNull(),
+  overrideLimit: int("overrideLimit"),
+  overrideValue: varchar("overrideValue", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
