@@ -18,6 +18,11 @@ describe("platform procedures", () => {
     await expect(caller.platform.menuItems({})).resolves.toBeDefined();
   });
 
+  it("returns NOT_FOUND instead of undefined for a missing restaurant", async () => {
+    const caller = appRouter.createCaller(context("admin"));
+    await expect(caller.platform.restaurantById({ id: 999999 })).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
   it("blocks a test-role user from another restaurant tenant", async () => {
     const caller = appRouter.createCaller(context("user", "waiter"));
     await expect(caller.platform.restaurantById({ id: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
