@@ -333,3 +333,5 @@
 
 - [x] إزالة نسخة orders المحلية المكررة من Home والاشتقاق المباشر من remoteOrders لتقليل fallback التشغيلي
 
+- [x] إزالة menuProducts الثابتة من MenuView وربط المنتجات والتصنيفات مباشرة ببيانات backend
+
