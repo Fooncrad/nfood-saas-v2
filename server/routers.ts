@@ -82,6 +82,30 @@ export const appRouter = router({
       if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "لم يتم العثور على الطلب" });
       return order;
     }),
+    reorderGuestOrder: publicProcedure.input(z.object({ slug: z.string().min(2).max(160).regex(/^[a-z0-9-]+$/), orderId: z.number().int().positive(), guestPhone: z.string().trim().min(7).max(32) })).mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and(eq(restaurants.slug, input.slug), eq(restaurants.status, "active"))).limit(1))[0];
+      if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير متاح" });
+      const source = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, channel: orders.channel, guestName: orders.guestName, guestPhone: orders.guestPhone }).from(orders).where(and(eq(orders.id, input.orderId), eq(orders.restaurantId, restaurant.id), eq(orders.guestPhone, input.guestPhone))).limit(1))[0];
+      if (!source) throw new TRPCError({ code: "NOT_FOUND", message: "لم يتم العثور على الطلب" });
+      const sourceItems = await db.select({ menuItemId: orderItems.menuItemId, quantity: orderItems.quantity }).from(orderItems).where(eq(orderItems.orderId, source.id));
+      if (!sourceItems.length) throw new TRPCError({ code: "BAD_REQUEST", message: "الطلب السابق لا يحتوي أصنافًا قابلة للإعادة" });
+      const menuIds = sourceItems.map((item) => item.menuItemId);
+      const currentItems = await db.select({ id: menuItems.id, price: menuItems.price, isAvailable: menuItems.isAvailable }).from(menuItems).where(and(eq(menuItems.restaurantId, restaurant.id), inArray(menuItems.id, menuIds)));
+      const byId = new Map(currentItems.map((item) => [item.id, item]));
+      if (currentItems.length !== menuIds.length || sourceItems.some((item) => !byId.get(item.menuItemId)?.isAvailable)) throw new TRPCError({ code: "BAD_REQUEST", message: "بعض أصناف الطلب السابق غير متاحة حاليًا" });
+      const total = sourceItems.reduce((sum, item) => sum + Number(byId.get(item.menuItemId)!.price) * item.quantity, 0);
+      const result = await db.transaction(async (tx) => {
+        const inserted = await tx.insert(orders).values({ restaurantId: restaurant.id, branchId: source.branchId, channel: source.channel, status: "new", paymentMethod: "cash", paymentStatus: "unpaid", total: total.toFixed(2), guestName: source.guestName, guestPhone: source.guestPhone }).$returningId();
+        const orderId = inserted[0]?.id;
+        if (!orderId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "تعذر إنشاء الطلب المعاد" });
+        await tx.insert(orderItems).values(sourceItems.map((item) => ({ orderId, menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: byId.get(item.menuItemId)!.price })));
+        await insertAuditLog({ restaurantId: restaurant.id, branchId: source.branchId, actorUserId: null, actorRole: "guest", action: "guest.order.reorder", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid(12) });
+        return { success: true, orderId, total: total.toFixed(2), paymentMethod: "cash" as const, paymentStatus: "unpaid" as const, status: "new" as const };
+      });
+      return result;
+    }),
     restaurants: protectedProcedure.query(({ ctx }) => isAdminContext(ctx) ? listRestaurants() : listRestaurants(1)),
     restaurantById: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ ctx, input }) => { assertRestaurantAccess(ctx, input.id); const restaurant = await getRestaurantById(input.id); if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير موجود" }); return restaurant; }),
     branding: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(async ({ ctx, input }) => { assertRestaurantAccess(ctx, input.restaurantId); const restaurant = await getRestaurantById(input.restaurantId); if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "Restaurant not found" }); return { restaurantId: restaurant.id, slug: restaurant.slug, brandName: restaurant.brandName ?? restaurant.name, brandColor: restaurant.brandColor ?? "#e76f3c", brandLogoUrl: restaurant.brandLogoUrl ?? "", brandDescription: restaurant.brandDescription ?? "" }; }),
