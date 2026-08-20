@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" | "waiter"): TrpcContext {
+function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" | "waiter" | "customer" | "driver"): TrpcContext {
   return {
     user: { id: 7, openId: "platform-test", name: "اختبار", email: "test@nfood.local", loginMethod: "test", role, testRole, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
@@ -28,6 +28,13 @@ describe("platform procedures", () => {
     const unauthenticated = { ...context(), user: null } as TrpcContext;
     const caller = appRouter.createCaller(unauthenticated);
     await expect(caller.platform.restaurants()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("uses account-scoped summaries for customer and driver roles", async () => {
+    const customerSummary = await appRouter.createCaller(context("user", "customer")).platform.roleSummary({ restaurantId: 1 });
+    const driverSummary = await appRouter.createCaller(context("user", "driver")).platform.roleSummary({ restaurantId: 1 });
+    expect(customerSummary.scope).toBe("customer");
+    expect(driverSummary.scope).toBe("driver");
   });
 
   it("accepts the POS/KDS order lifecycle statuses", async () => {
