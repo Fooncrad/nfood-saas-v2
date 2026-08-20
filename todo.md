@@ -244,3 +244,4 @@
 - [x] اختبار مرور admin عبر بوابة updateRestaurant وupdateSubscription قبل تحقق المورد مع بقاء الأدوار التشغيلية محجوبة
 - [x] إضافة واجهة تعديل اسم ومدينة الفرع وربطها بـ updateBranch الفعلي
 - [x] إزالة restaurantId الثابت من لوحة Feature Access وربطها بمطعم فعلي أو حالة فراغ
+- [x] إضافة واجهة تعديل اسم الموظف ودوره وربطها بـ updateEmployee الفعلي
