@@ -91,7 +91,7 @@ export default function Home() {
     const next: OrderStatus = current.status === "new" ? "preparing" : current.status === "preparing" ? "ready" : "completed";
     const numericId = Number(id.replace("#", ""));
     if (!remoteOrders.data?.some((order) => order.id === numericId)) { toast.error("الطلب غير موجود في بيانات backend الحالية"); return; }
-    updateOrderStatus.mutate({ orderId: numericId, status: next });
+    updateOrderStatus.mutate({ restaurantId: selectedRestaurantId, orderId: numericId, status: next });
   };
 
   if (loading) return <div dir="rtl" className="flex min-h-screen items-center justify-center bg-[#f6f7f9] text-slate-500">جارٍ التحقق من الجلسة...</div>;
