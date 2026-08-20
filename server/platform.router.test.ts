@@ -18,6 +18,13 @@ describe("platform procedures", () => {
     await expect(caller.platform.menuItems({})).resolves.toBeDefined();
   });
 
+  it("allows central admin to read operational resources across restaurants", async () => {
+    const admin = appRouter.createCaller(context("admin"));
+    await expect(admin.platform.branches({ restaurantId: 2 })).resolves.toBeDefined();
+    await expect(admin.platform.menuItems({ restaurantId: 2 })).resolves.toBeDefined();
+    await expect(admin.platform.reservations({ restaurantId: 2 })).resolves.toBeDefined();
+  });
+
   it("returns NOT_FOUND instead of undefined for a missing restaurant", async () => {
     const caller = appRouter.createCaller(context("admin"));
     await expect(caller.platform.restaurantById({ id: 999999 })).rejects.toMatchObject({ code: "NOT_FOUND" });
