@@ -3,7 +3,7 @@ import { COOKIE_NAME, TEST_SESSION_COOKIE } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, testRoleProcedure, adminProcedure, router } from "./_core/trpc";
-import { branches, orders, orderItems, inventoryItems, employees, restaurants, menuCategories, menuItems, purchases, restaurantTables, campaigns, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, restaurantFeatures } from "../drizzle/schema";
+import { branches, orders, orderItems, inventoryItems, employees, remoteWorkers, restaurants, menuCategories, menuItems, purchases, restaurantTables, campaigns, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, restaurantFeatures } from "../drizzle/schema";
 import { getDb, getRestaurantById, getRestaurantByBarcode, listBranches, listEmployees, listInventory, listMenuCategories, listMenuItems, listOrders, listRestaurants, listSubscriptions, listRoles, listPermissions, listTables, listPurchases, listAttendance, listCampaigns, listCoupons, listRemoteWorkers, listRemoteTasks, listTaskMessages, listNotifications, getTestAccountByEmail, listAuthSessions, upsertUser, getUserByOpenId, listFeatureDefinitions, listRestaurantFeatures, getUserSecurity, getFeatureAccess, insertAuditLog, listAuditLogs, globalSearch, getRoleSummary } from "./db";
 import { and, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
@@ -13,6 +13,23 @@ import { sdk } from "./_core/sdk";
 
 function assertRestaurantAccess(ctx: { user: { testRole?: string } | null }, restaurantId: number) {
   if (ctx.user?.testRole && restaurantId !== 1) throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك صلاحية الوصول إلى هذا المطعم" });
+}
+
+export function assertRemoteTaskTransition(current: string, next: string, isAdmin: boolean) {
+  const allowed: Record<string, string[]> = { published: ["reviewing", "cancelled"], reviewing: ["accepted", "cancelled"], accepted: ["in_progress", "cancelled"], in_progress: ["submitted", "cancelled"], submitted: ["completed", "cancelled"] };
+  if (current === "completed" || current === "cancelled" || !allowed[current]?.includes(next)) throw new TRPCError({ code: "BAD_REQUEST", message: "انتقال حالة المهمة غير مسموح" });
+}
+
+async function getRemoteTaskAccess(ctx: { user: { id: number; testRole?: string } | null }, taskId: number) {
+  if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED", message: "يجب تسجيل الدخول" });
+  const db = await getDb();
+  if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+  const task = (await db.select().from(remoteTasks).where(eq(remoteTasks.id, taskId)).limit(1))[0];
+  if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "المهمة غير موجودة" });
+  assertRestaurantAccess(ctx, task.restaurantId);
+  const worker = (await db.select().from(remoteWorkers).where(and(eq(remoteWorkers.userId, ctx.user.id), eq(remoteWorkers.restaurantId, task.restaurantId))).limit(1))[0];
+  if (ctx.user.testRole !== "restaurant_admin" && (!worker || (task.assignedWorkerId !== null && task.assignedWorkerId !== worker.id))) throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك هذه المهمة" });
+  return { db, task, worker };
 }
 
 export const appRouter = router({
@@ -82,9 +99,9 @@ export const appRouter = router({
     tasks: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(({ input }) => listRemoteTasks(input.restaurantId)),
     messages: protectedProcedure.input(z.object({ taskId: z.number().int().positive() })).query(({ input }) => listTaskMessages(input.taskId)),
     createTask: testRoleProcedure("restaurant_admin").input(z.object({ restaurantId: z.number().int().positive(), assignedWorkerId: z.number().int().positive().optional(), type: z.enum(["orders", "reservations", "social", "support", "marketing", "other"]), title: z.string().min(2).max(180), description: z.string().max(5000).optional(), amount: z.string().regex(/^\d+(\.\d{1,2})?$/), currency: z.string().default("SAR"), paymentMethod: z.enum(["manual", "bank_transfer", "wallet", "pending_gateway"]).default("manual"), dueAt: z.string().datetime().optional() })).mutation(async ({ ctx, input }) => { const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.insert(remoteTasks).values({ ...input, createdByUserId: ctx.user!.id, assignedWorkerId: input.assignedWorkerId ?? null, description: input.description ?? null, dueAt: input.dueAt ? new Date(input.dueAt) : null }); const taskId = Number(result[0].insertId); await db.insert(notifications).values({ userId: ctx.user!.id, taskId, type: "task", title: "تم إنشاء مهمة", body: `تم حفظ المهمة: ${input.title}` }); return { success: true, id: taskId, status: "published" as const, paymentStatus: "unpaid" as const }; }),
-    acceptTask: testRoleProcedure("restaurant_admin", "waiter", "kitchen", "cashier", "driver").input(z.object({ taskId: z.number().int().positive(), workerId: z.number().int().positive() })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new Error("Database is not available"); await db.update(remoteTasks).set({ assignedWorkerId: input.workerId, status: "accepted" }).where(eq(remoteTasks.id, input.taskId)); return { success: true, status: "accepted" as const }; }),
-    updateTaskStatus: testRoleProcedure("restaurant_admin", "waiter", "kitchen", "cashier", "driver").input(z.object({ taskId: z.number().int().positive(), status: z.enum(["published", "reviewing", "accepted", "in_progress", "submitted", "completed", "cancelled"]) })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new Error("Database is not available"); await db.update(remoteTasks).set({ status: input.status }).where(eq(remoteTasks.id, input.taskId)); return { success: true, status: input.status }; }),
-    sendMessage: protectedProcedure.input(z.object({ taskId: z.number().int().positive(), body: z.string().min(1).max(5000) })).mutation(async ({ ctx, input }) => { const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.insert(taskMessages).values({ taskId: input.taskId, senderUserId: ctx.user.id, body: input.body }); await db.insert(notifications).values({ userId: ctx.user.id, taskId: input.taskId, type: "message", title: "رسالة مهمة جديدة", body: input.body }); return { success: true, id: Number(result[0].insertId) }; }),
+    acceptTask: testRoleProcedure("restaurant_admin", "waiter", "kitchen", "cashier", "driver").input(z.object({ taskId: z.number().int().positive(), workerId: z.number().int().positive() })).mutation(async ({ ctx, input }) => { const access = await getRemoteTaskAccess(ctx, input.taskId); if (ctx.user?.testRole !== "restaurant_admin" && (!access.worker || access.worker.id !== input.workerId)) throw new TRPCError({ code: "FORBIDDEN", message: "لا يمكنك قبول المهمة بهذا العامل" }); const worker = (await access.db.select().from(remoteWorkers).where(and(eq(remoteWorkers.id, input.workerId), eq(remoteWorkers.restaurantId, access.task.restaurantId))).limit(1))[0]; if (!worker) throw new TRPCError({ code: "FORBIDDEN", message: "العامل غير مرتبط بالمطعم" }); if (access.task.status !== "published") throw new TRPCError({ code: "BAD_REQUEST", message: "لا يمكن قبول المهمة في حالتها الحالية" }); await access.db.update(remoteTasks).set({ assignedWorkerId: input.workerId, status: "accepted" }).where(eq(remoteTasks.id, input.taskId)); return { success: true, status: "accepted" as const }; }),
+    updateTaskStatus: testRoleProcedure("restaurant_admin", "waiter", "kitchen", "cashier", "driver").input(z.object({ taskId: z.number().int().positive(), status: z.enum(["published", "reviewing", "accepted", "in_progress", "submitted", "completed", "cancelled"]) })).mutation(async ({ ctx, input }) => { const access = await getRemoteTaskAccess(ctx, input.taskId); const isAdmin = ctx.user?.testRole === "restaurant_admin"; assertRemoteTaskTransition(access.task.status, input.status, isAdmin); await access.db.update(remoteTasks).set({ status: input.status }).where(eq(remoteTasks.id, input.taskId)); return { success: true, status: input.status }; }),
+    sendMessage: protectedProcedure.input(z.object({ taskId: z.number().int().positive(), body: z.string().min(1).max(5000) })).mutation(async ({ ctx, input }) => { const access = await getRemoteTaskAccess(ctx, input.taskId); const result = await access.db.insert(taskMessages).values({ taskId: input.taskId, senderUserId: ctx.user!.id, body: input.body }); await access.db.insert(notifications).values({ userId: ctx.user!.id, taskId: input.taskId, type: "message", title: "رسالة مهمة جديدة", body: input.body }); return { success: true, id: Number(result[0].insertId) }; }),
   }),
   security: router({
     sessions: protectedProcedure.query(({ ctx }) => listAuthSessions(ctx.user.id)),
