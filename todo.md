@@ -103,7 +103,7 @@
 - [ ] بناء Driver Workflow كامل مع فشل التوصيل والإرجاع والوثائق وETA
 - [ ] بناء Customer Display وصوت استدعاء العميل وشاشة أرقام الانتظار وإعلانات العروض
 - [ ] إضافة تخصيص PWA لكل مطعم وCustom Domain وWhite Label وLanding Page Builder
-- [ ] بناء Feature Usage Analytics وChurn Analytics وMRR وARR وSaaS Health Dashboard
+- [x] بناء Feature Usage Analytics وChurn Analytics وMRR وARR وSaaS Health Dashboard
 - [ ] بناء SLA للدعم وتعيين Support Agent وإدارة API وWebhook
 - [ ] إضافة SSO للـ Enterprise بعد إعداد مزود الهوية المؤسسي
 - [ ] تنفيذ اختبارات تكامل مرحلية لكل مجموعة ميزات وعدم تعليم الميزات غير الموصولة كمكتملة

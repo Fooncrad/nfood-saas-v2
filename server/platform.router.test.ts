@@ -77,6 +77,13 @@ describe("platform procedures", () => {
     const metrics = await appRouter.createCaller(context("admin")).admin.saasMetrics();
     expect(metrics).toEqual(expect.objectContaining({ currency: "SAR", mrr: expect.any(Number), arr: expect.any(Number), churnRate: expect.any(Number) }));
   });
+  it("allows admin to read feature usage metrics", async () => {
+    const metrics = await appRouter.createCaller(context("admin")).admin.featureUsageMetrics();
+    expect(Array.isArray(metrics)).toBe(true);
+  });
+  it("blocks waiter from reading feature usage metrics", async () => {
+    await expect(appRouter.createCaller(context("user", "waiter")).admin.featureUsageMetrics()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
   it("protects web push subscriptions from anonymous access and invalid endpoints", async () => {
     const unauthenticated = appRouter.createCaller({ ...context(), user: null } as TrpcContext);
     await expect(unauthenticated.notifications.pushSubscribe({ endpoint: "https://push.example.test/sub", keys: { p256dh: "1234567890123456", auth: "12345678" } })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
