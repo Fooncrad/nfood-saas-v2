@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const homeSource = readFileSync(new URL("../pages/Home.tsx", import.meta.url), "utf8");
+const reservationsSource = readFileSync(new URL("../pages/ReservationsView.tsx", import.meta.url), "utf8");
 
 describe("UI placeholder audit", () => {
   it("keeps role navigation filtering and a 403 fallback in the dashboard shell", () => {
@@ -20,6 +21,13 @@ describe("UI placeholder audit", () => {
   it("does not expose the removed generic action fallback", () => {
     expect(homeSource).not.toContain("Feature coming soon");
     expect(homeSource).not.toContain("ميزة قادمة");
+  });
+
+  it("keeps explicit states in ReservationsView", () => {
+    expect(reservationsSource).toContain("isLoading");
+    expect(reservationsSource).toContain("isError");
+    expect(reservationsSource).toContain("Request ID");
+    expect(reservationsSource).toContain("لا توجد");
   });
 
   it("keeps operational menu and order lists backend-only", () => {

@@ -340,3 +340,5 @@
 - [x] إضافة تدقيق واختبارات صريحة لـCRUD admin على مورد إداري قابل للتعديل، مع اختبار persistence وتنظيف، وتوثيق موارد lifecycle المستثناة
 - [x] توضيح نطاق CRUD: admin المركزي يملك الإدارة المركزية، وrestaurant_admin يملك موارد المطعم؛ اختبار persistence الفعلي هو المرجع وليس الفحص الشكلي
 
+- [x] إضافة اختبار صريح لحالات loading وempty وerror وRequest ID في ReservationsView بجانب حالات Home
+
