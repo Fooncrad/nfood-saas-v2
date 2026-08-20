@@ -16,6 +16,7 @@ import { trpc } from "@/lib/trpc";
 import { executeLogoutFlow, executeSwitchAccountFlow } from "@/lib/profileActions";
 import { getWorkspaceState } from "@/lib/workspace";
 import { dashboardProfiles } from "@/lib/dashboardProfiles";
+import { roleNavigation } from "@/lib/roleNavigation";
 import Barcode from "react-barcode";
 import { ReservationsView } from "@/pages/ReservationsView";
 
@@ -54,7 +55,7 @@ export default function Home() {
   const [testPassword, setTestPassword] = useState("");
   const testLogin = trpc.auth.testLogin.useMutation({ onSuccess: () => { toast.success("تم تسجيل الدخول لحساب الاختبار"); window.location.reload(); }, onError: (error) => toast.error(error.message || "بيانات الدخول غير صحيحة") });
   const [active, setActive] = useState<NavKey>("overview");
-  const visibleNavItems = useMemo(() => { const role = user?.testRole; if (!role || role === "restaurant_admin") return navItems; const allowed: Record<string, NavKey[]> = { waiter: ["overview", "orders", "tables", "reservations", "remote", "security"], kitchen: ["overview", "kds", "orders", "security"], cashier: ["overview", "pos", "orders", "tables", "security"], customer: ["overview", "orders", "reservations", "security"], driver: ["overview", "orders", "remote", "security"] }; const keys = allowed[role] ?? ["overview"]; return navItems.filter((item) => keys.includes(item.key)); }, [user?.testRole]);
+  const visibleNavItems = useMemo(() => { const role = user?.testRole; if (!role) return navItems; const keys = roleNavigation[role as keyof typeof roleNavigation] ?? ["overview"]; return navItems.filter((item) => keys.includes(item.key)); }, [user?.testRole]);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState(() => { if (typeof window === "undefined") return 1; const stored = Number(window.localStorage.getItem("nfood-selected-restaurant")); return Number.isInteger(stored) && stored > 0 ? stored : 1; });
   const restaurantsQuery = trpc.platform.restaurants.useQuery(undefined, { enabled: Boolean(user), retry: false });
   useEffect(() => { const restaurants = restaurantsQuery.data ?? []; if (!restaurants.length) return; const available = restaurants.some((restaurant) => restaurant.id === selectedRestaurantId); const nextId = available ? selectedRestaurantId : restaurants[0].id; if (nextId !== selectedRestaurantId) setSelectedRestaurantId(nextId); window.localStorage.setItem("nfood-selected-restaurant", String(nextId)); }, [restaurantsQuery.data, selectedRestaurantId]);
