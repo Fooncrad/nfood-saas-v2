@@ -260,3 +260,4 @@
 - [x] حماية createMenuItem بالتحقق من ارتباط categoryId بالمطعم قبل إنشاء الصنف
 - [x] اختبار منع cross-restaurant references في createOrder وcreateMenuItem قبل أي كتابة
 - [x] منع menuItems من إعادة جميع الأصناف عند غياب restaurantId لغير الأدمن
+- [x] منع auditLogs من إعادة كل سجلات التدقيق عند غياب restaurantId لغير الأدمن
