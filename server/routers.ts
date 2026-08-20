@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, testRoleProcedure, adminProcedure, router } from "./_core/trpc";
 import { branches, orders, orderItems, inventoryItems, employees, attendance, remoteWorkers, restaurants, users, subscriptions, menuCategories, menuItems, purchases, restaurantTables, campaigns, remoteTasks, remoteWorkerApplications, taskMessages, notifications, pushSubscriptions, testAccounts, authSessions, userSecurity, restaurantFeatures } from "../drizzle/schema";
-import { getDb, getRestaurantById, getRestaurantByBarcode, listBranches, listEmployees, listInventory, listMenuCategories, listMenuItems, listOrders, listOrdersByRestaurant, listRestaurants, listSubscriptions, listRoles, listPermissions, listTables, listPurchases, listAttendance, listCampaigns, listCoupons, listRemoteWorkers, listRemoteTasks, listTaskMessages, listNotifications, getTestAccountByEmail, listAuthSessions, upsertUser, getUserByOpenId, listFeatureDefinitions, listRestaurantFeatures, getUserSecurity, getFeatureAccess, insertAuditLog, listAuditLogs, globalSearch, getRoleSummary } from "./db";
+import { getDb, getRestaurantById, getRestaurantByBarcode, listBranches, listEmployees, listInventory, listMenuCategories, listMenuItems, listOrders, listOrdersByRestaurant, listRestaurants, listSubscriptions, listRoles, listPermissions, listTables, listPurchases, listAttendance, listCampaigns, listCoupons, listRemoteWorkers, listRemoteTasks, listTaskMessages, listNotifications, getTestAccountByEmail, listAuthSessions, upsertUser, getUserByOpenId, listFeatureDefinitions, listRestaurantFeatures, getUserSecurity, getFeatureAccess, insertAuditLog, listAuditLogs, globalSearch, getRoleSummary, getPublicRestaurantPage } from "./db";
 import { and, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
@@ -46,6 +46,7 @@ export const appRouter = router({
     }),
   }),
   platform: router({
+    publicRestaurantPage: publicProcedure.input(z.object({ slug: z.string().min(2).max(160).regex(/^[a-z0-9-]+$/) })).query(async ({ input }) => { const page = await getPublicRestaurantPage(input.slug); if (!page) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير متاح" }); return page; }),
     restaurants: protectedProcedure.query(() => listRestaurants()),
     restaurantById: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(({ ctx, input }) => { assertRestaurantAccess(ctx, input.id); return getRestaurantById(input.id); }),
     branding: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(async ({ ctx, input }) => { assertRestaurantAccess(ctx, input.restaurantId); const restaurant = await getRestaurantById(input.restaurantId); if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "Restaurant not found" }); return { restaurantId: restaurant.id, brandName: restaurant.brandName ?? restaurant.name, brandColor: restaurant.brandColor ?? "#e76f3c", brandLogoUrl: restaurant.brandLogoUrl ?? "", brandDescription: restaurant.brandDescription ?? "" }; }),

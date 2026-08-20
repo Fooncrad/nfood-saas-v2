@@ -26,6 +26,11 @@ describe("platform procedures", () => {
     await expect(caller.platform.attendanceByRestaurant({ restaurantId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("validates public restaurant slugs before querying data", async () => {
+    const caller = appRouter.createCaller({ ...context(), user: null } as TrpcContext);
+    await expect(caller.platform.publicRestaurantPage({ slug: "غير-صالح" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
   it("rejects unauthenticated access to protected platform procedures", async () => {
     const unauthenticated = { ...context(), user: null } as TrpcContext;
     const caller = appRouter.createCaller(unauthenticated);

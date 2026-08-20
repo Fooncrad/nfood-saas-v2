@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -35,6 +35,7 @@ export async function getUserByOpenId(openId: string) {
 
 export async function listRestaurants() { const db = await getDb(); return db ? db.select().from(restaurants).orderBy(desc(restaurants.createdAt)) : []; }
 export async function getRestaurantById(id: number) { const db = await getDb(); if (!db) return undefined; const result = await db.select().from(restaurants).where(eq(restaurants.id, id)).limit(1); return result[0]; }
+export async function getPublicRestaurantPage(slug: string) { const db = await getDb(); if (!db) return undefined; const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug, name: restaurants.name, status: restaurants.status, brandName: restaurants.brandName, brandColor: restaurants.brandColor, brandLogoUrl: restaurants.brandLogoUrl, brandDescription: restaurants.brandDescription }).from(restaurants).where(and(eq(restaurants.slug, slug), ne(restaurants.status, "suspended"))).limit(1))[0]; if (!restaurant) return undefined; const categories = await db.select({ id: menuCategories.id, name: menuCategories.name, sortOrder: menuCategories.sortOrder }).from(menuCategories).where(eq(menuCategories.restaurantId, restaurant.id)); const items = await db.select({ id: menuItems.id, categoryId: menuItems.categoryId, name: menuItems.name, description: menuItems.description, price: menuItems.price, imageUrl: menuItems.imageUrl }).from(menuItems).where(and(eq(menuItems.restaurantId, restaurant.id), eq(menuItems.isAvailable, true))); return { restaurant, categories, items }; }
 export async function getRestaurantByBarcode(barcode: string) { const db = await getDb(); if (!db) return undefined; const result = await db.select().from(restaurants).where(eq(restaurants.barcode, barcode)).limit(1); return result[0]; }
 export async function listBranches(restaurantId: number) { const db = await getDb(); return db ? db.select().from(branches).where(eq(branches.restaurantId, restaurantId)) : []; }
 export async function listMenuCategories(restaurantId: number) { const db = await getDb(); return db ? db.select().from(menuCategories).where(eq(menuCategories.restaurantId, restaurantId)) : []; }
