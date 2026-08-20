@@ -18,6 +18,11 @@ describe("NFOOD platform schema", () => {
     expect(restaurants.barcode.config.notNull).toBe(true);
   });
 
+  it("defines persisted branch operating hours", () => {
+    expect(branches.openingTime).toBeDefined();
+    expect(branches.closingTime).toBeDefined();
+  });
+
   it("defines the order lifecycle columns used by POS and KDS", () => {
     expect(orders.status).toBeDefined();
     expect(orders.branchId).toBeDefined();
