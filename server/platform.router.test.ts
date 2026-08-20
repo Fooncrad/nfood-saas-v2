@@ -18,6 +18,12 @@ describe("platform procedures", () => {
     await expect(caller.platform.menuItems({})).resolves.toBeDefined();
   });
 
+  it("scopes restaurant collection for operational roles while central admin remains broad", async () => {
+    const waiterRestaurants = await appRouter.createCaller(context("user", "waiter")).platform.restaurants();
+    expect(waiterRestaurants.every((restaurant) => restaurant.id === 1)).toBe(true);
+    await expect(appRouter.createCaller(context("admin")).platform.restaurants()).resolves.toBeDefined();
+  });
+
   it("allows central admin to read operational resources across restaurants", async () => {
     const admin = appRouter.createCaller(context("admin"));
     await expect(admin.platform.branches({ restaurantId: 2 })).resolves.toBeDefined();
