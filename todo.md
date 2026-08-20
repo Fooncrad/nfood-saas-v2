@@ -102,7 +102,7 @@
 - [ ] ربط أقسام المطبخ بالطابعات وقواعد توجيه الطلب وتقسيم الطلب بين الأقسام
 - [ ] بناء Driver Workflow كامل مع فشل التوصيل والإرجاع والوثائق وETA
 - [x] بناء Customer Display أولي عام لعرض أرقام الطلبات الجاهزة وقيد التحضير دون بيانات شخصية؛ صوت الاستدعاء والإعلانات المتقدمة غير مكتملين
-- [ ] إضافة تخصيص PWA لكل مطعم وCustom Domain وWhite Label وLanding Page Builder
+- [x] تنفيذ تخصيص PWA وPWA Branding وWhite Label لكل مطعم؛ Custom Domain وLanding Page Builder غير منفذين بعد
 - [x] بناء Feature Usage Analytics وChurn Analytics وMRR وARR وSaaS Health Dashboard
 - [ ] بناء SLA للدعم وتعيين Support Agent وإدارة API وWebhook
 - [ ] إضافة SSO للـ Enterprise بعد إعداد مزود الهوية المؤسسي
