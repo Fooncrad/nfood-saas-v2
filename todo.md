@@ -189,3 +189,4 @@
 - [x] إضافة createTable وdeleteTable مع tenant guard والتحقق من ملكية الفرع والطاولة
 - [x] استكمال TablesView لتسجيل طاولة وحذفها وتحديث حالتها عبر mutations حقيقية
 - [x] إضافة اختبارات صلاحيات إنشاء وحذف الطاولات عن waiter
+- [x] إضافة updateRestaurant وdeleteRestaurant محميين بصلاحية admin مع حذف منطقي إلى suspended
