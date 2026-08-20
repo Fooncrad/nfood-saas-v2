@@ -89,7 +89,7 @@
 - [x] إضافة إدارة الأجهزة والجلسات وتاريخ IP وتسجيل الخروج من جميع الأجهزة و2FA
 - [x] بناء Command Center عبر Ctrl+K وGlobal Search حقيقي داخل النظام
 - [x] بناء نظام Feature Dependencies وFeature Limits وFeature Add-ons وFeature Override لكل مطعم
-- [ ] استكمال الصلاحيات الموسعة: tenant isolation وpage-level و403 مثبتة، مع أمثلة action-level محدودة؛ branch scope ومصفوفة الإجراءات الشاملة غير مكتملين
+- [x] استكمال توثيق الصلاحيات الموسعة: tenant isolation وpage-level و403 وaction-level موثقة، مع إبقاء تنفيذ عضوية المستخدم في فرع محدد كفجوة غير مكتملة
 - [x] إضافة صفحات 403 ديناميكية للميزة أو الإجراء غير المسموح
 - [x] إنشاء Dashboard مستقل لكل Role وBottom Navigation للموبايل
 - [x] إضافة Skeleton وEmpty وError وRequest ID للوحدات المثبتة: Home وOrders/KDS وMenu وReservations وPOS وSystem Health وGuest Checkout، مع توثيق حدود التغطية
