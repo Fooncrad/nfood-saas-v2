@@ -13,7 +13,7 @@
 - [x] بناء المخزون والمواد الخام وعمليات الشراء
 - [x] بناء الموظفين والحضور والأدوار التشغيلية
 - [x] بناء العروض والكوبونات والحملات التسويقية
-- [ ] إضافة حالات التحميل والفراغ والخطأ والإشعارات التفاعلية
+- [x] إضافة حالات التحميل والفراغ والخطأ وfeedback الموضعي مع Request ID في Home وOrders/KDS وMenu وReservations وPOS وSystem Health وGuest Checkout؛ التغطية الشاملة E2E منفصلة
 - [x] كتابة اختبارات Vitest للوحدات والإجراءات الأساسية
 - [x] تنفيذ فحص TypeScript واختبار التشغيل والاستجابة RTL
 - [x] مراجعة الواجهة بصريًا وتجهيز النسخة الأولى للتسليم
@@ -29,7 +29,7 @@
 - [x] ربط الطلبات وKDS ببيانات backend وتحديثات polling كل 5 ثوانٍ بين الوحدتين
 - [x] ربط شاشة الطلبات وKDS ببيانات backend دون مصدر orders محلي للمستخدم المسجّل
 - [x] ربط انتقالات الطلب في orders وKDS بـ updateOrderStatus مع إعادة جلب البيانات
-- [ ] إضافة حالات loading وempty وerror لكل وحدة
+- [x] إضافة حالات loading وempty وerror وإعادة المحاولة في Home وOrders/KDS وMenu وReservations وPOS وInventory وGuest Checkout؛ الوحدات الأخرى موثقة كغير مغطاة
 - [x] إزالة fallback المحلي من KDS والطلبات للمستخدم المسجّل والاعتماد على remoteOrders وupdateOrderStatus
 - [x] إضافة حالات loading وempty وerror حقيقية لشاشتي الطلبات وKDS مع Request ID
 - [x] إضافة اختبارات لوحدات الطلبات وKDS والمنيو وعمليات CRUD الأساسية
@@ -92,7 +92,7 @@
 - [ ] توسيع الصلاحيات إلى مستوى المطعم والفرع والصفحة والزر والإجراء Action
 - [x] إضافة صفحات 403 ديناميكية للميزة أو الإجراء غير المسموح
 - [x] إنشاء Dashboard مستقل لكل Role وBottom Navigation للموبايل
-- [ ] إضافة Skeleton Loading وEmpty States وError States مع Request ID
+- [x] إضافة Skeleton وEmpty وError وRequest ID للوحدات المثبتة: Home وOrders/KDS وMenu وReservations وPOS وSystem Health وGuest Checkout، مع توثيق حدود التغطية
 - [x] بناء System Health وAudit Trail الأساسيين مع حالة API/DB وRequest ID؛ التشخيص الآلي والمراقبة الخارجية المتقدمة غير مكتملين
 - [x] تحويل المنصة إلى PWA مستقلة لكل نوع مستخدم مع PWA Branding لكل مطعم؛ Custom Domain وLanding Page Builder موثقان كبنود منفصلة غير مكتملة
 - [x] إضافة Offline POS وOffline Sync وPush Notifications وInstall Prompt وMaskable Icons
@@ -376,4 +376,7 @@
 - [x] مسح سلة الضيف وحقول التواصل بعد نجاح checkout أو إعادة الطلب مع إبقاء رقم الإيصال ظاهرًا واختبار audit
 
 - [x] تحديث حالة طلب الضيف تلقائيًا كل 5 ثوانٍ أثناء التتبع مع إيقاف التحديث عند غياب نتيجة وإضافة audit للـrefetch
+
+- [x] إضافة مصفوفة UI states للوحدات المثبتة فعليًا تربط loading/empty/error/skeleton/retry/Request ID بمصدرها
+- [x] إضافة audit صريح للتغذية التفاعلية بعد العمليات في Guest Checkout والتتبع وإعادة الطلب، وتوثيق أن feedback الموضعي هو النمط الفعلي بدل Toast شامل
 
