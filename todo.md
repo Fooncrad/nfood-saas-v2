@@ -100,3 +100,4 @@
 - [x] بناء Command Center عبر Ctrl+K وGlobal Search للوحدات والطلبات المتاحة
 - [x] إضافة manifest عربي RTL وService Worker لتشغيل shell عند انقطاع الشبكة وتسجيل PWA في الإنتاج
 - [x] إضافة Offline POS بطابور محلي للطلبات ومؤشر اتصال ومزامنة تلقائية عند عودة الشبكة
+- [x] إضافة Install Prompt لتثبيت تطبيق NFOOD من داخل اللوحة
