@@ -179,3 +179,6 @@
 - [x] إضافة update/delete للفروع مع tenant guard وصلاحية restaurant_admin
 - [x] ربط BranchesView بقراءة الفروع وإنشائها وتبديل حالتها وحذفها وحالات الخطأ
 - [x] توسيع اختبار حجب mutations ليشمل إنشاء الفروع والحملات عن دور waiter
+- [x] إضافة recordAttendance مع تحقق tenant وملكية الموظف وصلاحية restaurant_admin
+- [x] ربط TeamView بزر تسجيل حضور اليوم عبر mutation حقيقية وحالات النجاح والفشل
+- [x] إضافة اختبار حجب recordAttendance عن waiter
