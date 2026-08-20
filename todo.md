@@ -266,3 +266,4 @@
 - [x] حماية tablesByBranch من قراءة طاولات فرع غير تابع للمطعم
 - [x] حماية attendance من إعادة حضور جميع الموظفين عند غياب employeeId لغير الأدمن
 - [x] حماية createReservation من branchId غير التابع للمطعم قبل الحفظ
+- [x] اختبار منع branchId العابر للمطاعم في createReservation قبل الحفظ

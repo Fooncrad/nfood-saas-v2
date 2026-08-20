@@ -144,6 +144,11 @@ describe("platform procedures", () => {
     const caller = appRouter.createCaller(context("admin"));
     await expect(caller.platform.updateOrderStatus({ restaurantId: 1, orderId: 999999, status: "ready" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
+  it("rejects cross-restaurant reservation branches before write", async () => {
+    const admin = appRouter.createCaller(context("admin"));
+    await expect(admin.platform.createReservation({ restaurantId: 2, branchId: 1, kind: "reservation", customerName: "اختبار عزل", partySize: 2, reservedFor: new Date("2026-09-01T18:00:00.000Z") })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("protects reservations by role and tenant", async () => {
     const kitchen = appRouter.createCaller(context("user", "kitchen"));
     await expect(kitchen.platform.createReservation({ restaurantId: 1, kind: "reservation", customerName: "عميل اختبار", partySize: 2, reservedFor: new Date("2026-08-21T18:00:00.000Z") })).rejects.toMatchObject({ code: "FORBIDDEN" });
