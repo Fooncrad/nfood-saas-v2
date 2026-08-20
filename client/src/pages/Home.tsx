@@ -58,8 +58,9 @@ export default function Home() {
   const testLogin = trpc.auth.testLogin.useMutation({ onSuccess: () => { toast.success("تم تسجيل الدخول لحساب الاختبار"); window.location.reload(); }, onError: (error) => toast.error(error.message || "بيانات الدخول غير صحيحة") });
   const [active, setActive] = useState<NavKey>("overview");
   const visibleNavItems = useMemo(() => { const role = user?.testRole; if (!role || role === "restaurant_admin") return navItems; const allowed: Record<string, NavKey[]> = { waiter: ["overview", "orders", "tables", "remote", "security"], kitchen: ["overview", "kds", "orders", "security"], cashier: ["overview", "pos", "orders", "tables", "security"], customer: ["overview", "orders", "security"], driver: ["overview", "orders", "remote", "security"] }; const keys = allowed[role] ?? ["overview"]; return navItems.filter((item) => keys.includes(item.key)); }, [user?.testRole]);
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState(1);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState(() => { if (typeof window === "undefined") return 1; const stored = Number(window.localStorage.getItem("nfood-selected-restaurant")); return Number.isInteger(stored) && stored > 0 ? stored : 1; });
   const restaurantsQuery = trpc.platform.restaurants.useQuery(undefined, { enabled: Boolean(user), retry: false });
+  useEffect(() => { const restaurants = restaurantsQuery.data ?? []; if (!restaurants.length) return; const available = restaurants.some((restaurant) => restaurant.id === selectedRestaurantId); const nextId = available ? selectedRestaurantId : restaurants[0].id; if (nextId !== selectedRestaurantId) setSelectedRestaurantId(nextId); window.localStorage.setItem("nfood-selected-restaurant", String(nextId)); }, [restaurantsQuery.data, selectedRestaurantId]);
   const selectedRestaurantQuery = trpc.platform.restaurantById.useQuery({ id: selectedRestaurantId }, { enabled: Boolean(user), retry: false });
   const selectedRestaurant = selectedRestaurantQuery.data;
   const [profileOpen, setProfileOpen] = useState(false);
