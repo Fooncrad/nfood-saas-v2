@@ -249,3 +249,4 @@
 - [x] إضافة واجهة تعديل المورد والإجمالي لعملية الشراء وربطها بـ updatePurchase
 - [x] إزالة رقم الفروع الثابت 0 من جدول Super Admin واستبداله بحالة غير متاح أو إحصائية backend
 - [x] إزالة const restaurantId = 1 غير المستخدم من SuperAdminView
+- [x] إضافة محدد مطعم فعلي إلى لوحة Feature Override في Super Admin
