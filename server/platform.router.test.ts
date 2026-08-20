@@ -274,6 +274,17 @@ describe("platform procedures", () => {
     await expect(appRouter.createCaller(context("user", "waiter")).platform.createBranch({ restaurantId: restaurant.id, name: "فرع غير مصرح", city: "الرياض", status: "open" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("exposes employee allowance and protects waiter and driver staff creation by role", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).limit(1))[0];
+    if (!restaurant) return;
+    const allowance = await appRouter.createCaller(context("admin")).platform.employeeLimit({ restaurantId: restaurant.id });
+    expect(allowance).toEqual(expect.objectContaining({ used: expect.any(Number), canCreate: expect.any(Boolean) }));
+    await expect(appRouter.createCaller(context("user", "waiter")).platform.createEmployee({ restaurantId: restaurant.id, name: "نادل غير مصرح", role: "نادل", status: "active" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(appRouter.createCaller(context("user", "driver")).platform.createEmployee({ restaurantId: restaurant.id, name: "سائق غير مصرح", role: "سائق", status: "active" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("rejects a missing POS/KDS order before changing status", async () => {
     const caller = appRouter.createCaller(context("admin"));
     await expect(caller.platform.updateOrderStatus({ restaurantId: 1, orderId: 999999, status: "ready" })).rejects.toMatchObject({ code: "FORBIDDEN" });
