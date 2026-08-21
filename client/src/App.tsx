@@ -4,9 +4,15 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
 import Home from "./pages/Home";
 import RestaurantPublic from "./pages/RestaurantPublic";
 import CustomerDisplay from "./pages/CustomerDisplay";
+
+function AppContent() {
+  const { direction } = useLanguage();
+  return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Router /></div>;
+}
 
 function Router() {
   return (
@@ -25,8 +31,9 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
-          <Toaster position="top-left" dir="rtl" />
-          <Router />
+          <LanguageProvider>
+            <AppContent />
+          </LanguageProvider>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
