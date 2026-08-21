@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LANGUAGE_STORAGE_KEY, languageMeta, translations } from "./LanguageContext";
+import { LANGUAGE_STORAGE_KEY, languageMeta, legacyUiTranslations, translations } from "./LanguageContext";
 
 describe("language configuration", () => {
   it("contains Arabic, English, and French with correct directions", () => {
@@ -21,6 +21,18 @@ describe("language configuration", () => {
     for (const key of arabicKeys) {
       expect(translations.en[key as keyof typeof translations.en]).not.toBe("");
       expect(translations.fr[key as keyof typeof translations.fr]).not.toBe("");
+    }
+  });
+
+  it("covers legacy middle-page labels in English and French", () => {
+    const arabicPattern = /[\u0600-\u06FF]/;
+    for (const [key, value] of Object.entries(legacyUiTranslations.en)) {
+      expect(value.trim()).not.toBe("");
+      const frenchValue = legacyUiTranslations.fr[key];
+      expect(frenchValue, `Missing French translation for: ${key}`).toBeDefined();
+      expect(frenchValue?.trim()).not.toBe("");
+      expect(arabicPattern.test(value)).toBe(false);
+      expect(arabicPattern.test(frenchValue ?? "")).toBe(false);
     }
   });
 
