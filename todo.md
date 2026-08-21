@@ -579,3 +579,5 @@
 - [x] إضافة اختبارات validation للحجز تغطي المدخل الصحيح، عدد الضيوف غير الصحيح، الموعد الماضي، ورقم الهاتف غير الصالح؛ ReservationsView.test.ts ناجح 3/3
 
 - [x] إضافة اختبارات وحدة لطابور POS المحلي للـJSON التالف، العزل restaurant/branch، الإضافة offlineId، وتقليص الطابور بعد المزامنة؛ offlineQueue.test.ts وReservationsView.test.ts ناجحان
+
+- [x] تحويل إدارة أدوار المطعم من window.prompt/window.confirm إلى محرر RTL داخلي للإنشاء والتعديل وتأكيد حذف قابل للإلغاء مع بقاء setPermissions وCRUD محميين
