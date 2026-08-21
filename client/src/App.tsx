@@ -26,7 +26,7 @@ function Router() {
       <Route path="/restaurant/:slug" component={RestaurantPublic} />
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
       <Route path="/customer/:slug" component={CustomerPublic} />
-      <Route path="/customer-profile" component={CustomerProfileSettings} />
+      <Route path="/customer-profile" component={() => <CustomerProfileSettings />} />
       <Route path="/integrations" component={IntegrationsSettings} />
       <Route path="/customer-portal" component={CustomerPortal} />
       <Route path="/support" component={SupportManagement} />

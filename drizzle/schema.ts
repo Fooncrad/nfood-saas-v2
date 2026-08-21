@@ -535,3 +535,46 @@ export const auditLogs = mysqlTable("auditLogs", {
   metadata: text("metadata"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+
+export const vcardCardProducts = mysqlTable("vcardCardProducts", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 160 }).notNull(),
+  description: text("description"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 8 }).default("SAR").notNull(),
+  targetRole: mysqlEnum("targetRole", ["customer", "restaurant", "driver"]).default("customer").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export const vcardCardOrders = mysqlTable("vcardCardOrders", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull().references(() => vcardCardProducts.id),
+  userId: int("userId").notNull().references(() => users.id),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  status: mysqlEnum("status", ["pending_payment", "paid", "cancelled", "fulfilled"]).default("pending_payment").notNull(),
+  paymentProvider: varchar("paymentProvider", { length: 80 }),
+  externalPaymentId: varchar("externalPaymentId", { length: 180 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export const vcardCardCodes = mysqlTable("vcardCardCodes", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull().references(() => vcardCardProducts.id),
+  codeHash: varchar("codeHash", { length: 128 }).notNull().unique(),
+  codeLast4: varchar("codeLast4", { length: 4 }).notNull(),
+  status: mysqlEnum("status", ["available", "reserved", "bound", "disabled"]).default("available").notNull(),
+  orderId: int("orderId").references(() => vcardCardOrders.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  boundAt: timestamp("boundAt"),
+});
+export const vcardCardBindings = mysqlTable("vcardCardBindings", {
+  id: int("id").autoincrement().primaryKey(),
+  codeId: int("codeId").notNull().unique().references(() => vcardCardCodes.id),
+  userId: int("userId").notNull().references(() => users.id),
+  customerProfileId: int("customerProfileId").references(() => customerProfiles.id),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  targetRole: mysqlEnum("targetRole", ["customer", "restaurant", "driver"]).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
