@@ -8,6 +8,9 @@ import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
 import Home from "./pages/Home";
 import RestaurantPublic from "./pages/RestaurantPublic";
 import CustomerDisplay from "./pages/CustomerDisplay";
+import CustomerPublic from "./pages/CustomerPublic";
+import CustomerProfileSettings from "./pages/CustomerProfileSettings";
+import IntegrationsSettings from "./pages/IntegrationsSettings";
 
 function AppContent() {
   const { direction } = useLanguage();
@@ -20,6 +23,9 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/restaurant/:slug" component={RestaurantPublic} />
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
+      <Route path="/customer/:slug" component={CustomerPublic} />
+      <Route path="/customer-profile" component={CustomerProfileSettings} />
+      <Route path="/integrations" component={IntegrationsSettings} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

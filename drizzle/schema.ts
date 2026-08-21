@@ -16,6 +16,7 @@ export const integrationSettings = mysqlTable("integrationSettings", {
   category: varchar("category", { length: 80 }).notNull(),
   status: mysqlEnum("status", ["not_configured", "configured", "disabled"]).default("not_configured").notNull(),
   keyReference: varchar("keyReference", { length: 180 }),
+  secretCiphertext: text("secretCiphertext"),
   updatedByUserId: int("updatedByUserId"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -34,6 +35,30 @@ export const users = mysqlTable("users", {
   emailVerified: boolean("emailVerified").default(false).notNull(),
   emailVerificationToken: varchar("emailVerificationToken", { length: 128 }),
   emailVerificationExpiresAt: timestamp("emailVerificationExpiresAt"),
+});
+
+export const customerProfiles = mysqlTable("customerProfiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique().references(() => users.id),
+  slug: varchar("slug", { length: 160 }).notNull().unique(),
+  isPublic: boolean("isPublic").default(false).notNull(),
+  displayName: varchar("displayName", { length: 160 }),
+  title: varchar("title", { length: 160 }),
+  bio: text("bio"),
+  avatarUrl: varchar("avatarUrl", { length: 500 }),
+  coverUrl: varchar("coverUrl", { length: 500 }),
+  phone: varchar("phone", { length: 40 }),
+  whatsapp: varchar("whatsapp", { length: 40 }),
+  email: varchar("email", { length: 320 }),
+  websiteUrl: varchar("websiteUrl", { length: 500 }),
+  address: varchar("address", { length: 500 }),
+  instagramUrl: varchar("instagramUrl", { length: 500 }),
+  twitterUrl: varchar("twitterUrl", { length: 500 }),
+  facebookUrl: varchar("facebookUrl", { length: 500 }),
+  linkedinUrl: varchar("linkedinUrl", { length: 500 }),
+  servicesJson: text("servicesJson"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export const restaurants = mysqlTable("restaurants", {
