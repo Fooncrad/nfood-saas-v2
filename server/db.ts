@@ -213,15 +213,19 @@ export async function globalSearch(restaurantId: number, query: string, limit = 
   ];
   return { results: results.slice(0, limit), available: true as const };
 }
-export async function getRoleSummary(restaurantId: number, role?: string, userId?: number) {
+export async function getRoleSummary(restaurantId: number, role?: string, userId?: number, branchId?: number) {
+  const unavailable = { available: false as const, sales: 0, orders: 0, average: 0, avgFulfillmentMinutes: 0, deliveryOrders: 0, customerOrders: 0, newOrders: 0, preparing: 0, ready: 0, completed: 0, tables: 0, scope: "unavailable" as const };
   const db = await getDb();
-  if (!db) return { available: false as const, sales: 0, orders: 0, average: 0, avgFulfillmentMinutes: 0, deliveryOrders: 0, customerOrders: 0, newOrders: 0, preparing: 0, ready: 0, completed: 0, tables: 0, scope: "unavailable" as const };
+  if (!db) return unavailable;
   const scope = role === "customer" ? "customer" : role === "driver" ? "driver" : "restaurant";
-  const rows = role === "customer" && userId ? await db.select().from(orders).where(and(eq(orders.restaurantId, restaurantId), eq(orders.customerId, userId))) : role === "driver" && userId ? await db.select().from(orders).where(and(eq(orders.restaurantId, restaurantId), eq(orders.driverId, userId))) : await db.select().from(orders).where(eq(orders.restaurantId, restaurantId));
+  const baseFilters = [eq(orders.restaurantId, restaurantId), ...(branchId ? [eq(orders.branchId, branchId)] : [])];
+  const roleFilters = role === "customer" && userId ? [...baseFilters, eq(orders.customerId, userId)] : role === "driver" && userId ? [...baseFilters, eq(orders.driverId, userId)] : baseFilters;
+  const rows = await db.select().from(orders).where(and(...roleFilters));
   const total = rows.reduce((sum, order) => sum + Number(order.total ?? 0), 0);
   const completedRows = rows.filter((order) => order.status === "completed" && order.createdAt && order.updatedAt);
   const avgFulfillmentMinutes = completedRows.length ? completedRows.reduce((sum, order) => sum + Math.max(0, new Date(order.updatedAt).getTime() - new Date(order.createdAt).getTime()) / 60000, 0) / completedRows.length : 0;
-  const tables = new Set(rows.filter((order) => order.status !== "completed").map((order) => order.tableName).filter(Boolean)).size;
+  const tableRows = branchId ? await db.select({ status: restaurantTables.status }).from(restaurantTables).where(eq(restaurantTables.branchId, branchId)) : [];
+  const tables = tableRows.filter((table) => table.status === "occupied").length;
   const deliveryOrders = rows.filter((order) => order.channel === "delivery").length;
   const customerOrders = role === "customer" ? rows.length : rows.filter((order) => order.customerId != null).length;
   return { available: true as const, sales: total, orders: rows.length, average: rows.length ? total / rows.length : 0, avgFulfillmentMinutes, deliveryOrders, customerOrders, newOrders: rows.filter((order) => order.status === "new").length, preparing: rows.filter((order) => order.status === "preparing").length, ready: rows.filter((order) => order.status === "ready").length, completed: rows.filter((order) => order.status === "completed").length, tables, scope };

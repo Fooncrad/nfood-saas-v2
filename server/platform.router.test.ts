@@ -222,6 +222,14 @@ describe("platform procedures", () => {
     }
   });
 
+  it("allows restaurant admins to read a branch-scoped summary without platform 403", async () => {
+    const summary = await appRouter.createCaller(context("user", "restaurant_admin")).platform.roleSummary({ restaurantId: 1, branchId: 1 });
+    expect(summary.scope).toBe("restaurant");
+    expect(summary.available).toBe(true);
+    expect(summary.tables).toBeGreaterThanOrEqual(0);
+    expect(summary.orders).toBeGreaterThanOrEqual(0);
+  });
+
   it("restricts inventory and purchase mutations to restaurant admins", async () => {
     const waiter = appRouter.createCaller(context("user", "waiter"));
     await expect(waiter.platform.createInventoryItem({ restaurantId: 1, name: "مادة اختبار", unit: "كجم", quantity: "1", minimumQuantity: "0" })).rejects.toMatchObject({ code: "FORBIDDEN" });

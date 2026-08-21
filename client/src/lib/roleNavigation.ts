@@ -15,7 +15,7 @@ export const roleActions: Record<DashboardRole, DashboardAction[]> = {
 
 export const roleNavigation: Record<DashboardRole, DashboardNavKey[]> = {
   admin: ["overview", "admin", "security", "health"],
-  restaurant_admin: ["overview", "admin", "branches", "orders", "pos", "kds", "menu", "tables", "inventory", "team", "marketing", "reservations", "remote", "security", "health"],
+  restaurant_admin: ["overview", "branches", "orders", "pos", "kds", "menu", "tables", "inventory", "team", "marketing", "reservations", "remote", "security"],
   waiter: ["overview", "orders", "tables", "reservations", "remote", "security"],
   kitchen: ["overview", "kds", "orders", "security"],
   cashier: ["overview", "pos", "orders", "tables", "security"],

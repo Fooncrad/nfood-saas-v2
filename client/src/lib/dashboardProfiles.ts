@@ -10,7 +10,7 @@ export type DashboardProfile = {
 
 export const dashboardProfiles: Record<DashboardRole, DashboardProfile> = {
   admin: { title: "مركز إدارة المنصة", body: "أدر المطاعم والباقات والإعدادات المركزية دون وحدات تشغيل المطاعم.", action: "فتح إدارة المنصة", target: "admin", secondary: [{ label: "صحة النظام", target: "health" }, { label: "أمان الحساب", target: "security" }] },
-  restaurant_admin: { title: "مركز إدارة المطعم", body: "راجع صحة النظام والميزات الديناميكية والعمليات اليومية.", action: "فتح إدارة الميزات", target: "admin", secondary: [{ label: "إدارة الفروع", target: "branches" }, { label: "فحص صحة النظام", target: "health" }] },
+  restaurant_admin: { title: "مركز إدارة المطعم", body: "تابع الطلبات والفروع والعمليات اليومية من مساحة المطعم.", action: "فتح الطلبات", target: "orders", secondary: [{ label: "إدارة الفروع", target: "branches" }, { label: "فتح المنيو", target: "menu" }] },
   waiter: { title: "مركز خدمة الطاولات", body: "تابع الطلبات الجديدة وإشغال الطاولات وتواصل مع فريق المطبخ.", action: "فتح الطلبات", target: "orders", secondary: [{ label: "عرض الطاولات", target: "tables" }, { label: "إنشاء مهمة", target: "remote" }] },
   kitchen: { title: "مركز تشغيل المطبخ", body: "ابدأ بالطلبات الجديدة ثم انقلها إلى التحضير والجاهزية.", action: "فتح KDS", target: "kds", secondary: [{ label: "الطلبات الجديدة", target: "orders" }, { label: "المخزون", target: "inventory" }] },
   cashier: { title: "مركز الكاشير", body: "أنشئ طلبًا جديدًا وتحقق من حالة الدفع والطلبات المكتملة.", action: "فتح POS", target: "pos", secondary: [{ label: "مراجعة الطلبات", target: "orders" }, { label: "الطاولات", target: "tables" }] },

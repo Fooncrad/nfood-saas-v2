@@ -7,7 +7,7 @@ describe("role navigation matrix", () => {
     for (const role of roles) {
       expect(roleNavigation[role].length).toBeGreaterThan(0);
       expect(isRoleNavigationAllowed(role, "overview")).toBe(true);
-      expect(isRoleNavigationAllowed(role, "admin")).toBe(role === "restaurant_admin");
+      expect(isRoleNavigationAllowed(role, "admin")).toBe(false);
     }
   });
 
@@ -29,6 +29,8 @@ describe("role navigation matrix", () => {
     expect(central).not.toContain("pos");
     expect(getVisibleNavigation("restaurant_admin")).toContain("orders");
     expect(getVisibleNavigation("restaurant_admin")).toContain("pos");
+    expect(getVisibleNavigation("restaurant_admin")).not.toContain("admin");
+    expect(getVisibleNavigation("restaurant_admin")).not.toContain("health");
     expect(getVisibleNavigation("cashier")).toContain("pos");
   });
 
