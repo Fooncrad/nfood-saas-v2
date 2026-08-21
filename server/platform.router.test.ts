@@ -31,6 +31,11 @@ describe("platform procedures", () => {
     await db.delete(printerRoutingRules).where(eq(printerRoutingRules.id, rule.id));
     await db.delete(kitchenSections).where(eq(kitchenSections.id, created.id));
   });
+  it("protects kitchen ticket reads by restaurant and role", async () => {
+    const kitchen = appRouter.createCaller({ ...context("user", "kitchen"), user: { ...context("user", "kitchen").user, restaurantId: 1 } });
+    await expect(kitchen.platform.kitchenTickets({ restaurantId: 1, orderId: 999999 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(kitchen.platform.kitchenTickets({ restaurantId: 2, orderId: 999999 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
   it("exposes system health only to central admin", async () => {
     const adminHealth = await appRouter.createCaller(context("admin")).admin.systemHealth();
     expect(["healthy", "degraded"]).toContain(adminHealth.status);

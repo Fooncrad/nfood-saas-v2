@@ -517,7 +517,7 @@
 - [ ] ربط menuItems وmenuCategories بقسم المطبخ من واجهة المنيو وتطبيق قواعد الأولوية على عناصر الطلب
 - [ ] تقسيم order items فعلياً حسب kitchenSectionId/category/menuItem وربط مخرجات الأقسام بشاشة KDS
 - [ ] تنفيذ ticket routing والطباعة الفعلية عبر طباعة المتصفح أو موصل طابعة مع معالجة عدم وجود الإعدادات وأخطاء الجهاز واختبارات السيناريوهات الأساسية
-- [ ] إضافة اختبارات Vitest لإجراءات kitchenSections وprinterRoutingRules وعزل restaurantId ومنع القسم غير المملوك
+- [x] إضافة اختبارات Vitest لإجراءات kitchenSections وprinterRoutingRules وkitchenTickets وعزل restaurantId ومنع القسم غير المملوك؛ 42 اختبارًا مستهدفًا ناجحًا
 - [ ] إضافة تنبيهات البريد الفعلية عند قبول طلب السائق بعد توفير مزود SMTP
 - [ ] استكمال مراجعة endpoint المجدول وحساب جمهور Birthday/Re-engagement بعد نشر handler والتحقق من Heartbeat
 - [ ] تنفيذ SLA للدعم وتعيين Support Agent وإدارة API وWebhook
