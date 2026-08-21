@@ -22,6 +22,15 @@ describe("platform procedures", () => {
     await expect(appRouter.createCaller(context("user", "waiter")).admin.systemHealth()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("protects loyalty and referral procedures by role and customer existence", async () => {
+    const admin = appRouter.createCaller(context("admin"));
+    const waiter = appRouter.createCaller(context("user", "waiter"));
+    await expect(admin.platform.loyaltySummary({ restaurantId: 1, customerId: 999999 })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(waiter.platform.loyaltySummary({ restaurantId: 1, customerId: 999999 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(admin.platform.createReferral({ restaurantId: 1, referrerCustomerId: 999999, code: "TEST-REFERRAL" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(waiter.platform.createReferral({ restaurantId: 1, referrerCustomerId: 999999, code: "TEST-REFERRAL-2" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("creates a safe public guest checkout from server-side menu prices", async () => {
     const db = await getDb();
     if (!db) return;

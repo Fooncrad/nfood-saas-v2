@@ -97,6 +97,39 @@ export const orderItems = mysqlTable("orderItems", {
   unitPrice: decimal("unitPrice", { precision: 10, scale: 2 }).notNull(),
 });
 
+export const loyaltyAccounts = mysqlTable("loyaltyAccounts", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  customerId: int("customerId").notNull().references(() => users.id),
+  pointsBalance: int("pointsBalance").default(0).notNull(),
+  tier: varchar("tier", { length: 40 }).default("standard").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const loyaltyTransactions = mysqlTable("loyaltyTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  customerId: int("customerId").notNull().references(() => users.id),
+  orderId: int("orderId").references(() => orders.id),
+  points: int("points").notNull(),
+  type: mysqlEnum("type", ["earn", "adjust", "redeem"]).default("earn").notNull(),
+  note: varchar("note", { length: 240 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const referralRecords = mysqlTable("referralRecords", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  referrerCustomerId: int("referrerCustomerId").notNull().references(() => users.id),
+  referredCustomerId: int("referredCustomerId").references(() => users.id),
+  qualifyingOrderId: int("qualifyingOrderId").references(() => orders.id),
+  code: varchar("code", { length: 80 }).notNull(),
+  status: mysqlEnum("status", ["pending", "qualified", "rewarded", "cancelled"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  qualifiedAt: timestamp("qualifiedAt"),
+});
+
 export const inventoryItems = mysqlTable("inventoryItems", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull(),

@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs, platformSettings } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs, platformSettings, loyaltyAccounts, loyaltyTransactions, referralRecords } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -27,6 +27,37 @@ export async function getPlatformSettings() {
 export async function setPlatformSetting(key: PlatformSettingKey, value: string, updatedByUserId: number) {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
   await db.insert(platformSettings).values({ settingKey: key, settingValue: value, updatedByUserId }).onDuplicateKeyUpdate({ set: { settingValue: value, updatedByUserId, updatedAt: new Date() } });
+}
+
+export async function getLoyaltyAccount(restaurantId: number, customerId: number) {
+  const db = await getDb(); if (!db) return undefined;
+  return (await db.select().from(loyaltyAccounts).where(and(eq(loyaltyAccounts.restaurantId, restaurantId), eq(loyaltyAccounts.customerId, customerId))).limit(1))[0];
+}
+
+export async function ensureLoyaltyAccount(restaurantId: number, customerId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const existing = await getLoyaltyAccount(restaurantId, customerId);
+  if (existing) return existing;
+  const result = await db.insert(loyaltyAccounts).values({ restaurantId, customerId, pointsBalance: 0, tier: "standard" });
+  return (await db.select().from(loyaltyAccounts).where(eq(loyaltyAccounts.id, Number(result[0].insertId))).limit(1))[0];
+}
+
+export async function getLoyaltySummary(restaurantId: number, customerId: number) {
+  const account = await ensureLoyaltyAccount(restaurantId, customerId);
+  const db = await getDb(); if (!db || !account) return { account, transactions: [] };
+  const transactions = await db.select().from(loyaltyTransactions).where(and(eq(loyaltyTransactions.restaurantId, restaurantId), eq(loyaltyTransactions.customerId, customerId))).orderBy(desc(loyaltyTransactions.createdAt)).limit(50);
+  return { account, transactions };
+}
+
+export async function addLoyaltyPoints(restaurantId: number, customerId: number, points: number, type: "earn" | "adjust" | "redeem", note?: string, orderId?: number) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const account = await ensureLoyaltyAccount(restaurantId, customerId);
+  if (!account) throw new Error("Loyalty account could not be created");
+  const nextBalance = account.pointsBalance + points;
+  if (nextBalance < 0) throw new Error("Loyalty points cannot be negative");
+  await db.update(loyaltyAccounts).set({ pointsBalance: nextBalance, tier: nextBalance >= 1000 ? "gold" : nextBalance >= 500 ? "silver" : "standard", updatedAt: new Date() }).where(eq(loyaltyAccounts.id, account.id));
+  const result = await db.insert(loyaltyTransactions).values({ restaurantId, customerId, orderId: orderId ?? null, points, type, note: note ?? null });
+  return { accountId: account.id, transactionId: Number(result[0].insertId), pointsBalance: nextBalance };
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
