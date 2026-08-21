@@ -169,6 +169,17 @@ export async function getFeatureAccess(restaurantId: number, featureKey: string)
 export async function getUserSecurity(userId: number) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(userSecurity).where(eq(userSecurity.userId, userId)).limit(1); return rows[0]; }
 export async function insertAuditLog(input: typeof auditLogs.$inferInsert) { const db = await getDb(); if (!db) return undefined; const result = await db.insert(auditLogs).values(input); return Number(result[0].insertId); }
 export async function listAuditLogs(restaurantId?: number) { const db = await getDb(); if (!db) return []; return restaurantId ? db.select().from(auditLogs).where(eq(auditLogs.restaurantId, restaurantId)).orderBy(desc(auditLogs.createdAt)).limit(100) : db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(100); }
+export async function getActivitySummary(restaurantId?: number) {
+  const db = await getDb();
+  if (!db) return { scope: restaurantId ? "restaurant" as const : "platform" as const, totals: { orders: 0, completed: 0, sales: 0, active: 0, auditEvents: 0 }, days: [] as Array<{ date: string; orders: number; sales: number }>, recentEvents: [] };
+  const orderRows = restaurantId ? await db.select({ createdAt: orders.createdAt, status: orders.status, total: orders.total }).from(orders).where(eq(orders.restaurantId, restaurantId)) : await db.select({ createdAt: orders.createdAt, status: orders.status, total: orders.total }).from(orders);
+  const events = restaurantId ? await db.select().from(auditLogs).where(eq(auditLogs.restaurantId, restaurantId)).orderBy(desc(auditLogs.createdAt)).limit(100) : await db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(100);
+  const now = new Date(); const days = Array.from({ length: 7 }, (_, index) => { const date = new Date(now); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - (6 - index)); return { key: date.toISOString().slice(0, 10), date: date.toLocaleDateString("ar-SA", { weekday: "short", month: "numeric", day: "numeric" }), orders: 0, sales: 0 }; });
+  const byDate = new Map(days.map((day) => [day.key, day]));
+  let sales = 0; let completed = 0;
+  for (const row of orderRows) { const amount = Number(row.total ?? 0); sales += amount; if (row.status === "completed") completed += 1; const key = new Date(row.createdAt).toISOString().slice(0, 10); const day = byDate.get(key); if (day) { day.orders += 1; day.sales += amount; } }
+  return { scope: restaurantId ? "restaurant" as const : "platform" as const, totals: { orders: orderRows.length, completed, sales, active: orderRows.filter((row) => ["new", "preparing", "ready"].includes(row.status)).length, auditEvents: events.length }, days: days.map(({ key, ...day }) => day), recentEvents: events.slice(0, 12) };
+}
 export async function globalSearch(restaurantId: number, query: string, limit = 20) {
   const db = await getDb();
   if (!db) return { results: [], available: false as const };
