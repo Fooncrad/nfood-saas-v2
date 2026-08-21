@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { validateRestaurantDraft } from "@/lib/restaurantValidation";
 
 type CreateRestaurantInput = { name: string; slug: string; plan: string };
 
@@ -14,7 +15,7 @@ export function CreateRestaurantDialog({ open, pending = false, onClose, onSubmi
   const [draft, setDraft] = useState<CreateRestaurantInput>({ name: "", slug: "", plan: "Growth" });
   useEffect(() => { if (!open) setDraft({ name: "", slug: "", plan: "Growth" }); }, [open]);
   if (!open) return null;
-  const canSubmit = draft.name.trim().length >= 2 && draft.slug.trim().length >= 2 && !pending;
+  const canSubmit = !validateRestaurantDraft(draft) && !pending;
   return <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/45 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="new-restaurant-title" dir="rtl">
     <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-7">
       <div className="flex items-start justify-between gap-4">
