@@ -83,7 +83,15 @@ export default function Home() {
     if (globalSearchQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("global.search");
     else if (roleSummaryQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("dashboard.summary");
   }, [globalSearchQuery.error, roleSummaryQuery.error, isCentralAdmin]);
-  useEffect(() => { const onForbidden = (event: Event) => { const action = (event as CustomEvent<{ action?: string }>).detail?.action; setGlobalForbiddenAction(action || "protected.action"); }; window.addEventListener("nfood:forbidden", onForbidden); return () => window.removeEventListener("nfood:forbidden", onForbidden); }, []);
+  useEffect(() => {
+    const onForbidden = (event: Event) => {
+      if (isCentralAdmin) return;
+      const action = (event as CustomEvent<{ action?: string }>).detail?.action;
+      setGlobalForbiddenAction(action || "protected.action");
+    };
+    window.addEventListener("nfood:forbidden", onForbidden);
+    return () => window.removeEventListener("nfood:forbidden", onForbidden);
+  }, [isCentralAdmin]);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [pwaInstalled, setPwaInstalled] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(display-mode: standalone)").matches);
   const [pushStatus, setPushStatus] = useState<NotificationPermission | "unsupported">(() => typeof Notification === "undefined" ? "unsupported" : Notification.permission);
