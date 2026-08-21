@@ -513,7 +513,7 @@
 
 - [x] إضافة DriverDeliveryView للسائق لعرض الطلبات المعينة فقط وتحديث الاستلام والطريق والتسليم والفشل والمرتجع وETA مع اختبار انتقالات الحالة وسبب الفشل
 
-- [ ] بناء واجهة frontend مكتملة لإدارة Kitchen Sections وPrinter Routing Rules مع تعديل وتعطيل وحذف وحالات تحميل/فراغ/خطأ
+- [x] بناء واجهة frontend مكتملة لإدارة Kitchen Sections وPrinter Routing Rules مع تعديل وتعطيل وحذف وحالات تحميل/فراغ/خطأ؛ أضيفت أزرار التعديل والتفعيل/التعطيل والحذف وحفظ الأولوية داخل الصفحة
 - [x] ربط menuItems وmenuCategories بقسم المطبخ من واجهة المنيو وتطبيق أولوية قواعد التوجيه على عناصر الطلب؛ تبقى نماذج التعديل المتقدمة في دفعة polish لاحقة
 - [x] تقسيم order items فعلياً حسب kitchenSectionId/category/menuItem وربط مخرجات الأقسام بشاشة KDS عبر kitchenTickets وKitchenTicketBoard؛ تبقى أولوية قواعد التوجيه والطباعة الإنتاجية مفتوحة
 - [x] تنفيذ ticket routing والطباعة الفعلية عبر طباعة المتصفح مع أولوية قاعدة الصنف ثم التصنيف ثم القسم، وحالات عدم وجود التذكرة/النوافذ المنبثقة؛ موصلات الطابعات الشبكية وUSB الإنتاجية خارج النطاق
@@ -526,7 +526,7 @@
 
 ## Kitchen milestone notes
 - [x] إضافة جداول kitchenSections وprinterRoutingRules وربط menuItems بقسم اختياري وتطبيق migration 0036
-- [x] إضافة إجراءات backend محمية: list/create/updateKitchenSection وlist/createPrinterRoutingRule
+- [x] إضافة إجراءات backend محمية: list/create/update/deleteKitchenSection وlist/create/update/deletePrinterRoutingRule مع تحقق tenant
 - [x] إضافة لوحة إعدادات RTL أولية داخل KDS لإنشاء الأقسام وربط نوع الطابعة وإضافة قواعد التوجيه
 - [ ] لا تعتبر لوحة الإعدادات الحالية طباعة إنتاجية أو تقسيم طلب مكتملًا حتى تنجز البنود أعلاه
 

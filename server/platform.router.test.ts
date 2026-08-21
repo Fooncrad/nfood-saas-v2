@@ -26,9 +26,13 @@ describe("platform procedures", () => {
     expect(section).toEqual(expect.objectContaining({ id: created.id, restaurantId: restaurant.id, name, printerType: "browser" }));
     const rule = await admin.platform.createPrinterRoutingRule({ restaurantId: restaurant.id, kitchenSectionId: created.id, categoryId: null, menuItemId: null, priority: 2 });
     expect(rule).toEqual(expect.objectContaining({ success: true, id: expect.any(Number) }));
+    await admin.platform.updatePrinterRoutingRule({ restaurantId: restaurant.id, id: rule.id, priority: 9, isEnabled: false });
+    const updatedRule = (await db.select().from(printerRoutingRules).where(eq(printerRoutingRules.id, rule.id)).limit(1))[0];
+    expect(updatedRule).toEqual(expect.objectContaining({ priority: 9, isEnabled: false }));
     const otherRestaurantId = restaurant.id + 999999;
     await expect(admin.platform.listKitchenSections({ restaurantId: otherRestaurantId })).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await db.delete(printerRoutingRules).where(eq(printerRoutingRules.id, rule.id));
+    await expect(admin.platform.updatePrinterRoutingRule({ restaurantId: otherRestaurantId, id: rule.id, priority: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await admin.platform.deletePrinterRoutingRule({ restaurantId: restaurant.id, id: rule.id });
     await db.delete(kitchenSections).where(eq(kitchenSections.id, created.id));
   });
   it("protects kitchen ticket reads by restaurant and role", async () => {
