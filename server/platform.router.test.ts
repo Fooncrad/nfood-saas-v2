@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { getDb, getLoyaltyTier } from "./db";
-import { branches, menuCategories, menuItems, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings } from "../drizzle/schema";
+import { branches, menuCategories, menuItems, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, driverApplications } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
@@ -20,6 +20,16 @@ describe("platform procedures", () => {
     expect(["ok", "error", "unavailable"]).toContain(adminHealth.database);
     expect(adminHealth.api).toBe("ok");
     await expect(appRouter.createCaller(context("user", "waiter")).admin.systemHealth()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("persists a driver application as pending review with vehicle documents", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const result = await db.insert(driverApplications).values({ fullName: "سائق اختبار", email: `driver-${Date.now()}@nfood.local`, phone: "0500000000", city: "الرياض", vehicleType: "car", identityDocumentUrl: "/manus-storage/identity-test", licenseDocumentUrl: "/manus-storage/license-test", vehicleFrontUrl: "/manus-storage/front-test", vehicleBackUrl: "/manus-storage/back-test", status: "pending_review" });
+    const id = Number(result[0].insertId);
+    const row = (await db.select().from(driverApplications).where(eq(driverApplications.id, id)).limit(1))[0];
+    expect(row).toEqual(expect.objectContaining({ id, city: "الرياض", vehicleType: "car", status: "pending_review", identityDocumentUrl: "/manus-storage/identity-test" }));
+    await db.delete(driverApplications).where(eq(driverApplications.id, id));
   });
 
   it("derives loyalty tiers from balance and supports automatic demotion", () => {
