@@ -190,10 +190,20 @@ export const appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: orders.restaurantId }).from(orders).where(eq(orders.id, input.orderId)).limit(1);
+      const existing = await db.select({ restaurantId: orders.restaurantId, customerId: orders.customerId, paymentStatus: orders.paymentStatus }).from(orders).where(eq(orders.id, input.orderId)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError({ code: "FORBIDDEN", message: "الطلب غير مرتبط بالمطعم" });
       await db.update(orders).set({ status: input.status }).where(eq(orders.id, input.orderId));
-      return { success: true, orderId: input.orderId, status: input.status };
+      let referralRewarded = false;
+      if (input.status === "completed" && existing[0].paymentStatus === "paid" && existing[0].customerId) {
+        const pendingReferral = (await db.select({ id: referralRecords.id, referrerCustomerId: referralRecords.referrerCustomerId, referredCustomerId: referralRecords.referredCustomerId }).from(referralRecords).where(and(eq(referralRecords.restaurantId, input.restaurantId), eq(referralRecords.referredCustomerId, existing[0].customerId), eq(referralRecords.status, "pending"))).orderBy(referralRecords.createdAt).limit(1))[0];
+        if (pendingReferral) {
+          await addLoyaltyPoints(input.restaurantId, pendingReferral.referrerCustomerId, 100, "earn", "مكافأة إحالة بعد أول طلب مؤهل", input.orderId);
+          if (pendingReferral.referredCustomerId) await addLoyaltyPoints(input.restaurantId, pendingReferral.referredCustomerId, 50, "earn", "مكافأة انضمام عبر إحالة", input.orderId);
+          await db.update(referralRecords).set({ status: "rewarded", qualifyingOrderId: input.orderId, qualifiedAt: new Date() }).where(eq(referralRecords.id, pendingReferral.id));
+          referralRewarded = true;
+        }
+      }
+      return { success: true, orderId: input.orderId, status: input.status, referralRewarded };
     }),
   }),
   notifications: router({
