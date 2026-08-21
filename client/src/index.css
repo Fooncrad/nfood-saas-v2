@@ -175,3 +175,55 @@
     }
   }
 }
+
+
+/* NFOOD X visual system — premium Arabic SaaS surface */
+@layer base {
+  html { font-family: "Cairo", ui-sans-serif, system-ui, sans-serif; }
+  body {
+    background:
+      radial-gradient(circle at 8% 0%, oklch(0.98 0.035 58 / 0.75), transparent 28rem),
+      radial-gradient(circle at 100% 18%, oklch(0.96 0.025 250 / 0.7), transparent 32rem),
+      linear-gradient(135deg, oklch(0.985 0.008 250), oklch(0.965 0.012 80));
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  [data-slot="card"] {
+    border-color: oklch(0.91 0.012 75 / 0.75);
+    box-shadow: 0 12px 34px -22px oklch(0.22 0.035 65 / 0.35), 0 2px 8px -5px oklch(0.22 0.035 65 / 0.18);
+    transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 180ms cubic-bezier(0.23, 1, 0.32, 1), border-color 180ms ease;
+  }
+  [data-slot="card"]:hover {
+    border-color: oklch(0.82 0.08 55 / 0.55);
+    box-shadow: 0 20px 42px -24px oklch(0.24 0.06 55 / 0.35), 0 4px 12px -7px oklch(0.24 0.06 55 / 0.16);
+  }
+  input, textarea, select {
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  }
+  input:focus, textarea:focus, select:focus {
+    box-shadow: 0 0 0 4px oklch(0.82 0.12 55 / 0.12);
+  }
+}
+
+@layer utilities {
+  .nfood-glass {
+    background: oklch(1 0 0 / 0.72);
+    border: 1px solid oklch(1 0 0 / 0.7);
+    box-shadow: 0 18px 50px -30px oklch(0.25 0.04 60 / 0.4);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+  .nfood-gradient-text {
+    background: linear-gradient(110deg, #c2410c, #f97316 48%, #0f766e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .nfood-enter {
+    animation: nfood-enter 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+  @keyframes nfood-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .nfood-enter { animation: none; } [data-slot="card"] { transition: none; } }
+}
