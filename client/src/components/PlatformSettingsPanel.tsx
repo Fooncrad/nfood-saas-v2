@@ -2,39 +2,43 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
-type SettingKey = "supportEmail" | "supportPhone" | "defaultCurrency" | "defaultTimezone" | "baseDomain" | "maintenanceMode" | "allowGuestCheckout";
+type SettingKey = "supportEmail" | "supportPhone" | "defaultCurrency" | "defaultTimezone" | "baseDomain" | "maintenanceMode" | "allowGuestCheckout" | "siteLanguage" | "availableLanguages" | "country" | "siteName" | "copyrightYear" | "currencyDisplayMode" | "numberFormat" | "pricingLayout" | "analyticsId" | "facebookPixelId" | "siteDescription" | "subscriptionTaxRate" | "taxNumber" | "companyDetails";
 type Settings = Record<SettingKey, string>;
 
-const fields: Array<{ key: SettingKey; label: string; placeholder: string }> = [
-  { key: "supportEmail", label: "بريد دعم المنصة", placeholder: "support@example.com" },
-  { key: "supportPhone", label: "هاتف دعم المنصة", placeholder: "+966..." },
-  { key: "defaultCurrency", label: "العملة الافتراضية", placeholder: "SAR" },
-  { key: "defaultTimezone", label: "المنطقة الزمنية", placeholder: "Asia/Riyadh" },
-  { key: "baseDomain", label: "النطاق الأساسي للمنصة", placeholder: "https://nfood.io" },
-];
+const defaultSettings: Settings = { supportEmail: "", supportPhone: "", defaultCurrency: "SAR", defaultTimezone: "Asia/Riyadh", baseDomain: "", maintenanceMode: "false", allowGuestCheckout: "true", siteLanguage: "ar", availableLanguages: "ar,en", country: "Saudi Arabia", siteName: "NFOOD Restaurant SaaS", copyrightYear: String(new Date().getFullYear()), currencyDisplayMode: "symbol", numberFormat: "1,000.00", pricingLayout: "style-1", analyticsId: "", facebookPixelId: "", siteDescription: "", subscriptionTaxRate: "0", taxNumber: "", companyDetails: "" };
+
+function Field({ label, value, onChange, placeholder, dir }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; dir?: "rtl" | "ltr" }) {
+  return <label className="space-y-2 text-xs font-semibold text-slate-600">{label}<Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="mt-1 rounded-xl" dir={dir} /></label>;
+}
 
 export function PlatformSettingsPanel() {
   const settingsQuery = trpc.platform.platformSettings.useQuery(undefined, { retry: false });
-  const updateSetting = trpc.platform.updatePlatformSetting.useMutation({
-    onSuccess: async () => { await settingsQuery.refetch(); toast.success("تم حفظ إعداد المنصة"); },
-    onError: (error) => toast.error(`تعذر حفظ الإعداد: ${error.message}`),
-  });
-  const [draft, setDraft] = useState<Settings>({ supportEmail: "", supportPhone: "", defaultCurrency: "SAR", defaultTimezone: "Asia/Riyadh", baseDomain: "", maintenanceMode: "false", allowGuestCheckout: "true" });
-  useEffect(() => { if (settingsQuery.data) setDraft(settingsQuery.data); }, [settingsQuery.data]);
-  const save = (key: SettingKey) => {
-    const value = key === "baseDomain" ? draft[key].trim().replace(/\/+$/, "") : draft[key];
-    if (key === "baseDomain" && value && !/^https?:\/\/[^\s/]+(?::\d+)?(?:\/[^\s]*)?$/.test(value)) { toast.error("اكتب النطاق بصيغة https://nfood.io"); return; }
-    updateSetting.mutate({ key, value });
+  const updateSettings = trpc.platform.updatePlatformSettings.useMutation({ onSuccess: async (result) => { await settingsQuery.refetch(); toast.success(`تم حفظ ${result.count} إعدادات دفعة واحدة`); }, onError: (error) => toast.error(`تعذر حفظ إعدادات المنصة: ${error.message}`) });
+  const [draft, setDraft] = useState<Settings>(defaultSettings);
+  useEffect(() => { if (settingsQuery.data) setDraft({ ...defaultSettings, ...settingsQuery.data }); }, [settingsQuery.data]);
+  const set = (key: SettingKey, value: string) => setDraft((current) => ({ ...current, [key]: value }));
+  const saveAll = () => {
+    const values = { ...draft, baseDomain: draft.baseDomain.trim().replace(/\/+$/, ""), availableLanguages: draft.availableLanguages.split(",").map((item) => item.trim()).filter(Boolean).join(","), subscriptionTaxRate: draft.subscriptionTaxRate.trim() || "0" };
+    if (values.baseDomain && !/^https?:\/\/[^\s/]+(?::\d+)?(?:\/[^\s]*)?$/.test(values.baseDomain)) { toast.error("اكتب نطاق المنصة بصيغة https://nfood.io"); return; }
+    const tax = Number(values.subscriptionTaxRate); if (!Number.isFinite(tax) || tax < 0 || tax > 100) { toast.error("نسبة الضريبة يجب أن تكون بين 0 و100"); return; }
+    updateSettings.mutate({ values });
   };
-  return <Card className="mt-5 rounded-2xl border-orange-100 bg-white shadow-sm" dir="rtl">
-    <CardHeader><CardTitle className="text-base">إعدادات المنصة المركزية</CardTitle><p className="text-xs text-slate-500">تُدار من Super Admin وتؤثر على الإعدادات الافتراضية دون كشف أسرار المزودات. عند ضبط النطاق ستُبنى روابط المطاعم العامة عليه.</p></CardHeader>
-    <CardContent className="space-y-5">
-      {settingsQuery.isError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">تعذر تحميل إعدادات المنصة. Request ID: platform-settings <button className="mr-2 font-bold underline" onClick={() => void settingsQuery.refetch()}>إعادة المحاولة</button></div> : null}
-      <div className="grid gap-3 md:grid-cols-2">{fields.map((field) => <div key={field.key} className="flex items-end gap-2"><label className="flex-1 text-xs font-semibold text-slate-600">{field.label}<Input value={draft[field.key]} onChange={(event) => setDraft((current) => ({ ...current, [field.key]: event.target.value }))} placeholder={field.placeholder} className="mt-2 rounded-xl" /></label><Button type="button" onClick={() => save(field.key)} disabled={updateSetting.isPending} className="rounded-xl bg-[#e76f3c] text-xs hover:bg-[#d85f2e]">حفظ</Button></div>)}</div>
-      <div className="grid gap-3 md:grid-cols-2"><div className="flex items-center justify-between rounded-xl bg-slate-50 p-4"><div><p className="text-sm font-bold">وضع الصيانة</p><p className="mt-1 text-xs text-slate-500">يُحفظ كإعداد مركزي ويحتاج ربط middleware قبل تفعيله إنتاجيًا.</p></div><Button type="button" variant="outline" onClick={() => { const value = draft.maintenanceMode === "true" ? "false" : "true"; setDraft((current) => ({ ...current, maintenanceMode: value })); updateSetting.mutate({ key: "maintenanceMode", value }); }} className="rounded-xl text-xs">{draft.maintenanceMode === "true" ? "مفعل" : "متوقف"}</Button></div><div className="flex items-center justify-between rounded-xl bg-slate-50 p-4"><div><p className="text-sm font-bold">الحجز العام</p><p className="mt-1 text-xs text-slate-500">إعداد افتراضي للمنصة؛ تحكم المطعم النهائي من ملف المطعم.</p></div><Button type="button" variant="outline" onClick={() => { const value = draft.allowGuestCheckout === "true" ? "false" : "true"; setDraft((current) => ({ ...current, allowGuestCheckout: value })); updateSetting.mutate({ key: "allowGuestCheckout", value }); }} className="rounded-xl text-xs">{draft.allowGuestCheckout === "true" ? "مسموح" : "موقوف"}</Button></div></div>
+  const section = (title: string, description: string, children: React.ReactNode) => <section className="rounded-2xl border border-slate-200 bg-white p-5"><div className="mb-4"><h3 className="text-sm font-bold text-slate-900">{title}</h3><p className="mt-1 text-xs leading-6 text-slate-500">{description}</p></div><div className="grid gap-4 md:grid-cols-2">{children}</div></section>;
+  return <Card className="mt-5 rounded-2xl border-orange-100 bg-slate-50 shadow-sm" dir="rtl">
+    <CardHeader><CardTitle className="text-base">إعدادات المنصة والموقع</CardTitle><p className="text-xs leading-6 text-slate-500">عدّل الحقول الفعلية ثم اضغط زر الحفظ الواحد. نطاق المطعم المنفصل يُدار من بوابة المطعم ويحتاج Custom Domain ضمن الباقة.</p></CardHeader>
+    <CardContent className="space-y-4">
+      {settingsQuery.isError && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">تعذر تحميل الإعدادات. Request ID: platform-settings <button className="mr-2 font-bold underline" onClick={() => void settingsQuery.refetch()}>إعادة المحاولة</button></div>}
+      {section("الإعدادات العامة", "اللغة والدولة والهوية العامة للموقع.", <><Field label="لغة الموقع" value={draft.siteLanguage} onChange={(value) => set("siteLanguage", value)} placeholder="ar" dir="ltr" /><Field label="اللغات المتاحة (مفصولة بفواصل)" value={draft.availableLanguages} onChange={(value) => set("availableLanguages", value)} placeholder="ar,en" dir="ltr" /><Field label="الدولة" value={draft.country} onChange={(value) => set("country", value)} placeholder="Saudi Arabia" /><Field label="اسم الموقع" value={draft.siteName} onChange={(value) => set("siteName", value)} placeholder="NFOOD Restaurant SaaS" /><Field label="سنة حقوق النشر" value={draft.copyrightYear} onChange={(value) => set("copyrightYear", value)} placeholder="2026" dir="ltr" /><Field label="نطاق المنصة واللوحة" value={draft.baseDomain} onChange={(value) => set("baseDomain", value)} placeholder="https://nfood.io" dir="ltr" /></>)}
+      {section("التفضيلات المالية والتسعير", "قيم افتراضية للمنصة؛ إعدادات المطعم النهائية تبقى داخل بوابة المطعم.", <><Field label="العملة الافتراضية" value={draft.defaultCurrency} onChange={(value) => set("defaultCurrency", value)} placeholder="SAR" dir="ltr" /><Field label="المنطقة الزمنية" value={draft.defaultTimezone} onChange={(value) => set("defaultTimezone", value)} placeholder="Asia/Riyadh" dir="ltr" /><Field label="وضع عرض العملة" value={draft.currencyDisplayMode} onChange={(value) => set("currencyDisplayMode", value)} placeholder="symbol" dir="ltr" /><Field label="تنسيق الأرقام" value={draft.numberFormat} onChange={(value) => set("numberFormat", value)} placeholder="1,000.00" dir="ltr" /><Field label="تخطيط التسعير" value={draft.pricingLayout} onChange={(value) => set("pricingLayout", value)} placeholder="style-1" dir="ltr" /></>)}
+      {section("معلومات الشركة والاشتراكات", "بيانات تعريفية وضريبية محفوظة في إعدادات المنصة ولا تحتوي أسرار مزودات.", <><Field label="نسبة ضريبة الاشتراك (%)" value={draft.subscriptionTaxRate} onChange={(value) => set("subscriptionTaxRate", value)} placeholder="15" dir="ltr" /><Field label="الرقم الضريبي" value={draft.taxNumber} onChange={(value) => set("taxNumber", value)} placeholder="رقم التسجيل الضريبي" dir="ltr" /><label className="space-y-2 text-xs font-semibold text-slate-600 md:col-span-2">تفاصيل الشركة / المنظمة<Textarea value={draft.companyDetails} onChange={(event) => set("companyDetails", event.target.value)} className="mt-1 min-h-24 rounded-xl" placeholder="العنوان والبيانات القانونية" /></label></>)}
+      {section("دعم المنصة ووصف الموقع", "بيانات عامة يمكن عرضها في قنوات الدعم والصفحة التعريفية.", <><Field label="بريد دعم المنصة" value={draft.supportEmail} onChange={(value) => set("supportEmail", value)} placeholder="support@example.com" dir="ltr" /><Field label="هاتف دعم المنصة" value={draft.supportPhone} onChange={(value) => set("supportPhone", value)} placeholder="+966..." dir="ltr" /><label className="space-y-2 text-xs font-semibold text-slate-600 md:col-span-2">الوصف العام<Textarea value={draft.siteDescription} onChange={(event) => set("siteDescription", event.target.value)} className="mt-1 min-h-24 rounded-xl" placeholder="وصف المنصة" /></label></>)}
+      {section("حالة المنصة", "تُحفظ مركزيًا؛ وضع الصيانة يحتاج middleware منفصلًا قبل تفعيله إنتاجيًا.", <><label className="flex items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={draft.maintenanceMode === "true"} onChange={(event) => set("maintenanceMode", event.target.checked ? "true" : "false")} className="h-4 w-4 accent-orange-500" /> وضع الصيانة</label><label className="flex items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={draft.allowGuestCheckout === "true"} onChange={(event) => set("allowGuestCheckout", event.target.checked ? "true" : "false")} className="h-4 w-4 accent-orange-500" /> السماح بالـ Guest Checkout</label></>)}
+      <section className="rounded-2xl border border-dashed border-slate-300 bg-slate-100 p-5"><h3 className="text-sm font-bold text-slate-800">تكاملات غير مفعلة</h3><p className="mt-1 text-xs leading-6 text-slate-500">الدفع الإلكتروني، إعدادات البريد SMTP، Recaptcha، Facebook Pixel، SEO المتقدم، الصفحة المقصودة، المواقع الاجتماعية وWebhooks تحتاج مزودات أو أسرارًا ولم تُحفظ كحقول وهمية.</p><div className="mt-3 flex flex-wrap gap-2">{["الدفع الإلكتروني", "SMTP", "Recaptcha", "Facebook Pixel", "SEO", "Landing Page", "Webhooks"].map((label) => <span key={label} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">{label} · غير مفعّل</span>)}</div></section>
+      <Button type="button" onClick={saveAll} disabled={updateSettings.isPending || settingsQuery.isLoading} className="w-full rounded-xl bg-[#e76f3c] py-6 text-base font-bold hover:bg-[#d85f2e]">{updateSettings.isPending ? "جارٍ حفظ الإعدادات..." : "حفظ جميع الإعدادات"}</Button>
     </CardContent>
   </Card>;
 }
