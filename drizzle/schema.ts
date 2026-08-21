@@ -306,7 +306,7 @@ export const testAccounts = mysqlTable("testAccounts", {
   id: int("id").autoincrement().primaryKey(),
   email: varchar("email", { length: 320 }).notNull().unique(),
   displayName: varchar("displayName", { length: 120 }).notNull(),
-  role: mysqlEnum("role", ["restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"]).notNull(),
+  role: mysqlEnum("role", ["admin", "restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"]).notNull(),
   passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

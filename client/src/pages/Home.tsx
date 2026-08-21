@@ -54,7 +54,7 @@ function money(value: number) { return `${value.toLocaleString("ar-SA")} ر.س`;
 
 export default function Home() {
   const { user, loading, logout } = useAuth();
-  const [testEmail, setTestEmail] = useState("nfood@ret.com");
+  const [testEmail, setTestEmail] = useState("fooncards@gmail.com");
   const [testPassword, setTestPassword] = useState("");
   const testLogin = trpc.auth.testLogin.useMutation({ onSuccess: () => { toast.success("تم تسجيل الدخول لحساب الاختبار"); window.location.reload(); }, onError: (error) => toast.error(error.message || "بيانات الدخول غير صحيحة") });
   const [active, setActive] = useState<NavKey>("overview");

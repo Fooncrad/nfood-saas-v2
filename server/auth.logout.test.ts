@@ -42,6 +42,15 @@ function createAuthContext(): { ctx: TrpcContext; clearedCookies: CookieCall[] }
 }
 
 describe("auth.logout", () => {
+  it("logs the central admin test account with the admin role", async () => {
+    const ctx = {
+      user: null,
+      req: { protocol: "https", headers: {}, get: () => undefined, ip: "127.0.0.1" },
+      res: { cookie: () => undefined, clearCookie: () => undefined },
+    } as unknown as TrpcContext;
+    const result = await appRouter.createCaller(ctx).auth.testLogin({ email: "fooncards@gmail.com", password: "123456" });
+    expect(result).toEqual(expect.objectContaining({ success: true, role: "admin" }));
+  });
   it("clears the session cookie and reports success", async () => {
     const { ctx, clearedCookies } = createAuthContext();
     const caller = appRouter.createCaller(ctx);

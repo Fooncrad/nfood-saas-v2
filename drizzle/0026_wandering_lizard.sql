@@ -1,0 +1,1 @@
+ALTER TABLE `testAccounts` MODIFY COLUMN `role` enum('admin','restaurant_admin','waiter','kitchen','cashier','customer','driver') NOT NULL;
