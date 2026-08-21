@@ -31,6 +31,7 @@ import { CreateRestaurantDialog } from "@/components/CreateRestaurantDialog";
 import { LoyaltyPanel } from "@/components/LoyaltyPanel";
 import { ReviewsPanel } from "@/components/ReviewsPanel";
 import { DriverDeliveryView } from "@/components/DriverDeliveryView";
+import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";
 import { KitchenPrinterSettings } from "@/components/KitchenPrinterSettings";
 import { KitchenTicketBoard } from "@/components/KitchenTicketBoard";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -246,7 +247,7 @@ function ModuleView({ active, orders, advanceOrder, setActive, restaurantId, ord
   if (active === "team") return <TeamView restaurantId={restaurantId} />;
   if (active === "marketing") return <MarketingView restaurantId={restaurantId} />;
   if (active === "reservations") return <ReservationsView restaurantId={restaurantId} />;
-  if (active === "admin") return <SuperAdminView />;
+  if (active === "admin") return <SuperAdminRestaurantCatalog />;
   if (active === "accounts") return <AccountManagementPanel />;
   if (active === "files") return <MediaLibraryPanel isCentralAdmin={role === "admin"} restaurantId={restaurantId} />;
   if (active === "branches") return <BranchesView restaurantId={restaurantId} />;

@@ -13,6 +13,9 @@ import { validateRestaurantDraft } from "@/lib/restaurantValidation";
 
 type CreateRestaurantInput = { name: string; slug: string; plan: string };
 
+const orderTypes = ["داخل المطعم", "استلام", "توصيل", "حجز", "طلب واتساب", "طلب مسبق"];
+const pages = ["الصفحة الترحيبية", "المنيو", "الباقات", "التخصصات", "QR Code", "جهات الاتصال"];
+
 type CreateRestaurantDialogProps = {
   open: boolean;
   pending?: boolean;
@@ -22,9 +25,15 @@ type CreateRestaurantDialogProps = {
 
 export function CreateRestaurantDialog({ open, pending = false, onClose, onSubmit }: CreateRestaurantDialogProps) {
   const [draft, setDraft] = useState<CreateRestaurantInput>({ name: "", slug: "", plan: "Growth" });
+  const [selectedOrderTypes, setSelectedOrderTypes] = useState<string[]>(["داخل المطعم", "استلام"]);
+  const [selectedPages, setSelectedPages] = useState<string[]>(["الصفحة الترحيبية", "المنيو", "QR Code"]);
 
   useEffect(() => {
-    if (!open) setDraft({ name: "", slug: "", plan: "Growth" });
+    if (!open) {
+      setDraft({ name: "", slug: "", plan: "Growth" });
+      setSelectedOrderTypes(["داخل المطعم", "استلام"]);
+      setSelectedPages(["الصفحة الترحيبية", "المنيو", "QR Code"]);
+    }
   }, [open]);
 
   const validationMessage = validateRestaurantDraft(draft);
@@ -52,6 +61,11 @@ export function CreateRestaurantDialog({ open, pending = false, onClose, onSubmi
               <option value="Enterprise">Enterprise</option>
             </select>
           </label>
+          <div className="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:grid-cols-2">
+            <div><p className="mb-2 text-xs font-black text-slate-700">أنواع الطلبات</p><div className="grid grid-cols-2 gap-2">{orderTypes.map((item) => <label key={item} className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-2.5 py-2 text-[11px] text-slate-600"><input type="checkbox" checked={selectedOrderTypes.includes(item)} onChange={(event) => setSelectedOrderTypes((current) => event.target.checked ? [...current, item] : current.filter((value) => value !== item))} className="accent-[#e76f3c]" />{item}</label>)}</div></div>
+            <div><p className="mb-2 text-xs font-black text-slate-700">صفحات النشاط</p><div className="grid grid-cols-2 gap-2">{pages.map((item) => <label key={item} className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-2.5 py-2 text-[11px] text-slate-600"><input type="checkbox" checked={selectedPages.includes(item)} onChange={(event) => setSelectedPages((current) => event.target.checked ? [...current, item] : current.filter((value) => value !== item))} className="accent-[#e76f3c]" />{item}</label>)}</div></div>
+          </div>
+          <p className="rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 text-[11px] leading-5 text-sky-800">تُحفظ هذه الاختيارات كإعدادات واجهة أولية، بينما تبقى مفاتيح الدفع والرسائل والتكاملات الخارجية غير مفعّلة حتى إدخال مفاتيحها من مركز البوابات.</p>
           {validationMessage && <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">{validationMessage}</p>}
         </div>
         <DialogFooter className="mt-2 flex-col-reverse sm:flex-row sm:justify-start">
