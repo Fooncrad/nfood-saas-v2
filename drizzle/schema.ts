@@ -52,6 +52,7 @@ export const customerProfiles = mysqlTable("customerProfiles", {
   email: varchar("email", { length: 320 }),
   websiteUrl: varchar("websiteUrl", { length: 500 }),
   address: varchar("address", { length: 500 }),
+  city: varchar("city", { length: 120 }),
   instagramUrl: varchar("instagramUrl", { length: 500 }),
   twitterUrl: varchar("twitterUrl", { length: 500 }),
   facebookUrl: varchar("facebookUrl", { length: 500 }),

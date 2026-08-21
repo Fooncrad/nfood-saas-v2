@@ -1,0 +1,1 @@
+ALTER TABLE `customerProfiles` ADD `city` varchar(120);
