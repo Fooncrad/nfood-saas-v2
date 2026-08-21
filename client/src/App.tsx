@@ -24,9 +24,11 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/restaurant/:slug" component={RestaurantPublic} />
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
+      <Route path="/restaurant/:slug" component={RestaurantPublic} />
+      <Route path="/menu/:slug" component={RestaurantPublic} />
       <Route path="/customer/:slug" component={CustomerPublic} />
+      <Route path="/vcard/:slug" component={CustomerPublic} />
       <Route path="/customer-profile" component={() => <CustomerProfileSettings />} />
       <Route path="/integrations" component={IntegrationsSettings} />
       <Route path="/customer-portal" component={CustomerPortal} />

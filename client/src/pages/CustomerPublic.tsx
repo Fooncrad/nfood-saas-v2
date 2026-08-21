@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link, useRoute } from "wouter";
+import { Link, useParams } from "wouter";
 import Barcode from "react-barcode";
 import { ArrowLeft, BriefcaseBusiness, Copy, ExternalLink, Globe2, Mail, MapPin, MessageCircle, Phone, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,8 @@ import { toast } from "sonner";
 function safeExternal(url?: string | null) { return url && /^https?:\/\//i.test(url) ? url : undefined; }
 
 export default function CustomerPublic() {
-  const [, params] = useRoute("/customer/:slug");
+  const { slug = "" } = useParams<{ slug: string }>();
   const { direction } = useLanguage();
-  const slug = params?.slug ?? "";
   const profile = trpc.platform.publicCustomerProfile.useQuery({ slug }, { enabled: Boolean(slug), retry: false });
   const data = profile.data;
   const publicUrl = useMemo(() => window.location.href, [slug]);
