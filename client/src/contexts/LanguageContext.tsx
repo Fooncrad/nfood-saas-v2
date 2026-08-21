@@ -34,6 +34,15 @@ export const legacyUiTranslations: Record<Exclude<Language, "ar">, Record<string
 
 const legacyNodeSources = new WeakMap<Text, string>();
 let legacyTranslationInProgress = false;
+let legacyTranslationScheduled = false;
+function scheduleLegacyUiTranslations(language: Language) {
+  if (legacyTranslationScheduled || typeof window === "undefined") return;
+  legacyTranslationScheduled = true;
+  window.requestAnimationFrame(() => {
+    legacyTranslationScheduled = false;
+    applyLegacyUiTranslations(language);
+  });
+}
 function applyLegacyUiTranslations(language: Language) {
   if (typeof document === "undefined" || legacyTranslationInProgress) return;
   legacyTranslationInProgress = true;
@@ -82,9 +91,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.body.dataset.language = language;
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
     applyLegacyUiTranslations(language);
-    const observer = new MutationObserver(() => applyLegacyUiTranslations(language));
-    observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["placeholder", "aria-label", "title"] });
-    const refresh = window.setTimeout(() => applyLegacyUiTranslations(language), 120);
+    const observer = new MutationObserver(() => scheduleLegacyUiTranslations(language));
+    observer.observe(document.body, { subtree: true, childList: true });
+    const refresh = window.setTimeout(() => scheduleLegacyUiTranslations(language), 120);
     return () => { window.clearTimeout(refresh); observer.disconnect(); };
   }, [language, meta.dir]);
   const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, setLanguage: setLanguageState, t: (key) => translations[language][key], formatDate: (input) => new Intl.DateTimeFormat(meta.locale, { dateStyle: "medium" }).format(new Date(input)), formatNumber: (input) => new Intl.NumberFormat(meta.locale).format(input) }), [language, meta.dir, meta.locale]);
