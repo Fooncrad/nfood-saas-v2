@@ -581,3 +581,5 @@
 - [x] إضافة اختبارات وحدة لطابور POS المحلي للـJSON التالف، العزل restaurant/branch، الإضافة offlineId، وتقليص الطابور بعد المزامنة؛ offlineQueue.test.ts وReservationsView.test.ts ناجحان
 
 - [x] تحويل إدارة أدوار المطعم من window.prompt/window.confirm إلى محرر RTL داخلي للإنشاء والتعديل وتأكيد حذف قابل للإلغاء مع بقاء setPermissions وCRUD محميين
+
+- [x] تحويل إدارة العملاء في Super Admin من window.prompt/window.confirm إلى محرر RTL داخلي للإنشاء والتعديل وتأكيد حذف قابل للإلغاء مع بقاء CRUD المركزي محميًا
