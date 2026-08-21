@@ -31,8 +31,8 @@ describe("language configuration", () => {
       const frenchValue = legacyUiTranslations.fr[key];
       expect(frenchValue, `Missing French translation for: ${key}`).toBeDefined();
       expect(frenchValue?.trim()).not.toBe("");
-      expect(arabicPattern.test(value)).toBe(false);
-      expect(arabicPattern.test(frenchValue ?? "")).toBe(false);
+      expect(arabicPattern.test(value), `Arabic characters remain in English for: ${key} => ${value}`).toBe(false);
+      expect(arabicPattern.test(frenchValue ?? ""), `Arabic characters remain in French for: ${key} => ${frenchValue}`).toBe(false);
     }
   });
 
