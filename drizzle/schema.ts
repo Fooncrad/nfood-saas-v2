@@ -31,6 +31,9 @@ export const users = mysqlTable("users", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
   birthDate: timestamp("birthDate"),
+  emailVerified: boolean("emailVerified").default(false).notNull(),
+  emailVerificationToken: varchar("emailVerificationToken", { length: 128 }),
+  emailVerificationExpiresAt: timestamp("emailVerificationExpiresAt"),
 });
 
 export const restaurants = mysqlTable("restaurants", {
@@ -50,6 +53,8 @@ export const restaurants = mysqlTable("restaurants", {
   privacyPolicy: text("privacyPolicy"),
   refundPolicy: text("refundPolicy"),
   phone: varchar("phone", { length: 40 }),
+  country: varchar("country", { length: 120 }),
+  city: varchar("city", { length: 120 }),
   whatsapp: varchar("whatsapp", { length: 40 }),
   instagramUrl: varchar("instagramUrl", { length: 500 }),
   facebookUrl: varchar("facebookUrl", { length: 500 }),
