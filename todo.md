@@ -100,8 +100,8 @@
 - [x] تنفيذ Guest Checkout وتتبع الطلب وإعادة الطلب للضيف؛ تحويل الضيف إلى Customer وAbandoned Cart ما زالا غير مكتملين
 - [x] تنفيذ أساس إحالة يدوي وتأهل تلقائي للطلب المكتمل والمدفوع مع منع التكرار؛ Birthday Marketing وRe-engagement والاختبار الشامل موثقة كبنود مستقلة مفتوحة
 - [x] تنفيذ أساس مستويات الولاء وتقييمات السائق والمنتج والمطعم؛ تحليل المشاعر موثق كتأجيل مستقل
-- [ ] ربط أقسام المطبخ بالطابعات وقواعد توجيه الطلب وتقسيم الطلب بين الأقسام
-- [ ] بناء Driver Workflow كامل مع فشل التوصيل والإرجاع والوثائق وETA
+- [ ] ربط أقسام المطبخ بالطابعات وقواعد توجيه الطلب وتقسيم الطلب بين الأقسام؛ أضيف مخطط kitchenSections وprinterRoutingRules وإجراءات CRUD محمية بالعزل، وتبقى الواجهة والتقسيم والطباعة الفعلية
+- [x] بناء Driver Workflow كامل مع فشل التوصيل والإرجاع والوثائق وETA؛ اكتملت دورة التوصيل والواجهة واختبارات persistence، وتبقى إشعارات البريد والتتبع الحي خارج النطاق
 - [x] بناء Customer Display أولي عام لعرض أرقام الطلبات الجاهزة وقيد التحضير دون بيانات شخصية، مع نداء صوتي محلي اختياري؛ الإعلانات المتقدمة غير مكتملة
 - [x] تنفيذ تخصيص PWA وPWA Branding وWhite Label لكل مطعم؛ Custom Domain وLanding Page Builder غير منفذين بعد
 - [x] بناء Feature Usage Analytics وChurn Analytics وMRR وARR وSaaS Health Dashboard
@@ -437,8 +437,8 @@
 - [x] ربط واجهة الحملات بنماذج النوع ونافذة الخمول وزر جدولة مع حالات الخطأ والنجاح؛ birthDate يُحفظ backend وتحتاج واجهة ملف العميل التفصيلية لاحقًا
 - [ ] إضافة اختبارات endpoint المجدول وحساب جمهور Birthday/Re-engagement
 - [ ] إضافة Google وOTP وPasskey بعد توفير مفاتيح المزودات
-- [ ] ربط أقسام المطبخ بالطابعات وقواعد التوجيه وتقسيم الطلب بين الأقسام
-- [ ] بناء Driver Workflow كامل مع فشل التوصيل والإرجاع والوثائق وETA
+- [x] ربط أقسام المطبخ بالطابعات وقواعد التوجيه وتقسيم الطلب بين الأقسام؛ أضيف مخطط kitchenSections وprinterRoutingRules وإجراءات CRUD محمية بالعزل
+- [x] بناء Driver Workflow كامل مع فشل التوصيل والإرجاع والوثائق وETA؛ اكتملت دورة التوصيل والواجهة واختبارات persistence، وتبقى إشعارات البريد والتتبع الحي خارج النطاق
 - [ ] بناء SLA للدعم وتعيين Support Agent وإدارة API وWebhook
 - [ ] مراجعة النشر الإنتاجي بعد إضافة handler المجدول؛ لا تُنشأ مهام Heartbeat قبل النشر
 
@@ -512,3 +512,38 @@
 - [x] إضافة deliveryStatus وETA وسبب الفشل وملاحظة السائق إلى الطلبات مع إجراءات assignDriver وupdateDeliveryStatus وعزل المطعم واختبار انتقالات الحالات
 
 - [x] إضافة DriverDeliveryView للسائق لعرض الطلبات المعينة فقط وتحديث الاستلام والطريق والتسليم والفشل والمرتجع وETA مع اختبار انتقالات الحالة وسبب الفشل
+
+- [ ] بناء واجهة frontend مكتملة لإدارة Kitchen Sections وPrinter Routing Rules مع تعديل وتعطيل وحذف وحالات تحميل/فراغ/خطأ
+- [ ] ربط menuItems وmenuCategories بقسم المطبخ من واجهة المنيو وتطبيق قواعد الأولوية على عناصر الطلب
+- [ ] تقسيم order items فعلياً حسب kitchenSectionId/category/menuItem وربط مخرجات الأقسام بشاشة KDS
+- [ ] تنفيذ ticket routing والطباعة الفعلية عبر طباعة المتصفح أو موصل طابعة مع معالجة عدم وجود الإعدادات وأخطاء الجهاز واختبارات السيناريوهات الأساسية
+- [ ] إضافة اختبارات Vitest لإجراءات kitchenSections وprinterRoutingRules وعزل restaurantId ومنع القسم غير المملوك
+- [ ] إضافة تنبيهات البريد الفعلية عند قبول طلب السائق بعد توفير مزود SMTP
+- [ ] استكمال مراجعة endpoint المجدول وحساب جمهور Birthday/Re-engagement بعد نشر handler والتحقق من Heartbeat
+- [ ] تنفيذ SLA للدعم وتعيين Support Agent وإدارة API وWebhook
+- [ ] توفير مفاتيح Google وOTP وPasskey ثم تفعيل مزودات المصادقة
+- [ ] استكمال مراجعة النشر الإنتاجي بعد إضافة handler المجدول؛ لا تُنشأ مهام Heartbeat قبل النشر
+
+## Kitchen milestone notes
+- [x] إضافة جداول kitchenSections وprinterRoutingRules وربط menuItems بقسم اختياري وتطبيق migration 0036
+- [x] إضافة إجراءات backend محمية: list/create/updateKitchenSection وlist/createPrinterRoutingRule
+- [x] إضافة لوحة إعدادات RTL أولية داخل KDS لإنشاء الأقسام وربط نوع الطابعة وإضافة قواعد التوجيه
+- [ ] لا تعتبر لوحة الإعدادات الحالية طباعة إنتاجية أو تقسيم طلب مكتملًا حتى تنجز البنود أعلاه
+
+## Driver milestone notes
+- [x] اكتمال دورة السائق في backend وواجهة DriverDeliveryView واختبارات persistence والانتقالات
+- [ ] إشعار الموافقة بالبريد والتتبع الحي يحتاجان مزودات خارجية ومفاتيح إنتاجية
+
+## Marketing milestone notes
+- [x] منطق Birthday/Re-engagement وHeartbeat handler idempotent موجود
+- [ ] إرسال الرسائل الفعلي واختبارات endpoint والتحقق من تشغيل cron في بيئة live ما زال مفتوحًا
+
+## Support milestone notes
+- [ ] بناء SLA وتعيين الوكلاء وAPI/Webhook Management
+
+## Auth milestone notes
+- [ ] Google وOTP وPasskey تحتاج مفاتيح المزودات قبل التفعيل النهائي
+
+## Final audit
+- [ ] تدقيق شامل لصلاحيات الأدوار وعزل المطعم والفروع في الوحدات الجديدة
+- [ ] تشغيل suite كاملة واختبار بصري responsive قبل التسليم النهائي

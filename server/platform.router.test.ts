@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { getDb, getLoyaltyTier } from "./db";
-import { branches, menuCategories, menuItems, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, driverApplications } from "../drizzle/schema";
+import { branches, menuCategories, menuItems, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, driverApplications, kitchenSections, printerRoutingRules } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
@@ -14,6 +14,23 @@ function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" 
 }
 
 describe("platform procedures", () => {
+  it("persists kitchen sections and isolates printer routing by restaurant", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).limit(1))[0];
+    if (!restaurant) return;
+    const name = `قسم اختبار ${Date.now()}`;
+    const admin = appRouter.createCaller({ ...context("user", "restaurant_admin"), user: { ...context("user", "restaurant_admin").user, restaurantId: restaurant.id } });
+    const created = await admin.platform.createKitchenSection({ restaurantId: restaurant.id, name, printerType: "browser" });
+    const section = (await db.select().from(kitchenSections).where(eq(kitchenSections.id, created.id)).limit(1))[0];
+    expect(section).toEqual(expect.objectContaining({ id: created.id, restaurantId: restaurant.id, name, printerType: "browser" }));
+    const rule = await admin.platform.createPrinterRoutingRule({ restaurantId: restaurant.id, kitchenSectionId: created.id, categoryId: null, menuItemId: null, priority: 2 });
+    expect(rule).toEqual(expect.objectContaining({ success: true, id: expect.any(Number) }));
+    const otherRestaurantId = restaurant.id + 999999;
+    await expect(admin.platform.listKitchenSections({ restaurantId: otherRestaurantId })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await db.delete(printerRoutingRules).where(eq(printerRoutingRules.id, rule.id));
+    await db.delete(kitchenSections).where(eq(kitchenSections.id, created.id));
+  });
   it("exposes system health only to central admin", async () => {
     const adminHealth = await appRouter.createCaller(context("admin")).admin.systemHealth();
     expect(["healthy", "degraded"]).toContain(adminHealth.status);

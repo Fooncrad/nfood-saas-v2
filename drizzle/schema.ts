@@ -87,11 +87,33 @@ export const menuItems = mysqlTable("menuItems", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").references(() => restaurants.id),
   categoryId: int("categoryId").notNull(),
+  kitchenSectionId: int("kitchenSectionId"),
   name: varchar("name", { length: 160 }).notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   imageUrl: text("imageUrl"),
   isAvailable: boolean("isAvailable").default(true).notNull(),
+});
+
+export const kitchenSections = mysqlTable("kitchenSections", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  name: varchar("name", { length: 120 }).notNull(),
+  printerName: varchar("printerName", { length: 160 }),
+  printerType: mysqlEnum("printerType", ["network", "usb", "browser", "none"]).default("none").notNull(),
+  printerAddress: varchar("printerAddress", { length: 255 }),
+  isEnabled: boolean("isEnabled").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const printerRoutingRules = mysqlTable("printerRoutingRules", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  kitchenSectionId: int("kitchenSectionId").notNull().references(() => kitchenSections.id),
+  categoryId: int("categoryId"),
+  menuItemId: int("menuItemId"),
+  priority: int("priority").default(0).notNull(),
+  isEnabled: boolean("isEnabled").default(true).notNull(),
 });
 
 export const orders = mysqlTable("orders", {
