@@ -32,6 +32,22 @@ describe("platform procedures", () => {
     await db.delete(driverApplications).where(eq(driverApplications.id, id));
   });
 
+  it("enforces driver delivery transitions and failure reasons", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).limit(1))[0];
+    if (!restaurant) return;
+    const branch = (await db.select({ id: branches.id }).from(branches).where(eq(branches.restaurantId, restaurant.id)).limit(1))[0];
+    if (!branch) return;
+    const result = await db.insert(orders).values({ restaurantId: restaurant.id, branchId: branch.id, channel: "delivery", paymentMethod: "cash", paymentStatus: "unpaid", driverId: 7, total: "25.00", deliveryStatus: "assigned" });
+    const orderId = Number(result[0].insertId);
+    const driver = appRouter.createCaller({ ...context("user", "driver"), user: { ...context("user", "driver").user, restaurantId: restaurant.id } });
+    await expect(driver.platform.updateDeliveryStatus({ restaurantId: restaurant.id, orderId, status: "out_for_delivery", etaMinutes: 15 })).resolves.toMatchObject({ deliveryStatus: "out_for_delivery" });
+    await expect(driver.platform.updateDeliveryStatus({ restaurantId: restaurant.id, orderId, status: "failed" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(driver.platform.updateDeliveryStatus({ restaurantId: restaurant.id, orderId, status: "failed", failureReason: "عنوان غير صحيح" })).resolves.toMatchObject({ deliveryStatus: "failed" });
+    await db.delete(orders).where(eq(orders.id, orderId));
+  });
+
   it("derives loyalty tiers from balance and supports automatic demotion", () => {
     expect(getLoyaltyTier(0)).toBe("standard");
     expect(getLoyaltyTier(499)).toBe("standard");
