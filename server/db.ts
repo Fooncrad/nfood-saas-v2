@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs, platformSettings, loyaltyAccounts, loyaltyTransactions, referralRecords } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, referralRecords } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -24,6 +24,18 @@ export function getLoyaltyTier(points: number): LoyaltyTier {
   return safePoints >= 1000 ? "gold" : safePoints >= 500 ? "silver" : "standard";
 }
 export type PlatformSettingKey = typeof PLATFORM_SETTING_KEYS[number];
+
+export async function listIntegrationSettings(scope: "platform" | "restaurant", restaurantId?: number) {
+  const db = await getDb(); if (!db) return [];
+  const filters = scope === "platform" ? eq(integrationSettings.scope, "platform") : and(eq(integrationSettings.scope, "restaurant"), restaurantId ? eq(integrationSettings.restaurantId, restaurantId) : eq(integrationSettings.restaurantId, 0));
+  return db.select().from(integrationSettings).where(filters).orderBy(integrationSettings.category, integrationSettings.providerKey);
+}
+export async function upsertIntegrationSetting(input: { scope: "platform" | "restaurant"; restaurantId?: number; providerKey: string; category: string; status: "not_configured" | "configured" | "disabled"; keyReference?: string | null; updatedByUserId: number }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const existing = await db.select({ id: integrationSettings.id }).from(integrationSettings).where(and(eq(integrationSettings.scope, input.scope), eq(integrationSettings.providerKey, input.providerKey), input.scope === "restaurant" ? eq(integrationSettings.restaurantId, input.restaurantId ?? 0) : eq(integrationSettings.scope, "platform"))).limit(1);
+  if (existing[0]) { await db.update(integrationSettings).set({ category: input.category, status: input.status, keyReference: input.keyReference ?? null, updatedByUserId: input.updatedByUserId, updatedAt: new Date() }).where(eq(integrationSettings.id, existing[0].id)); return existing[0].id; }
+  const result = await db.insert(integrationSettings).values({ scope: input.scope, restaurantId: input.restaurantId ?? null, providerKey: input.providerKey, category: input.category, status: input.status, keyReference: input.keyReference ?? null, updatedByUserId: input.updatedByUserId }); return Number(result[0].insertId);
+}
 
 export async function getPlatformSettings() {
   const db = await getDb();

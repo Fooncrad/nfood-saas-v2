@@ -8,6 +8,18 @@ export const platformSettings = mysqlTable("platformSettings", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const integrationSettings = mysqlTable("integrationSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  scope: mysqlEnum("scope", ["platform", "restaurant"]).notNull(),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  providerKey: varchar("providerKey", { length: 120 }).notNull(),
+  category: varchar("category", { length: 80 }).notNull(),
+  status: mysqlEnum("status", ["not_configured", "configured", "disabled"]).default("not_configured").notNull(),
+  keyReference: varchar("keyReference", { length: 180 }),
+  updatedByUserId: int("updatedByUserId"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
