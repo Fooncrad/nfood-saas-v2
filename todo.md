@@ -592,3 +592,4 @@
 - [x] تحويل ربط العامل وطلب الانضمام وإلغاء الارتباط في RemoteWorkView من prompt/confirm إلى نماذج RTL داخلية
 - [x] إزالة جميع window.prompt/window.confirm من Home.tsx والمسارات التشغيلية المعدلة؛ نجحت suite كاملة: 19 ملفًا و130 اختبارًا
 - [x] إضافة helper لحساب جمهور Birthday/Re-engagement مع اختبارات التاريخ والعزل المنطقي قبل الإرسال
+- [x] إضافة إجراء campaignAudiencePreview يعيد عدد جمهور الحملة فقط مع عزل المطعم وحالة providerReady الآمنة
