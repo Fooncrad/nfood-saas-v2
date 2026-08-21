@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { getDb, getLoyaltyTier } from "./db";
-import { branches, menuCategories, menuItems, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users } from "../drizzle/schema";
+import { branches, menuCategories, menuItems, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
@@ -404,5 +404,24 @@ describe("platform procedures", () => {
     await expect(kitchen.platform.createReservation({ restaurantId: 1, kind: "reservation", customerName: "عميل اختبار", partySize: 2, reservedFor: new Date("2026-08-21T18:00:00.000Z") })).rejects.toMatchObject({ code: "FORBIDDEN" });
     const waiter = appRouter.createCaller(context("user", "waiter"));
     await expect(waiter.platform.reservations({ restaurantId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+  it("saves each platform gateway independently and keeps secrets out of persistence", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const admin = appRouter.createCaller(context("admin"));
+    const suffix = `${Date.now()}`;
+    const moyasar = `Moyasar-${suffix}`;
+    const tamara = `Tamara-${suffix}`;
+    try {
+      await expect(admin.platform.upsertIntegrationSetting({ scope: "platform", providerKey: moyasar, category: "الدفع", status: "configured", keyReference: "MOYASAR_API_KEY_PROD" })).resolves.toMatchObject({ success: true, secretStored: false });
+      await expect(admin.platform.upsertIntegrationSetting({ scope: "platform", providerKey: tamara, category: "الدفع", status: "configured", keyReference: "TAMARA_API_KEY_PROD" })).resolves.toMatchObject({ success: true, secretStored: false });
+      const rows = await db.select({ providerKey: integrationSettings.providerKey, category: integrationSettings.category, keyReference: integrationSettings.keyReference }).from(integrationSettings).where(eq(integrationSettings.scope, "platform"));
+      expect(rows).toEqual(expect.arrayContaining([{ providerKey: moyasar, category: "الدفع", keyReference: "MOYASAR_API_KEY_PROD" }, { providerKey: tamara, category: "الدفع", keyReference: "TAMARA_API_KEY_PROD" }]));
+      const waiter = appRouter.createCaller(context("user", "waiter"));
+      await expect(waiter.platform.upsertIntegrationSetting({ scope: "platform", providerKey: `Blocked-${suffix}`, category: "الدفع", status: "configured", keyReference: "NO" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    } finally {
+      await db.delete(integrationSettings).where(eq(integrationSettings.providerKey, moyasar));
+      await db.delete(integrationSettings).where(eq(integrationSettings.providerKey, tamara));
+    }
   });
 });
