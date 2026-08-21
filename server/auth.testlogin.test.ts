@@ -18,6 +18,20 @@ describe("auth.testLogin", () => {
     expect(result).not.toHaveProperty("password");
   });
 
+  it.each([
+    ["admin", "admin"],
+    ["restaurant", "restaurant_admin"],
+    ["waiter", "waiter"],
+    ["kitchen", "kitchen"],
+    ["cashier", "cashier"],
+    ["customer", "customer"],
+    ["driver", "driver"],
+  ] as const)("accepts the username alias %s", async (username, role) => {
+    const caller = appRouter.createCaller(loginContext());
+    const result = await caller.auth.testLogin({ email: username, password: "123456" });
+    expect(result).toMatchObject({ success: true, role });
+  });
+
   it("rejects an invalid password", async () => {
     const caller = appRouter.createCaller(loginContext());
     await expect(caller.auth.testLogin({ email: "nfood@ret.com", password: "wrong-password" })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
