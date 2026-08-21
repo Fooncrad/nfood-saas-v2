@@ -199,10 +199,12 @@ export const appRouter = router({
       if (input.status === "completed" && existing[0].paymentStatus === "paid" && existing[0].customerId) {
         const pendingReferral = (await db.select({ id: referralRecords.id, referrerCustomerId: referralRecords.referrerCustomerId, referredCustomerId: referralRecords.referredCustomerId }).from(referralRecords).where(and(eq(referralRecords.restaurantId, input.restaurantId), eq(referralRecords.referredCustomerId, existing[0].customerId), eq(referralRecords.status, "pending"))).orderBy(referralRecords.createdAt).limit(1))[0];
         if (pendingReferral) {
-          await addLoyaltyPoints(input.restaurantId, pendingReferral.referrerCustomerId, 100, "earn", "مكافأة إحالة بعد أول طلب مؤهل", input.orderId);
-          if (pendingReferral.referredCustomerId) await addLoyaltyPoints(input.restaurantId, pendingReferral.referredCustomerId, 50, "earn", "مكافأة انضمام عبر إحالة", input.orderId);
-          await db.update(referralRecords).set({ status: "rewarded", qualifyingOrderId: input.orderId, qualifiedAt: new Date() }).where(eq(referralRecords.id, pendingReferral.id));
-          referralRewarded = true;
+          const rewardUpdate = await db.update(referralRecords).set({ status: "rewarded", qualifyingOrderId: input.orderId, qualifiedAt: new Date() }).where(and(eq(referralRecords.id, pendingReferral.id), eq(referralRecords.status, "pending")));
+          if (Number(rewardUpdate[0]?.affectedRows ?? 0) > 0) {
+            await addLoyaltyPoints(input.restaurantId, pendingReferral.referrerCustomerId, 100, "earn", "مكافأة إحالة بعد أول طلب مؤهل", input.orderId);
+            if (pendingReferral.referredCustomerId) await addLoyaltyPoints(input.restaurantId, pendingReferral.referredCustomerId, 50, "earn", "مكافأة انضمام عبر إحالة", input.orderId);
+            referralRewarded = true;
+          }
         }
       }
       return { success: true, orderId: input.orderId, status: input.status, referralRewarded };
