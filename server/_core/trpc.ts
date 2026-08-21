@@ -37,11 +37,21 @@ export const testRoleProcedure = (...roles: string[]) => protectedProcedure.use(
   }),
 );
 
+export const platformAdminProcedure = t.procedure.use(
+  t.middleware(async opts => {
+    const { ctx, next } = opts;
+    if (!ctx.user || (ctx.user.role !== "admin" && ctx.user.testRole !== "admin")) {
+      throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
+    }
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  }),
+);
+
 export const adminProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
 
-    if (!ctx.user || (ctx.user.role !== 'admin' && ctx.user.testRole !== 'restaurant_admin')) {
+    if (!ctx.user || (ctx.user.role !== "admin" && ctx.user.testRole !== "admin" && ctx.user.testRole !== "restaurant_admin")) {
       throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
     }
 

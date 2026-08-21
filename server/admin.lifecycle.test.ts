@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { nanoid } from "nanoid";
 
 function adminContext(): TrpcContext {
   return {
@@ -10,6 +11,14 @@ function adminContext(): TrpcContext {
   };
 }
 
+function testRoleContext(testRole: "admin" | "restaurant_admin"): TrpcContext {
+  return {
+    user: { id: 8, openId: `test-${testRole}`, name: testRole, email: `${testRole}@nfood.local`, loginMethod: "test", role: "user", testRole, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: { clearCookie: () => undefined } as TrpcContext["res"],
+  } as TrpcContext;
+}
+
 describe("admin lifecycle guards", () => {
   it("rejects soft-delete for a missing restaurant without writing", async () => {
     await expect(appRouter.createCaller(adminContext()).admin.deleteRestaurant({ id: 999999999 })).rejects.toMatchObject({ code: "NOT_FOUND" });
@@ -17,5 +26,16 @@ describe("admin lifecycle guards", () => {
 
   it("rejects cancellation for a missing subscription without writing", async () => {
     await expect(appRouter.createCaller(adminContext()).admin.cancelSubscription({ id: 999999999 })).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("allows the central test admin to create a restaurant", async () => {
+    const caller = appRouter.createCaller(testRoleContext("admin"));
+    const created = await caller.admin.createRestaurant({ name: "اختبار صلاحية NFOOD", slug: `permission-test-${nanoid(8).toLowerCase()}`, plan: "Growth" });
+    expect(created).toEqual(expect.objectContaining({ success: true, barcode: expect.stringMatching(/^NFOOD-/) }));
+    await caller.admin.deleteRestaurant({ id: created.id });
+  });
+
+  it("rejects restaurant managers from creating a new restaurant", async () => {
+    await expect(appRouter.createCaller(testRoleContext("restaurant_admin")).admin.createRestaurant({ name: "غير مسموح", slug: `blocked-${nanoid(8).toLowerCase()}`, plan: "Growth" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });

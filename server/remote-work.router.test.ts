@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter, assertRemoteTaskTransition, getTaskNotificationRecipient } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import { getDb } from "./db";
-import { remoteTasks, remoteWorkerApplications, remoteWorkers, restaurants, users } from "../drizzle/schema";
+import { notifications, remoteTasks, remoteWorkerApplications, remoteWorkers, restaurants, users } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 function context(testRole?: "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "driver"): TrpcContext {
@@ -67,7 +67,7 @@ describe("remote work procedures", () => {
     const actor = (await db.select({ id: users.id }).from(users).limit(1))[0];
     if (!restaurant || !actor) return;
     const base = context("restaurant_admin");
-    const caller = appRouter.createCaller({ ...base, user: { ...base.user!, id: actor.id } });
+    const caller = appRouter.createCaller({ ...base, user: { ...base.user!, id: actor.id, role: "admin" } });
       const created = await caller.remote.createTask({ restaurantId: restaurant.id, type: "support", title: "اختبار انتقال", amount: "10.00", currency: "SAR", paymentMethod: "manual" });
       expect(created.paymentStatus).toBe("unpaid");
       const persisted = (await db.select({ paymentMethod: remoteTasks.paymentMethod, paymentStatus: remoteTasks.paymentStatus }).from(remoteTasks).where(eq(remoteTasks.id, created.id)).limit(1))[0];
@@ -78,6 +78,7 @@ describe("remote work procedures", () => {
       await expect(caller.remote.updateTaskStatus({ taskId: created.id, status: "completed" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
       await expect(caller.remote.updateTaskStatus({ taskId: created.id, status: "cancelled" })).resolves.toMatchObject({ success: true, status: "cancelled" });
     } finally {
+      await db.delete(notifications).where(eq(notifications.taskId, created.id));
       await db.delete(remoteTasks).where(eq(remoteTasks.id, created.id));
     }
   });
@@ -95,8 +96,9 @@ describe("remote work procedures", () => {
     let taskId: number | undefined;
     try {
       const applicantBase = context("waiter");
-      const applicant = appRouter.createCaller({ ...applicantBase, user: { ...applicantBase.user!, id: applicantId } });
-      const restaurantAdmin = appRouter.createCaller({ ...context("restaurant_admin"), user: { ...context("restaurant_admin").user!, id: applicantId } });
+      const applicant = appRouter.createCaller({ ...applicantBase, user: { ...applicantBase.user!, id: applicantId, restaurantId: restaurant.id } });
+      const restaurantAdminBase = context("restaurant_admin");
+      const restaurantAdmin = appRouter.createCaller({ ...restaurantAdminBase, user: { ...restaurantAdminBase.user!, id: applicantId, restaurantId: restaurant.id } });
       const submitted = await applicant.remote.applyAsRemoteWorker({ restaurantId: restaurant.id, role: "متابع طلبات", message: "أرغب بالانضمام" });
       applicationId = submitted.id;
       await expect(restaurantAdmin.remote.reviewWorkerApplication({ restaurantId: restaurant.id, applicationId, status: "approved" })).resolves.toMatchObject({ success: true, status: "approved" });
@@ -107,9 +109,11 @@ describe("remote work procedures", () => {
       taskId = task.id;
       await expect(applicant.remote.acceptTask({ taskId, workerId })).resolves.toMatchObject({ success: true, status: "accepted" });
     } finally {
+      if (taskId) await db.delete(notifications).where(eq(notifications.taskId, taskId));
       if (taskId) await db.delete(remoteTasks).where(eq(remoteTasks.id, taskId));
       if (applicationId) await db.delete(remoteWorkerApplications).where(eq(remoteWorkerApplications.id, applicationId));
       if (workerId) await db.delete(remoteWorkers).where(eq(remoteWorkers.id, workerId));
+      await db.delete(remoteWorkers).where(eq(remoteWorkers.userId, applicantId));
       await db.delete(users).where(eq(users.id, applicantId));
     }
   });
