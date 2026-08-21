@@ -590,3 +590,4 @@
 - [x] تحويل تعديل الكوبون في MarketingView إلى نموذج RTL الداخلي الموجود بدل window.prompt
 - [x] تحويل تعديل وتعليق المطاعم في Super Admin من window.prompt/window.confirm إلى محرر RTL داخلي وتأكيد قابل للإلغاء
 - [x] تحويل ربط العامل وطلب الانضمام وإلغاء الارتباط في RemoteWorkView من prompt/confirm إلى نماذج RTL داخلية
+- [x] إزالة جميع window.prompt/window.confirm من Home.tsx والمسارات التشغيلية المعدلة؛ نجحت suite كاملة: 19 ملفًا و130 اختبارًا
