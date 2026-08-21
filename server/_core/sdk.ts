@@ -279,7 +279,7 @@ class SDKServer {
     if (session.openId.startsWith("test_")) {
       const testAccount = await db.getTestAccountById(Number(session.openId.slice(5)));
       if (!testAccount) throw ForbiddenError("Test account not found");
-      return { id: -testAccount.id, openId: testAccount.email, name: testAccount.displayName, email: testAccount.email, loginMethod: "test", role: "user", testRole: testAccount.role, createdAt: testAccount.createdAt, updatedAt: testAccount.createdAt, lastSignedIn: new Date() } as AuthenticatedUser;
+      return { id: -testAccount.id, openId: testAccount.email, name: testAccount.displayName, email: testAccount.email, loginMethod: "test", role: "user", testRole: testAccount.role, restaurantId: testAccount.restaurantId ?? undefined, createdAt: testAccount.createdAt, updatedAt: testAccount.createdAt, lastSignedIn: new Date() } as AuthenticatedUser;
     }
 
     if (session.openId.startsWith(CRON_OPEN_ID_PREFIX)) {
@@ -330,7 +330,8 @@ const CRON_OPEN_ID_PREFIX = "cron_";
 
 /** Result of `sdk.authenticateRequest`. Cron callbacks set `isCron=true` and `taskUid`; see `/home/ubuntu/skills/webdev-periodic-updates/SKILL.md`. */
 export type AuthenticatedUser = User & {
-  testRole?: "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver";
+  testRole?: "admin" | "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver";
+  restaurantId?: number;
   taskUid?: string;
   isCron?: boolean;
 };

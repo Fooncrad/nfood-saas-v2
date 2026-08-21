@@ -306,6 +306,7 @@ export const reservations = mysqlTable("reservations", {
 });
 export const testAccounts = mysqlTable("testAccounts", {
   id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
   email: varchar("email", { length: 320 }).notNull().unique(),
   displayName: varchar("displayName", { length: 120 }).notNull(),
   role: mysqlEnum("role", ["admin", "restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"]).notNull(),

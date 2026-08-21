@@ -1,9 +1,10 @@
 export type DashboardNavKey = "overview" | "admin" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "reservations" | "remote" | "security" | "health";
 
-export type DashboardRole = "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver";
+export type DashboardRole = "admin" | "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver";
 export type DashboardAction = "orders.create" | "orders.status.update" | "inventory.manage" | "marketing.manage" | "reservations.create";
 
 export const roleActions: Record<DashboardRole, DashboardAction[]> = {
+  admin: [],
   restaurant_admin: ["orders.create", "orders.status.update", "inventory.manage", "marketing.manage", "reservations.create"],
   waiter: ["orders.create", "reservations.create"],
   kitchen: ["orders.status.update"],
@@ -13,6 +14,7 @@ export const roleActions: Record<DashboardRole, DashboardAction[]> = {
 };
 
 export const roleNavigation: Record<DashboardRole, DashboardNavKey[]> = {
+  admin: ["overview", "admin", "security", "health"],
   restaurant_admin: ["overview", "admin", "branches", "orders", "pos", "kds", "menu", "tables", "inventory", "team", "marketing", "reservations", "remote", "security", "health"],
   waiter: ["overview", "orders", "tables", "reservations", "remote", "security"],
   kitchen: ["overview", "kds", "orders", "security"],
