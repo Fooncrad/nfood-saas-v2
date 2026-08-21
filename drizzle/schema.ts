@@ -158,6 +158,19 @@ export const menuItems = mysqlTable("menuItems", {
   isAvailable: boolean("isAvailable").default(true).notNull(),
 });
 
+export const menuItemAddons = mysqlTable("menuItemAddons", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  menuItemId: int("menuItemId").notNull().references(() => menuItems.id),
+  name: varchar("name", { length: 160 }).notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  stockQuantity: int("stockQuantity").default(0).notNull(),
+  isAvailable: boolean("isAvailable").default(true).notNull(),
+  imageUrl: text("imageUrl"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const kitchenSections = mysqlTable("kitchenSections", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),

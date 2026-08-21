@@ -1,0 +1,12 @@
+import fs from "node:fs";
+const path = "client/src/pages/Home.tsx";
+let source = fs.readFileSync(path, "utf8");
+source = source.replace('import { Button } from "@/components/ui/button";', 'import { Button } from "@/components/ui/button";\nimport { MenuAddonsPanel } from "@/components/MenuAddonsPanel";');
+source = source.replace('  const [category, setCategory] = useState("الكل");', '  const [category, setCategory] = useState("الكل");\n  const [menuSection, setMenuSection] = useState<"items" | "addons">("items");');
+const marker = '  return <div><div className="mb-6 flex items-center justify-between">';
+if (!source.includes(marker)) throw new Error("Menu return marker not found");
+source = source.replace(marker, '  return <div>{menuSection === "addons" ? <><div className="mb-5 flex items-center justify-between rounded-2xl border border-orange-100 bg-orange-50/60 p-2"><div className="px-3 text-xs font-bold text-orange-800">كتالوج المنيو</div><div className="flex gap-1"><Button variant="ghost" onClick={() => setMenuSection("items")} className="rounded-xl text-xs">الأصناف</Button><Button onClick={() => setMenuSection("addons")} className="rounded-xl bg-[#e76f3c] text-xs hover:bg-[#d85f2e]">إضافات الأصناف</Button></div></div><MenuAddonsPanel restaurantId={restaurantId} /></> : <><div className="mb-5 flex items-center justify-between rounded-2xl border border-slate-200 bg-white/75 p-2"><div className="px-3 text-xs font-bold text-slate-700">كتالوج المنيو</div><div className="flex gap-1"><Button onClick={() => setMenuSection("items")} className="rounded-xl bg-[#111c2e] text-xs">الأصناف</Button><Button variant="ghost" onClick={() => setMenuSection("addons")} className="rounded-xl text-xs">إضافات الأصناف</Button></div></div><SectionHeading title="إدارة المنيو"');
+const endMarker = '</div></div>;\n}\n\nfunction PosView';
+if (!source.includes(endMarker)) throw new Error("Menu closing marker not found");
+source = source.replace(endMarker, '</div></div></>;\n}\n\nfunction PosView');
+fs.writeFileSync(path, source);
