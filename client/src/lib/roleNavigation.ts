@@ -21,6 +21,12 @@ export const roleNavigation: Record<DashboardRole, DashboardNavKey[]> = {
   driver: ["overview", "orders", "remote", "security"],
 };
 
+export function getVisibleNavigation(role: DashboardRole | string | undefined, isCentralAdmin = false): DashboardNavKey[] {
+  if (isCentralAdmin || role === "admin") return ["overview", "admin", "security", "health"];
+  if (!role || !(role in roleNavigation)) return ["overview"];
+  return roleNavigation[role as DashboardRole];
+}
+
 export function isRoleNavigationAllowed(role: DashboardRole | undefined, key: DashboardNavKey): boolean {
   if (!role) return false;
   return roleNavigation[role].includes(key);

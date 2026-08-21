@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isRoleActionAllowed, isRoleNavigationAllowed, roleActions, roleNavigation } from "./roleNavigation";
+import { getVisibleNavigation, isRoleActionAllowed, isRoleNavigationAllowed, roleActions, roleNavigation } from "./roleNavigation";
 
 describe("role navigation matrix", () => {
   it("keeps every role scoped to an explicit navigation allow-list", () => {
@@ -20,6 +20,16 @@ describe("role navigation matrix", () => {
     expect(isRoleActionAllowed("kitchen", "orders.create")).toBe(false);
     expect(isRoleActionAllowed("customer", "orders.create")).toBe(false);
     expect(isRoleActionAllowed("driver", "orders.create")).toBe(false);
+  });
+
+  it("keeps operational modules out of the central admin context", () => {
+    const central = getVisibleNavigation("admin", true);
+    expect(central).toEqual(["overview", "admin", "security", "health"]);
+    expect(central).not.toContain("orders");
+    expect(central).not.toContain("pos");
+    expect(getVisibleNavigation("restaurant_admin")).toContain("orders");
+    expect(getVisibleNavigation("restaurant_admin")).toContain("pos");
+    expect(getVisibleNavigation("cashier")).toContain("pos");
   });
 
   it("denies unknown or missing roles by default", () => {
