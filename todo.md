@@ -471,3 +471,7 @@
 - [x] إخفاء Super Admin وصحة المنصة من تنقل restaurant_admin والشريط السفلي، مع إبقاء الفروع ووحدات المطعم الخاصة
 - [x] ضمان أن الملخص في بوابة المطعم يستخدم restaurantId وbranchId للفرع المفتوح، ويحسب الطاولات المشغولة من restaurantTables
 - [x] إضافة اختبارات regression لمصفوفة التنقل وملخص restaurant_admin branch-scoped ومنع وصوله إلى admin/health
+
+- [x] إصلاح ظهور قائمة الملف الشخصي عند الضغط على صورة المستخدم لجميع الأدوار، بما فيها الهاتف بعد إزالة hidden sm:block
+- [x] ضمان عمل تسجيل الخروج من القائمة ومسح جلسة الاختبار أو OAuth وإعادة التوجيه إلى شاشة الدخول عبر executeLogoutFlow
+- [x] إضافة اختبارات regression لـprofileActions وتسجيل الخروج وتبديل الحساب؛ فحص auth.logout نجح
