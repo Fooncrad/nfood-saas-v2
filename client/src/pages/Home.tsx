@@ -75,7 +75,14 @@ export default function Home() {
   const workspaceBranches = trpc.platform.branches.useQuery({ restaurantId: selectedRestaurantId }, { enabled: workspaceReady, retry: false });
   const brandingQuery = trpc.platform.branding.useQuery({ restaurantId: selectedRestaurantId }, { enabled: workspaceReady, retry: false });
   const [globalForbiddenAction, setGlobalForbiddenAction] = useState<string | null>(null);
-  useEffect(() => { if (globalSearchQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("global.search"); else if (roleSummaryQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("dashboard.summary"); }, [globalSearchQuery.error, roleSummaryQuery.error]);
+  useEffect(() => {
+    if (isCentralAdmin) {
+      setGlobalForbiddenAction(null);
+      return;
+    }
+    if (globalSearchQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("global.search");
+    else if (roleSummaryQuery.error?.data?.code === "FORBIDDEN") setGlobalForbiddenAction("dashboard.summary");
+  }, [globalSearchQuery.error, roleSummaryQuery.error, isCentralAdmin]);
   useEffect(() => { const onForbidden = (event: Event) => { const action = (event as CustomEvent<{ action?: string }>).detail?.action; setGlobalForbiddenAction(action || "protected.action"); }; window.addEventListener("nfood:forbidden", onForbidden); return () => window.removeEventListener("nfood:forbidden", onForbidden); }, []);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [pwaInstalled, setPwaInstalled] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(display-mode: standalone)").matches);
