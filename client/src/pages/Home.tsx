@@ -92,7 +92,7 @@ export default function Home() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [showCustomerProfile, setShowCustomerProfile] = useState(false);
   const [showVcardBinding, setShowVcardBinding] = useState(false);
-  const vcardFeatureQuery = trpc.platform.vcardFeature.useQuery();
+  const vcardFeatureQuery = trpc.platform.vcardFeature.useQuery(undefined, { enabled: Boolean(user), retry: false });
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);

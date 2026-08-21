@@ -18,6 +18,11 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
+  // The root route is the unified sign-in screen. Protected queries may briefly
+  // return 401 before the user chooses a role or while the session is restored;
+  // never replace that screen with an OAuth redirect automatically.
+  if (window.location.pathname === "/") return;
+
   startLogin();
 };
 
