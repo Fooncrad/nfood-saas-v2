@@ -8,7 +8,9 @@ describe("role dashboard profiles", () => {
       expect(dashboardProfiles[role].target).not.toBe("admin");
       expect(dashboardProfiles[role].secondary.some((item) => item.target === "admin")).toBe(false);
     }
-    expect(dashboardProfiles.restaurant_admin.target).toBe("admin");
+    expect(dashboardProfiles.admin.target).toBe("admin");
+    expect(dashboardProfiles.restaurant_admin.target).toBe("orders");
+    expect(dashboardProfiles.restaurant_admin.secondary.some((item) => item.target === "admin")).toBe(false);
   });
 
   it("defines a distinct profile for every operational role", () => {
