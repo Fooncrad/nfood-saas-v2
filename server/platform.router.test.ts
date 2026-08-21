@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
-import { getDb } from "./db";
+import { getDb, getLoyaltyTier } from "./db";
 import { branches, menuCategories, menuItems, orderItems, orders, reservations, restaurants } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
@@ -20,6 +20,16 @@ describe("platform procedures", () => {
     expect(["ok", "error", "unavailable"]).toContain(adminHealth.database);
     expect(adminHealth.api).toBe("ok");
     await expect(appRouter.createCaller(context("user", "waiter")).admin.systemHealth()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("derives loyalty tiers from balance and supports automatic demotion", () => {
+    expect(getLoyaltyTier(0)).toBe("standard");
+    expect(getLoyaltyTier(499)).toBe("standard");
+    expect(getLoyaltyTier(500)).toBe("silver");
+    expect(getLoyaltyTier(999)).toBe("silver");
+    expect(getLoyaltyTier(1000)).toBe("gold");
+    expect(getLoyaltyTier(700)).toBe("silver");
+    expect(getLoyaltyTier(-10)).toBe("standard");
   });
 
   it("protects loyalty and referral procedures by role and customer existence", async () => {

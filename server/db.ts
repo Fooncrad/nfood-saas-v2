@@ -13,6 +13,16 @@ export async function getDb() {
 }
 
 export const PLATFORM_SETTING_KEYS = ["supportEmail", "supportPhone", "defaultCurrency", "defaultTimezone", "maintenanceMode", "allowGuestCheckout"] as const;
+export const LOYALTY_TIERS = [
+  { key: "standard", label: "Standard", minPoints: 0 },
+  { key: "silver", label: "Silver", minPoints: 500 },
+  { key: "gold", label: "Gold", minPoints: 1000 },
+] as const;
+export type LoyaltyTier = typeof LOYALTY_TIERS[number]["key"];
+export function getLoyaltyTier(points: number): LoyaltyTier {
+  const safePoints = Math.max(0, points);
+  return safePoints >= 1000 ? "gold" : safePoints >= 500 ? "silver" : "standard";
+}
 export type PlatformSettingKey = typeof PLATFORM_SETTING_KEYS[number];
 
 export async function getPlatformSettings() {
@@ -55,7 +65,7 @@ export async function addLoyaltyPoints(restaurantId: number, customerId: number,
   if (!account) throw new Error("Loyalty account could not be created");
   const nextBalance = account.pointsBalance + points;
   if (nextBalance < 0) throw new Error("Loyalty points cannot be negative");
-  await db.update(loyaltyAccounts).set({ pointsBalance: nextBalance, tier: nextBalance >= 1000 ? "gold" : nextBalance >= 500 ? "silver" : "standard", updatedAt: new Date() }).where(eq(loyaltyAccounts.id, account.id));
+  await db.update(loyaltyAccounts).set({ pointsBalance: nextBalance, tier: getLoyaltyTier(nextBalance), updatedAt: new Date() }).where(eq(loyaltyAccounts.id, account.id));
   const result = await db.insert(loyaltyTransactions).values({ restaurantId, customerId, orderId: orderId ?? null, points, type, note: note ?? null });
   return { accountId: account.id, transactionId: Number(result[0].insertId), pointsBalance: nextBalance };
 }
