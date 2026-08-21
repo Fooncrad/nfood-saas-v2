@@ -91,6 +91,42 @@ export const restaurants = mysqlTable("restaurants", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const supportAgents = mysqlTable("supportAgents", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique().references(() => users.id),
+  isActive: boolean("isActive").default(true).notNull(),
+  skillsJson: text("skillsJson"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export const supportTickets = mysqlTable("supportTickets", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  requesterUserId: int("requesterUserId").notNull().references(() => users.id),
+  assignedAgentId: int("assignedAgentId").references(() => supportAgents.id),
+  subject: varchar("subject", { length: 240 }).notNull(),
+  description: text("description").notNull(),
+  priority: mysqlEnum("priority", ["low", "normal", "high", "urgent"]).default("normal").notNull(),
+  status: mysqlEnum("status", ["open", "in_progress", "pending", "resolved", "closed"]).default("open").notNull(),
+  firstResponseDueAt: timestamp("firstResponseDueAt"),
+  resolutionDueAt: timestamp("resolutionDueAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export const apiWebhooks = mysqlTable("apiWebhooks", {
+  id: int("id").autoincrement().primaryKey(),
+  scope: mysqlEnum("scope", ["platform", "restaurant"]).notNull(),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  name: varchar("name", { length: 160 }).notNull(),
+  endpointUrl: varchar("endpointUrl", { length: 500 }).notNull(),
+  secretHash: varchar("secretHash", { length: 180 }).notNull(),
+  eventsJson: text("eventsJson"),
+  status: mysqlEnum("status", ["active", "disabled"]).default("active").notNull(),
+  createdByUserId: int("createdByUserId").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const branches = mysqlTable("branches", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull(),

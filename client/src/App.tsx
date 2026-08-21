@@ -12,6 +12,7 @@ import CustomerPublic from "./pages/CustomerPublic";
 import CustomerProfileSettings from "./pages/CustomerProfileSettings";
 import IntegrationsSettings from "./pages/IntegrationsSettings";
 import CustomerPortal from "./pages/CustomerPortal";
+import SupportManagement from "./pages/SupportManagement";
 
 function AppContent() {
   const { direction } = useLanguage();
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/customer-profile" component={CustomerProfileSettings} />
       <Route path="/integrations" component={IntegrationsSettings} />
       <Route path="/customer-portal" component={CustomerPortal} />
+      <Route path="/support" component={SupportManagement} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
