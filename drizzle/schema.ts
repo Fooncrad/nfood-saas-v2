@@ -79,6 +79,7 @@ export const branches = mysqlTable("branches", {
 export const menuCategories = mysqlTable("menuCategories", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull(),
+  kitchenSectionId: int("kitchenSectionId"),
   name: varchar("name", { length: 120 }).notNull(),
   sortOrder: int("sortOrder").default(0).notNull(),
 });
