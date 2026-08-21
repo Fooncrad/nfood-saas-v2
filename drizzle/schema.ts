@@ -234,6 +234,7 @@ export const rolePermissions = mysqlTable("rolePermissions", {
 });
 
 export const employees = mysqlTable("employees", {
+  branchId: int("branchId").references(() => branches.id),
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull(),
   name: varchar("name", { length: 160 }).notNull(),

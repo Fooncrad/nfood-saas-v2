@@ -18,6 +18,11 @@ describe("NFOOD platform schema", () => {
     expect(restaurants.barcode.config.notNull).toBe(true);
   });
 
+  it("defines branch-scoped staff support for restaurant operations", () => {
+    expect(employees.branchId).toBeDefined();
+    expect(employees.role).toBeDefined();
+  });
+
   it("defines persisted branch operating hours", () => {
     expect(branches.openingTime).toBeDefined();
     expect(branches.closingTime).toBeDefined();

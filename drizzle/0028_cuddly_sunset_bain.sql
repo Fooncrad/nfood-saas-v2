@@ -1,0 +1,2 @@
+ALTER TABLE `employees` ADD `branchId` int;--> statement-breakpoint
+ALTER TABLE `employees` ADD CONSTRAINT `employees_branchId_branches_id_fk` FOREIGN KEY (`branchId`) REFERENCES `branches`(`id`) ON DELETE no action ON UPDATE no action;
