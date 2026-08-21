@@ -13,6 +13,7 @@ import CustomerProfileSettings from "./pages/CustomerProfileSettings";
 import IntegrationsSettings from "./pages/IntegrationsSettings";
 import CustomerPortal from "./pages/CustomerPortal";
 import SupportManagement from "./pages/SupportManagement";
+import VcardCardsAdmin from "./pages/VcardCardsAdmin";
 
 function AppContent() {
   const { direction } = useLanguage();
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/integrations" component={IntegrationsSettings} />
       <Route path="/customer-portal" component={CustomerPortal} />
       <Route path="/support" component={SupportManagement} />
+      <Route path="/vcard-cards" component={VcardCardsAdmin} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
