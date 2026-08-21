@@ -239,6 +239,13 @@
       "when": 1787284286482,
       "tag": "0033_aberrant_toxin",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1787284841543,
+      "tag": "0034_late_celestials",
+      "breakpoints": true
     }
   ]
 }

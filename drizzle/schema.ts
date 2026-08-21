@@ -267,6 +267,26 @@ export const employees = mysqlTable("employees", {
   status: mysqlEnum("status", ["active", "inactive"]).default("active").notNull(),
 });
 
+export const driverApplications = mysqlTable("driverApplications", {
+  id: int("id").autoincrement().primaryKey(),
+  applicantUserId: int("applicantUserId").references(() => users.id),
+  fullName: varchar("fullName", { length: 160 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 40 }).notNull(),
+  city: varchar("city", { length: 120 }).notNull(),
+  vehicleType: mysqlEnum("vehicleType", ["bicycle", "motorcycle", "car", "van", "other"]).notNull(),
+  identityDocumentUrl: varchar("identityDocumentUrl", { length: 500 }),
+  licenseDocumentUrl: varchar("licenseDocumentUrl", { length: 500 }),
+  vehicleFrontUrl: varchar("vehicleFrontUrl", { length: 500 }),
+  vehicleBackUrl: varchar("vehicleBackUrl", { length: 500 }),
+  vehicleLeftUrl: varchar("vehicleLeftUrl", { length: 500 }),
+  vehicleRightUrl: varchar("vehicleRightUrl", { length: 500 }),
+  status: mysqlEnum("status", ["pending_review", "approved", "rejected"]).default("pending_review").notNull(),
+  reviewNote: text("reviewNote"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const remoteWorkers = mysqlTable("remoteWorkers", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
