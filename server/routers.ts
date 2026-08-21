@@ -65,7 +65,8 @@ export const appRouter = router({
   platform: router({
     platformSettings: adminProcedure.query(async () => getPlatformSettings()),
     updatePlatformSetting: adminProcedure.input(z.object({ key: z.enum(PLATFORM_SETTING_KEYS), value: z.string().max(2000) })).mutation(async ({ ctx, input }) => { await setPlatformSetting(input.key, input.value, ctx.user.id); await insertAuditLog({ actorUserId: ctx.user.id, action: "platform.setting.updated", entityType: "platform_setting", entityId: String(input.key), metadata: JSON.stringify({ key: input.key }) }); return { ok: true, key: input.key }; }),
-    publicRestaurantPage: publicProcedure.input(z.object({ slug: z.string().min(2).max(160).regex(/^[a-z0-9-]+$/) })).query(async ({ input }) => { const page = await getPublicRestaurantPage(input.slug); if (!page) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير متاح" }); return page; }),
+    publicRestaurantPage: publicProcedure.input(z.object({ slug: z.string().min(2).max(160).regex(/^[a-z0-9-]+$/) })).query(async ({ input }) => { const page = await getPublicRestaurantPage(input.slug); if (!page) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير متاح" }); const { baseDomain } = await getPlatformSettings(); return { ...page, baseDomain }; }),
+    publicBaseDomain: publicProcedure.query(async () => ({ baseDomain: (await getPlatformSettings()).baseDomain })),
     customerDisplay: publicProcedure.input(z.object({ slug: z.string().min(2).max(160).regex(/^[a-z0-9-]+$/), branchId: z.number().int().positive().optional() })).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
