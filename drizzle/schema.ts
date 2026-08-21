@@ -30,6 +30,7 @@ export const users = mysqlTable("users", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  birthDate: timestamp("birthDate"),
 });
 
 export const restaurants = mysqlTable("restaurants", {
@@ -192,6 +193,9 @@ export const campaigns = mysqlTable("campaigns", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
   name: varchar("name", { length: 160 }).notNull(),
+  kind: mysqlEnum("kind", ["general", "birthday", "reengagement"]).default("general").notNull(),
+  reengagementDays: int("reengagementDays").default(30),
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
   status: mysqlEnum("status", ["draft", "scheduled", "active", "ended"]).default("draft").notNull(),
   startsAt: timestamp("startsAt"),
   endsAt: timestamp("endsAt"),
