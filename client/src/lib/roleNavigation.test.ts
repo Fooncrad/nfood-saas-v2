@@ -38,5 +38,7 @@ describe("role navigation matrix", () => {
     expect(isRoleNavigationAllowed(undefined, "orders")).toBe(false);
     expect(isRoleNavigationAllowed("waiter", "inventory")).toBe(false);
     expect(isRoleNavigationAllowed("customer", "marketing")).toBe(false);
+    expect(getVisibleNavigation("customer")).not.toContain("admin");
+    expect(getVisibleNavigation("customer")).not.toContain("health");
   });
 });
