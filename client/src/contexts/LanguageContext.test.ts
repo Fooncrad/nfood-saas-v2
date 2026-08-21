@@ -14,6 +14,16 @@ describe("language configuration", () => {
     expect(translations.fr.dashboard).toBe("Tableau de bord");
   });
 
+  it("keeps all translation keys aligned across the three languages", () => {
+    const arabicKeys = Object.keys(translations.ar).sort();
+    expect(Object.keys(translations.en).sort()).toEqual(arabicKeys);
+    expect(Object.keys(translations.fr).sort()).toEqual(arabicKeys);
+    for (const key of arabicKeys) {
+      expect(translations.en[key as keyof typeof translations.en]).not.toBe("");
+      expect(translations.fr[key as keyof typeof translations.fr]).not.toBe("");
+    }
+  });
+
   it("uses a stable storage key for persistence", () => {
     expect(LANGUAGE_STORAGE_KEY).toBe("nfood-language");
   });
