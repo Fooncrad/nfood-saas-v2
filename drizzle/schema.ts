@@ -24,6 +24,7 @@ export const restaurants = mysqlTable("restaurants", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 160 }).notNull(),
   slug: varchar("slug", { length: 160 }).notNull().unique(),
+  customDomain: varchar("customDomain", { length: 255 }).unique(),
   barcode: varchar("barcode", { length: 64 }).notNull().unique(),
   status: mysqlEnum("status", ["active", "trial", "suspended"]).default("trial").notNull(),
   plan: varchar("plan", { length: 64 }).default("Growth").notNull(),
