@@ -1,4 +1,4 @@
-export type DashboardNavKey = "overview" | "admin" | "accounts" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "reservations" | "remote" | "security" | "health";
+export type DashboardNavKey = "overview" | "admin" | "accounts" | "files" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "reservations" | "remote" | "security" | "health";
 
 export type DashboardRole = "admin" | "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver";
 export type DashboardAction = "orders.create" | "orders.status.update" | "inventory.manage" | "marketing.manage" | "reservations.create";
@@ -14,17 +14,17 @@ export const roleActions: Record<DashboardRole, DashboardAction[]> = {
 };
 
 export const roleNavigation: Record<DashboardRole, DashboardNavKey[]> = {
-  admin: ["overview", "admin", "accounts", "security", "health"],
-  restaurant_admin: ["overview", "branches", "orders", "pos", "kds", "menu", "tables", "inventory", "team", "marketing", "reservations", "remote", "security"],
-  waiter: ["overview", "orders", "tables", "reservations", "remote", "security"],
-  kitchen: ["overview", "kds", "orders", "security"],
-  cashier: ["overview", "pos", "orders", "tables", "security"],
-  customer: ["overview", "orders", "reservations", "security"],
-  driver: ["overview", "orders", "remote", "security"],
+  admin: ["overview", "admin", "accounts", "files", "security", "health"],
+  restaurant_admin: ["overview", "branches", "orders", "pos", "kds", "menu", "tables", "inventory", "team", "marketing", "reservations", "remote", "files", "security"],
+  waiter: ["overview", "orders", "tables", "reservations", "remote", "files", "security"],
+  kitchen: ["overview", "kds", "orders", "files", "security"],
+  cashier: ["overview", "pos", "orders", "tables", "files", "security"],
+  customer: ["overview", "orders", "reservations", "files", "security"],
+  driver: ["overview", "orders", "remote", "files", "security"],
 };
 
 export function getVisibleNavigation(role: DashboardRole | string | undefined, isCentralAdmin = false): DashboardNavKey[] {
-  if (isCentralAdmin || role === "admin") return ["overview", "admin", "accounts", "security", "health"];
+  if (isCentralAdmin || role === "admin") return ["overview", "admin", "accounts", "files", "security", "health"];
   if (!role || !(role in roleNavigation)) return ["overview"];
   return roleNavigation[role as DashboardRole];
 }

@@ -3,7 +3,7 @@ import {
   Activity, Bell, ChefHat, ChevronDown, CircleDollarSign, Clock3, Eye, LayoutDashboard,
   Menu as MenuIcon, Package, Plus, Search, Settings2, ShoppingBag, Store, Table2,
   Users, Utensils, WalletCards, Zap, CheckCircle2, ArrowUpLeft, MoreHorizontal,
-  Truck, Megaphone, Boxes, ShieldCheck, TrendingDown, ArrowLeft
+  Truck, Megaphone, Boxes, ShieldCheck, TrendingDown, ArrowLeft, HardDrive
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { enqueueOfflineItem, readOfflineQueue, writeOfflineQueue } from "@/lib/o
 import { publicMenuUrl } from "@/lib/publicMenuUrl";
 import { validateRemoteTaskDraft } from "@/lib/remoteTaskValidation";
 import AccountManagementPanel from "@/components/AccountManagementPanel";
+import { MediaLibraryPanel } from "@/components/MediaLibraryPanel";
 import { dashboardProfiles } from "@/lib/dashboardProfiles";
 import { getVisibleNavigation, isRoleActionAllowed } from "@/lib/roleNavigation";
 import Barcode from "react-barcode";
@@ -38,13 +39,14 @@ import CustomerProfileSettings from "@/pages/CustomerProfileSettings";
 import VcardAccountBinding from "@/pages/VcardAccountBinding";
 
 type OrderStatus = "new" | "preparing" | "ready" | "completed";
-type NavKey = "overview" | "admin" | "accounts" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "reservations" | "remote" | "security" | "health";
+type NavKey = "overview" | "admin" | "accounts" | "files" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "reservations" | "remote" | "security" | "health";
 
 type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string };
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
 
 const navItems: { key: NavKey; label: string; icon: typeof LayoutDashboard }[] = [
   { key: "overview", label: "نظرة عامة", icon: LayoutDashboard },
+  { key: "files", label: "مدير الملفات", icon: HardDrive },
   { key: "admin", label: "Super Admin", icon: ShieldCheck },
   { key: "branches", label: "الفروع والإعدادات", icon: Store },
   { key: "orders", label: "الطلبات", icon: ShoppingBag },
@@ -61,7 +63,7 @@ const navItems: { key: NavKey; label: string; icon: typeof LayoutDashboard }[] =
   { key: "health", label: "صحة النظام", icon: Activity },
 ];
 
-const navTranslationKeys: Record<NavKey, TranslationKey> = { overview: "overview", admin: "platformAdmin", accounts: "platformAdmin", branches: "branches", orders: "orders", pos: "pos", kds: "kds", menu: "menu", tables: "tables", inventory: "inventory", team: "team", marketing: "marketing", reservations: "reservations", remote: "remote", security: "security", health: "health" };
+const navTranslationKeys: Record<NavKey, TranslationKey> = { overview: "overview", admin: "platformAdmin", accounts: "platformAdmin", files: "platformAdmin", branches: "branches", orders: "orders", pos: "pos", kds: "kds", menu: "menu", tables: "tables", inventory: "inventory", team: "team", marketing: "marketing", reservations: "reservations", remote: "remote", security: "security", health: "health" };
 const statusLabels: Record<OrderStatus, string> = { new: "جديد", preparing: "قيد التحضير", ready: "جاهز", completed: "مكتمل" };
 const statusStyles: Record<OrderStatus, string> = { new: "bg-amber-50 text-amber-700 border-amber-200", preparing: "bg-blue-50 text-blue-700 border-blue-200", ready: "bg-emerald-50 text-emerald-700 border-emerald-200", completed: "bg-slate-100 text-slate-600 border-slate-200" };
 
@@ -231,7 +233,7 @@ function Overview({ orders, advanceOrder, query, setQuery, role, onNavigate, sum
 }
 
 function ModuleView({ active, orders, advanceOrder, setActive, restaurantId, ordersLoading, ordersError, role }: { active: NavKey; orders: Order[]; advanceOrder: (id: string) => void; setActive: (key: NavKey) => void; restaurantId: number; ordersLoading: boolean; ordersError: boolean; role?: string }) {
-  const labels: Record<NavKey, { title: string; description: string; icon: typeof LayoutDashboard }> = { overview: { title: "نظرة عامة", description: "", icon: LayoutDashboard }, admin: { title: "Super Admin", description: "إدارة المطاعم والعملاء والاشتراكات والصلاحيات.", icon: ShieldCheck }, accounts: { title: "مركز الحسابات", description: "إدارة الدخول والحالة وبيانات جميع أدوار النظام.", icon: Users }, branches: { title: "الفروع والإعدادات", description: "إدارة الفروع وساعات العمل وإعداداتها التشغيلية.", icon: Store }, orders: { title: "إدارة الطلبات", description: "تابع الطلبات وحدّث مراحلها من شاشة واحدة.", icon: ShoppingBag }, pos: { title: "نقطة البيع POS", description: "أنشئ طلباً جديداً بسرعة واربطه بالفرع والطاولة.", icon: WalletCards }, kds: { title: "شاشة المطبخ KDS", description: "تنظيم الطلبات الواردة ومتابعة زمن التحضير لحظياً.", icon: ChefHat }, menu: { title: "المنيو والأصناف", description: "إدارة التصنيفات والأصناف والأسعار والتوفر.", icon: Utensils }, tables: { title: "الطاولات", description: "عرض إشغال الطاولات وربطها بالطلبات الحالية.", icon: Table2 }, inventory: { title: "المخزون والمشتريات", description: "متابعة المواد الخام والتنبيهات وتسجيل المشتريات.", icon: Package }, team: { title: "الموظفون والحضور", description: "إدارة الفريق والأدوار وسجل الحضور.", icon: Users }, marketing: { title: "التسويق والحملات", description: "العروض والكوبونات والحملات في مكان واحد.", icon: Megaphone }, reservations: { title: "الحجوزات وقائمة الانتظار", description: "إدارة مواعيد الضيوف وحالات الوصول من مساحة المطعم.", icon: Clock3 }, remote: { title: "التوظيف عن بُعد", description: "أنشئ مهامًا مدفوعة وتواصل مع الموظفين من مكان واحد.", icon: Users }, security: { title: "أمان الحساب والجلسات", description: "أدر الأجهزة والجلسات والتحقق بخطوتين.", icon: ShieldCheck }, health: { title: "صحة النظام", description: "راقب حالة API وقاعدة البيانات والخدمات الأساسية.", icon: Activity } };
+  const labels: Record<NavKey, { title: string; description: string; icon: typeof LayoutDashboard }> = { overview: { title: "نظرة عامة", description: "", icon: LayoutDashboard }, admin: { title: "Super Admin", description: "إدارة المطاعم والعملاء والاشتراكات والصلاحيات.", icon: ShieldCheck }, accounts: { title: "مركز الحسابات", description: "إدارة الدخول والحالة وبيانات جميع أدوار النظام.", icon: Users }, files: { title: "مدير الملفات", description: "رفع وتنظيم ملفات الحساب أو المطعم ضمن مساحة معزولة.", icon: HardDrive }, branches: { title: "الفروع والإعدادات", description: "إدارة الفروع وساعات العمل وإعداداتها التشغيلية.", icon: Store }, orders: { title: "إدارة الطلبات", description: "تابع الطلبات وحدّث مراحلها من شاشة واحدة.", icon: ShoppingBag }, pos: { title: "نقطة البيع POS", description: "أنشئ طلباً جديداً بسرعة واربطه بالفرع والطاولة.", icon: WalletCards }, kds: { title: "شاشة المطبخ KDS", description: "تنظيم الطلبات الواردة ومتابعة زمن التحضير لحظياً.", icon: ChefHat }, menu: { title: "المنيو والأصناف", description: "إدارة التصنيفات والأصناف والأسعار والتوفر.", icon: Utensils }, tables: { title: "الطاولات", description: "عرض إشغال الطاولات وربطها بالطلبات الحالية.", icon: Table2 }, inventory: { title: "المخزون والمشتريات", description: "متابعة المواد الخام والتنبيهات وتسجيل المشتريات.", icon: Package }, team: { title: "الموظفون والحضور", description: "إدارة الفريق والأدوار وسجل الحضور.", icon: Users }, marketing: { title: "التسويق والحملات", description: "العروض والكوبونات والحملات في مكان واحد.", icon: Megaphone }, reservations: { title: "الحجوزات وقائمة الانتظار", description: "إدارة مواعيد الضيوف وحالات الوصول من مساحة المطعم.", icon: Clock3 }, remote: { title: "التوظيف عن بُعد", description: "أنشئ مهامًا مدفوعة وتواصل مع الموظفين من مكان واحد.", icon: Users }, security: { title: "أمان الحساب والجلسات", description: "أدر الأجهزة والجلسات والتحقق بخطوتين.", icon: ShieldCheck }, health: { title: "صحة النظام", description: "راقب حالة API وقاعدة البيانات والخدمات الأساسية.", icon: Activity } };
   const info = labels[active]; const Icon = info.icon;
   if (active === "orders" && role === "driver") return <DriverDeliveryView restaurantId={restaurantId} />;
   if (active === "orders" || active === "kds") return <><div className="mb-6 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-[#e76f3c]"><Icon className="h-6 w-6" /></div><div><h2 className="text-xl font-bold">{info.title}</h2><p className="text-sm text-slate-500">{info.description}</p></div></div>{ordersLoading && <div className="mb-4 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-500">جارٍ تحميل الطلبات من قاعدة البيانات...</div>}{ordersError && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">تعذر تحميل الطلبات. Request ID: orders-{restaurantId}</div>}{!ordersLoading && !ordersError && orders.length === 0 && <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">لا توجد طلبات محفوظة لهذا الفرع بعد.</div>}<div className="grid gap-4 md:grid-cols-4">{(["new", "preparing", "ready", "completed"] as OrderStatus[]).map((status) => <Card key={status} className="rounded-2xl border-slate-200 bg-white shadow-sm"><CardHeader className="px-4 pb-2 pt-4"><CardTitle className="flex items-center justify-between text-sm">{statusLabels[status]}<span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{orders.filter((o) => o.status === status).length}</span></CardTitle></CardHeader><CardContent className="space-y-3 p-4 pt-2">{orders.filter((o) => o.status === status).map((order) => <div key={order.id} className="rounded-xl border border-slate-100 bg-slate-50/70 p-3"><div className="flex justify-between text-xs font-bold"><span>{order.id}</span><span className="text-slate-400">{order.time}</span></div><p className="mt-2 text-xs font-medium">{order.table}</p><p className="mt-1 text-[11px] leading-5 text-slate-500">{order.items}</p>{status !== "completed" && <Button onClick={() => advanceOrder(order.id)} size="sm" className="mt-3 h-8 w-full rounded-lg bg-[#e76f3c] text-xs hover:bg-[#d85f2e]">نقل إلى {statusLabels[status === "new" ? "preparing" : status === "preparing" ? "ready" : "completed"]}</Button>}</div>)}</CardContent></Card>)}</div>{active === "kds" && <><KitchenTicketBoard restaurantId={restaurantId} orders={orders} /><KitchenPrinterSettings restaurantId={restaurantId} /></>}</>;
@@ -244,6 +246,7 @@ function ModuleView({ active, orders, advanceOrder, setActive, restaurantId, ord
   if (active === "reservations") return <ReservationsView restaurantId={restaurantId} />;
   if (active === "admin") return <SuperAdminView />;
   if (active === "accounts") return <AccountManagementPanel />;
+  if (active === "files") return <MediaLibraryPanel isCentralAdmin={role === "admin"} restaurantId={restaurantId} />;
   if (active === "branches") return <BranchesView restaurantId={restaurantId} />;
   if (active === "remote") return <RemoteWorkView restaurantId={restaurantId} />;
   if (active === "security") return <SecurityView restaurantId={restaurantId} />;

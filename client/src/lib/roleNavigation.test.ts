@@ -24,7 +24,7 @@ describe("role navigation matrix", () => {
 
   it("keeps operational modules out of the central admin context", () => {
     const central = getVisibleNavigation("admin", true);
-    expect(central).toEqual(["overview", "admin", "accounts", "security", "health"]);
+    expect(central).toEqual(["overview", "admin", "accounts", "files", "security", "health"]);
     expect(central).not.toContain("orders");
     expect(central).toContain("accounts");
     expect(getVisibleNavigation("customer")).not.toContain("accounts");

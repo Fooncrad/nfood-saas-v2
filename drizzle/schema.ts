@@ -579,3 +579,30 @@ export const vcardCardBindings = mysqlTable("vcardCardBindings", {
   targetRole: mysqlEnum("targetRole", ["customer", "restaurant", "driver"]).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+export const mediaFolders = mysqlTable("mediaFolders", {
+  id: int("id").autoincrement().primaryKey(),
+  ownerUserId: int("ownerUserId").references(() => users.id),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  scope: mysqlEnum("scope", ["platform", "restaurant", "user"]).default("user").notNull(),
+  name: varchar("name", { length: 160 }).notNull(),
+  createdByUserId: int("createdByUserId").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const mediaFiles = mysqlTable("mediaFiles", {
+  id: int("id").autoincrement().primaryKey(),
+  folderId: int("folderId").references(() => mediaFolders.id),
+  ownerUserId: int("ownerUserId").references(() => users.id),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  scope: mysqlEnum("scope", ["platform", "restaurant", "user"]).default("user").notNull(),
+  originalName: varchar("originalName", { length: 240 }).notNull(),
+  storageKey: varchar("storageKey", { length: 500 }).notNull().unique(),
+  publicUrl: varchar("publicUrl", { length: 700 }).notNull(),
+  contentType: varchar("contentType", { length: 160 }).notNull(),
+  sizeBytes: int("sizeBytes").notNull(),
+  category: mysqlEnum("category", ["image", "menu", "logo", "document", "other"]).default("other").notNull(),
+  isDeleted: boolean("isDeleted").default(false).notNull(),
+  uploadedByUserId: int("uploadedByUserId").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

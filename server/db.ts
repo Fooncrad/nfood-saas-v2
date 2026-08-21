@@ -1,7 +1,7 @@
 import { and, count, desc, eq, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { createCipheriv, createHash, randomBytes } from "node:crypto";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -263,4 +263,34 @@ export async function getRoleSummary(restaurantId: number, role?: string, userId
   const deliveryOrders = rows.filter((order) => order.channel === "delivery").length;
   const customerOrders = role === "customer" ? rows.length : rows.filter((order) => order.customerId != null).length;
   return { available: true as const, sales: total, orders: rows.length, average: rows.length ? total / rows.length : 0, avgFulfillmentMinutes, deliveryOrders, customerOrders, newOrders: rows.filter((order) => order.status === "new").length, preparing: rows.filter((order) => order.status === "preparing").length, ready: rows.filter((order) => order.status === "ready").length, completed: rows.filter((order) => order.status === "completed").length, tables, scope };
+}
+
+export type MediaScope = "platform" | "restaurant" | "user";
+export async function listMediaFiles(input: { scope: MediaScope; userId?: number; restaurantId?: number; search?: string; category?: "image" | "menu" | "logo" | "document" | "other" }) {
+  const db = await getDb(); if (!db) return [];
+  const predicates = [eq(mediaFiles.scope, input.scope), eq(mediaFiles.isDeleted, false)];
+  if (input.scope === "user") predicates.push(eq(mediaFiles.ownerUserId, input.userId ?? 0));
+  if (input.scope === "restaurant") predicates.push(eq(mediaFiles.restaurantId, input.restaurantId ?? 0));
+  if (input.category) predicates.push(eq(mediaFiles.category, input.category));
+  const rows = await db.select().from(mediaFiles).where(and(...predicates)).orderBy(desc(mediaFiles.createdAt));
+  const query = input.search?.trim().toLowerCase();
+  return query ? rows.filter((row) => row.originalName.toLowerCase().includes(query)) : rows;
+}
+export async function listMediaFolders(input: { scope: MediaScope; userId?: number; restaurantId?: number }) {
+  const db = await getDb(); if (!db) return [];
+  const predicates = [eq(mediaFolders.scope, input.scope)];
+  if (input.scope === "user") predicates.push(eq(mediaFolders.ownerUserId, input.userId ?? 0));
+  if (input.scope === "restaurant") predicates.push(eq(mediaFolders.restaurantId, input.restaurantId ?? 0));
+  return db.select().from(mediaFolders).where(and(...predicates)).orderBy(desc(mediaFolders.createdAt));
+}
+export async function getMediaUsage(input: { scope: MediaScope; userId?: number; restaurantId?: number }) {
+  const files = await listMediaFiles(input); return { usedBytes: files.reduce((total, file) => total + file.sizeBytes, 0), fileCount: files.length };
+}
+export async function createMediaFolder(input: { scope: MediaScope; ownerUserId?: number; restaurantId?: number; name: string; createdByUserId: number }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const result = await db.insert(mediaFolders).values({ scope: input.scope, ownerUserId: input.ownerUserId ?? null, restaurantId: input.restaurantId ?? null, name: input.name, createdByUserId: input.createdByUserId }); return Number(result[0].insertId);
+}
+export async function createMediaFile(input: { scope: MediaScope; ownerUserId?: number; restaurantId?: number; folderId?: number; originalName: string; storageKey: string; publicUrl: string; contentType: string; sizeBytes: number; category: "image" | "menu" | "logo" | "document" | "other"; uploadedByUserId: number }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const result = await db.insert(mediaFiles).values({ ...input, ownerUserId: input.ownerUserId ?? null, restaurantId: input.restaurantId ?? null, folderId: input.folderId ?? null }); return Number(result[0].insertId);
 }
