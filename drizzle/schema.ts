@@ -130,6 +130,18 @@ export const referralRecords = mysqlTable("referralRecords", {
   qualifiedAt: timestamp("qualifiedAt"),
 });
 
+export const reviews = mysqlTable("reviews", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  orderId: int("orderId").notNull().references(() => orders.id),
+  customerId: int("customerId").notNull().references(() => users.id),
+  targetType: mysqlEnum("targetType", ["restaurant", "driver", "product"]).notNull(),
+  targetId: int("targetId"),
+  rating: int("rating").notNull(),
+  comment: varchar("comment", { length: 1000 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const inventoryItems = mysqlTable("inventoryItems", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull(),
