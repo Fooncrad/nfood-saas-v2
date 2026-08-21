@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { validateRegistrationContact } from "@/lib/registrationValidation";
 
 const plans = [
   { value: "Free", label: "البداية", price: "مجانية", description: "لإطلاق مطعمك وتجربة الأساسيات", features: ["فرع رئيسي", "منيو رقمي", "طلبات QR"] },
@@ -36,7 +37,7 @@ export function RegisterScreen({ onBack, onOAuth }: { onBack: () => void; onOAut
   const driverRegister = trpc.auth.submitDriverApplication.useMutation({ onSuccess: (result) => { setApplicationId(result.applicationId); toast.success(result.message); }, onError: (error) => toast.error(error.message || "تعذر إرسال طلب السائق") });
   const uploadDriverFile = trpc.auth.uploadDriverFile.useMutation();
   const selectedPlan = useMemo(() => plans.find((item) => item.value === plan) ?? plans[0], [plan]);
-  const validContact = name.trim().length >= 2 && city.trim().length >= 2 && /\S+@\S+\.\S+/.test(email) && phone.trim().length >= 7;
+  const validContact = validateRegistrationContact({ name, city, email, phone, country }, accountType === "restaurant");
   const canContinue = step === 0 || step === 1 ? validContact && (accountType === "driver" || country.trim().length >= 2) : true;
   const next = () => { if (!canContinue) { toast.error("أكمل البيانات المطلوبة بصيغة صحيحة"); return; } setStep((current) => Math.min(3, current + 1)); };
   const fileToBase64 = (file: File) => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error("تعذر قراءة الملف")); reader.readAsDataURL(file); });
