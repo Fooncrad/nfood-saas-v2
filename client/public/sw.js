@@ -1,4 +1,4 @@
-const CACHE_NAME = "nfood-shell-v1";
+const CACHE_NAME = "nfood-shell-v2";
 const SHELL = ["/", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -6,12 +6,22 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))).then(() => self.clients.claim()));
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
+  if (event.data?.type === "REQUEST_SYNC") self.registration.sync?.register("nfood-data-sync").catch(() => undefined);
+});
+
+self.addEventListener("sync", (event) => {
+  if (event.tag !== "nfood-data-sync") return;
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => clients.forEach((client) => client.postMessage({ type: "NFOOD_SYNC_REQUEST" }))));
 });
 
 self.addEventListener("push", (event) => {
   let data = { title: "NFOOD", body: "لديك تحديث جديد في مساحة العمل." };
-  try { if (event.data) data = { ...data, ...event.data.json() }; } catch { /* fallback text intentionally omitted */ }
+  try { if (event.data) data = { ...data, ...event.data.json() }; } catch { /* fallback */ }
   event.waitUntil(self.registration.showNotification(data.title, { body: data.body, dir: "rtl", lang: "ar", tag: "nfood-update" }));
 });
 
