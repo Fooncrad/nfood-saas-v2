@@ -1,0 +1,14 @@
+import fs from "node:fs";
+const path = "client/src/pages/Home.tsx";
+let source = fs.readFileSync(path, "utf8");
+source = source.replace('import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";', 'import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";\nimport { RemoteTaskDialog, type RemoteTaskDraft } from "@/components/RemoteTaskDialog";');
+source = source.replace('  const [activeTask, setActiveTask] = useState<number | null>(null);', '  const [activeTask, setActiveTask] = useState<number | null>(null);\n  const [taskDialogOpen, setTaskDialogOpen] = useState(false);');
+const gridStart = source.indexOf('<div className="grid gap-5 xl:grid-cols-[360px_1fr]">');
+if (gridStart < 0) throw new Error("Remote work grid not found");
+const cardStart = source.indexOf('<Card className="rounded-2xl border-slate-200 bg-white shadow-sm"><CardHeader className="border-b border-slate-100 px-5 py-4"><CardTitle className="text-base">مهمة جديدة</CardTitle>', gridStart);
+if (cardStart < 0) throw new Error("Task form card not found");
+const listStart = source.indexOf('<div className="space-y-4">', cardStart);
+if (listStart < 0) throw new Error("Task list column not found");
+const replacement = '<Card className="rounded-2xl border-slate-200 bg-white shadow-sm"><CardHeader className="border-b border-slate-100 px-5 py-4"><CardTitle className="text-base">مهمة جديدة</CardTitle><p className="mt-1 text-xs text-slate-500">افتح النموذج لإضافة مهمة وتحديد القيمة والموعد والتعيين.</p></CardHeader><CardContent className="p-5"><Button type="button" onClick={() => setTaskDialogOpen(true)} disabled={!user} className="w-full rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]">إنشاء مهمة جديدة</Button>{!user && <p className="mt-3 text-center text-xs text-amber-600">سجّل الدخول لحفظ المهمة في قاعدة البيانات.</p>}<RemoteTaskDialog open={taskDialogOpen} pending={createTask.isPending} workers={(workersQuery.data ?? []).map((worker) => ({ id: worker.id, role: worker.role }))} onClose={() => setTaskDialogOpen(false)} onSubmit={(draft: RemoteTaskDraft) => { createTask.mutate({ restaurantId, type: draft.type, title: draft.title.trim(), description: draft.description.trim() || undefined, amount: Number(draft.amount || 0).toFixed(2), currency: "SAR", paymentMethod: "manual", assignedWorkerId: draft.assignedWorkerId ? Number(draft.assignedWorkerId) : undefined, dueAt: draft.dueAt ? new Date(draft.dueAt).toISOString() : undefined }); setTaskDialogOpen(false); }} /></CardContent></Card>';
+source = source.slice(0, cardStart) + replacement + source.slice(listStart);
+fs.writeFileSync(path, source);
