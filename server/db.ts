@@ -27,7 +27,7 @@ export type PlatformSettingKey = typeof PLATFORM_SETTING_KEYS[number];
 
 export async function getPlatformSettings() {
   const db = await getDb();
-  const defaults: Record<PlatformSettingKey, string> = { supportEmail: "", supportPhone: "", defaultCurrency: "SAR", defaultTimezone: "Asia/Riyadh", baseDomain: "", maintenanceMode: "false", allowGuestCheckout: "true", siteLanguage: "ar", availableLanguages: "ar,en", country: "Saudi Arabia", siteName: "NFOOD Restaurant SaaS", copyrightYear: String(new Date().getFullYear()), currencyDisplayMode: "symbol", numberFormat: "1,000.00", pricingLayout: "style-1", analyticsId: "", facebookPixelId: "", siteDescription: "", subscriptionTaxRate: "0", taxNumber: "", companyDetails: "" };
+  const defaults: Record<PlatformSettingKey, string> = { supportEmail: "", supportPhone: "", defaultCurrency: "SAR", defaultTimezone: "Asia/Riyadh", baseDomain: "", maintenanceMode: "false", allowGuestCheckout: "true", siteLanguage: "ar", availableLanguages: "ar,en,fr", country: "Saudi Arabia", siteName: "NFOOD Restaurant SaaS", copyrightYear: String(new Date().getFullYear()), currencyDisplayMode: "symbol", numberFormat: "1,000.00", pricingLayout: "style-1", analyticsId: "", facebookPixelId: "", siteDescription: "", subscriptionTaxRate: "0", taxNumber: "", companyDetails: "" };
   if (!db) return defaults;
   const rows = await db.select({ key: platformSettings.settingKey, value: platformSettings.settingValue }).from(platformSettings);
   for (const row of rows) { if (row.key in defaults) defaults[row.key as PlatformSettingKey] = row.value; }
