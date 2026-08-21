@@ -27,7 +27,7 @@ export async function marketingHeartbeatHandler(req: Request, res: Response) {
       if (campaign.kind === "reengagement") { const last = lastOrderByCustomer.get(customer.id); const days = campaign.reengagementDays ?? 30; return !last || now.getTime() - last.getTime() >= days * 86400000; }
       return false;
     }).map((customer) => customer.id);
-    return res.json({ ok: true, campaignId: campaign.id, kind: campaign.kind, eligibleCount: eligibleCustomerIds.length, delivery: "not_configured", timestamp });
+    return res.json({ ok: true, campaignId: campaign.id, kind: campaign.kind, eligibleCount: eligibleCustomerIds.length, delivery: "demo_dry_run", demoMode: true, message: "تمت معاينة الجمهور فقط؛ استبدل إعدادات الرسائل التجريبية قبل الإرسال الفعلي.", timestamp });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined, context: { url: req.originalUrl, taskUid: (req as Request & { user?: { taskUid?: string } }).user?.taskUid }, timestamp });
   }
