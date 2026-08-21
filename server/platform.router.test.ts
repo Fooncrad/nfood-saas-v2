@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { getDb, getLoyaltyTier } from "./db";
-import { branches, menuCategories, menuItems, orderItems, orders, reservations, restaurants } from "../drizzle/schema";
+import { branches, menuCategories, menuItems, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
@@ -39,6 +39,32 @@ describe("platform procedures", () => {
     await expect(waiter.platform.loyaltySummary({ restaurantId: 1, customerId: 999999 })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(admin.platform.createReferral({ restaurantId: 1, referrerCustomerId: 999999, code: "TEST-REFERRAL" })).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(waiter.platform.createReferral({ restaurantId: 1, referrerCustomerId: 999999, code: "TEST-REFERRAL-2" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("persists one referral reward after the first paid completed order and prevents a second reward", async () => {
+    const db = await getDb(); if (!db) return;
+    const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(eq(restaurants.status, "active")).limit(1))[0]; if (!restaurant) return;
+    const branch = (await db.select({ id: branches.id }).from(branches).where(eq(branches.restaurantId, restaurant.id)).limit(1))[0]; if (!branch) return;
+    const customers = await db.select({ id: users.id }).from(users).limit(2); if (customers.length < 2) return;
+    const code = `PERSIST-${Date.now()}`;
+    const admin = appRouter.createCaller(context("admin"));
+    const referral = await admin.platform.createReferral({ restaurantId: restaurant.id, referrerCustomerId: customers[0].id, referredCustomerId: customers[1].id, code });
+    const orderResult = await db.insert(orders).values({ restaurantId: restaurant.id, branchId: branch.id, customerId: customers[1].id, channel: "takeaway", paymentMethod: "cash", paymentStatus: "paid", total: "20.00", status: "new" });
+    const orderId = Number(orderResult[0].insertId);
+    try {
+      await expect(admin.platform.updateOrderStatus({ restaurantId: restaurant.id, orderId, status: "completed" })).resolves.toMatchObject({ success: true, referralRewarded: true });
+      await expect(admin.platform.updateOrderStatus({ restaurantId: restaurant.id, orderId, status: "completed" })).resolves.toMatchObject({ success: true, referralRewarded: false });
+      const savedReferral = (await db.select({ status: referralRecords.status, qualifyingOrderId: referralRecords.qualifyingOrderId }).from(referralRecords).where(eq(referralRecords.id, referral.id)).limit(1))[0];
+      expect(savedReferral).toEqual({ status: "rewarded", qualifyingOrderId: orderId });
+      const rewards = await db.select({ id: loyaltyTransactions.id }).from(loyaltyTransactions).where(eq(loyaltyTransactions.referenceId, `referral:${referral.id}`));
+      expect(rewards).toHaveLength(2);
+    } finally {
+      await db.delete(loyaltyTransactions).where(eq(loyaltyTransactions.referenceId, `referral:${referral.id}`));
+      await db.delete(loyaltyAccounts).where(eq(loyaltyAccounts.customerId, customers[0].id));
+      await db.delete(loyaltyAccounts).where(eq(loyaltyAccounts.customerId, customers[1].id));
+      await db.delete(referralRecords).where(eq(referralRecords.id, referral.id));
+      await db.delete(orders).where(eq(orders.id, orderId));
+    }
   });
 
   it("protects separated restaurant, driver, and product review procedures", async () => {
