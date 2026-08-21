@@ -12,7 +12,7 @@ export async function getDb() {
   return _db;
 }
 
-export const PLATFORM_SETTING_KEYS = ["supportEmail", "supportPhone", "defaultCurrency", "defaultTimezone", "baseDomain", "maintenanceMode", "allowGuestCheckout", "siteLanguage", "availableLanguages", "country", "siteName", "copyrightYear", "currencyDisplayMode", "numberFormat", "pricingLayout", "analyticsId", "facebookPixelId", "siteDescription", "subscriptionTaxRate", "taxNumber", "companyDetails"] as const;
+export const PLATFORM_SETTING_KEYS = ["supportEmail", "supportPhone", "defaultCurrency", "defaultTimezone", "baseDomain", "maintenanceMode", "allowGuestCheckout", "siteLanguage", "availableLanguages", "country", "siteName", "copyrightYear", "currencyDisplayMode", "numberFormat", "pricingLayout", "analyticsId", "facebookPixelId", "siteDescription", "homepageContent", "termsOfService", "privacyPolicy", "refundPolicy", "subscriptionTaxRate", "taxNumber", "companyDetails"] as const;
 export const LOYALTY_TIERS = [
   { key: "standard", label: "Standard", minPoints: 0 },
   { key: "silver", label: "Silver", minPoints: 500 },
@@ -39,7 +39,7 @@ export async function upsertIntegrationSetting(input: { scope: "platform" | "res
 
 export async function getPlatformSettings() {
   const db = await getDb();
-  const defaults: Record<PlatformSettingKey, string> = { supportEmail: "", supportPhone: "", defaultCurrency: "SAR", defaultTimezone: "Asia/Riyadh", baseDomain: "", maintenanceMode: "false", allowGuestCheckout: "true", siteLanguage: "ar", availableLanguages: "ar,en,fr", country: "Saudi Arabia", siteName: "NFOOD Restaurant SaaS", copyrightYear: String(new Date().getFullYear()), currencyDisplayMode: "symbol", numberFormat: "1,000.00", pricingLayout: "style-1", analyticsId: "", facebookPixelId: "", siteDescription: "", subscriptionTaxRate: "0", taxNumber: "", companyDetails: "" };
+  const defaults: Record<PlatformSettingKey, string> = { supportEmail: "", supportPhone: "", defaultCurrency: "SAR", defaultTimezone: "Asia/Riyadh", baseDomain: "", maintenanceMode: "false", allowGuestCheckout: "true", siteLanguage: "ar", availableLanguages: "ar,en,fr", country: "Saudi Arabia", siteName: "NFOOD Restaurant SaaS", copyrightYear: String(new Date().getFullYear()), currencyDisplayMode: "symbol", numberFormat: "1,000.00", pricingLayout: "style-1", analyticsId: "", facebookPixelId: "", siteDescription: "", homepageContent: "", termsOfService: "", privacyPolicy: "", refundPolicy: "", subscriptionTaxRate: "0", taxNumber: "", companyDetails: "" };
   if (!db) return defaults;
   const rows = await db.select({ key: platformSettings.settingKey, value: platformSettings.settingValue }).from(platformSettings);
   for (const row of rows) { if (row.key in defaults) defaults[row.key as PlatformSettingKey] = row.value; }
