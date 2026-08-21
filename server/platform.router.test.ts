@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { getDb, getLoyaltyTier } from "./db";
-import { branches, menuCategories, menuItems, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, driverApplications, kitchenSections, printerRoutingRules } from "../drizzle/schema";
+import { branches, menuCategories, menuItems, menuItemAddons, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, driverApplications, kitchenSections, printerRoutingRules } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
@@ -14,6 +14,8 @@ function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" 
 }
 
 describe("platform procedures", () => {
+  it("isolates menu item addons and protects their CRUD by restaurant role", async () => { const db = await getDb(); if (!db) return; const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).limit(1))[0]; if (!restaurant) return; const item = (await db.select({ id: menuItems.id }).from(menuItems).where(eq(menuItems.restaurantId, restaurant.id)).limit(1))[0]; if (!item) return; const base = context("user", "restaurant_admin"); const admin = appRouter.createCaller({ ...base, user: { ...base.user, restaurantId: restaurant.id } }); const name = `إضافة اختبار ${Date.now()}`; const created = await admin.platform.createMenuItemAddon({ restaurantId: restaurant.id, menuItemId: item.id, name, price: "2.50", stockQuantity: 12 }); expect(created).toEqual(expect.objectContaining({ id: expect.any(Number), restaurantId: restaurant.id, menuItemId: item.id, name })); try { await expect(admin.platform.listMenuItemAddons({ restaurantId: restaurant.id })).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ id: created.id, name })])); await expect(admin.platform.updateMenuItemAddon({ restaurantId: restaurant.id, id: created.id, price: "3.00", isAvailable: false })).resolves.toEqual(expect.objectContaining({ id: created.id, price: "3.00", isAvailable: false })); await expect(admin.platform.listMenuItemAddons({ restaurantId: restaurant.id + 999999 })).rejects.toMatchObject({ code: "FORBIDDEN" }); await expect(appRouter.createCaller(context("user", "customer")).platform.updateMenuItemAddon({ restaurantId: restaurant.id, id: created.id, name: "غير مصرح" })).rejects.toMatchObject({ code: "FORBIDDEN" }); } finally { await admin.platform.deleteMenuItemAddon({ restaurantId: restaurant.id, id: created.id }); await db.delete(menuItemAddons).where(eq(menuItemAddons.id, created.id)); } });
+
   it("persists kitchen sections and isolates printer routing by restaurant", async () => {
     const db = await getDb();
     if (!db) return;
