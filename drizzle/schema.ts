@@ -445,6 +445,7 @@ export const testAccounts = mysqlTable("testAccounts", {
   displayName: varchar("displayName", { length: 120 }).notNull(),
   role: mysqlEnum("role", ["admin", "restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"]).notNull(),
   passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

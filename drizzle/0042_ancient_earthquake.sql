@@ -1,0 +1,1 @@
+ALTER TABLE `testAccounts` ADD `isActive` boolean DEFAULT true NOT NULL;

@@ -36,3 +36,5 @@ export const decodeOAuthState = (state: string): OAuthState => {
   }
   return { redirectUri: decoded };
 };
+
+export const ADMIN_RETURN_COOKIE = "nfood_admin_return";
