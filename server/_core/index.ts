@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerMarketingHeartbeat } from "../marketing";
+import { registerReservationHeartbeat } from "../reservations";
 import { getPublicRestaurantPage } from "../db";
 import { serveStatic, setupVite } from "./vite";
 import { attachDisplayRealtime } from "../displayRealtime";
@@ -45,6 +46,7 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerMarketingHeartbeat(app);
+  registerReservationHeartbeat(app);
   // tRPC API
   app.use(
     "/api/trpc",

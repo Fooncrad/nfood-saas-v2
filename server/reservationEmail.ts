@@ -1,0 +1,32 @@
+import nodemailer from "nodemailer";
+
+function getTransporter() {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || 587);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASSWORD;
+  if (!host || !user || !pass) return null;
+  return nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
+}
+
+export async function sendReservationAcceptedEmail(input: { to?: string | null; customerName: string; restaurantName: string; tableName: string; reservedFor: Date; partySize: number }) {
+  if (!input.to) return { sent: false, skipped: "no-recipient" as const };
+  const transporter = getTransporter();
+  if (!transporter) return { sent: false, skipped: "smtp-not-configured" as const };
+  const when = input.reservedFor.toLocaleString("ar-SA", { dateStyle: "full", timeStyle: "short" });
+  await transporter.sendMail({ from: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER, to: input.to, subject: `تم قبول حجزك في ${input.restaurantName}`, text: `مرحبًا ${input.customerName}، تم قبول حجزك في ${input.restaurantName}. الطاولة: ${input.tableName}. الموعد: ${when}. عدد الأشخاص: ${input.partySize}.`, html: `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.8"><h2>تم قبول الحجز</h2><p>مرحبًا ${escapeHtml(input.customerName)}،</p><p>تم تأكيد حجزك في <strong>${escapeHtml(input.restaurantName)}</strong>.</p><p>الطاولة: <strong>${escapeHtml(input.tableName)}</strong><br>الموعد: <strong>${escapeHtml(when)}</strong><br>عدد الأشخاص: <strong>${input.partySize}</strong></p><p>ننتظركم بكل سرور.</p></div>` });
+  return { sent: true as const };
+}
+
+export async function sendReservationNoShowEmail(input: { to?: string | null; customerName: string; restaurantName: string; reservedFor: Date; graceMinutes: number }) {
+  if (!input.to) return { sent: false, skipped: "no-recipient" as const };
+  const transporter = getTransporter();
+  if (!transporter) return { sent: false, skipped: "smtp-not-configured" as const };
+  const when = input.reservedFor.toLocaleString("ar-SA", { dateStyle: "full", timeStyle: "short" });
+  await transporter.sendMail({ from: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER, to: input.to, subject: `تم إلغاء حجزك في ${input.restaurantName} لعدم الحضور`, text: `مرحبًا ${input.customerName}، تم إلغاء حجزك في ${input.restaurantName} للموعد ${when} لعدم تسجيل الحضور خلال ${input.graceMinutes} دقائق من وقت الحجز.`, html: `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.8"><h2>تم إلغاء الحجز لعدم الحضور</h2><p>مرحبًا ${escapeHtml(input.customerName)}،</p><p>تم إلغاء حجزك في <strong>${escapeHtml(input.restaurantName)}</strong> للموعد <strong>${escapeHtml(when)}</strong> لأن الحضور لم يُسجّل خلال ${input.graceMinutes} دقائق.</p><p>يمكنك إنشاء حجز جديد من صفحة المنيو.</p></div>` });
+  return { sent: true as const };
+}

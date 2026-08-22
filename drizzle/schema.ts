@@ -96,6 +96,7 @@ export const restaurants = mysqlTable("restaurants", {
   reservationEnabled: boolean("reservationEnabled").default(true).notNull(),
   cancellationEnabled: boolean("cancellationEnabled").default(true).notNull(),
   cancellationWindowMinutes: int("cancellationWindowMinutes").default(15).notNull(),
+  reservationNoShowGraceMinutes: int("reservationNoShowGraceMinutes").default(10).notNull(),
   showBranchesOnMenu: boolean("showBranchesOnMenu").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -577,15 +578,19 @@ export const reservations = mysqlTable("reservations", {
   branchId: int("branchId").references(() => branches.id),
   slotId: int("slotId").references(() => reservationSlots.id),
   createdByUserId: int("createdByUserId").references(() => users.id),
+  assignedTableId: int("assignedTableId").references(() => restaurantTables.id),
   kind: mysqlEnum("kind", ["reservation", "waitlist"]).default("reservation").notNull(),
   customerName: varchar("customerName", { length: 160 }).notNull(),
+  email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 40 }),
   partySize: int("partySize").default(1).notNull(),
+  durationMinutes: int("durationMinutes").default(60).notNull(),
   reservedFor: timestamp("reservedFor").notNull(),
   status: mysqlEnum("status", ["pending", "confirmed", "seated", "completed", "cancelled", "no_show"]).default("pending").notNull(),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  noShowNotifiedAt: timestamp("noShowNotifiedAt"),
 });
 export const testAccounts = mysqlTable("testAccounts", {
   id: int("id").autoincrement().primaryKey(),
