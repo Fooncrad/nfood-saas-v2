@@ -1,10 +1,11 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
+import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_STORAGE_KEY, LanguageProvider, languageStorageKey, useLanguage, type Language } from "./contexts/LanguageContext";
 import Home from "./pages/Home";
 import RestaurantPublic from "./pages/RestaurantPublic";
 import CustomerDisplay from "./pages/CustomerDisplay";
@@ -16,7 +17,16 @@ import SupportManagement from "./pages/SupportManagement";
 import VcardCardsAdmin from "./pages/VcardCardsAdmin";
 
 function AppContent() {
-  const { direction } = useLanguage();
+  const { direction, language, setLanguage } = useLanguage();
+  const [location] = useLocation();
+  useEffect(() => {
+    const key = languageStorageKey(location);
+    const stored = window.localStorage.getItem(key) as Language | null;
+    const valid = stored === "ar" || stored === "en" || stored === "fr" || stored === "ur";
+    if (valid && stored !== language) setLanguage(stored);
+    else if (!valid && key === DASHBOARD_LANGUAGE_STORAGE_KEY && language !== "ar") setLanguage("ar");
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, key === MENU_LANGUAGE_STORAGE_KEY ? (valid ? stored! : language) : "ar");
+  }, [location]);
   return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Router /></div>;
 }
 

@@ -2,6 +2,10 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 
 export type Language = "ar" | "en" | "fr" | "ur";
 export const LANGUAGE_STORAGE_KEY = "nfood-language";
+export const DASHBOARD_LANGUAGE_STORAGE_KEY = "nfood-dashboard-language";
+export const MENU_LANGUAGE_STORAGE_KEY = "nfood-menu-language";
+export function isPublicLanguagePath(pathname: string) { return pathname.startsWith("/menu/") || pathname.startsWith("/restaurant/"); }
+export function languageStorageKey(pathname?: string) { const currentPath = pathname ?? (typeof window !== "undefined" ? window.location.pathname : "/"); return isPublicLanguagePath(currentPath) ? MENU_LANGUAGE_STORAGE_KEY : DASHBOARD_LANGUAGE_STORAGE_KEY; }
 
 export const languageMeta: Record<Language, { label: string; nativeLabel: string; dir: "rtl" | "ltr"; locale: string }> = {
   ar: { label: "Arabic", nativeLabel: "العربية", dir: "rtl", locale: "ar-SA" },
@@ -81,7 +85,7 @@ export type TranslationKey = keyof typeof arabic;
 type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; setLanguage: (language: Language) => void; t: (key: TranslationKey) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
-function readStoredLanguage(): Language { if (typeof window === "undefined") return "ar"; const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY); if (stored === "ar" || stored === "en" || stored === "fr" || stored === "ur") return stored; const browser = window.navigator.language.toLowerCase().split("-")[0]; return browser === "en" || browser === "fr" || browser === "ur" ? browser : "ar"; }
+function readStoredLanguage(): Language { if (typeof window === "undefined") return "ar"; const stored = window.localStorage.getItem(languageStorageKey()); if (stored === "ar" || stored === "en" || stored === "fr" || stored === "ur") return stored; if (!isPublicLanguagePath(window.location.pathname)) return "ar"; const browser = window.navigator.language.toLowerCase().split("-")[0]; return browser === "en" || browser === "fr" || browser === "ur" ? browser : "ar"; }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>(readStoredLanguage);
@@ -91,7 +95,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.dir = meta.dir;
     document.body.dir = meta.dir;
     document.body.dataset.language = language;
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    window.localStorage.setItem(languageStorageKey(), language);
     applyLegacyUiTranslations(language);
     const observer = new MutationObserver(() => scheduleLegacyUiTranslations(language));
     observer.observe(document.body, { subtree: true, childList: true });
