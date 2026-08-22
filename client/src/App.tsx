@@ -9,6 +9,7 @@ import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_STO
 import Home from "./pages/Home";
 import RestaurantPublic from "./pages/RestaurantPublic";
 import CustomerDisplay from "./pages/CustomerDisplay";
+import PublicDisplay from "./pages/PublicDisplay";
 import CustomerPublic from "./pages/CustomerPublic";
 import CustomerProfileSettings from "./pages/CustomerProfileSettings";
 import AccountProfileSettings from "./pages/AccountProfileSettings";
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/pricing" component={PricingPage} />
       <Route path="/features" component={FeaturesPage} />
       <Route path="/how-it-works" component={HowItWorksPage} />
+      <Route path="/display/:token" component={PublicDisplay} />
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
       <Route path="/restaurant/:slug" component={RestaurantPublic} />
       <Route path="/menu/:slug" component={RestaurantPublic} />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateCampaignContentDraft, validateDisplaySlideDraft } from "./routers";
+import { isDisplaySlideActive, validateCampaignContentDraft, validateDisplaySlideDraft } from "./routers";
 
 describe("restaurant display and marketing content validation", () => {
   it("requires a menu item or media asset for a display slide", () => {
@@ -21,5 +21,14 @@ describe("restaurant display and marketing content validation", () => {
 
   it("requires a meaningful marketing headline", () => {
     expect(validateCampaignContentDraft({ locale: "fr", headline: "  " })).toBe("العنوان التسويقي مطلوب");
+  });
+
+  it("selects only slides active in their time window and campaign", () => {
+    const now = new Date("2026-08-22T12:00:00.000Z");
+    expect(isDisplaySlideActive({ isActive: true, startsAt: new Date("2026-08-22T11:00:00.000Z"), endsAt: new Date("2026-08-22T13:00:00.000Z") }, undefined, now)).toBe(true);
+    expect(isDisplaySlideActive({ isActive: true, startsAt: new Date("2026-08-22T13:00:00.000Z") }, undefined, now)).toBe(false);
+    expect(isDisplaySlideActive({ isActive: true, campaignId: 9 }, { status: "active", startsAt: null, endsAt: null }, now)).toBe(true);
+    expect(isDisplaySlideActive({ isActive: true, campaignId: 9 }, { status: "ended", startsAt: null, endsAt: null }, now)).toBe(false);
+    expect(isDisplaySlideActive({ isActive: false }, undefined, now)).toBe(false);
   });
 });
