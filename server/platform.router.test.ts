@@ -8,7 +8,7 @@ import type { TrpcContext } from "./_core/context";
 
 function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver", restaurantId?: number): TrpcContext {
   return {
-    user: { id: 7, openId: "platform-test", name: "اختبار", email: "test@nfood.local", loginMethod: "test", role, testRole, restaurantId, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
+    user: { id: 1, openId: "platform-test", name: "اختبار", email: "test@nfood.local", loginMethod: "test", role, testRole, restaurantId, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
     res: { clearCookie: () => undefined } as TrpcContext["res"],
   };
@@ -121,12 +121,13 @@ describe("platform procedures", () => {
       await expect(admin.platform.updateOrderStatus({ restaurantId: restaurant.id, orderId, status: "completed" })).resolves.toMatchObject({ success: true, referralRewarded: false });
       const savedReferral = (await db.select({ status: referralRecords.status, qualifyingOrderId: referralRecords.qualifyingOrderId }).from(referralRecords).where(eq(referralRecords.id, referral.id)).limit(1))[0];
       expect(savedReferral).toEqual({ status: "rewarded", qualifyingOrderId: orderId });
-      const rewards = await db.select({ id: loyaltyTransactions.id }).from(loyaltyTransactions).where(eq(loyaltyTransactions.referenceId, `referral:${referral.id}`));
+      const rewards = await db.select({ id: loyaltyTransactions.id }).from(loyaltyTransactions).where(eq(loyaltyTransactions.orderId, orderId));
       expect(rewards).toHaveLength(2);
     } finally {
-      await db.delete(loyaltyTransactions).where(eq(loyaltyTransactions.referenceId, `referral:${referral.id}`));
+      await db.delete(loyaltyTransactions).where(eq(loyaltyTransactions.orderId, orderId));
       await db.delete(loyaltyAccounts).where(eq(loyaltyAccounts.customerId, customers[0].id));
       await db.delete(loyaltyAccounts).where(eq(loyaltyAccounts.customerId, customers[1].id));
+      await db.update(referralRecords).set({ qualifyingOrderId: null }).where(eq(referralRecords.id, referral.id));
       await db.delete(referralRecords).where(eq(referralRecords.id, referral.id));
       await db.delete(orders).where(eq(orders.id, orderId));
     }

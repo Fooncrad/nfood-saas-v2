@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import { nanoid } from "nanoid";
+import { getDb } from "./db";
+import { branches, restaurantMembers, testAccounts } from "../drizzle/schema";
+import { and, eq } from "drizzle-orm";
 
 function adminContext(): TrpcContext {
   return {
@@ -30,8 +33,15 @@ describe("admin lifecycle guards", () => {
 
   it("allows the central test admin to create a restaurant", async () => {
     const caller = appRouter.createCaller(testRoleContext("admin"));
-    const created = await caller.admin.createRestaurant({ name: "اختبار صلاحية NFOOD", slug: `permission-test-${nanoid(8).toLowerCase()}`, plan: "Growth" });
-    expect(created).toEqual(expect.objectContaining({ success: true, barcode: expect.stringMatching(/^NFOOD-/) }));
+    const email = `restaurant-${nanoid(8).toLowerCase()}@nfood.local`;
+    const created = await caller.admin.createRestaurant({ name: "اختبار صلاحية NFOOD", slug: `permission-test-${nanoid(8).toLowerCase()}`, plan: "Growth", email, password: "123456" });
+    expect(created).toEqual(expect.objectContaining({ success: true, barcode: expect.stringMatching(/^NFOOD-/), account: { email, temporaryPassword: "123456" } }));
+    const db = await getDb();
+    const account = db && (await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId }).from(testAccounts).where(eq(testAccounts.email, email)).limit(1))[0];
+    const branch = db && account && (await db.select({ id: branches.id }).from(branches).where(eq(branches.restaurantId, created.id)).limit(1))[0];
+    const member = db && account && branch && (await db.select({ id: restaurantMembers.id }).from(restaurantMembers).where(and(eq(restaurantMembers.restaurantId, created.id), eq(restaurantMembers.branchId, branch.id))).limit(1))[0];
+    expect(account?.restaurantId).toBe(created.id);
+    expect(member).toBeTruthy();
     await expect(caller.admin.deleteRestaurant({ id: created.id })).resolves.toEqual(expect.objectContaining({ success: true, id: created.id }));
     await expect(appRouter.createCaller(adminContext()).platform.restaurantById({ id: created.id })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });

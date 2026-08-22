@@ -28,7 +28,7 @@ export function SuperAdminRestaurantCatalog() {
   const updateRestaurant = trpc.admin.updateRestaurant.useMutation({ onSuccess: () => { void utils.admin.restaurants.invalidate(); toast.success("تم تحديث المطعم"); }, onError: (error) => toast.error(`تعذر تحديث المطعم: ${error.message}`) });
   const enterRestaurant = trpc.admin.enterRestaurantAccount.useMutation({ onSuccess: () => { toast.success("تم الدخول إلى مساحة المطعم"); window.location.assign("/"); }, onError: (error) => toast.error(`تعذر الدخول إلى المطعم: ${error.message}`) });
   const deleteRestaurant = trpc.admin.deleteRestaurant.useMutation({ onSuccess: () => { void utils.admin.restaurants.invalidate(); toast.success("تم حذف المطعم بأمان"); }, onError: (error) => toast.error(`تعذر حذف المطعم: ${error.message}`) });
-  const createRestaurant = trpc.admin.createRestaurant.useMutation({ onSuccess: () => { void utils.admin.restaurants.invalidate(); setCreateOpen(false); toast.success("تم إنشاء المطعم"); }, onError: (error) => toast.error(`تعذر إنشاء المطعم: ${error.message}`) });
+  const createRestaurant = trpc.admin.createRestaurant.useMutation({ onSuccess: () => { void utils.admin.restaurants.invalidate(); setCreateOpen(false); toast.success("تم إنشاء المطعم وحساب الدخول"); }, onError: (error) => toast.error(`تعذر إنشاء المطعم: ${error.message}`) });
   const rows = useMemo(() => (restaurantsQuery.data ?? []).filter((restaurant) => {
     const status = restaurant.status === "active" ? "نشط" : restaurant.status === "trial" ? "تجربة" : "معلّق";
     const matchesFilter = filter === "الكل" || filter === status;
