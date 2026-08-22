@@ -92,6 +92,8 @@ export const restaurants = mysqlTable("restaurants", {
   address: varchar("address", { length: 500 }),
   languagesJson: text("languagesJson").default('["ar","en","fr","ur"]'),
   reservationEnabled: boolean("reservationEnabled").default(true).notNull(),
+  cancellationEnabled: boolean("cancellationEnabled").default(true).notNull(),
+  cancellationWindowMinutes: int("cancellationWindowMinutes").default(15).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -293,6 +295,10 @@ export const orders = mysqlTable("orders", {
   hotelRoom: varchar("hotelRoom", { length: 80 }),
   hotelFloor: varchar("hotelFloor", { length: 40 }),
   status: mysqlEnum("status", ["new", "preparing", "ready", "completed", "cancelled"]).default("new").notNull(),
+  acceptedAt: timestamp("acceptedAt"),
+  cancelledAt: timestamp("cancelledAt"),
+  cancellationReason: varchar("cancellationReason", { length: 500 }),
+  cancelledByUserId: int("cancelledByUserId").references(() => users.id),
   channel: mysqlEnum("channel", ["dine_in", "takeaway", "delivery", "reservation", "hotel"]).default("dine_in").notNull(),
   paymentMethod: mysqlEnum("paymentMethod", ["cash", "card", "bank_transfer", "online", "other"]).default("cash").notNull(),
   paymentStatus: mysqlEnum("paymentStatus", ["unpaid", "paid", "failed", "refunded"]).default("unpaid").notNull(),
