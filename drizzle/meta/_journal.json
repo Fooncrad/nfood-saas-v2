@@ -337,6 +337,13 @@
       "when": 1787369902160,
       "tag": "0047_easy_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "5",
+      "when": 1787376175770,
+      "tag": "0048_gorgeous_beast",
+      "breakpoints": true
     }
   ]
 }

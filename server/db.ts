@@ -1,7 +1,7 @@
 import { and, count, desc, eq, inArray, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { createCipheriv, createHash, randomBytes } from "node:crypto";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -266,6 +266,10 @@ export async function getRoleSummary(restaurantId: number, role?: string, userId
 }
 
 export type MediaScope = "platform" | "restaurant" | "user";
+export async function listTranslationErrors(restaurantId: number) { const db = await getDb(); if (!db) return []; return db.select().from(translationErrorLogs).where(eq(translationErrorLogs.restaurantId, restaurantId)).orderBy(desc(translationErrorLogs.createdAt)); }
+export async function createTranslationError(input: { restaurantId: number; entityType: "category" | "item"; entityId: number; sourceLanguage: string; targetLanguage: string; sourceName: string; errorMessage: string; createdByUserId?: number | null; attempts?: number }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.insert(translationErrorLogs).values({ ...input, createdByUserId: input.createdByUserId ?? null, attempts: input.attempts ?? 1 }); return Number(result[0].insertId); }
+export async function resolveTranslationError(id: number, restaurantId: number) { const db = await getDb(); if (!db) throw new Error("Database is not available"); await db.update(translationErrorLogs).set({ status: "resolved", resolvedAt: new Date() }).where(and(eq(translationErrorLogs.id, id), eq(translationErrorLogs.restaurantId, restaurantId))); return { success: true, id }; }
+
 export async function listMediaFiles(input: { scope: MediaScope; userId?: number; restaurantId?: number; search?: string; category?: "image" | "menu" | "logo" | "document" | "other" }) {
   const db = await getDb(); if (!db) return [];
   const predicates = [eq(mediaFiles.scope, input.scope), eq(mediaFiles.isDeleted, false)];

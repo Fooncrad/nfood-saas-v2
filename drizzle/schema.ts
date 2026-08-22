@@ -162,6 +162,22 @@ export const menuItems = mysqlTable("menuItems", {
   isAvailable: boolean("isAvailable").default(true).notNull(),
 });
 
+export const translationErrorLogs = mysqlTable("translationErrorLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  entityType: mysqlEnum("entityType", ["category", "item"]).notNull(),
+  entityId: int("entityId").notNull(),
+  sourceLanguage: varchar("sourceLanguage", { length: 10 }).notNull(),
+  targetLanguage: varchar("targetLanguage", { length: 10 }).notNull(),
+  sourceName: text("sourceName").notNull(),
+  errorMessage: text("errorMessage").notNull(),
+  status: mysqlEnum("status", ["open", "resolved"]).default("open").notNull(),
+  attempts: int("attempts").default(1).notNull(),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  resolvedAt: timestamp("resolvedAt"),
+});
+
 export const menuItemAddons = mysqlTable("menuItemAddons", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
