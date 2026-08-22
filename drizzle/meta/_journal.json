@@ -463,6 +463,13 @@
       "when": 1787433885586,
       "tag": "0065_careless_mariko_yashida",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "5",
+      "when": 1787438336991,
+      "tag": "0066_first_hellion",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,26 @@
+import { Check, Image as ImageIcon, MonitorPlay, Smartphone, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+
+const templates = [
+  { id: "tv-cinematic", name: "سينمائي للشاشة", ratio: "16 / 9", type: "tv", gradient: "from-[#24150f] via-[#8e3f20] to-[#f0a15e]", label: "عرض اليوم" },
+  { id: "tv-match", name: "ليلة المباراة", ratio: "16 / 9", type: "tv", gradient: "from-[#071b2d] via-[#0f766e] to-[#a7f3d0]", label: "جاهزون للمباراة" },
+  { id: "mobile-story", name: "قصة الجوال", ratio: "4 / 5", type: "mobile", gradient: "from-[#3b0764] via-[#a21caf] to-[#f0abfc]", label: "جرّب الجديد" },
+  { id: "mobile-menu", name: "بطاقة المنيو", ratio: "9 / 16", type: "mobile", gradient: "from-[#172554] via-[#2563eb] to-[#bfdbfe]", label: "اطلبها الآن" },
+] as const;
+
+export function MediaTemplateStudio() {
+  const [selected, setSelected] = useState<string>(templates[0].id);
+  const [title, setTitle] = useState("عرض اليوم");
+  const [subtitle, setSubtitle] = useState("نكهة تستحق التجربة");
+  const [cta, setCta] = useState("اطلب الآن");
+  const [imageUrl, setImageUrl] = useState("");
+  const template = useMemo(() => templates.find((item) => item.id === selected) ?? templates[0], [selected]);
+
+  return <Card className="overflow-hidden rounded-[2rem] border-slate-200 bg-white shadow-[0_18px_60px_-35px_rgba(15,23,42,.35)]"><CardHeader className="border-b border-slate-100 bg-gradient-to-l from-[#f7fbff] to-white px-5 py-5"><div className="flex items-center justify-between gap-4"><div><CardTitle className="flex items-center gap-2 text-lg font-black text-slate-900"><Sparkles className="h-5 w-5 text-emerald-500" /> استوديو القوالب السريعة</CardTitle><p className="mt-1 text-xs leading-5 text-slate-500">اختر مقاسًا مناسبًا، عدّل النص، ثم استخدم المعاينة قبل رفع الحملة. القوالب تحفظ مساحة آمنة للنص ولا تشوّه الصورة.</p></div><div className="hidden gap-2 sm:flex"><span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">TV 16:9</span><span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">Mobile 4:5 / 9:16</span></div></div></CardHeader><CardContent className="grid gap-6 p-5 lg:grid-cols-[1fr_1.1fr]">
+    <div className="space-y-3"><p className="text-xs font-black text-slate-700">القوالب الجاهزة</p><div className="grid grid-cols-2 gap-3">{templates.map((item) => <button type="button" key={item.id} onClick={() => setSelected(item.id)} className={`group rounded-2xl border p-2 text-right transition ${selected === item.id ? "border-[#e76f3c] bg-orange-50 ring-2 ring-orange-100" : "border-slate-200 hover:border-slate-300"}`}><div className={`relative flex aspect-[16/10] items-end overflow-hidden rounded-xl bg-gradient-to-br ${item.gradient} p-3 text-white`} style={{ aspectRatio: item.ratio }}><span className="text-[10px] font-black">{item.label}</span>{selected === item.id && <span className="absolute left-2 top-2 rounded-full bg-white/90 p-1 text-emerald-600"><Check className="h-3 w-3" /></span>}</div><div className="mt-2 flex items-center justify-between gap-2"><span className="truncate text-[11px] font-bold text-slate-700">{item.name}</span>{item.type === "tv" ? <MonitorPlay className="h-3.5 w-3.5 text-slate-400" /> : <Smartphone className="h-3.5 w-3.5 text-slate-400" />}</div></button>)}</div></div>
+    <div className="space-y-4"><div className="grid gap-3 sm:grid-cols-3"><Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="العنوان" className="rounded-xl" /><Input value={subtitle} onChange={(event) => setSubtitle(event.target.value)} placeholder="الوصف" className="rounded-xl" /><Input value={cta} onChange={(event) => setCta(event.target.value)} placeholder="زر الإجراء" className="rounded-xl" /></div><div className="flex gap-2"><Input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="رابط صورة من مكتبة الوسائط (اختياري)" className="rounded-xl" /><Button type="button" variant="outline" className="shrink-0 rounded-xl"><ImageIcon className="ml-2 h-4 w-4" /> من المكتبة</Button></div><div className="flex min-h-[260px] items-center justify-center rounded-[1.5rem] bg-slate-100 p-5"><div className={`relative flex w-full max-w-[520px] items-end overflow-hidden rounded-[1.25rem] bg-gradient-to-br ${template.gradient} p-6 text-white shadow-2xl`} style={{ aspectRatio: template.ratio, backgroundImage: imageUrl ? `linear-gradient(90deg, rgba(7,12,20,.88), rgba(7,12,20,.18)), url(${imageUrl})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}><div className="relative z-10 max-w-[75%]"><p className="text-[clamp(1rem,3vw,2rem)] font-black leading-tight">{title || "عنوان الحملة"}</p><p className="mt-2 text-xs font-medium text-white/80 sm:text-sm">{subtitle || "وصف قصير وواضح"}</p><span className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-[11px] font-black text-slate-900">{cta || "الإجراء"}</span></div><span className="absolute right-4 top-4 rounded-full bg-white/15 px-2 py-1 text-[9px] font-bold text-white/80">{template.ratio.replace(" / ", ":")}</span></div></div></div>
+  </CardContent></Card>;
+}

@@ -98,6 +98,15 @@ export const restaurants = mysqlTable("restaurants", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const menuAnalyticsEvents = mysqlTable("menuAnalyticsEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  eventType: mysqlEnum("eventType", ["menu_open", "qr_scan"]).notNull(),
+  visitorKey: varchar("visitorKey", { length: 96 }),
+  source: varchar("source", { length: 40 }).default("direct").notNull(),
+  occurredAt: timestamp("occurredAt").defaultNow().notNull(),
+});
+
 export const supportAgents = mysqlTable("supportAgents", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().unique().references(() => users.id),

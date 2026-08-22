@@ -41,6 +41,8 @@ import { RemoteTaskDialog, type RemoteTaskDraft } from "@/components/RemoteTaskD
 import { KitchenPrinterSettings } from "@/components/KitchenPrinterSettings";
 import { KitchenTicketBoard } from "@/components/KitchenTicketBoard";
 import { RestaurantDisplayMarketingPanel } from "@/components/RestaurantDisplayMarketingPanel";
+import { RestaurantMenuInsightsPanel } from "@/components/RestaurantMenuInsightsPanel";
+import { MediaTemplateStudio } from "@/components/MediaTemplateStudio";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useLanguage, type TranslationKey } from "@/contexts/LanguageContext";
 import { detectMenuSourceLanguage } from "@/lib/translationSource";
@@ -250,7 +252,7 @@ function ModuleView({ active, orders, advanceOrder, setActive, restaurantId, bra
   if (active === "tables") return <TablesView restaurantId={restaurantId} />;
   if (active === "inventory") return <InventoryView restaurantId={restaurantId} />;
   if (active === "team") return <TeamView restaurantId={restaurantId} />;
-  if (active === "marketing") return <div className="space-y-8"><MarketingView restaurantId={restaurantId} /><RestaurantDisplayMarketingPanel restaurantId={restaurantId} branchId={branchId} /></div>;
+  if (active === "marketing") return <div className="space-y-8"><RestaurantMenuInsightsPanel restaurantId={restaurantId} /><MediaTemplateStudio /><MarketingView restaurantId={restaurantId} /><RestaurantDisplayMarketingPanel restaurantId={restaurantId} branchId={branchId} /></div>;
   if (active === "reservations") return <ReservationsView restaurantId={restaurantId} />;
   if (active === "admin") return <SuperAdminRestaurantCatalog />;
   if (active === "accounts") return <AccountManagementPanel />;
