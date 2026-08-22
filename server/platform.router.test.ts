@@ -543,3 +543,10 @@ describe("dynamic package catalog", () => {
     if (plans[0].features.length > 0) expect(plans[0].features[0]).toEqual(expect.objectContaining({ planId: plans[0].id, featureId: expect.any(Number), key: expect.any(String), enabled: expect.any(Boolean) }));
   });
 });
+
+  it("returns platform summary only to Super Admin with real metric groups", async () => {
+    const admin = appRouter.createCaller(context("admin"));
+    const summary = await admin.admin.platformSummary();
+    expect(summary).toEqual(expect.objectContaining({ restaurants: expect.objectContaining({ total: expect.any(Number), active: expect.any(Number), trial: expect.any(Number), suspended: expect.any(Number) }), customers: expect.any(Number), employees: expect.any(Number), orders: expect.objectContaining({ total: expect.any(Number), pending: expect.any(Number), cancelled: expect.any(Number) }), revenue: expect.any(Number), subscriptions: expect.objectContaining({ active: expect.any(Number), averageMonthlyPrice: expect.any(Number) }) }));
+    await expect(appRouter.createCaller(context("user", "restaurant_admin", 1)).admin.platformSummary()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });

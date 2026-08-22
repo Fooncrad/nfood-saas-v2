@@ -20,6 +20,7 @@ export type AdminOfflineOperation =
         id: number;
         name?: string;
         description?: string | null;
+        planType?: "free" | "monthly" | "yearly" | "trial" | "enterprise";
         monthlyPrice?: string;
         yearlyPrice?: string;
         isActive?: boolean;
