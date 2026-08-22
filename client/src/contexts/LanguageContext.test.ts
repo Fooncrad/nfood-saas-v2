@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { LANGUAGE_STORAGE_KEY, languageMeta, legacyUiTranslations, translations } from "./LanguageContext";
+import { describe, expect, it, vi } from "vitest";
+import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_MANUAL_STORAGE_KEY, detectVisitorLanguage, languageMeta, legacyUiTranslations, translations } from "./LanguageContext";
 
 describe("language configuration", () => {
   it("contains Arabic, English, and French with correct directions", () => {
@@ -36,7 +36,17 @@ describe("language configuration", () => {
     }
   });
 
-  it("uses a stable storage key for persistence", () => {
+  it("uses separate dashboard and public manual-language storage keys", () => {
     expect(LANGUAGE_STORAGE_KEY).toBe("nfood-language");
+    expect(DASHBOARD_LANGUAGE_STORAGE_KEY).toBe("nfood-dashboard-language");
+    expect(MENU_LANGUAGE_MANUAL_STORAGE_KEY).toBe("nfood-menu-language-manual");
+  });
+
+  it("detects supported visitor languages from navigator.language", () => {
+    vi.stubGlobal("window", { navigator: { language: "fr-FR" } });
+    expect(detectVisitorLanguage()).toBe("fr");
+    vi.stubGlobal("window", { navigator: { language: "en-US" } });
+    expect(detectVisitorLanguage()).toBe("en");
+    vi.unstubAllGlobals();
   });
 });
