@@ -11,10 +11,12 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const guestStatusLabels: Record<string, string> = { new: "جديد", preparing: "قيد التحضير", ready: "جاهز", completed: "مكتمل", cancelled: "ملغى" };
+type LocalizedMenuEntity = { name: string; description?: string | null; translationsJson?: string | null };
+function localizeMenuEntity<T extends LocalizedMenuEntity>(entity: T, language: string): T { if (language === "ar" || !entity.translationsJson) return entity; try { const translations = JSON.parse(entity.translationsJson) as Array<{ language: string; name: string; description?: string }>; const match = translations.find((entry) => entry.language === language); return match?.name ? { ...entity, name: match.name, description: match.description ?? entity.description } : entity; } catch { return entity; } }
 
 export default function RestaurantPublic() {
   const { slug = "" } = useParams<{ slug: string }>();
-  const { t, direction } = useLanguage();
+  const { t, direction, language } = useLanguage();
   const page = trpc.platform.publicRestaurantPage.useQuery({ slug }, { enabled: Boolean(slug), retry: false });
   const checkout = trpc.platform.guestCheckout.useMutation();
   const reservation = trpc.platform.createPublicReservation.useMutation();
@@ -36,8 +38,8 @@ export default function RestaurantPublic() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerPanel, setDrawerPanel] = useState<"menu" | "contact" | "reservation">("menu");
   const [searchTerm, setSearchTerm] = useState("");
-  const categories = useMemo(() => [...(page.data?.categories ?? [])].sort((a, b) => a.sortOrder - b.sortOrder), [page.data?.categories]);
-  const items = page.data?.items ?? [];
+  const categories = useMemo(() => [...(page.data?.categories ?? [])].sort((a, b) => a.sortOrder - b.sortOrder).map((category) => localizeMenuEntity(category, language)), [page.data?.categories, language]);
+  const items = useMemo(() => (page.data?.items ?? []).map((item) => localizeMenuEntity(item, language)), [page.data?.items, language]);
   const branches = page.data?.branches ?? [];
   const categoryCounts = useMemo(() => items.reduce<Record<string, number>>((counts, item) => { if (item.categoryId != null) counts[String(item.categoryId)] = (counts[String(item.categoryId)] ?? 0) + 1; return counts; }, {}), [items]);
   const brandColor = page.data?.restaurant.brandColor ?? "#e5007d";
