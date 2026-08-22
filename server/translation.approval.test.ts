@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
-import { appRouter } from "./routers";
+import { appRouter, getTranslationTargetLanguages } from "./routers";
 import { getDb } from "./db";
 import { menuCategories, restaurants } from "../drizzle/schema";
 import type { TrpcContext } from "./_core/context";
@@ -12,6 +12,16 @@ function context(restaurantId: number): TrpcContext {
     res: { clearCookie: () => undefined } as TrpcContext["res"],
   };
 }
+
+describe("translation directions", () => {
+  it.each([
+    ["ar", ["ar", "en", "fr"], ["en", "fr"]],
+    ["en", ["ar", "en", "fr"], ["ar", "fr"]],
+    ["fr", ["ar", "fr", "en", "en"], ["ar", "en"]],
+  ])("keeps %s as source and returns the other languages", (source, languages, expected) => {
+    expect(getTranslationTargetLanguages(source as "ar" | "en" | "fr", languages)).toEqual(expected);
+  });
+});
 
 describe("translation approval", () => {
   it("approves only a translation belonging to the active restaurant", async () => {
