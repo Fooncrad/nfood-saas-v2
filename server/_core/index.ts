@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerMarketingHeartbeat } from "../marketing";
+import { getPublicRestaurantPage } from "../db";
 import { serveStatic, setupVite } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -29,6 +30,10 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+type MenuLanguage = "ar" | "en" | "fr" | "ur";
+function normalizeMenuLanguage(value: unknown): MenuLanguage { const code = typeof value === "string" ? value.toLowerCase().split("-")[0] : "ar"; return code === "en" || code === "fr" || code === "ur" ? code : "ar"; }
+function localizeMenuEntity<T extends { name: string; description?: string | null; translationsJson?: string | null }>(entity: T, language: MenuLanguage): T { try { const parsed = entity.translationsJson ? JSON.parse(entity.translationsJson) : []; const entries = Array.isArray(parsed) ? parsed as Array<{ language?: string; name?: string; description?: string; status?: string }> : []; const approved = (entry: { status?: string }) => !entry.status || entry.status === "approved"; const match = entries.find((entry) => entry.language === language && approved(entry)) ?? entries.find((entry) => entry.language === "ar" && approved(entry)); return match?.name ? { ...entity, name: match.name, description: match.description ?? entity.description } : entity; } catch { return entity; } }
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
@@ -46,6 +51,7 @@ async function startServer() {
       createContext,
     })
   );
+  app.get("/api/menu", async (req, res) => { const slug = typeof req.query.slug === "string" ? req.query.slug.trim().toLowerCase() : ""; if (!/^[a-z0-9-]{2,160}$/.test(slug)) return res.status(400).json({ error: "slug is required" }); const language = normalizeMenuLanguage(req.query.lang); const page = await getPublicRestaurantPage(slug); if (!page) return res.status(404).json({ error: "restaurant_not_found" }); return res.json({ ...page, language, direction: language === "en" || language === "fr" ? "ltr" : "rtl", categories: page.categories.map((entity) => localizeMenuEntity(entity, language)), items: page.items.map((entity) => localizeMenuEntity(entity, language)) }); });
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
