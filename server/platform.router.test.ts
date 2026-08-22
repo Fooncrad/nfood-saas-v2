@@ -506,3 +506,30 @@ describe("platform procedures", () => {
     }
   });
 });
+
+
+describe("audit log filtering", () => {
+  it("filters by restaurant, actor, and date range", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const actor = (await db.select({ id: users.id }).from(users).limit(1))[0];
+    if (!actor) return;
+    const slug = `audit-filter-${Date.now()}`;
+    const restaurantResult = await db.insert(restaurants).values({ name: "اختبار فلترة التدقيق", slug, barcode: `NFOOD-AUDIT-${Date.now()}`, status: "active", plan: "Growth" });
+    const restaurantId = Number(restaurantResult[0].insertId);
+    const insideDate = new Date(Date.now() - 60_000);
+    const outsideDate = new Date(Date.now() - 86_400_000);
+    try {
+      await db.insert(auditLogs).values([
+        { restaurantId, actorUserId: actor.id, actorRole: "admin", action: "feature.override.enable", entityType: "feature", entityId: "101", createdAt: insideDate },
+        { restaurantId, actorUserId: actor.id, actorRole: "admin", action: "feature.override.disable", entityType: "feature", entityId: "102", createdAt: outsideDate },
+      ]);
+      const result = await appRouter.createCaller(context("admin")).platform.auditLogs({ restaurantId, actorUserId: actor.id, from: new Date(insideDate.getTime() - 5_000), to: new Date(insideDate.getTime() + 5_000), limit: 100 });
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(expect.objectContaining({ restaurantId, actorUserId: actor.id, entityId: "101" }));
+    } finally {
+      await db.delete(auditLogs).where(eq(auditLogs.restaurantId, restaurantId));
+      await db.delete(restaurants).where(eq(restaurants.id, restaurantId));
+    }
+  });
+});

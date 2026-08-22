@@ -1,7 +1,7 @@
-import { and, count, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { createCipheriv, createHash, randomBytes } from "node:crypto";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -209,6 +209,9 @@ export async function getFeatureAccess(restaurantId: number, featureKey: string)
   const restaurant = (await db.select({ plan: restaurants.plan }).from(restaurants).where(eq(restaurants.id, restaurantId)).limit(1))[0];
   const subscription = (await db.select({ plan: subscriptions.plan }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), eq(subscriptions.status, "active"))).orderBy(desc(subscriptions.id)).limit(1))[0];
   const activePlan = subscription?.plan ?? restaurant?.plan ?? "Starter";
+  const configuredPlanRows = await db.select({ key: featureDefinitions.key, enabled: packagePlanFeatures.enabled, featureLimit: packagePlanFeatures.featureLimit }).from(packagePlanFeatures).innerJoin(packagePlans, eq(packagePlanFeatures.planId, packagePlans.id)).innerJoin(featureDefinitions, eq(packagePlanFeatures.featureId, featureDefinitions.id)).where(and(or(eq(packagePlans.key, activePlan), eq(packagePlans.name, activePlan)), eq(packagePlans.isActive, true)));
+  const configuredPlan = configuredPlanRows.length > 0;
+  const planFeatureByKey = new Map(configuredPlanRows.map((row) => [row.key, row]));
   const planFeatures = PLAN_FEATURES[activePlan] ?? PLAN_FEATURES.Starter;
   const byKey = new Map(definitions.map((definition) => [definition.key, definition]));
   const byFeatureId = new Map(overrides.map((override) => [override.featureId, override]));
@@ -218,16 +221,17 @@ export async function getFeatureAccess(restaurantId: number, featureKey: string)
     if (!definition) return { enabled: false, limit: null, reason: "missing" };
     const override = byFeatureId.get(definition.id);
     if (definition.dependencyKey) { const dependency = evaluate(definition.dependencyKey, new Set(Array.from(visited).concat(key))); if (!dependency.enabled) return { enabled: false, limit: null, reason: "dependency_disabled" }; }
-    if (override?.enabled === false) return { enabled: false, limit: override.overrideLimit ?? definition.defaultLimit ?? null, reason: "disabled" };
-    if (!override && !planFeatures.has(key)) return { enabled: false, limit: definition.defaultLimit ?? null, reason: "disabled" };
-    return { enabled: true, limit: override?.overrideLimit ?? definition.defaultLimit ?? null, reason: "enabled" };
+    if (override?.enabled === false) return { enabled: false, limit: override.overrideLimit ?? planFeatureByKey.get(key)?.featureLimit ?? definition.defaultLimit ?? null, reason: "disabled" };
+    const packageFeature = planFeatureByKey.get(key);
+    if (!override && ((configuredPlan && packageFeature?.enabled !== true) || (!configuredPlan && !planFeatures.has(key)))) return { enabled: false, limit: packageFeature?.featureLimit ?? definition.defaultLimit ?? null, reason: "disabled" };
+    return { enabled: true, limit: override?.overrideLimit ?? packageFeature?.featureLimit ?? definition.defaultLimit ?? null, reason: "enabled" };
   };
   return { key: featureKey, ...evaluate(featureKey) };
 }
 
 export async function getUserSecurity(userId: number) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(userSecurity).where(eq(userSecurity.userId, userId)).limit(1); return rows[0]; }
 export async function insertAuditLog(input: typeof auditLogs.$inferInsert) { const db = await getDb(); if (!db) return undefined; let safeInput = input; if (input.actorUserId !== undefined && input.actorUserId !== null) { const actor = await db.select({ id: users.id }).from(users).where(eq(users.id, input.actorUserId)).limit(1); if (!actor[0]) safeInput = { ...input, actorUserId: null }; } const result = await db.insert(auditLogs).values(safeInput); return Number(result[0].insertId); }
-export async function listAuditLogs(restaurantId?: number) { const db = await getDb(); if (!db) return []; return restaurantId ? db.select().from(auditLogs).where(eq(auditLogs.restaurantId, restaurantId)).orderBy(desc(auditLogs.createdAt)).limit(100) : db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(100); }
+export async function listAuditLogs(filters?: { restaurantId?: number; actorUserId?: number; actorRole?: string; action?: string; from?: Date; to?: Date; limit?: number }) { const db = await getDb(); if (!db) return []; const conditions = [filters?.restaurantId ? eq(auditLogs.restaurantId, filters.restaurantId) : undefined, filters?.actorUserId ? eq(auditLogs.actorUserId, filters.actorUserId) : undefined, filters?.actorRole ? eq(auditLogs.actorRole, filters.actorRole) : undefined, filters?.action ? eq(auditLogs.action, filters.action) : undefined, filters?.from ? gte(auditLogs.createdAt, filters.from) : undefined, filters?.to ? lte(auditLogs.createdAt, filters.to) : undefined].filter((condition): condition is NonNullable<typeof condition> => Boolean(condition)); const whereClause = conditions.length > 0 ? and(...conditions) : undefined; return db.select().from(auditLogs).where(whereClause).orderBy(desc(auditLogs.createdAt)).limit(filters?.limit ?? 100); }
 export async function getActivitySummary(restaurantId?: number) {
   const db = await getDb();
   if (!db) return { scope: restaurantId ? "restaurant" as const : "platform" as const, totals: { orders: 0, completed: 0, sales: 0, active: 0, auditEvents: 0 }, days: [] as Array<{ date: string; orders: number; sales: number }>, recentEvents: [] };

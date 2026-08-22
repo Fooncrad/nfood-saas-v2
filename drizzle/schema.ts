@@ -352,6 +352,27 @@ export const subscriptions = mysqlTable("subscriptions", {
   renewsAt: timestamp("renewsAt"),
 });
 
+export const packagePlans = mysqlTable("packagePlans", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 80 }).notNull().unique(),
+  name: varchar("name", { length: 120 }).notNull(),
+  description: text("description"),
+  monthlyPrice: decimal("monthlyPrice", { precision: 10, scale: 2 }).default("0").notNull(),
+  yearlyPrice: decimal("yearlyPrice", { precision: 10, scale: 2 }).default("0").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export const packagePlanFeatures = mysqlTable("packagePlanFeatures", {
+  id: int("id").autoincrement().primaryKey(),
+  planId: int("planId").notNull().references(() => packagePlans.id),
+  featureId: int("featureId").notNull().references(() => featureDefinitions.id),
+  enabled: boolean("enabled").default(true).notNull(),
+  featureLimit: int("featureLimit"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const restaurantMembers = mysqlTable("restaurantMembers", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
