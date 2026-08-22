@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `showBranchesOnMenu` boolean DEFAULT false NOT NULL;

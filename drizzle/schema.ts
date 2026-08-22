@@ -94,6 +94,7 @@ export const restaurants = mysqlTable("restaurants", {
   reservationEnabled: boolean("reservationEnabled").default(true).notNull(),
   cancellationEnabled: boolean("cancellationEnabled").default(true).notNull(),
   cancellationWindowMinutes: int("cancellationWindowMinutes").default(15).notNull(),
+  showBranchesOnMenu: boolean("showBranchesOnMenu").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
