@@ -13,6 +13,8 @@ describe("Restaurant growth contracts", () => {
     expect(schema).toContain('eventType: mysqlEnum("eventType", ["menu_open", "qr_scan"])');
     expect(router).toContain("recordMenuAnalytics");
     expect(router).toContain("menuAnalytics");
+    expect(router).toContain("pwaInstallMessage");
+    expect(router).toContain("pwaInstallIconUrl");
     expect(router).toContain("assertRestaurantAccess(ctx, input.restaurantId)");
   });
 
@@ -23,6 +25,9 @@ describe("Restaurant growth contracts", () => {
     expect(studio).toContain('ratio: "16 / 9"');
     expect(studio).toContain('ratio: "9 / 16"');
     expect(studio).toContain("backgroundSize: \"cover\"");
+    expect(studio).toContain("selectTemplate");
+    expect(studio).toContain("transition-[aspect-ratio,transform,opacity,box-shadow]");
+    expect(studio).toContain("motion-reduce:transition-none");
   });
 
   it("contains a dismissible install experience for iOS and Android", () => {
@@ -32,5 +37,7 @@ describe("Restaurant growth contracts", () => {
     expect(menu).toContain("من Safari: مشاركة");
     expect(menu).toContain("ثبّت منيو");
     expect(menu).toContain("nfood-install-dismissed");
+    expect(menu).toContain("pwaInstallMessage");
+    expect(menu).toContain("pwaInstallIconUrl");
   });
 });

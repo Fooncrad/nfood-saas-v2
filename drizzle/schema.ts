@@ -76,6 +76,8 @@ export const restaurants = mysqlTable("restaurants", {
   themeMode: mysqlEnum("themeMode", ["light", "dark", "system"]).default("light").notNull(),
   themePreset: varchar("themePreset", { length: 40 }).default("nfood-sunset").notNull(),
   brandLogoUrl: varchar("brandLogoUrl", { length: 500 }),
+  pwaInstallMessage: varchar("pwaInstallMessage", { length: 180 }),
+  pwaInstallIconUrl: varchar("pwaInstallIconUrl", { length: 500 }),
   brandDescription: text("brandDescription"),
   homepageContent: text("homepageContent"),
   termsOfService: text("termsOfService"),
