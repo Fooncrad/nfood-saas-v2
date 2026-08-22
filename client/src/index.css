@@ -227,3 +227,38 @@
   @keyframes nfood-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @media (prefers-reduced-motion: reduce) { .nfood-enter { animation: none; } [data-slot="card"] { transition: none; } }
 }
+
+/* NFOOD interaction polish */
+@layer components {
+  [data-slot="button"] {
+    min-height: 2.625rem;
+    border-radius: 0.85rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+  [data-slot="button"]:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 10px 24px -16px oklch(0.35 0.08 40 / 0.45); }
+  [data-slot="button"]:not(:disabled):active { transform: scale(0.97); }
+  [data-slot="button"]:focus-visible { box-shadow: 0 0 0 4px oklch(0.74 0.13 45 / 0.2); }
+  [data-slot="input"], [data-slot="textarea"], input, textarea, select { border-radius: 0.85rem; }
+  [data-slot="card"] { border-radius: 1.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="button"], [data-slot="card"] { transition: none !important; }
+  [data-slot="button"]:not(:disabled):hover, [data-slot="button"]:not(:disabled):active { transform: none; }
+}
+
+/* NFOOD platform identity layer */
+@layer components {
+  .nfood-dashboard-shell {
+    background-image:
+      radial-gradient(circle at 92% -12%, oklch(0.98 0.06 58 / 0.88), transparent 22rem),
+      radial-gradient(circle at 8% 10%, oklch(0.96 0.035 220 / 0.72), transparent 26rem);
+  }
+  .nfood-dashboard-shell main > header {
+    box-shadow: 0 1px 0 oklch(0.82 0.025 250 / 0.32), 0 12px 34px -28px oklch(0.25 0.04 250 / 0.45);
+  }
+  .nfood-dashboard-shell [data-slot="button"]:not(:disabled) { will-change: transform; }
+  .nfood-dashboard-shell [data-slot="input"]:focus,
+  .nfood-dashboard-shell [data-slot="textarea"]:focus { border-color: oklch(0.72 0.14 48 / 0.75); }
+}

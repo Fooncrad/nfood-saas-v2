@@ -11,6 +11,7 @@ import RestaurantPublic from "./pages/RestaurantPublic";
 import CustomerDisplay from "./pages/CustomerDisplay";
 import CustomerPublic from "./pages/CustomerPublic";
 import CustomerProfileSettings from "./pages/CustomerProfileSettings";
+import AccountProfileSettings from "./pages/AccountProfileSettings";
 import IntegrationsSettings from "./pages/IntegrationsSettings";
 import CustomerPortal from "./pages/CustomerPortal";
 import SupportManagement from "./pages/SupportManagement";
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/customer/:slug" component={CustomerPublic} />
       <Route path="/vcard/:slug" component={CustomerPublic} />
       <Route path="/customer-profile" component={() => <CustomerProfileSettings />} />
+      <Route path="/account-profile" component={() => <AccountProfileSettings />} />
       <Route path="/integrations" component={IntegrationsSettings} />
       <Route path="/customer-portal" component={CustomerPortal} />
       <Route path="/support" component={SupportManagement} />

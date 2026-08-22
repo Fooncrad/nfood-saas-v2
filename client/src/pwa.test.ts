@@ -26,7 +26,10 @@ describe("NFOOD PWA contract", () => {
     for (const role of ["cashier", "customer", "driver", "kitchen", "restaurant_admin", "waiter"]) {
       const manifestPath = `client/public/manifest.${role}.webmanifest`;
       expect(existsSync(resolve(root, manifestPath))).toBe(true);
-      expect(read(manifestPath)).toContain("icon-maskable.svg");
+      const manifest = read(manifestPath);
+      expect(manifest).toContain("nfood-icon-512");
+      expect(manifest).toContain("nfood-icon-192");
+      expect(manifest).toContain('"purpose": "any maskable"');
     }
   });
 });

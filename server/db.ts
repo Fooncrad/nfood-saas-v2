@@ -127,6 +127,13 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
 }
 
+export async function updateUserAvatar(userId: number, avatarUrl: string | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.update(users).set({ avatarUrl, updatedAt: new Date() }).where(eq(users.id, userId));
+  return avatarUrl;
+}
+
 export async function getUserByOpenId(openId: string) {
   const db = await getDb(); if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);

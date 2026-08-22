@@ -30,7 +30,8 @@ describe("UI placeholder audit", () => {
     expect(homeSource).toContain("trpc.platform.branding.useQuery");
     expect(homeSource).toContain("document.title = brand?.brandName");
     expect(homeSource).toContain("meta[name=\"theme-color\"]");
-    expect(homeSource).toContain("application/manifest+json");
+    expect(homeSource).toContain("manifest.${role}.webmanifest");
+    expect(homeSource).toContain("themeMeta");
   });
 
   it("keeps System Health wired into Super Admin", () => {
@@ -45,7 +46,8 @@ describe("UI placeholder audit", () => {
     for (const manifest of roleManifests) {
       expect(manifest).toContain('"lang": "ar"');
       expect(manifest).toContain('"dir": "rtl"');
-      expect(manifest).toContain("icon-maskable.svg");
+      expect(manifest).toContain("nfood-icon-512");
+      expect(manifest).toContain("nfood-icon-192");
     }
   });
 
@@ -90,7 +92,7 @@ describe("UI placeholder audit", () => {
     expect(publicRestaurantSource).toContain("guestName");
     expect(publicRestaurantSource).toContain("guestPhone");
     expect(publicRestaurantSource).toContain("الدفع نقدي عند الاستلام");
-    expect(publicRestaurantSource).toContain("Request ID: guest-checkout");
+    expect(publicRestaurantSource).toContain("guest-checkout-");
   });
 
   it("keeps operational menu and order lists backend-only", () => {
