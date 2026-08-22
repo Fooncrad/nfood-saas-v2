@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { getDb, getOrCreateRestaurantArchiveFolder } from "./db";
-import { mediaFolders, restaurants } from "../drizzle/schema";
+import { createMediaFile, getDb, getOrCreateRestaurantArchiveFolder } from "./db";
+import { mediaFiles, mediaFolders, restaurants } from "../drizzle/schema";
 
 describe("restaurant media archive", () => {
   it("resolves a valid creator when the session user id is temporary", async () => {
@@ -14,6 +14,11 @@ describe("restaurant media archive", () => {
     expect(folderId).toBeGreaterThan(0);
     const folder = (await db.select({ restaurantId: mediaFolders.restaurantId, name: mediaFolders.name }).from(mediaFolders).where(eq(mediaFolders.id, folderId)).limit(1))[0];
     expect(folder).toEqual({ restaurantId: restaurant.id, name: "Menu Archive" });
+    const mediaId = await createMediaFile({ scope: "restaurant", restaurantId: restaurant.id, folderId, originalName: "500x500.webp", storageKey: `test/media-${Date.now()}.webp`, publicUrl: "https://example.test/media.webp", contentType: "image/webp", sizeBytes: 12, category: "menu", uploadedByUserId: -2730017 });
+    const media = (await db.select({ uploadedByUserId: mediaFiles.uploadedByUserId, folderId: mediaFiles.folderId }).from(mediaFiles).where(eq(mediaFiles.id, mediaId)).limit(1))[0];
+    expect(media?.uploadedByUserId).toBeGreaterThan(0);
+    expect(media?.folderId).toBe(folderId);
+    await db.delete(mediaFiles).where(eq(mediaFiles.id, mediaId));
     if (!existing) await db.delete(mediaFolders).where(eq(mediaFolders.id, folderId));
   });
 });
