@@ -262,3 +262,18 @@
   .nfood-dashboard-shell [data-slot="input"]:focus,
   .nfood-dashboard-shell [data-slot="textarea"]:focus { border-color: oklch(0.72 0.14 48 / 0.75); }
 }
+
+/* Restaurant public theme engine */
+.nfood-menu-theme { background: var(--menu-page); color: var(--menu-ink); transition: background-color 180ms ease, color 180ms ease; }
+.nfood-menu-theme .bg-white { background-color: var(--menu-surface) !important; }
+.nfood-menu-theme .bg-\[\#f5f5f8\] { background-color: var(--menu-page) !important; }
+.nfood-menu-theme .text-slate-800, .nfood-menu-theme .text-slate-900 { color: var(--menu-ink) !important; }
+.nfood-menu-theme .text-slate-500, .nfood-menu-theme .text-slate-600 { color: var(--menu-muted) !important; }
+.nfood-menu-theme .border-slate-100, .nfood-menu-theme .border-slate-200 { border-color: color-mix(in srgb, var(--menu-primary) 16%, transparent) !important; }
+.nfood-menu-theme .bg-pink-50, .nfood-menu-theme .bg-orange-50 { background-color: color-mix(in srgb, var(--menu-primary) 10%, var(--menu-surface)) !important; }
+.nfood-menu-theme .text-pink-600, .nfood-menu-theme .text-orange-600 { color: var(--menu-primary) !important; }
+.nfood-menu-theme .nfood-menu-primary { background-color: var(--menu-primary); color: #fff; }
+.nfood-menu-theme input, .nfood-menu-theme textarea, .nfood-menu-theme select { background-color: var(--menu-surface); color: var(--menu-ink); border-color: color-mix(in srgb, var(--menu-primary) 18%, transparent); }
+.nfood-menu-theme .nfood-menu-muted-surface { background-color: color-mix(in srgb, var(--menu-primary) 8%, var(--menu-surface)); }
+.nfood-menu-dark .shadow-sm, .nfood-menu-dark .shadow-lg { box-shadow: 0 18px 40px -28px rgba(0, 0, 0, .75); }
+@media (prefers-reduced-motion: reduce) { .nfood-menu-theme { transition: none; } }

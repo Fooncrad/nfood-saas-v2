@@ -1,0 +1,2 @@
+ALTER TABLE `restaurants` ADD `themeMode` enum('light','dark','system') DEFAULT 'light' NOT NULL;--> statement-breakpoint
+ALTER TABLE `restaurants` ADD `themePreset` varchar(40) DEFAULT 'nfood-sunset' NOT NULL;
