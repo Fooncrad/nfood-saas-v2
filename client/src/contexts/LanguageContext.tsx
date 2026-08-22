@@ -4,8 +4,10 @@ export type Language = "ar" | "en" | "fr" | "ur";
 export const LANGUAGE_STORAGE_KEY = "nfood-language";
 export const DASHBOARD_LANGUAGE_STORAGE_KEY = "nfood-dashboard-language";
 export const MENU_LANGUAGE_STORAGE_KEY = "nfood-menu-language";
+export const MENU_LANGUAGE_MANUAL_STORAGE_KEY = "nfood-menu-language-manual";
 export function isPublicLanguagePath(pathname: string) { return pathname.startsWith("/menu/") || pathname.startsWith("/restaurant/"); }
 export function languageStorageKey(pathname?: string) { const currentPath = pathname ?? (typeof window !== "undefined" ? window.location.pathname : "/"); return isPublicLanguagePath(currentPath) ? MENU_LANGUAGE_STORAGE_KEY : DASHBOARD_LANGUAGE_STORAGE_KEY; }
+export function detectVisitorLanguage(): Language { if (typeof window === "undefined") return "ar"; const browser = window.navigator.language.toLowerCase().split("-")[0]; return browser === "en" || browser === "fr" || browser === "ur" ? browser : "ar"; }
 
 export const languageMeta: Record<Language, { label: string; nativeLabel: string; dir: "rtl" | "ltr"; locale: string }> = {
   ar: { label: "Arabic", nativeLabel: "العربية", dir: "rtl", locale: "ar-SA" },
@@ -82,10 +84,10 @@ function applyLegacyUiTranslations(language: Language) {
 const urdu: Record<keyof typeof arabic, string> = english;
 export const translations = { ar: arabic, en: english, fr: french, ur: urdu } as const;
 export type TranslationKey = keyof typeof arabic;
-type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; setLanguage: (language: Language) => void; t: (key: TranslationKey) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
+type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; setLanguage: (language: Language, persist?: boolean) => void; t: (key: TranslationKey) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
-function readStoredLanguage(): Language { if (typeof window === "undefined") return "ar"; const stored = window.localStorage.getItem(languageStorageKey()); if (stored === "ar" || stored === "en" || stored === "fr" || stored === "ur") return stored; if (!isPublicLanguagePath(window.location.pathname)) return "ar"; const browser = window.navigator.language.toLowerCase().split("-")[0]; return browser === "en" || browser === "fr" || browser === "ur" ? browser : "ar"; }
+function readStoredLanguage(): Language { if (typeof window === "undefined") return "ar"; if (isPublicLanguagePath(window.location.pathname)) { const manual = window.localStorage.getItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY); if (manual === "ar" || manual === "en" || manual === "fr" || manual === "ur") return manual; return detectVisitorLanguage(); } const stored = window.localStorage.getItem(DASHBOARD_LANGUAGE_STORAGE_KEY); return stored === "ar" || stored === "en" || stored === "fr" || stored === "ur" ? stored : "ar"; }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>(readStoredLanguage);
@@ -95,14 +97,14 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.dir = meta.dir;
     document.body.dir = meta.dir;
     document.body.dataset.language = language;
-    window.localStorage.setItem(languageStorageKey(), language);
+    if (!isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(DASHBOARD_LANGUAGE_STORAGE_KEY, language);
     applyLegacyUiTranslations(language);
     const observer = new MutationObserver(() => scheduleLegacyUiTranslations(language));
     observer.observe(document.body, { subtree: true, childList: true });
     const refresh = window.setTimeout(() => scheduleLegacyUiTranslations(language), 120);
     return () => { window.clearTimeout(refresh); observer.disconnect(); };
   }, [language, meta.dir]);
-  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, setLanguage: setLanguageState, t: (key) => translations[language][key], formatDate: (input) => new Intl.DateTimeFormat(meta.locale, { dateStyle: "medium" }).format(new Date(input)), formatNumber: (input) => new Intl.NumberFormat(meta.locale).format(input) }), [language, meta.dir, meta.locale]);
+  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, setLanguage: (next, persist = true) => { setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(languageStorageKey(), next); if (isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: (key) => translations[language][key], formatDate: (input) => new Intl.DateTimeFormat(meta.locale, { dateStyle: "medium" }).format(new Date(input)), formatNumber: (input) => new Intl.NumberFormat(meta.locale).format(input) }), [language, meta.dir, meta.locale]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
