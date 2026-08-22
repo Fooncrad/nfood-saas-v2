@@ -1,0 +1,1 @@
+ALTER TABLE `restaurantDisplayScreens` ADD `kioskPinHash` varchar(220);

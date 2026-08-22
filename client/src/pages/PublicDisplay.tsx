@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { QRCodeSVG } from "qrcode.react";
 import { MonitorPlay, Wifi, WifiOff } from "lucide-react";
 
 export default function PublicDisplay() {
   const { token } = useParams<{ token: string }>();
   const kioskMode = typeof window !== "undefined" && (new URLSearchParams(window.location.search).get("kiosk") === "1" || window.localStorage.getItem(`nfood-display-kiosk:${token ?? ""}`) === "1");
   const [fullscreen, setFullscreen] = useState(false);
+  const [showPinPrompt, setShowPinPrompt] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState("");
   const playback = trpc.restaurantContent.publicPlayback.useQuery({ token: token ?? "" }, { enabled: Boolean(token), retry: 1, refetchInterval: (query) => (query.state.data?.screen.refreshSeconds ?? 30) * 1000 });
+  const verifyPin = trpc.restaurantContent.verifyKioskPin.useMutation();
   const slides = playback.data?.slides ?? [];
   const [index, setIndex] = useState(0);
   const slide = slides[index % Math.max(slides.length, 1)];
@@ -15,20 +20,27 @@ export default function PublicDisplay() {
   const locale = typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("ar") ? "ar" : "en";
   const title = useMemo(() => slide?.title ?? slide?.menuItem?.name ?? "", [slide]);
   const subtitle = slide?.subtitle ?? slide?.menuItem?.description ?? "";
+  const menuUrl = playback.data?.screen.restaurantSlug ? `${window.location.origin}/menu/${playback.data.screen.restaurantSlug}` : "";
+  const qrPositionClass = { "top-left": "left-8 top-8 md:left-14 md:top-14", "top-right": "right-8 top-8 md:right-14 md:top-14", "bottom-left": "bottom-8 left-8 md:bottom-14 md:left-14", "bottom-right": "bottom-8 right-8 md:bottom-14 md:right-14", center: "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" }[playback.data?.screen.qrPosition ?? "bottom-right"];
 
   useEffect(() => { setIndex(0); }, [playback.data?.screen.id, slides.length]);
+  useEffect(() => { if (!token || typeof window === "undefined" || !window.WebSocket) return; const protocol = window.location.protocol === "https:" ? "wss:" : "ws:"; const socket = new WebSocket(`${protocol}//${window.location.host}/api/display-ws?token=${encodeURIComponent(token)}`); socket.onmessage = (event) => { try { if (JSON.parse(event.data).type === "display.updated") void playback.refetch(); } catch { /* تجاهل رسالة غير معروفة */ } }; return () => socket.close(); }, [token, playback.refetch]);
+  useEffect(() => { if (!kioskMode || typeof document === "undefined") return; const onFullscreen = () => { const active = Boolean(document.fullscreenElement); setFullscreen(active); if (!active) setShowPinPrompt(true); }; document.addEventListener("fullscreenchange", onFullscreen); return () => document.removeEventListener("fullscreenchange", onFullscreen); }, [kioskMode]);
   useEffect(() => { if (slides.length < 2) return; const timer = window.setTimeout(() => setIndex((current) => (current + 1) % slides.length), seconds * 1000); return () => window.clearTimeout(timer); }, [index, seconds, slides.length]);
   useEffect(() => { document.title = playback.data?.screen.name ? `${playback.data.screen.name} · NFOOD` : "شاشة المطعم · NFOOD"; }, [playback.data?.screen.name]);
   useEffect(() => { if (!kioskMode || !token) return; window.localStorage.setItem(`nfood-display-kiosk:${token}`, "1"); const request = () => document.documentElement.requestFullscreen?.().then(() => setFullscreen(true)).catch(() => undefined); request(); const onFullscreen = () => setFullscreen(Boolean(document.fullscreenElement)); document.addEventListener("fullscreenchange", onFullscreen); return () => document.removeEventListener("fullscreenchange", onFullscreen); }, [kioskMode, token]);
-  const enterFullscreen = () => { document.documentElement.requestFullscreen?.().then(() => setFullscreen(true)).catch(() => undefined); };
+  const enterFullscreen = () => { document.documentElement.requestFullscreen?.().then(() => { setFullscreen(true); setShowPinPrompt(false); }).catch(() => undefined); };
+  const submitPin = () => { setPinError(""); verifyPin.mutate({ token: token ?? "", pin }, { onSuccess: () => { setPin(""); setShowPinPrompt(false); void document.exitFullscreen?.(); }, onError: (error) => setPinError(error.message) }); };
 
   if (playback.isLoading) return <main className="grid min-h-screen place-items-center bg-[#07111f] text-white"><div className="text-center"><MonitorPlay className="mx-auto h-12 w-12 animate-pulse text-orange-400" /><p className="mt-4 text-sm font-bold text-slate-300">جاري تحميل شاشة المطعم…</p></div></main>;
   if (playback.isError) return <main dir="rtl" className="grid min-h-screen place-items-center bg-[#07111f] p-6 text-white"><div className="max-w-md text-center"><WifiOff className="mx-auto h-12 w-12 text-red-400" /><h1 className="mt-5 text-2xl font-black">تعذر تشغيل الشاشة</h1><p className="mt-3 text-sm leading-7 text-slate-400">الرابط غير صالح أو تم إيقاف الشاشة مؤقتًا. اطلب من مدير المطعم إنشاء رابط جديد أو تفعيل الشاشة.</p><p className="mt-4 font-mono text-xs text-slate-600">Request ID: display-{token}</p></div></main>;
   if (!slides.length) return <main dir="rtl" className="grid min-h-screen place-items-center bg-[#07111f] p-6 text-white"><div className="text-center"><MonitorPlay className="mx-auto h-12 w-12 text-orange-400" /><h1 className="mt-5 text-3xl font-black">{playback.data?.screen.name}</h1><p className="mt-3 text-sm text-slate-400">لا توجد شرائح مؤهلة للعرض حاليًا. ستتم المزامنة تلقائيًا.</p><div className="mt-5 inline-flex items-center gap-2 rounded-full bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-300"><Wifi className="h-4 w-4" /> متصل بالمزامنة</div></div></main>;
 
   return <main dir={locale === "ar" ? "rtl" : "ltr"} className="relative min-h-screen overflow-hidden bg-[#07111f] text-white">
+    {kioskMode && showPinPrompt && <div className="fixed inset-0 z-50 grid place-items-center bg-[#020817]/90 p-6 backdrop-blur-sm"><form onSubmit={(event) => { event.preventDefault(); submitPin(); }} className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0d1a2d] p-6 text-right shadow-2xl"><h2 className="text-xl font-black">الخروج من وضع Kiosk</h2><p className="mt-2 text-sm leading-6 text-slate-300">أدخل رمز PIN المعتمد للخروج من وضع العرض.</p><input autoFocus inputMode="numeric" pattern="[0-9]{4,8}" maxLength={8} value={pin} onChange={(event) => setPin(event.target.value.replace(/\\D/g, ""))} className="mt-5 h-12 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-center text-xl tracking-[0.5em] text-white outline-none focus:border-orange-400" placeholder="••••" /><p className="mt-2 min-h-5 text-xs text-rose-300">{pinError}</p><button type="submit" disabled={verifyPin.isPending || pin.length < 4} className="mt-3 w-full rounded-2xl bg-orange-500 py-3 text-sm font-black text-white disabled:opacity-50">{verifyPin.isPending ? "جارٍ التحقق…" : "تحقق واخرج"}</button></form></div>}
     {slide?.mediaFile?.publicUrl ? <img src={slide.mediaFile.publicUrl} alt={title} className="absolute inset-0 h-full w-full object-cover opacity-60" /> : <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,#e76f3c55,transparent_40%),radial-gradient(circle_at_80%_75%,#2dd4bf33,transparent_35%)]" />}
     <div className="absolute inset-0 bg-gradient-to-br from-[#07111f]/90 via-[#07111f]/55 to-[#07111f]/95" />
+    {playback.data?.screen.qrEnabled && menuUrl && <div className={`absolute z-10 rounded-2xl p-3 shadow-2xl ring-1 ring-white/20 ${qrPositionClass}`} style={{ backgroundColor: playback.data.screen.qrBackground }}><QRCodeSVG value={menuUrl} size={playback.data.screen.qrSize} level="H" includeMargin fgColor={playback.data.screen.qrForeground} bgColor={playback.data.screen.qrBackground} /><p className="mt-2 text-center text-[10px] font-black text-white/80">امسح لفتح المنيو</p></div>}
     <div className="relative flex min-h-screen flex-col justify-between p-8 md:p-14">
       <header className="flex items-center justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.28em] text-orange-300">NFOOD DISPLAY</p><p className="mt-2 text-sm font-bold text-slate-300">{playback.data?.screen.name}</p></div><div className="flex items-center gap-2"><div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold text-emerald-200"><Wifi className="h-4 w-4" /> مباشر</div>{kioskMode && !fullscreen && <button type="button" onClick={enterFullscreen} className="rounded-full border border-orange-300/30 bg-orange-400/15 px-4 py-2 text-xs font-black text-orange-200">تفعيل Kiosk / ملء الشاشة</button>}</div></header>
       <section className="max-w-4xl"><div className="mb-6 h-1.5 w-20 rounded-full bg-orange-400" /><h1 className="text-5xl font-black leading-[1.08] tracking-tight drop-shadow-2xl md:text-8xl">{title}</h1>{subtitle && <p className="mt-6 max-w-2xl text-xl leading-9 text-slate-200 md:text-3xl">{subtitle}</p>}</section>

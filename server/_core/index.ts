@@ -10,6 +10,7 @@ import { createContext } from "./context";
 import { registerMarketingHeartbeat } from "../marketing";
 import { getPublicRestaurantPage } from "../db";
 import { serveStatic, setupVite } from "./vite";
+import { attachDisplayRealtime } from "../displayRealtime";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -37,6 +38,7 @@ function localizeMenuEntity<T extends { name: string; description?: string | nul
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  attachDisplayRealtime(server);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
