@@ -428,6 +428,13 @@
       "when": 1787426459180,
       "tag": "0060_sour_molten_man",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "5",
+      "when": 1787428984848,
+      "tag": "0061_special_butterfly",
+      "breakpoints": true
     }
   ]
 }

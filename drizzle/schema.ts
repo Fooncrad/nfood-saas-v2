@@ -754,6 +754,7 @@ export const restaurantDisplayScreens = mysqlTable("restaurantDisplayScreens", {
   name: varchar("name", { length: 160 }).notNull(),
   deviceKey: varchar("deviceKey", { length: 120 }).notNull().unique(),
   publicToken: varchar("publicToken", { length: 120 }).notNull().unique(),
+  publicLinkEnabled: boolean("publicLinkEnabled").default(true).notNull(),
   status: mysqlEnum("status", ["draft", "active", "paused"]).default("draft").notNull(),
   refreshSeconds: int("refreshSeconds").default(30).notNull(),
   createdByUserId: int("createdByUserId").notNull().references(() => users.id),

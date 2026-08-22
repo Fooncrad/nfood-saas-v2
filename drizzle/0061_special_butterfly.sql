@@ -1,0 +1,1 @@
+ALTER TABLE `restaurantDisplayScreens` ADD `publicLinkEnabled` boolean DEFAULT true NOT NULL;
