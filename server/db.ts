@@ -193,11 +193,23 @@ export async function listAuthSessions(userId: number) { const db = await getDb(
 export async function listFeatureDefinitions() { const db = await getDb(); return db ? db.select().from(featureDefinitions).orderBy(featureDefinitions.key) : []; }
 export async function listRestaurantFeatures(restaurantId: number) { const db = await getDb(); return db ? db.select().from(restaurantFeatures).where(eq(restaurantFeatures.restaurantId, restaurantId)) : []; }
 
+export const RESTAURANT_FEATURE_KEYS = ["overview", "files", "branches", "orders", "pos", "kds", "menu", "tables", "inventory", "team", "marketing", "reservations", "remote", "security", "health", "custom_domain", "integrations", "delivery", "loyalty", "reviews", "vcard", "analytics", "webhooks"] as const;
+const PLAN_FEATURES: Record<string, ReadonlySet<string>> = {
+  Starter: new Set(["overview", "menu", "orders"]),
+  Growth: new Set(["overview", "files", "branches", "orders", "pos", "menu", "tables", "team", "security"]),
+  "All Features": new Set(RESTAURANT_FEATURE_KEYS),
+  Enterprise: new Set(RESTAURANT_FEATURE_KEYS),
+};
+
 export async function getFeatureAccess(restaurantId: number, featureKey: string): Promise<{ key: string; enabled: boolean; limit: number | null; reason: "enabled" | "disabled" | "missing" | "dependency_disabled" | "database_unavailable" }> {
   const db = await getDb();
   if (!db) return { key: featureKey, enabled: false, limit: null, reason: "database_unavailable" };
   const definitions = await db.select().from(featureDefinitions);
   const overrides = await db.select().from(restaurantFeatures).where(eq(restaurantFeatures.restaurantId, restaurantId));
+  const restaurant = (await db.select({ plan: restaurants.plan }).from(restaurants).where(eq(restaurants.id, restaurantId)).limit(1))[0];
+  const subscription = (await db.select({ plan: subscriptions.plan }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), eq(subscriptions.status, "active"))).orderBy(desc(subscriptions.id)).limit(1))[0];
+  const activePlan = subscription?.plan ?? restaurant?.plan ?? "Starter";
+  const planFeatures = PLAN_FEATURES[activePlan] ?? PLAN_FEATURES.Starter;
   const byKey = new Map(definitions.map((definition) => [definition.key, definition]));
   const byFeatureId = new Map(overrides.map((override) => [override.featureId, override]));
   const evaluate = (key: string, visited = new Set<string>()): { enabled: boolean; limit: number | null; reason: "enabled" | "disabled" | "missing" | "dependency_disabled" } => {
@@ -207,6 +219,7 @@ export async function getFeatureAccess(restaurantId: number, featureKey: string)
     const override = byFeatureId.get(definition.id);
     if (definition.dependencyKey) { const dependency = evaluate(definition.dependencyKey, new Set(Array.from(visited).concat(key))); if (!dependency.enabled) return { enabled: false, limit: null, reason: "dependency_disabled" }; }
     if (override?.enabled === false) return { enabled: false, limit: override.overrideLimit ?? definition.defaultLimit ?? null, reason: "disabled" };
+    if (!override && !planFeatures.has(key)) return { enabled: false, limit: definition.defaultLimit ?? null, reason: "disabled" };
     return { enabled: true, limit: override?.overrideLimit ?? definition.defaultLimit ?? null, reason: "enabled" };
   };
   return { key: featureKey, ...evaluate(featureKey) };
