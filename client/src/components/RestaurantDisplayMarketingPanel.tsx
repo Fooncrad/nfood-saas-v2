@@ -14,6 +14,7 @@ export function RestaurantDisplayMarketingPanel({ restaurantId, branchId }: Prop
   const menu = trpc.platform.menuItems.useQuery({ restaurantId }, { retry: 1 });
   const media = trpc.media.list.useQuery({ scope: "restaurant", restaurantId, category: "image" }, { retry: 1 });
   const campaigns = trpc.platform.campaigns.useQuery({ restaurantId }, { retry: 1 });
+  const matchModes = trpc.restaurantContent.matchModes.useQuery({ restaurantId }, { retry: 1 });
   const restaurant = trpc.platform.restaurantById.useQuery({ id: restaurantId }, { retry: 1 });
   const [screenName, setScreenName] = useState("");
   const [editScreenName, setEditScreenName] = useState("");
@@ -38,6 +39,13 @@ export function RestaurantDisplayMarketingPanel({ restaurantId, branchId }: Prop
   const [headline, setHeadline] = useState("");
   const [body, setBody] = useState("");
   const [callToAction, setCallToAction] = useState("");
+  const [matchId, setMatchId] = useState<number>();
+  const [matchName, setMatchName] = useState("عرض المباراة");
+  const [matchHeadline, setMatchHeadline] = useState("عرض خاص أثناء المباراة");
+  const [matchBody, setMatchBody] = useState("اطلب الآن واستمتع بالعرض قبل نهاية المباراة");
+  const [matchCta, setMatchCta] = useState("اطلب الآن");
+  const [matchQrUrl, setMatchQrUrl] = useState("");
+  const [matchEndsAt, setMatchEndsAt] = useState("");
   const utils = trpc.useUtils();
   const activeScreen = (screens.data ?? []).find((screen) => screen.id === selectedScreenId) ?? screens.data?.[0];
   useEffect(() => { if (activeScreen) { setEditScreenName(activeScreen.name); setEditRefreshSeconds(String(activeScreen.refreshSeconds)); setQrEnabled(activeScreen.qrEnabled); setQrPosition(activeScreen.qrPosition); setQrSize(String(activeScreen.qrSize)); setQrForeground(activeScreen.qrForeground); setQrBackground(activeScreen.qrBackground); } }, [activeScreen?.id]);
@@ -64,6 +72,10 @@ export function RestaurantDisplayMarketingPanel({ restaurantId, branchId }: Prop
   const deleteSlide = trpc.restaurantContent.deleteSlide.useMutation({ onSuccess: refresh, onError: (e) => toast.error(`تعذر حذف الطبق: ${e.message}`) });
   const saveContent = trpc.restaurantContent.saveCampaignContent.useMutation({ onSuccess: () => { setHeadline(""); setBody(""); setCallToAction(""); toast.success("تم حفظ النص كمسودة للمراجعة"); }, onError: (e) => toast.error(`تعذر حفظ النص: ${e.message}`) });
   const generateDraft = trpc.restaurantContent.generateCampaignDraft.useMutation({ onSuccess: ({ draft }) => { setHeadline(draft.headline); setBody(draft.body); setCallToAction(draft.callToAction); toast.success("تم توليد مسودة قابلة للمراجعة"); }, onError: (e) => toast.error(`تعذر توليد النص: ${e.message}`) });
+  const refreshMatch = () => void utils.restaurantContent.matchModes.invalidate();
+  const saveMatch = trpc.restaurantContent.saveMatchMode.useMutation({ onSuccess: ({ id }) => { setMatchId(id); refreshMatch(); toast.success("تم حفظ إعلان المباراة كمسودة"); }, onError: (e) => toast.error(`تعذر حفظ إعلان المباراة: ${e.message}`) });
+  const startMatch = trpc.restaurantContent.startMatchMode.useMutation({ onSuccess: () => { refreshMatch(); toast.success("تم تشغيل إعلان المباراة على الشاشات المصرح بها"); }, onError: (e) => toast.error(`تعذر تشغيل إعلان المباراة: ${e.message}`) });
+  const stopMatch = trpc.restaurantContent.stopMatchMode.useMutation({ onSuccess: () => { refreshMatch(); toast.success("تم إيقاف إعلان المباراة وإعادة الشاشات للوضع الطبيعي"); }, onError: (e) => toast.error(`تعذر استعادة العرض الطبيعي: ${e.message}`) });
   const copyDisplayLink = async (token: string) => { const url = `${window.location.origin}/display/${token}`; await navigator.clipboard?.writeText(url); toast.success("تم نسخ رابط التشغيل العام"); };
   const shareDisplayLink = async (token: string) => { const url = `${window.location.origin}/display/${token}?kiosk=1`; if (navigator.share) { try { await navigator.share({ title: `شاشة ${activeScreen?.name ?? "المطعم"}`, text: "رابط تشغيل شاشة المطعم", url }); toast.success("تم فتح خيارات المشاركة"); } catch { /* ألغى المستخدم المشاركة */ } } else { await copyDisplayLink(token); } };
   const openDisplayChannel = (channel: "whatsapp" | "telegram" | "email", token: string) => { const url = `${window.location.origin}/display/${token}?kiosk=1`; const text = `رابط تشغيل شاشة المطعم: ${url}`; const target = channel === "whatsapp" ? `https://wa.me/?text=${encodeURIComponent(text)}` : channel === "telegram" ? `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent("رابط تشغيل شاشة المطعم")}` : `mailto:?subject=${encodeURIComponent("رابط تشغيل شاشة المطعم")}&body=${encodeURIComponent(text)}`; window.open(target, "_blank", "noopener,noreferrer"); };
@@ -73,6 +85,7 @@ export function RestaurantDisplayMarketingPanel({ restaurantId, branchId }: Prop
   const menuUrl = restaurant.data?.slug ? `${window.location.origin}/menu/${restaurant.data.slug}` : "";
   const campaignUrl = campaignId && menuUrl ? `${menuUrl}?campaign=${campaignId}` : menuUrl;
   const selectedMedia = (media.data ?? []).find((file) => String(file.id) === slideMediaId);
+  const liveMatch = (matchModes.data ?? []).find((row) => row.match.status === "live");
 
   return (
     <div className="space-y-6">
@@ -81,6 +94,8 @@ export function RestaurantDisplayMarketingPanel({ restaurantId, branchId }: Prop
         <h2 className="mt-2 text-2xl font-black text-slate-900">شاشات المطعم والحملات</h2>
         <p className="mt-2 text-sm leading-6 text-slate-500">اربط الشاشات بالأطباق والصور الموجودة في مكتبة المطعم، وأنشئ نصوصًا تسويقية متعددة اللغات.</p>
       </div>
+
+      <Card className="overflow-hidden rounded-3xl border-amber-200 bg-gradient-to-br from-[#fff8ed] via-white to-[#fff1dc] shadow-sm"><CardHeader className="flex-row flex-wrap items-center justify-between gap-3 border-b border-amber-100"><div><CardTitle className="flex items-center gap-2 text-base"><Megaphone className="h-5 w-5 text-amber-600" /> مدير المباراة والعروض الخاطفة</CardTitle><p className="mt-1 text-xs text-slate-600">شغّل إعلانًا فوريًا على الشاشات المصرح بها، ثم أعد العرض الطبيعي بضغطة واحدة.</p></div><span className={`rounded-full px-3 py-1 text-xs font-black ${liveMatch ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600"}`}>{liveMatch ? "● إعلان المباراة يعمل الآن" : "● الوضع الطبيعي"}</span></CardHeader><CardContent className="grid gap-3 p-5 lg:grid-cols-[1fr_1fr_1fr_1fr_1.2fr_auto]"><Input value={matchName} onChange={(e) => setMatchName(e.target.value)} placeholder="اسم العرض" className="rounded-xl bg-white" /><Input value={matchHeadline} onChange={(e) => setMatchHeadline(e.target.value)} placeholder="عنوان الإعلان" className="rounded-xl bg-white" /><Input value={matchBody} onChange={(e) => setMatchBody(e.target.value)} placeholder="نص العرض" className="rounded-xl bg-white" /><Input value={matchCta} onChange={(e) => setMatchCta(e.target.value)} placeholder="زر الإجراء" className="rounded-xl bg-white" /><div className="flex items-center gap-2"><Input type="url" value={matchQrUrl} onChange={(e) => setMatchQrUrl(e.target.value)} placeholder="رابط QR للطلب" className="rounded-xl bg-white" /><Input type="datetime-local" value={matchEndsAt} onChange={(e) => setMatchEndsAt(e.target.value)} aria-label="ينتهي الإعلان" className="rounded-xl bg-white" /></div><div className="flex flex-wrap gap-2"><Button type="button" onClick={() => saveMatch.mutate({ restaurantId, id: matchId, branchId: branchId ?? null, name: matchName.trim(), headline: matchHeadline.trim(), body: matchBody.trim() || null, callToAction: matchCta.trim() || null, qrTargetUrl: matchQrUrl.trim() || null, countdownEndsAt: matchEndsAt ? new Date(matchEndsAt) : null })} disabled={saveMatch.isPending || matchHeadline.trim().length < 2} className="rounded-xl bg-[#111c2e] text-xs">حفظ الإعلان</Button>{matchId && <Button type="button" onClick={() => startMatch.mutate({ restaurantId, id: matchId })} disabled={startMatch.isPending} className="rounded-xl bg-emerald-600 text-xs text-white hover:bg-emerald-700">تشغيل الآن</Button>}{liveMatch && <Button type="button" onClick={() => stopMatch.mutate({ restaurantId, id: liveMatch.match.id })} disabled={stopMatch.isPending} className="rounded-xl bg-rose-100 text-xs text-rose-700 hover:bg-rose-200">إيقاف واستعادة الطبيعي</Button>}</div></CardContent></Card>
 
       <Card className="rounded-3xl border-slate-200 shadow-sm">
         <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">

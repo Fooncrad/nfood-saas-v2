@@ -785,6 +785,23 @@ export const restaurantDisplaySlides = mysqlTable("restaurantDisplaySlides", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const restaurantDisplayMatchModes = mysqlTable("restaurantDisplayMatchModes", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").references(() => branches.id),
+  name: varchar("name", { length: 160 }).notNull(),
+  status: mysqlEnum("status", ["idle", "live"]).default("idle").notNull(),
+  headline: varchar("headline", { length: 180 }).notNull(),
+  body: text("body"),
+  callToAction: varchar("callToAction", { length: 120 }),
+  mediaFileId: int("mediaFileId").references(() => mediaFiles.id),
+  qrTargetUrl: varchar("qrTargetUrl", { length: 700 }),
+  countdownEndsAt: timestamp("countdownEndsAt"),
+  createdByUserId: int("createdByUserId").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const campaignContents = mysqlTable("campaignContents", {
   id: int("id").autoincrement().primaryKey(),
   campaignId: int("campaignId").notNull().references(() => campaigns.id),
