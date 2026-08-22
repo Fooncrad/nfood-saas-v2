@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { TEST_SESSION_COOKIE } from "@shared/const";
 import { getDb, getLoyaltyTier, getFeatureAccess } from "./db";
-import { branches, menuCategories, menuItems, menuItemAddons, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, driverApplications, kitchenSections, printerRoutingRules, testAccounts, auditLogs, featureDefinitions, restaurantFeatures } from "../drizzle/schema";
+import { branches, menuCategories, menuItems, menuItemAddons, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, driverApplications, kitchenSections, printerRoutingRules, restaurantTables, testAccounts, auditLogs, featureDefinitions, restaurantFeatures } from "../drizzle/schema";
 import { and, eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
@@ -173,9 +173,13 @@ describe("platform procedures", () => {
     const publicPage = await appRouter.createCaller(context()).platform.publicRestaurantPage({ slug: restaurant.slug });
     expect(publicPage?.restaurant).toEqual(expect.objectContaining({ id: restaurant.id, reservationEnabled: true }));
     expect(publicPage?.branches[0]).toEqual(expect.objectContaining({ id: branch.id, openingTime: branch.openingTime, closingTime: branch.closingTime }));
-    const created = await appRouter.createCaller(context()).platform.createPublicReservation({ slug: restaurant.slug, branchId: branch.id, customerName: "ضيف حجز", phone: "0500000000", partySize: 2, reservedFor: new Date(Date.now() + 86400000), notes: "اختبار" });
-    expect(created).toEqual(expect.objectContaining({ success: true, status: "pending" }));
-    await db.delete(reservations).where(eq(reservations.id, created.id));
+    const table = await db.insert(restaurantTables).values({ branchId: branch.id, name: `اختبار-${Date.now()}`, seats: 2, status: "available" });
+    const tableId = Number(table[0].insertId);
+    try {
+      const created = await appRouter.createCaller(context()).platform.createPublicReservation({ slug: restaurant.slug, branchId: branch.id, customerName: "ضيف حجز", phone: "0500000000", partySize: 2, reservedFor: new Date(Date.now() + 86400000), notes: "اختبار" });
+      expect(created).toEqual(expect.objectContaining({ success: true, status: "confirmed", tableId, tableName: expect.any(String) }));
+      await db.delete(reservations).where(eq(reservations.id, created.id));
+    } finally { await db.delete(restaurantTables).where(eq(restaurantTables.id, tableId)); }
   });
 
   it("returns actual available menu items and categories on the public restaurant page", async () => { const db = await getDb(); if (!db) return; const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug }).from(restaurants).where(eq(restaurants.status, "active")).limit(1))[0]; if (!restaurant) return; const item = (await db.select({ id: menuItems.id, name: menuItems.name, price: menuItems.price, categoryId: menuItems.categoryId }).from(menuItems).where(and(eq(menuItems.restaurantId, restaurant.id), eq(menuItems.isAvailable, true))).limit(1))[0]; if (!item) return; const publicPage = await appRouter.createCaller(context()).platform.publicRestaurantPage({ slug: restaurant.slug }); expect(publicPage?.items).toEqual(expect.arrayContaining([expect.objectContaining({ id: item.id, name: item.name, price: item.price, categoryId: item.categoryId })])); expect(publicPage?.items.every((entry) => entry.id > 0 && entry.name && entry.price !== undefined)).toBe(true); });
