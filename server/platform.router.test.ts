@@ -3,7 +3,7 @@ import { appRouter } from "./routers";
 import { TEST_SESSION_COOKIE } from "@shared/const";
 import { getDb, getLoyaltyTier } from "./db";
 import { branches, menuCategories, menuItems, menuItemAddons, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, driverApplications, kitchenSections, printerRoutingRules, testAccounts, auditLogs } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
 function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver"): TrpcContext {
@@ -170,6 +170,8 @@ describe("platform procedures", () => {
     expect(created).toEqual(expect.objectContaining({ success: true, status: "pending" }));
     await db.delete(reservations).where(eq(reservations.id, created.id));
   });
+
+  it("returns actual available menu items and categories on the public restaurant page", async () => { const db = await getDb(); if (!db) return; const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug }).from(restaurants).where(eq(restaurants.status, "active")).limit(1))[0]; if (!restaurant) return; const item = (await db.select({ id: menuItems.id, name: menuItems.name, price: menuItems.price, categoryId: menuItems.categoryId }).from(menuItems).where(and(eq(menuItems.restaurantId, restaurant.id), eq(menuItems.isAvailable, true))).limit(1))[0]; if (!item) return; const publicPage = await appRouter.createCaller(context()).platform.publicRestaurantPage({ slug: restaurant.slug }); expect(publicPage?.items).toEqual(expect.arrayContaining([expect.objectContaining({ id: item.id, name: item.name, price: item.price, categoryId: item.categoryId })])); expect(publicPage?.items.every((entry) => entry.id === item.id || entry.categoryId === item.categoryId || entry.categoryId === null)).toBe(true); });
 
   it("allows an authenticated user to read the platform collections", async () => {
     const caller = appRouter.createCaller(context());
