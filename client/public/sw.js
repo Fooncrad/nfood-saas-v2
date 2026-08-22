@@ -1,5 +1,15 @@
-const CACHE_NAME = "nfood-shell-v2";
-const SHELL = ["/", "/manifest.webmanifest"];
+const CACHE_NAME = "nfood-shell-v3";
+const SHELL = [
+  "/",
+  "/manifest.webmanifest",
+  "/manifest.admin.webmanifest",
+  "/manifest.restaurant_admin.webmanifest",
+  "/manifest.kitchen.webmanifest",
+  "/manifest.waiter.webmanifest",
+  "/manifest.cashier.webmanifest",
+  "/manifest.driver.webmanifest",
+  "/manifest.customer.webmanifest",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
