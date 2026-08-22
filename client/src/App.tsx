@@ -16,6 +16,7 @@ import IntegrationsSettings from "./pages/IntegrationsSettings";
 import CustomerPortal from "./pages/CustomerPortal";
 import SupportManagement from "./pages/SupportManagement";
 import VcardCardsAdmin from "./pages/VcardCardsAdmin";
+import FavoritesPage from "./pages/FavoritesPage";
 import { PricingPage, FeaturesPage, HowItWorksPage, LandingPage } from "./pages/PublicInfoPages";
 import { useAuth } from "./_core/hooks/useAuth";
 
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/account-profile" component={() => <AccountProfileSettings />} />
       <Route path="/integrations" component={IntegrationsSettings} />
       <Route path="/customer-portal" component={CustomerPortal} />
+      <Route path="/favorites" component={FavoritesPage} />
       <Route path="/support" component={SupportManagement} />
       <Route path="/vcard-cards" component={VcardCardsAdmin} />
       <Route path="/404" component={NotFound} />
