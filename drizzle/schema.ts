@@ -144,6 +144,7 @@ export const menuCategories = mysqlTable("menuCategories", {
   kitchenSectionId: int("kitchenSectionId"),
   name: varchar("name", { length: 120 }).notNull(),
   imageUrl: text("imageUrl"),
+  translationsJson: text("translationsJson"),
   sortOrder: int("sortOrder").default(0).notNull(),
 });
 
@@ -156,6 +157,7 @@ export const menuItems = mysqlTable("menuItems", {
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   imageUrl: text("imageUrl"),
+  translationsJson: text("translationsJson"),
   isAvailable: boolean("isAvailable").default(true).notNull(),
 });
 
