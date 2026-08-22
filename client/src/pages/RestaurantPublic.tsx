@@ -7,17 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { QRCodeSVG } from "qrcode.react";
 import { trpc } from "@/lib/trpc";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage, type Language } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const guestStatusLabels: Record<string, string> = { new: "جديد", preparing: "قيد التحضير", ready: "جاهز", completed: "مكتمل", cancelled: "ملغى" };
 type LocalizedMenuEntity = { name: string; description?: string | null; translationsJson?: string | null };
-function localizeMenuEntity<T extends LocalizedMenuEntity>(entity: T, language: string): T { if (language === "ar" || !entity.translationsJson) return entity; try { const translations = JSON.parse(entity.translationsJson) as Array<{ language: string; name: string; description?: string }>; const match = translations.find((entry) => entry.language === language); return match?.name ? { ...entity, name: match.name, description: match.description ?? entity.description } : entity; } catch { return entity; } }
+function localizeMenuEntity<T extends LocalizedMenuEntity>(entity: T, language: string): T { if (language === "ar" || !entity.translationsJson) return entity; try { const translations = JSON.parse(entity.translationsJson) as Array<{ language: string; name: string; description?: string; status?: string }>; const match = translations.find((entry) => entry.language === language && (!entry.status || entry.status === "approved")); return match?.name ? { ...entity, name: match.name, description: match.description ?? entity.description } : entity; } catch { return entity; } }
 
 export default function RestaurantPublic() {
   const { slug = "" } = useParams<{ slug: string }>();
-  const { t, direction, language } = useLanguage();
+  const { t, direction, language, setLanguage } = useLanguage();
   const page = trpc.platform.publicRestaurantPage.useQuery({ slug }, { enabled: Boolean(slug), retry: false });
+  const activeLanguages = useMemo<Language[]>(() => { try { const parsed = JSON.parse(page.data?.restaurant.languagesJson || '["ar","en","fr"]'); const supported = parsed.filter((value: unknown): value is Language => value === "ar" || value === "en" || value === "fr"); return supported.length ? supported : ["ar"]; } catch { return ["ar"]; } }, [page.data?.restaurant.languagesJson]);
+  useEffect(() => { if (!activeLanguages.includes(language)) setLanguage(activeLanguages[0]); }, [activeLanguages, language, setLanguage]);
   const checkout = trpc.platform.guestCheckout.useMutation();
   const reservation = trpc.platform.createPublicReservation.useMutation();
   const [cart, setCart] = useState<Record<number, number>>({});
@@ -74,7 +76,7 @@ export default function RestaurantPublic() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-8">
         <div className="flex items-center gap-3">{page.data.restaurant.brandLogoUrl ? <img src={page.data.restaurant.brandLogoUrl} alt={`شعار ${restaurantName}`} className="h-11 w-11 rounded-xl object-contain" /> : <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white"><ChefHat className="h-6 w-6" /></div>}<span className="hidden text-lg font-black tracking-tight text-slate-800 sm:inline">{restaurantName}</span></div>
         <nav className="hidden items-center gap-7 text-sm font-semibold text-slate-500 md:flex"><a href="#home" className="transition hover:text-pink-600">الرئيسية</a><a href="#menu" className="text-pink-600">قائمة الطعام</a><a href="#reservation" className="transition hover:text-pink-600">الحجز</a><a href="#contact" className="transition hover:text-pink-600">التواصل</a></nav>
-        <div className="flex items-center gap-2"><LanguageSwitcher compact /><button type="button" aria-label="فتح قائمة المطعم" onClick={() => { setDrawerPanel("menu"); setDrawerOpen(true); }} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition hover:bg-pink-50 hover:text-pink-600"><MenuIcon className="h-5 w-5" /></button>{itemCount > 0 && <button type="button" onClick={() => setCartOpen(true)} className="relative flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-black text-white shadow-lg shadow-pink-200 transition hover:-translate-y-0.5" style={{ backgroundColor: brandColor }}><ShoppingBag className="h-4 w-4" /><span>السلة</span><span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] text-slate-800">{itemCount}</span></button>}<Button size="sm" className="hidden rounded-xl px-4 text-white shadow-lg shadow-pink-200 sm:inline-flex" style={{ backgroundColor: brandColor }} onClick={() => document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" })}>اطلب الآن</Button></div>
+        <div className="flex items-center gap-2"><LanguageSwitcher compact allowedLanguages={activeLanguages} /><button type="button" aria-label="فتح قائمة المطعم" onClick={() => { setDrawerPanel("menu"); setDrawerOpen(true); }} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition hover:bg-pink-50 hover:text-pink-600"><MenuIcon className="h-5 w-5" /></button>{itemCount > 0 && <button type="button" onClick={() => setCartOpen(true)} className="relative flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-black text-white shadow-lg shadow-pink-200 transition hover:-translate-y-0.5" style={{ backgroundColor: brandColor }}><ShoppingBag className="h-4 w-4" /><span>السلة</span><span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] text-slate-800">{itemCount}</span></button>}<Button size="sm" className="hidden rounded-xl px-4 text-white shadow-lg shadow-pink-200 sm:inline-flex" style={{ backgroundColor: brandColor }} onClick={() => document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" })}>اطلب الآن</Button></div>
       </div>
     </header>
 

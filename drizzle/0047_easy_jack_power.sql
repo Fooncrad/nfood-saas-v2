@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `languagesJson` text DEFAULT ('["ar","en","fr"]');
