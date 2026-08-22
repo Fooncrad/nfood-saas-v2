@@ -213,7 +213,7 @@ export async function getFeatureAccess(restaurantId: number, featureKey: string)
 }
 
 export async function getUserSecurity(userId: number) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(userSecurity).where(eq(userSecurity.userId, userId)).limit(1); return rows[0]; }
-export async function insertAuditLog(input: typeof auditLogs.$inferInsert) { const db = await getDb(); if (!db) return undefined; const result = await db.insert(auditLogs).values(input); return Number(result[0].insertId); }
+export async function insertAuditLog(input: typeof auditLogs.$inferInsert) { const db = await getDb(); if (!db) return undefined; let safeInput = input; if (input.actorUserId !== undefined && input.actorUserId !== null) { const actor = await db.select({ id: users.id }).from(users).where(eq(users.id, input.actorUserId)).limit(1); if (!actor[0]) safeInput = { ...input, actorUserId: null }; } const result = await db.insert(auditLogs).values(safeInput); return Number(result[0].insertId); }
 export async function listAuditLogs(restaurantId?: number) { const db = await getDb(); if (!db) return []; return restaurantId ? db.select().from(auditLogs).where(eq(auditLogs.restaurantId, restaurantId)).orderBy(desc(auditLogs.createdAt)).limit(100) : db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(100); }
 export async function getActivitySummary(restaurantId?: number) {
   const db = await getDb();

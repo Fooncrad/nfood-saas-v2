@@ -46,6 +46,15 @@ describe("admin lifecycle guards", () => {
     await expect(appRouter.createCaller(adminContext()).platform.restaurantById({ id: created.id })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
+  it("allows restaurant entry when the source admin id is not yet persisted", async () => {
+    const cookies: Array<{ name: string; value: string }> = [];
+    const context = adminContext();
+    context.req.headers.cookie = "app_session_id=source-admin-token";
+    context.res.cookie = ((name: string, value: string) => { cookies.push({ name, value }); }) as TrpcContext["res"]["cookie"];
+    await expect(appRouter.createCaller(context).admin.enterRestaurantAccount({ id: 60001 })).resolves.toEqual(expect.objectContaining({ success: true, restaurantId: 60001 }));
+    expect(cookies.some((cookie) => cookie.name === "nfood_admin_return")).toBe(true);
+  });
+
   it("rejects restaurant managers from creating a new restaurant", async () => {
     await expect(appRouter.createCaller(testRoleContext("restaurant_admin")).admin.createRestaurant({ name: "غير مسموح", slug: `blocked-${nanoid(8).toLowerCase()}`, plan: "Growth" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
