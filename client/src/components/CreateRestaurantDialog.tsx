@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { validateRestaurantDraft } from "@/lib/restaurantValidation";
 
-type CreateRestaurantInput = { name: string; slug: string; plan: string; email: string; password: string };
+type CreateRestaurantInput = { name: string; slug: string; plan: string; email: string; phone: string; password: string };
 
 const orderTypes = ["داخل المطعم", "استلام", "توصيل", "حجز", "طلب واتساب", "طلب مسبق"];
 const pages = ["الصفحة الترحيبية", "المنيو", "الباقات", "التخصصات", "QR Code", "جهات الاتصال"];
@@ -24,20 +24,20 @@ type CreateRestaurantDialogProps = {
 };
 
 export function CreateRestaurantDialog({ open, pending = false, onClose, onSubmit }: CreateRestaurantDialogProps) {
-  const [draft, setDraft] = useState<CreateRestaurantInput>({ name: "", slug: "", plan: "Growth", email: "", password: "" });
+  const [draft, setDraft] = useState<CreateRestaurantInput>({ name: "", slug: "", plan: "Growth", email: "", phone: "", password: "" });
   const [selectedOrderTypes, setSelectedOrderTypes] = useState<string[]>(["داخل المطعم", "استلام"]);
   const [selectedPages, setSelectedPages] = useState<string[]>(["الصفحة الترحيبية", "المنيو", "QR Code"]);
 
   useEffect(() => {
     if (!open) {
-      setDraft({ name: "", slug: "", plan: "Growth", email: "", password: "" });
+      setDraft({ name: "", slug: "", plan: "Growth", email: "", phone: "", password: "" });
       setSelectedOrderTypes(["داخل المطعم", "استلام"]);
       setSelectedPages(["الصفحة الترحيبية", "المنيو", "QR Code"]);
     }
   }, [open]);
 
   const validationMessage = validateRestaurantDraft(draft);
-  const canSubmit = !validationMessage && draft.email.trim().length > 0 && draft.password.trim().length >= 6 && !pending;
+  const canSubmit = !validationMessage && draft.email.trim().length > 0 && draft.phone.trim().length >= 7 && draft.password.trim().length >= 6 && !pending;
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
@@ -56,6 +56,8 @@ export function CreateRestaurantDialog({ open, pending = false, onClose, onSubmi
           </label>
           <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-bold text-slate-700" htmlFor="restaurant-email">البريد الإلكتروني
             <Input id="restaurant-email" type="email" value={draft.email} onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))} placeholder="manager@restaurant.com" dir="ltr" className="mt-2 h-12 rounded-2xl bg-slate-50 px-4 text-left focus:bg-white" />
+          </label><label className="block text-sm font-bold text-slate-700" htmlFor="restaurant-phone">رقم الجوال
+            <Input id="restaurant-phone" type="tel" value={draft.phone} onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))} placeholder="+966 5X XXX XXXX" dir="ltr" className="mt-2 h-12 rounded-2xl bg-slate-50 px-4 text-left focus:bg-white" />
           </label><label className="block text-sm font-bold text-slate-700" htmlFor="restaurant-password">كلمة المرور
             <Input id="restaurant-password" type="password" value={draft.password} onChange={(event) => setDraft((current) => ({ ...current, password: event.target.value }))} placeholder="6 أحرف أو أرقام على الأقل" dir="ltr" className="mt-2 h-12 rounded-2xl bg-slate-50 px-4 text-left focus:bg-white" />
           </label></div>
@@ -75,7 +77,7 @@ export function CreateRestaurantDialog({ open, pending = false, onClose, onSubmi
         </div>
         <DialogFooter className="mt-2 flex-col-reverse sm:flex-row sm:justify-start">
           <Button type="button" variant="outline" onClick={onClose} className="rounded-2xl px-6">إلغاء</Button>
-          <Button type="button" disabled={!canSubmit} onClick={() => canSubmit && onSubmit({ name: draft.name.trim(), slug: draft.slug.trim(), plan: draft.plan.trim(), email: draft.email.trim().toLowerCase(), password: draft.password })} className="rounded-2xl bg-[#e76f3c] px-6 hover:bg-[#d85f2e]">{pending ? "جارٍ الحفظ..." : "حفظ المطعم"}</Button>
+          <Button type="button" disabled={!canSubmit} onClick={() => canSubmit && onSubmit({ name: draft.name.trim(), slug: draft.slug.trim(), plan: draft.plan.trim(), email: draft.email.trim().toLowerCase(), phone: draft.phone.trim(), password: draft.password })} className="rounded-2xl bg-[#e76f3c] px-6 hover:bg-[#d85f2e]">{pending ? "جارٍ الحفظ..." : "حفظ المطعم"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
