@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, uniqueIndex } from "drizzle-orm/mysql-core";
 
 export const platformSettings = mysqlTable("platformSettings", {
   id: int("id").autoincrement().primaryKey(),
@@ -142,6 +142,58 @@ export const branches = mysqlTable("branches", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const deliveryZones = mysqlTable("deliveryZones", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").references(() => branches.id),
+  name: varchar("name", { length: 160 }).notNull(),
+  centerLatitude: decimal("centerLatitude", { precision: 10, scale: 7 }).notNull(),
+  centerLongitude: decimal("centerLongitude", { precision: 10, scale: 7 }).notNull(),
+  radiusKm: decimal("radiusKm", { precision: 8, scale: 2 }).notNull(),
+  deliveryFee: decimal("deliveryFee", { precision: 10, scale: 2 }).default("0").notNull(),
+  minimumOrder: decimal("minimumOrder", { precision: 10, scale: 2 }).default("0").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const pickupPoints = mysqlTable("pickupPoints", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").notNull().references(() => branches.id),
+  name: varchar("name", { length: 160 }).notNull(),
+  address: varchar("address", { length: 500 }),
+  openingTime: varchar("openingTime", { length: 5 }),
+  closingTime: varchar("closingTime", { length: 5 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const reservationSlots = mysqlTable("reservationSlots", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").notNull().references(() => branches.id),
+  dayOfWeek: int("dayOfWeek").notNull(),
+  startTime: varchar("startTime", { length: 5 }).notNull(),
+  endTime: varchar("endTime", { length: 5 }).notNull(),
+  capacity: int("capacity").default(1).notNull(),
+  slotDurationMinutes: int("slotDurationMinutes").default(60).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const userPreferences = mysqlTable("userPreferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique().references(() => users.id),
+  language: varchar("language", { length: 10 }).default("ar").notNull(),
+  themeMode: mysqlEnum("themeMode", ["light", "dark", "system"]).default("system").notNull(),
+  themePreset: varchar("themePreset", { length: 40 }).default("nfood-sunset").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const menuCategories = mysqlTable("menuCategories", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull(),
@@ -164,6 +216,14 @@ export const menuItems = mysqlTable("menuItems", {
   translationsJson: text("translationsJson"),
   isAvailable: boolean("isAvailable").default(true).notNull(),
 });
+
+export const favoriteMenuItems = mysqlTable("favoriteMenuItems", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  menuItemId: int("menuItemId").notNull().references(() => menuItems.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({ favoriteUnique: uniqueIndex("favoriteMenuItems_user_restaurant_item").on(table.userId, table.restaurantId, table.menuItemId) }));
 
 export const translationErrorLogs = mysqlTable("translationErrorLogs", {
   id: int("id").autoincrement().primaryKey(),
