@@ -79,9 +79,12 @@ const trpcClient = trpc.createClient({
   ],
 });
 
+let isReloadingForServiceWorker = false;
+
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").then((registration) => { if (registration.waiting) registration.waiting.postMessage({ type: "SKIP_WAITING" }); registration.addEventListener("updatefound", () => { const worker = registration.installing; worker?.addEventListener("statechange", () => { if (worker.state === "installed" && navigator.serviceWorker.controller) worker.postMessage({ type: "SKIP_WAITING" }); }); }); }).catch((error) => console.warn("[PWA] Service Worker registration failed", error)); });
   navigator.serviceWorker.addEventListener("message", (event) => { if (event.data?.type === "NFOOD_SYNC_REQUEST") window.dispatchEvent(new CustomEvent("nfood:sync-request")); });
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (isReloadingForServiceWorker) return; isReloadingForServiceWorker = true; window.location.reload(); });
 }
 
 createRoot(document.getElementById("root")!).render(
