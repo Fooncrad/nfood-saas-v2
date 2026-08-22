@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createServer, type Server } from "http";
 import { WebSocket } from "ws";
-import { attachDisplayRealtime, closeDisplayRealtime, notifyDisplayChanged } from "./displayRealtime";
+import { attachDisplayRealtime, closeDisplayRealtime, isDisplayConnected, notifyDisplayChanged } from "./displayRealtime";
 
 let server: Server | undefined;
 
@@ -27,7 +27,9 @@ describe("display realtime channel", () => {
     });
     expect(JSON.parse(messages[0]).type).toBe("display.connected");
     expect(JSON.parse(messages[1]).type).toBe("display.updated");
-    socket.close();
+    expect(isDisplayConnected(token)).toBe(true);
+    await new Promise<void>((resolve) => { socket.once("close", () => resolve()); socket.close(); });
+    expect(isDisplayConnected(token)).toBe(false);
   });
 
   it("rejects a malformed token", async () => {
