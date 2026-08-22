@@ -533,3 +533,13 @@ describe("audit log filtering", () => {
     }
   });
 });
+
+
+describe("dynamic package catalog", () => {
+  it("returns saved package plans with linked feature records", async () => {
+    const plans = await appRouter.createCaller(context("admin")).admin.packagePlans();
+    if (plans.length === 0) return;
+    expect(plans[0]).toEqual(expect.objectContaining({ id: expect.any(Number), key: expect.any(String), name: expect.any(String), features: expect.any(Array) }));
+    if (plans[0].features.length > 0) expect(plans[0].features[0]).toEqual(expect.objectContaining({ planId: plans[0].id, featureId: expect.any(Number), key: expect.any(String), enabled: expect.any(Boolean) }));
+  });
+});
