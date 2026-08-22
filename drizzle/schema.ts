@@ -143,6 +143,7 @@ export const menuCategories = mysqlTable("menuCategories", {
   restaurantId: int("restaurantId").notNull(),
   kitchenSectionId: int("kitchenSectionId"),
   name: varchar("name", { length: 120 }).notNull(),
+  imageUrl: text("imageUrl"),
   sortOrder: int("sortOrder").default(0).notNull(),
 });
 
