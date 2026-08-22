@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
-import { appRouter, getTranslationTargetLanguages } from "./routers";
+import { appRouter, getTranslationTargetLanguages, parseTranslationPayload } from "./routers";
 import { getDb } from "./db";
 import { menuCategories, restaurants } from "../drizzle/schema";
 import type { TrpcContext } from "./_core/context";
@@ -12,6 +12,15 @@ function context(restaurantId: number): TrpcContext {
     res: { clearCookie: () => undefined } as TrpcContext["res"],
   };
 }
+
+describe("translation payload parsing", () => {
+  it("parses fenced object, direct arrays, and structured content parts", () => {
+    const entry = { language: "en", name: "Burger", description: "Classic", confidence: 0.95 };
+    expect(parseTranslationPayload("Here is the result:\n```json\n" + JSON.stringify({ translations: [entry] }) + "\n```" )).toEqual([entry]);
+    expect(parseTranslationPayload(JSON.stringify([entry]))).toEqual([entry]);
+    expect(parseTranslationPayload([{ type: "text", text: JSON.stringify({ translations: [entry] }) }])).toEqual([entry]);
+  });
+});
 
 describe("translation directions", () => {
   it.each([
