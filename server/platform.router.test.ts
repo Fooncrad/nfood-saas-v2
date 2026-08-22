@@ -455,12 +455,13 @@ describe("platform procedures", () => {
     try {
       const persistedCategory = (await db.select({ id: menuCategories.id, name: menuCategories.name }).from(menuCategories).where(eq(menuCategories.id, category.id)).limit(1))[0];
       expect(persistedCategory?.name).toBe(`اختبار CRUD ${suffix}`);
-      const item = await caller.platform.createMenuItem({ restaurantId: restaurant.id, categoryId: category.id, name: `صنف CRUD ${suffix}`, price: "9.99" });
+      const item = await caller.platform.createMenuItem({ restaurantId: restaurant.id, categoryId: category.id, name: `صنف CRUD ${suffix}`, price: "9.99", imageUrl: "/manus-storage/media/restaurant/test-image.webp" });
       itemId = item.id;
-      await expect(caller.platform.updateMenuItem({ restaurantId: restaurant.id, id: item.id, name: `صنف CRUD محدث ${suffix}`, price: "11.99" })).resolves.toMatchObject({ success: true, id: item.id });
-      const persistedItem = (await db.select({ name: menuItems.name, price: menuItems.price }).from(menuItems).where(eq(menuItems.id, item.id)).limit(1))[0];
+      await expect(caller.platform.updateMenuItem({ restaurantId: restaurant.id, id: item.id, name: `صنف CRUD محدث ${suffix}`, price: "11.99", imageUrl: "/manus-storage/media/restaurant/test-image-updated.webp" })).resolves.toMatchObject({ success: true, id: item.id });
+      const persistedItem = (await db.select({ name: menuItems.name, price: menuItems.price, imageUrl: menuItems.imageUrl }).from(menuItems).where(eq(menuItems.id, item.id)).limit(1))[0];
       expect(persistedItem?.name).toBe(`صنف CRUD محدث ${suffix}`);
       expect(String(persistedItem?.price)).toBe("11.99");
+      expect(persistedItem?.imageUrl).toBe("/manus-storage/media/restaurant/test-image-updated.webp");
       await expect(caller.platform.deleteMenuItem({ restaurantId: restaurant.id, id: item.id })).resolves.toMatchObject({ success: true, id: item.id });
       itemId = undefined;
     } finally {
