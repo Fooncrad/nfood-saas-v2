@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_MANUAL_STORAGE_KEY, detectVisitorLanguage, languageMeta, legacyUiTranslations, translations } from "./LanguageContext";
+import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_MANUAL_STORAGE_KEY, detectVisitorLanguage, isPublicLanguagePath, languageMeta, legacyUiTranslations, translations } from "./LanguageContext";
 
 describe("language configuration", () => {
   it("contains Arabic, English, and French with correct directions", () => {
@@ -48,5 +48,11 @@ describe("language configuration", () => {
     vi.stubGlobal("window", { navigator: { language: "en-US" } });
     expect(detectVisitorLanguage()).toBe("en");
     vi.unstubAllGlobals();
+  });
+
+  it("recognizes public menu routes separately from dashboard routes", () => {
+    expect(isPublicLanguagePath("/restaurant/demo")).toBe(true);
+    expect(isPublicLanguagePath("/menu/demo")).toBe(true);
+    expect(isPublicLanguagePath("/dashboard")).toBe(false);
   });
 });

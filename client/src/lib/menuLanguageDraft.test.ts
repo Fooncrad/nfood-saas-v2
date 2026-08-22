@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMenuTranslations, primaryMenuTranslation, type LocalizedDraft } from "./menuLanguageDraft";
+import { buildMenuTranslations, primaryMenuTranslation, readLocalizedDraft, type LocalizedDraft } from "./menuLanguageDraft";
 
 const draft: LocalizedDraft = {
   ar: { name: "برجر كلاسيك", description: "وصف عربي" },
@@ -18,5 +18,12 @@ describe("menu language draft", () => {
   it("uses Arabic as the primary menu name when it is selected", () => {
     expect(primaryMenuTranslation(["ar", "en"], draft).name).toBe("برجر كلاسيك");
     expect(primaryMenuTranslation(["en", "fr"], { ...draft, ar: { name: "", description: "" } }).name).toBe("Classic Burger");
+  });
+
+  it("reads saved category translations and identifies missing languages", () => {
+    const parsed = readLocalizedDraft(JSON.stringify([{ language: "ar", name: "المشروبات", description: "مشروبات باردة" }, { language: "en", name: "Drinks", description: "Cold drinks" }]), "قديم", "وصف قديم");
+    expect(parsed.ar.name).toBe("المشروبات");
+    expect(parsed.en.name).toBe("Drinks");
+    expect(parsed.fr.name).toBe("");
   });
 });

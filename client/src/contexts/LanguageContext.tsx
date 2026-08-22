@@ -98,6 +98,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.body.dir = meta.dir;
     document.body.dataset.language = language;
     if (!isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(DASHBOARD_LANGUAGE_STORAGE_KEY, language);
+    const isPublicMenu = isPublicLanguagePath(window.location.pathname);
+    if (isPublicMenu) return;
     applyLegacyUiTranslations(language);
     const observer = new MutationObserver(() => scheduleLegacyUiTranslations(language));
     observer.observe(document.body, { subtree: true, childList: true });
