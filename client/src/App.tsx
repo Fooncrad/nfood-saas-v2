@@ -15,6 +15,7 @@ import IntegrationsSettings from "./pages/IntegrationsSettings";
 import CustomerPortal from "./pages/CustomerPortal";
 import SupportManagement from "./pages/SupportManagement";
 import VcardCardsAdmin from "./pages/VcardCardsAdmin";
+import { PricingPage, FeaturesPage, HowItWorksPage } from "./pages/PublicInfoPages";
 
 function AppContent() {
   const { direction, language, setLanguage } = useLanguage();
@@ -34,6 +35,12 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/login" component={Home} />
+      <Route path="/register" component={Home} />
+      <Route path="/restaurant/register" component={Home} />
+      <Route path="/pricing" component={PricingPage} />
+      <Route path="/features" component={FeaturesPage} />
+      <Route path="/how-it-works" component={HowItWorksPage} />
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
       <Route path="/restaurant/:slug" component={RestaurantPublic} />
       <Route path="/menu/:slug" component={RestaurantPublic} />
