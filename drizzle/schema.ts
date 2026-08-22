@@ -746,3 +746,48 @@ export const mediaFiles = mysqlTable("mediaFiles", {
   uploadedByUserId: int("uploadedByUserId").notNull().references(() => users.id),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+export const restaurantDisplayScreens = mysqlTable("restaurantDisplayScreens", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").references(() => branches.id),
+  name: varchar("name", { length: 160 }).notNull(),
+  deviceKey: varchar("deviceKey", { length: 120 }).notNull().unique(),
+  status: mysqlEnum("status", ["draft", "active", "paused"]).default("draft").notNull(),
+  refreshSeconds: int("refreshSeconds").default(30).notNull(),
+  createdByUserId: int("createdByUserId").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const restaurantDisplaySlides = mysqlTable("restaurantDisplaySlides", {
+  id: int("id").autoincrement().primaryKey(),
+  screenId: int("screenId").notNull().references(() => restaurantDisplayScreens.id),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  menuItemId: int("menuItemId").references(() => menuItems.id),
+  mediaFileId: int("mediaFileId").references(() => mediaFiles.id),
+  title: varchar("title", { length: 180 }),
+  subtitle: text("subtitle"),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  durationSeconds: int("durationSeconds").default(8).notNull(),
+  startsAt: timestamp("startsAt"),
+  endsAt: timestamp("endsAt"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const campaignContents = mysqlTable("campaignContents", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaignId").notNull().references(() => campaigns.id),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  menuItemId: int("menuItemId").references(() => menuItems.id),
+  mediaFileId: int("mediaFileId").references(() => mediaFiles.id),
+  locale: varchar("locale", { length: 8 }).default("ar").notNull(),
+  headline: varchar("headline", { length: 180 }).notNull(),
+  body: text("body"),
+  callToAction: varchar("callToAction", { length: 120 }),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  isApproved: boolean("isApproved").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
