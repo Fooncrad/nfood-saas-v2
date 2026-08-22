@@ -20,7 +20,7 @@ function testRoleContext(testRole: "admin" | "restaurant_admin"): TrpcContext {
 }
 
 describe("admin lifecycle guards", () => {
-  it("rejects soft-delete for a missing restaurant without writing", async () => {
+  it("rejects deletion for a missing restaurant without writing", async () => {
     await expect(appRouter.createCaller(adminContext()).admin.deleteRestaurant({ id: 999999999 })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -32,7 +32,8 @@ describe("admin lifecycle guards", () => {
     const caller = appRouter.createCaller(testRoleContext("admin"));
     const created = await caller.admin.createRestaurant({ name: "اختبار صلاحية NFOOD", slug: `permission-test-${nanoid(8).toLowerCase()}`, plan: "Growth" });
     expect(created).toEqual(expect.objectContaining({ success: true, barcode: expect.stringMatching(/^NFOOD-/) }));
-    await caller.admin.deleteRestaurant({ id: created.id });
+    await expect(caller.admin.deleteRestaurant({ id: created.id })).resolves.toEqual(expect.objectContaining({ success: true, id: created.id }));
+    await expect(appRouter.createCaller(adminContext()).platform.restaurantById({ id: created.id })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("rejects restaurant managers from creating a new restaurant", async () => {
