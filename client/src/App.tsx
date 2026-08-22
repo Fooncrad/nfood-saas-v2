@@ -15,7 +15,8 @@ import IntegrationsSettings from "./pages/IntegrationsSettings";
 import CustomerPortal from "./pages/CustomerPortal";
 import SupportManagement from "./pages/SupportManagement";
 import VcardCardsAdmin from "./pages/VcardCardsAdmin";
-import { PricingPage, FeaturesPage, HowItWorksPage } from "./pages/PublicInfoPages";
+import { PricingPage, FeaturesPage, HowItWorksPage, LandingPage } from "./pages/PublicInfoPages";
+import { useAuth } from "./_core/hooks/useAuth";
 
 function AppContent() {
   const { direction, language, setLanguage } = useLanguage();
@@ -31,10 +32,12 @@ function AppContent() {
   return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Router /></div>;
 }
 
+function RootRoute() { const { user, loading } = useAuth(); if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#f7f8fb] text-sm font-bold text-slate-500">NFOOD</div>; return user ? <Home /> : <LandingPage />; }
+
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={RootRoute} />
       <Route path="/login" component={Home} />
       <Route path="/register" component={Home} />
       <Route path="/restaurant/register" component={Home} />
