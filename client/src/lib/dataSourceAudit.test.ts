@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const homeSource = readFileSync(new URL("../pages/Home.tsx", import.meta.url), "utf8");
+const homeModulesSource = readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
+const dashboardSource = `${homeSource}\n${homeModulesSource}`;
 const reservationsSource = readFileSync(new URL("../pages/ReservationsView.tsx", import.meta.url), "utf8");
 
 describe("operational data source audit", () => {
@@ -14,7 +16,7 @@ describe("operational data source audit", () => {
       "trpc.platform.employees.useQuery",
       "trpc.platform.campaigns.useQuery",
       "trpc.platform.coupons.useQuery",
-    ]) expect(homeSource).toContain(query);
+    ]) expect(dashboardSource).toContain(query);
     expect(homeSource).not.toContain("const menuProducts");
     expect(homeSource).not.toContain("const [orders, setOrders]");
   });

@@ -5,6 +5,8 @@ import { resolve } from "node:path";
 describe("POS and KDS realtime alerts", () => {
   const source = readFileSync(resolve(process.cwd(), "client/src/components/OrderRealtimeAlerts.tsx"), "utf8");
   const home = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
+  const homeModules = readFileSync(resolve(process.cwd(), "client/src/components/HomeModules.tsx"), "utf8");
+  const dashboard = `${home}\n${homeModules}`;
 
   it("detects new orders and status changes without exposing visitor data", () => {
     expect(source).toContain("!old.has(order.id)");
@@ -16,17 +18,17 @@ describe("POS and KDS realtime alerts", () => {
   });
 
   it("is wired into both POS and KDS with fast refresh and focus recovery", () => {
-    expect(home).toContain('mode="pos"');
-    expect(home).toContain('mode="kds"');
-    expect(home).toContain("refetchInterval: 2000");
-    expect(home).toContain("refetchOnWindowFocus: true");
+    expect(dashboard).toContain('mode="pos"');
+    expect(dashboard).toContain('mode="kds"');
+    expect(dashboard).toContain("refetchInterval: 2000");
+    expect(dashboard).toContain("refetchOnWindowFocus: true");
   });
 
   it("keeps POS product search local to the selected restaurant menu", () => {
-    expect(home).toContain("const [productSearch, setProductSearch] = useState(\"\");");
-    expect(home).toContain("const availableProducts = posProducts.filter");
-    expect(home).toContain("placeholder=\"ابحث عن صنف...\"");
-    expect(home).toContain("order.items.map((item) => `${item.quantity} × ${item.itemName}`)");
+    expect(dashboard).toContain("const [productSearch, setProductSearch] = useState(\"\");");
+    expect(dashboard).toContain("const availableProducts = posProducts.filter");
+    expect(dashboard).toContain("placeholder=\"ابحث عن صنف...\"");
+    expect(dashboard).toContain("order.items.map((item) => `${item.quantity} × ${item.itemName}`)");
   });
 
   it("keeps order detail lookup tenant-scoped", () => {
