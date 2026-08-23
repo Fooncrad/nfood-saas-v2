@@ -18,6 +18,8 @@ describe("NFOOD visual style guide", () => {
     expect(css).toContain("--sidebar: oklch(0.14 0.035 310)");
     expect(css).toContain(".dark body");
     expect(css).not.toContain("--primary: var(--color-blue-700)");
+    expect(css).toContain(".dark .nfood-dashboard-shell [data-slot=\"card\"]");
+    expect(css).toContain(".dark .nfood-dashboard-shell header");
   });
 
   it("loads the Arabic product font and protects reduced-motion users", () => {

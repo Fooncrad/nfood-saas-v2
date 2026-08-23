@@ -385,3 +385,26 @@
     .nfood-dashboard-shell main > header { gap: 0.5rem; }
   }
 }
+
+
+@layer components {
+  .dark .nfood-dashboard-shell [data-slot="card"] {
+    background-color: var(--card);
+    color: var(--card-foreground);
+    border-color: var(--border);
+  }
+  .dark .nfood-dashboard-shell .bg-white { background-color: var(--card); }
+  .dark .nfood-dashboard-shell .bg-slate-50,
+  .dark .nfood-dashboard-shell .bg-slate-100 { background-color: var(--muted); }
+  .dark .nfood-dashboard-shell .text-slate-800,
+  .dark .nfood-dashboard-shell .text-slate-900,
+  .dark .nfood-dashboard-shell .text-\[\#182230\],
+  .dark .nfood-dashboard-shell .text-\[\#111c2e\] { color: var(--foreground); }
+  .dark .nfood-dashboard-shell .text-slate-500,
+  .dark .nfood-dashboard-shell .text-slate-600,
+  .dark .nfood-dashboard-shell .text-slate-700 { color: var(--muted-foreground); }
+  .dark .nfood-dashboard-shell input,
+  .dark .nfood-dashboard-shell textarea,
+  .dark .nfood-dashboard-shell select { background-color: var(--input); color: var(--foreground); border-color: var(--border); }
+  .dark .nfood-dashboard-shell header { background-color: color-mix(in oklab, var(--background) 90%, transparent); border-color: var(--border); }
+}

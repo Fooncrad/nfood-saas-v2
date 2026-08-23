@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { validateCheckoutDetails } from "../pages/RestaurantPublic";
 
 const page = readFileSync(new URL("../pages/RestaurantPublic.tsx", import.meta.url), "utf8");
 
@@ -24,5 +25,15 @@ describe("public menu UX", () => {
   it("keeps QR outside the primary menu content", () => {
     const mainMenu = page.slice(page.indexOf('<div id="menu"'), page.indexOf('<section id="contact"'));
     expect(mainMenu).not.toContain("QRCodeSVG");
+  });
+
+  it("explains missing order-specific checkout data before submission", () => {
+    expect(validateCheckoutDetails({ channel: "dineIn" })).toContain("الطاولة");
+    expect(validateCheckoutDetails({ channel: "takeaway", pickupPointRequired: true })).toContain("الاستلام");
+    expect(validateCheckoutDetails({ channel: "takeaway" })).toBeNull();
+    expect(validateCheckoutDetails({ channel: "delivery", deliveryAddress: "شارع رئيسي" })).toContain("الخريطة");
+    expect(validateCheckoutDetails({ channel: "reservation" })).toContain("موعد");
+    expect(validateCheckoutDetails({ channel: "hotel", hotelName: "فندق" })).toContain("الغرفة");
+    expect(validateCheckoutDetails({ channel: "delivery", deliveryAddress: "شارع رئيسي", deliveryLatitude: 24.7, deliveryLongitude: 46.7 })).toBeNull();
   });
 });
