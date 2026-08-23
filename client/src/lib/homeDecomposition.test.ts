@@ -18,6 +18,9 @@ const modulesSource = readFileSync(new URL("../components/HomeModules.tsx", impo
     expect(sidebarSource).toContain('id: "platform-management"');
     expect(sidebarSource).toContain('id: "platform-settings"');
     expect(sidebarSource).toContain("collapsedGroups");
+    expect(sidebarSource).toContain("nfood:sidebar-groups:");
+    expect(sidebarSource).toContain("localStorage.getItem(sidebarStorageKey)");
+    expect(sidebarSource).toContain("localStorage.setItem(sidebarStorageKey");
     expect(sidebarSource).toContain('isCentralAdmin ? platformGroups : sidebarGroups');
     expect(sidebarSource).toContain('aria');
   });

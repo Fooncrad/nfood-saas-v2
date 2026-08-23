@@ -186,6 +186,7 @@ export default function Home() {
         visibleNavItems={visibleNavItems}
         active={active}
         onNavigate={setActive}
+        managerId={user.id}
         isCentralAdmin={isCentralAdmin}
         selectedRestaurantId={selectedRestaurantId}
         restaurants={restaurantsQuery.data ?? []}

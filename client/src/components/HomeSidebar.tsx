@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, ChevronDown, Search, Settings2, ShieldCheck, Utensils, Zap } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { NavKey } from "@/components/homeNavigation";
@@ -15,6 +15,8 @@ type HomeSidebarProps = {
   visibleNavItems: SidebarItem[];
   active: NavKey;
   onNavigate: (key: NavKey) => void;
+  managerId: number | string;
+
   isCentralAdmin: boolean;
   selectedRestaurantId: number;
   restaurants: RestaurantOption[];
@@ -41,6 +43,7 @@ export function HomeSidebar({
   visibleNavItems,
   active,
   onNavigate,
+  managerId,
   isCentralAdmin,
   selectedRestaurantId,
   restaurants,
@@ -64,10 +67,23 @@ export function HomeSidebar({
   const branchMessage = branchesLoading ? t("loadingBranches") : branchesError ? t("error") : t("noBranches");
   const restaurantMessage = restaurantsLoading ? t("loadingRestaurants") : t("noRestaurants");
   const integrationScope = isCentralAdmin ? "/integrations?scope=platform" : `/integrations?scope=restaurant&restaurantId=${selectedRestaurantId}`;
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const sidebarStorageKey = `nfood:sidebar-groups:${String(managerId)}`;
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const saved = window.localStorage.getItem(sidebarStorageKey);
+      return saved ? JSON.parse(saved) as Record<string, boolean> : {};
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(sidebarStorageKey, JSON.stringify(collapsedGroups)); } catch { /* storage may be unavailable */ }
+  }, [collapsedGroups, sidebarStorageKey]);
   const platformGroups = [
     { id: "platform-overview", label: t("overview"), keys: ["overview"] as NavKey[] },
     { id: "platform-management", label: "إدارة المنصة", keys: ["admin", "accounts", "files"] as NavKey[] },
+    { id: "platform-languages", label: "اللغات", keys: ["languages"] as NavKey[] },
     { id: "platform-settings", label: "الإعدادات والتشغيل", keys: ["branches", "health"] as NavKey[] },
     { id: "platform-security", label: t("security"), keys: ["security"] as NavKey[] },
   ].map((group) => ({ ...group, items: group.keys.map((key) => visibleNavItems.find((item) => item.key === key)).filter((item): item is SidebarItem => Boolean(item)) })).filter((group) => group.items.length > 0);
