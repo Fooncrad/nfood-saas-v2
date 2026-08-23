@@ -18,4 +18,10 @@ describe("POS and KDS realtime alerts", () => {
     expect(home).toContain("refetchInterval: 2000");
     expect(home).toContain("refetchOnWindowFocus: true");
   });
+
+  it("keeps POS product search local to the selected restaurant menu", () => {
+    expect(home).toContain("const [productSearch, setProductSearch] = useState(\"\");");
+    expect(home).toContain("const availableProducts = posProducts.filter");
+    expect(home).toContain("placeholder=\"ابحث عن صنف...\"");
+  });
 });
