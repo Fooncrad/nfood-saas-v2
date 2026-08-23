@@ -58,6 +58,7 @@ function Router() {
       <Route path="/features" component={FeaturesPage} />
       <Route path="/how-it-works" component={HowItWorksPage} />
       <Route path="/display/:token" component={PublicDisplay} />
+      <Route path="/tv/:token" component={PublicDisplay} />
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
       <Route path="/restaurant/:slug" component={RestaurantPublic} />
       <Route path="/menu/:slug" component={RestaurantPublic} />

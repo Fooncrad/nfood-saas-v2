@@ -26,6 +26,12 @@ test.describe("NFOOD core journeys", () => {
     await expect(page.locator("body")).not.toContainText("تعذر حفظ جلسة Admin الحالية");
   });
 
+  test("opens an active restaurant display through the short TV link", async ({ page }) => {
+    await page.goto("/tv/30002");
+    await expect(page.locator("body")).not.toContainText("الرابط غير صالح أو تم إيقاف الشاشة");
+    await expect(page.locator("body")).toContainText(/شيزكيك|NFOOD DISPLAY|متصل بالمزامنة/);
+  });
+
   test("supports switching the public menu to French with RTL/LTR update", async ({ page }) => {
     await page.goto(`/restaurant/${restaurantSlug}`);
     const languageButton = page.locator('summary[aria-label*="language"], summary[aria-label*="Language"], summary[aria-label*="اللغة"]').first();
