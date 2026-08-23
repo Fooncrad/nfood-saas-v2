@@ -9,6 +9,8 @@ export type OrderPricing = {
 
 const clampPercent = (value: number) => Math.min(100, Math.max(0, Number.isFinite(value) ? value : 0));
 
+export function getAppliedDiscountPercent(defaultDiscountPercent: number | string = 0, promotionDiscountPercent: number | string = 0) { return Math.max(clampPercent(Number(defaultDiscountPercent)), clampPercent(Number(promotionDiscountPercent))); }
+
 export function calculateOrderPricing(items: Array<{ unitPrice: number | string; quantity: number }>, discountPercent: number | string = 0, taxPercent: number | string = 0): OrderPricing {
   const subtotalCents = items.reduce((sum, item) => sum + Math.max(0, Math.round(Number(item.unitPrice) * 100)) * Math.max(0, Math.trunc(item.quantity)), 0);
   const safeDiscountPercent = clampPercent(Number(discountPercent));
