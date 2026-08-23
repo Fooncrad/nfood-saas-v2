@@ -23,6 +23,14 @@ describe("mobile menu order preferences and notes", () => {
     expect(source).toContain("notes: orderNotes.trim() || undefined");
   });
 
+  it("keeps the mobile cart full-width without horizontal distortion", () => {
+    const source = page();
+    expect(source).toContain("w-screen items-end");
+    expect(source).toContain("overflow-x-hidden");
+    expect(source).toContain("w-[100dvw]");
+    expect(source).toContain("backdrop-blur-[2px]");
+  });
+
   it("keeps category motion accessible", () => {
     const source = page();
     expect(source).toContain("category-results");
