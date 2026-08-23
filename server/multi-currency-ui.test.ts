@@ -21,6 +21,13 @@ describe("multi-country and multi-currency integration", () => {
     expect(source).toContain("currencyDecimals: restaurant[0].currencyDecimals");
   });
 
+  it("includes currency metadata in performance reports", () => {
+    const source = read("server/db.ts");
+    expect(source).toContain("currencyCodes");
+    expect(source).toContain("orders.currencyCode");
+    expect(source).toContain("restaurantConfig?.currencyCode");
+  });
+
   it("supports optional branch-level overrides", () => {
     const source = read("server/routers.ts");
     expect(source).toContain("countryCode: z.string().length(2).optional()");
