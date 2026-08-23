@@ -20,6 +20,8 @@ test.describe("NFOOD core journeys", () => {
     await expect(page.getByTestId("login-submit")).toBeEnabled();
     await page.getByTestId("login-submit").click();
     await expect(page.getByRole("heading", { name: /overview|نظرة عامة|dashboard|لوحة التحكم/i }).first()).toBeVisible();
+    await expect(page.getByText("Operations", { exact: true }).first()).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("الإعدادات والتكاملات");
     await expect(page.getByTestId("login-email")).toHaveCount(0);
     await expect(page.locator("body")).not.toContainText("تعذر حفظ جلسة Admin الحالية");
   });
