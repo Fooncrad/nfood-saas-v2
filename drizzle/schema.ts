@@ -103,6 +103,17 @@ export const restaurants = mysqlTable("restaurants", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const receiptTemplates = mysqlTable("receiptTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().unique().references(() => restaurants.id),
+  headerText: varchar("headerText", { length: 240 }).default("").notNull(),
+  footerText: varchar("footerText", { length: 240 }).default("شكراً لزيارتكم").notNull(),
+  logoUrl: varchar("logoUrl", { length: 500 }),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const menuAnalyticsEvents = mysqlTable("menuAnalyticsEvents", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
