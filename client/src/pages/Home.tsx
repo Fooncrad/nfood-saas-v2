@@ -66,10 +66,11 @@ function orderAgeMinutes(value: Date | string | number) { const timestamp = valu
 export default function Home() {
   const { user, loading, logout } = useAuth();
   const { direction, language, locale, t } = useLanguage();
+  const trpcUtils = trpc.useUtils();
   const [testEmail, setTestEmail] = useState("fooncards@gmail.com");
   const [testPassword, setTestPassword] = useState("");
   const [showRegister, setShowRegister] = useState(false);
-  const testLogin = trpc.auth.testLogin.useMutation({ onSuccess: () => { toast.success("تم تسجيل الدخول لحساب الاختبار"); window.location.reload(); }, onError: (error) => toast.error(error.message || "بيانات الدخول غير صحيحة") });
+  const testLogin = trpc.auth.testLogin.useMutation({ onSuccess: async () => { toast.success("تم تسجيل الدخول لحساب الاختبار"); await trpcUtils.auth.me.invalidate(); }, onError: (error) => toast.error(error.message || "بيانات الدخول غير صحيحة") });
   const adminReturn = trpc.auth.adminReturn.useMutation({ onSuccess: () => window.location.reload(), onError: (error) => toast.error(error.message || "تعذرت العودة إلى جلسة Admin") });
   const [active, setActive] = useState<NavKey>("overview");
   const localizedNavItems = useMemo(() => navItems.map((item) => ({ ...item, label: t(navTranslationKeys[item.key]) })), [language, t]);
