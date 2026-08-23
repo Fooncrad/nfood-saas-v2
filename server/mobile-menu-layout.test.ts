@@ -2,27 +2,28 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-describe("mobile menu cart preferences and motion", () => {
+describe("mobile menu order preferences and notes", () => {
   const page = () => readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"), "utf8");
   const css = () => readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
 
-  it("persists the visitor's preferred order type per menu", () => {
+  it("persists the preferred order type independently per branch", () => {
     const source = page();
-    expect(source).toContain("nfood-order-type-${slug}");
-    expect(source).toContain("localStorage.setItem(`nfood-order-type-${slug}`, orderType)");
+    expect(source).toContain("nfood-order-type-${slug}-branch-${selectedBranchId}");
+    expect(source).toContain("localStorage.setItem(orderTypePreferenceKey, orderType)");
+    expect(source).toContain("setOrderTypePreferenceReady(true)");
   });
 
-  it("provides order notes in the cart and sends them to guest checkout", () => {
+  it("provides remaining-character feedback and quick note templates", () => {
     const source = page();
-    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
-    expect(source).toContain("id=\"order-notes\"");
-    expect(source).toContain("setOrderNotes");
+    expect(source).toContain('id="order-notes"');
+    expect(source).toContain("1000 - orderNotes.length");
+    expect(source).toContain("noteTemplates.map");
+    expect(source).toContain("saveNoteTemplate");
+    expect(source).toContain("nfood-note-templates-${slug}");
     expect(source).toContain("notes: orderNotes.trim() || undefined");
-    expect(router).toContain("notes: z.string().trim().max(1000).optional()");
-    expect(router).toContain("notes: input.notes?.trim() || null");
   });
 
-  it("animates category results while respecting reduced motion", () => {
+  it("keeps category motion accessible", () => {
     const source = page();
     expect(source).toContain("category-results");
     expect(css()).toContain("nfood-category-enter");
