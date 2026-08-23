@@ -98,14 +98,14 @@ export default function RestaurantPublic() {
   const themePreset = page.data?.restaurant.themePreset ?? "nfood-sunset";
   const palette = restaurantThemePalettes[themePreset as keyof typeof restaurantThemePalettes] ?? restaurantThemePalettes["nfood-sunset"];
   const isDark = themeMode === "dark" || (themeMode === "system" && systemDark);
-  const menuThemeStyle = { "--menu-primary": palette.primary, "--menu-accent": palette.accent, "--menu-page": isDark ? palette.dark : palette.light, "--menu-surface": isDark ? "#2b2330" : "#ffffff", "--menu-ink": isDark ? "#fff8f2" : "#273044", "--menu-muted": isDark ? "#d3c5d0" : "#667085" } as CSSProperties;
+  const brandColor = page.data?.restaurant.brandColor ?? palette.primary;
+  const menuThemeStyle = { "--menu-primary": brandColor, "--menu-accent": palette.accent, "--menu-page": isDark ? palette.dark : palette.light, "--menu-surface": isDark ? "#2b2330" : "#ffffff", "--menu-ink": isDark ? "#fff8f2" : "#273044", "--menu-muted": isDark ? "#d3c5d0" : "#667085" } as CSSProperties;
   const categories = useMemo(() => [...(page.data?.categories ?? [])].sort((a, b) => a.sortOrder - b.sortOrder).map((category) => localizeMenuEntity(category, language)), [page.data?.categories, language]);
   const items = useMemo(() => (page.data?.items ?? []).map((item) => localizeMenuEntity(item, language)), [page.data?.items, language]);
   const allBranches = page.data?.branches ?? [];
   const showBranches = Boolean(page.data?.restaurant.showBranchesOnMenu) && allBranches.length > 1;
   const branches = showBranches ? allBranches : [];
   const categoryCounts = useMemo(() => items.reduce<Record<string, number>>((counts, item) => { if (item.categoryId != null) counts[String(item.categoryId)] = (counts[String(item.categoryId)] ?? 0) + 1; return counts; }, {}), [items]);
-  const brandColor = page.data?.restaurant.brandColor ?? "#e5007d";
   const trackingQuery = trpc.platform.trackGuestOrder.useQuery({ slug, orderId: Number(lookupOrderId), guestPhone: lookupPhone.trim() }, { enabled: Boolean(slug) && Number(lookupOrderId) > 0 && lookupPhone.trim().length >= 7, retry: false });
   const recordMenuAnalytics = trpc.platform.recordMenuAnalytics.useMutation();
   const reorder = trpc.platform.reorderGuestOrder.useMutation({ onSuccess: (result) => { setReceipt({ orderId: result.orderId, total: result.total }); setCart({}); setGuestName(""); setGuestPhone(""); } });
