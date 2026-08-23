@@ -31,6 +31,14 @@ describe("mobile menu order preferences and notes", () => {
     expect(source).toContain('startLogin()');
   });
 
+  it("removes the public previous-order tracking card", () => {
+    const source = page();
+    expect(source).not.toContain("copy.trackPrevious");
+    expect(source).not.toContain("trackGuestOrder");
+    expect(source).not.toContain("lookupOrderId");
+    expect(source).not.toContain("trackingQuery");
+  });
+
   it("keeps the mobile cart full-width without horizontal distortion", () => {
     const source = page();
     expect(source).toContain("w-screen flex-col items-stretch");
