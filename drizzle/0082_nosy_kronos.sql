@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `orderModesJson` text DEFAULT ('["dineIn","takeaway","delivery","reservation","hotel"]') NOT NULL;

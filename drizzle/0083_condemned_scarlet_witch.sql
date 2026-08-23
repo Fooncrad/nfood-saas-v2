@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` MODIFY COLUMN `orderModesJson` varchar(255) NOT NULL DEFAULT '["dineIn","takeaway","delivery","reservation","hotel"]';
