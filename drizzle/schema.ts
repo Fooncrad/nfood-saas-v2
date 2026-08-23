@@ -335,6 +335,7 @@ export const orders = mysqlTable("orders", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull(),
   branchId: int("branchId").notNull(),
+  kitchenSectionId: int("kitchenSectionId").references(() => kitchenSections.id),
   tableName: varchar("tableName", { length: 80 }),
   partySize: int("partySize"),
   pickupPoint: varchar("pickupPoint", { length: 240 }),
@@ -371,6 +372,7 @@ export const orders = mysqlTable("orders", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
   restaurantBranchStatusCreatedAtIdx: index("orders_restaurant_branch_status_created_idx").on(table.restaurantId, table.branchId, table.status, table.createdAt),
+  restaurantKitchenSectionStatusIdx: index("orders_restaurant_kitchen_section_status_idx").on(table.restaurantId, table.kitchenSectionId, table.status, table.createdAt),
   restaurantCreatedAtIdx: index("orders_restaurant_created_at_idx").on(table.restaurantId, table.createdAt),
   driverDeliveryStatusIdx: index("orders_driver_delivery_status_idx").on(table.driverId, table.deliveryStatus, table.updatedAt),
   restaurantClientRequestUidx: uniqueIndex("orders_restaurant_client_request_uidx").on(table.restaurantId, table.clientRequestId),

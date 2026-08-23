@@ -24,7 +24,8 @@ describe("manager operations monitor and KDS controls", () => {
     const kds = readFileSync(resolve(process.cwd(), "client/src/components/KdsOperationsBoard.tsx"), "utf8");
     const monitor = readFileSync(resolve(process.cwd(), "client/src/components/ManagerOperationsPanel.tsx"), "utf8");
     expect(kds).toContain("nfood-kds-filter-${restaurantId}");
-    expect(kds).toContain("تجاوز 15 دقيقة");
+    expect(kds).toContain("تجاوز وقت SLA الخاص بقسمه");
+    expect(kds).toContain("تصفية قسم المطبخ");
     expect(kds).toContain("aria-pressed");
     expect(kds).toContain("role=\"alert\"");
     expect(monitor).toContain("الطلبات النشطة");

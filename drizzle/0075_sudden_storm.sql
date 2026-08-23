@@ -1,0 +1,3 @@
+ALTER TABLE `orders` ADD `kitchenSectionId` int;--> statement-breakpoint
+ALTER TABLE `orders` ADD CONSTRAINT `orders_kitchenSectionId_kitchenSections_id_fk` FOREIGN KEY (`kitchenSectionId`) REFERENCES `kitchenSections`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX `orders_restaurant_kitchen_section_status_idx` ON `orders` (`restaurantId`,`kitchenSectionId`,`status`,`createdAt`);

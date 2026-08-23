@@ -25,7 +25,10 @@ describe("kitchen SLA and order performance reporting", () => {
     expect(panel).toContain("وقت التأخير حسب قسم المطبخ");
     expect(panel).toContain("السجل الزمني للطلبات");
     expect(panel).toContain("downloadCsv");
-    expect(panel).toContain("تقرير أداء الطلبات اليومي");
+    expect(panel).toContain("تقرير أداء الطلبات");
+    expect(panel).toContain("fromValue");
+    expect(panel).toContain("bySection");
+    expect(panel).toContain("byHour");
     expect(panel).toContain("toLocaleString(\"ar-SA\")");
   });
 });

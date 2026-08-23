@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { TEST_SESSION_COOKIE } from "@shared/const";
 import { getDb, getLoyaltyTier, getFeatureAccess } from "./db";
-import { branches, menuCategories, menuItems, menuItemAddons, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, driverApplications, kitchenSections, printerRoutingRules, restaurantTables, testAccounts, auditLogs, featureDefinitions, restaurantFeatures } from "../drizzle/schema";
+import { branches, menuCategories, menuItems, menuItemAddons, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, driverApplications, kitchenSections, printerRoutingRules, restaurantTables, testAccounts, auditLogs, featureDefinitions, restaurantFeatures, orderStatusHistory } from "../drizzle/schema";
 import { and, eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
@@ -133,6 +133,7 @@ describe("platform procedures", () => {
       await db.delete(loyaltyAccounts).where(eq(loyaltyAccounts.customerId, customers[1].id));
       await db.update(referralRecords).set({ qualifyingOrderId: null }).where(eq(referralRecords.id, referral.id));
       await db.delete(referralRecords).where(eq(referralRecords.id, referral.id));
+      await db.delete(orderStatusHistory).where(eq(orderStatusHistory.orderId, orderId));
       await db.delete(orders).where(eq(orders.id, orderId));
     }
   });

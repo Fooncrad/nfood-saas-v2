@@ -4,9 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
+import { trpc } from "@/lib/trpc";
 import type { Order, OrderStatus } from "@/components/homeNavigation";
 
 type Props = {
+  restaurantId: number;
   orders: Order[];
   ordersLoading: boolean;
   ordersError: boolean;
@@ -42,18 +44,22 @@ const copy: Record<Language, Copy> = {
   ur: { title: "آپریشنز سنٹر", live: "لائیو نگرانی", delayed: "تاخیر والا آرڈر", active: "فعال آرڈرز", system: "سسٹم کی حالت", healthy: "سروسز جواب دے رہی ہیں", degraded: "جائزہ درکار", syncing: "جانچ جاری", lastSync: "آخری ہم وقت سازی", noData: "ابھی آپریشنل ڈیٹا نہیں", orders: "آرڈرز", kds: "کچن ڈسپلے", viewOrders: "آرڈرز دیکھیں", openKds: "KDS کھولیں", attention: "توجہ درکار", status: { new: "نیا", preparing: "تیاری", ready: "تیار", completed: "مکمل" } },
 };
 
-export function ManagerOperationsPanel({ orders, ordersLoading, ordersError, summaryLoading, summaryError, lastUpdatedAt, onNavigate }: Props) {
+export function ManagerOperationsPanel({ restaurantId, orders, ordersLoading, ordersError, summaryLoading, summaryError, lastUpdatedAt, onNavigate }: Props) {
+  const slaQuery = trpc.admin.kitchenSla.useQuery({ restaurantId }, { staleTime: 30_000, retry: false });
   const { language, direction, locale } = useLanguage();
   const text = copy[language];
   const stats = useMemo(() => {
     const active = orders.filter((order) => order.status !== "completed");
-    const delayed = active.filter((order) => order.ageMinutes >= 15);
+    const delayed = active.filter((order) => {
+      const threshold = order.kitchenSectionId ? slaQuery.data?.find((section) => section.id === order.kitchenSectionId)?.thresholdMinutes : undefined;
+      return order.ageMinutes >= (threshold ?? 15);
+    });
     const byStatus = (Object.keys(text.status) as OrderStatus[]).reduce<Record<OrderStatus, number>>((result, status) => {
       result[status] = orders.filter((order) => order.status === status).length;
       return result;
     }, { new: 0, preparing: 0, ready: 0, completed: 0 });
     return { active, delayed, byStatus };
-  }, [orders, text.status]);
+  }, [orders, text.status, slaQuery.data]);
   const hasError = ordersError || summaryError;
   const isChecking = ordersLoading || summaryLoading;
   const syncLabel = lastUpdatedAt ? new Date(lastUpdatedAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—";
