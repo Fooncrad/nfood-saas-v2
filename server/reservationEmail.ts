@@ -13,6 +13,15 @@ function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
 }
 
+export async function sendPasswordResetEmail(input: { to: string; customerName: string; resetUrl: string }) {
+  const transporter = getTransporter();
+  if (!transporter) return { sent: false, skipped: "smtp-not-configured" as const };
+  const safeName = escapeHtml(input.customerName);
+  const safeUrl = escapeHtml(input.resetUrl);
+  await transporter.sendMail({ from: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER, to: input.to, subject: "إعادة تعيين كلمة مرور NFOOD", text: `مرحبًا ${input.customerName}، افتح الرابط التالي لإعادة تعيين كلمة المرور: ${input.resetUrl}. إذا لم تطلب ذلك فتجاهل الرسالة.`, html: `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.8"><h2>إعادة تعيين كلمة المرور</h2><p>مرحبًا ${safeName}،</p><p>تم طلب إعادة تعيين كلمة مرور حسابك في NFOOD.</p><p><a href="${safeUrl}">اضغط هنا لإنشاء كلمة مرور جديدة</a></p><p>ينتهي الرابط خلال ساعة واحدة. إذا لم تطلب ذلك فتجاهل الرسالة.</p></div>` });
+  return { sent: true as const };
+}
+
 export async function sendReservationAcceptedEmail(input: { to?: string | null; customerName: string; restaurantName: string; tableName: string; reservedFor: Date; partySize: number }) {
   if (!input.to) return { sent: false, skipped: "no-recipient" as const };
   const transporter = getTransporter();
