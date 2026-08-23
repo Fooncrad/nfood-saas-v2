@@ -5,6 +5,8 @@ const homeSource = readFileSync(new URL("../pages/Home.tsx", import.meta.url), "
 const sidebarSource = readFileSync(new URL("../components/HomeSidebar.tsx", import.meta.url), "utf8");
 const modulesSource = readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
 const quickAccessSource = readFileSync(new URL("../components/DashboardQuickAccess.tsx", import.meta.url), "utf8");
+const compactOrdersSource = readFileSync(new URL("../components/CompactOrdersBoard.tsx", import.meta.url), "utf8");
+const driverDeliverySource = readFileSync(new URL("../components/DriverDeliveryView.tsx", import.meta.url), "utf8");
 
  describe("Home decomposition", () => {
   it("keeps the primary shell small and delegates navigation to HomeSidebar", () => {
@@ -44,6 +46,16 @@ const quickAccessSource = readFileSync(new URL("../components/DashboardQuickAcce
     expect(panelSource).toContain('role="tablist"');
     expect(panelSource).toContain("updateMenuCategory");
     expect(panelSource).toContain("updateMenuItem");
+  });
+
+  it("uses compact single-screen summaries for orders and driver delivery", () => {
+    expect(modulesSource).toContain('import { CompactOrdersBoard }');
+    expect(modulesSource).toContain('if (active === "orders") return <CompactOrdersBoard');
+    expect(compactOrdersSource).toContain("<CompactModuleSummary metrics={metrics} />");
+    expect(compactOrdersSource).toContain("ordersLoading");
+    expect(driverDeliverySource).toContain("<CompactModuleSummary metrics={summary} />");
+    expect(driverDeliverySource).toContain("summary");
+    expect(driverDeliverySource).toContain("<CompactModuleSummary metrics={summary}");
   });
 
   it("keeps the deferred operational modules self-contained", () => {
