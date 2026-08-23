@@ -50,6 +50,12 @@ describe("language configuration", () => {
     vi.unstubAllGlobals();
   });
 
+  it("uses English as the safe default for unsupported visitors", () => {
+    vi.stubGlobal("window", { navigator: { language: "de-DE" } });
+    expect(detectVisitorLanguage()).toBe("en");
+    vi.unstubAllGlobals();
+  });
+
   it("recognizes public menu routes separately from dashboard routes", () => {
     expect(isPublicLanguagePath("/restaurant/demo")).toBe(true);
     expect(isPublicLanguagePath("/menu/demo")).toBe(true);

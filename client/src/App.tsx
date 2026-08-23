@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
@@ -6,20 +6,25 @@ import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_STORAGE_KEY, LanguageProvider, languageStorageKey, useLanguage, type Language } from "./contexts/LanguageContext";
-import Home from "./pages/Home";
-import RestaurantPublic from "./pages/RestaurantPublic";
-import CustomerDisplay from "./pages/CustomerDisplay";
-import PublicDisplay from "./pages/PublicDisplay";
-import CustomerPublic from "./pages/CustomerPublic";
-import CustomerProfileSettings from "./pages/CustomerProfileSettings";
-import AccountProfileSettings from "./pages/AccountProfileSettings";
-import IntegrationsSettings from "./pages/IntegrationsSettings";
-import CustomerPortal from "./pages/CustomerPortal";
-import SupportManagement from "./pages/SupportManagement";
-import VcardCardsAdmin from "./pages/VcardCardsAdmin";
-import FavoritesPage from "./pages/FavoritesPage";
+const Home = lazy(() => import("./pages/Home"));
+const RestaurantPublic = lazy(() => import("./pages/RestaurantPublic"));
+const CustomerDisplay = lazy(() => import("./pages/CustomerDisplay"));
+const PublicDisplay = lazy(() => import("./pages/PublicDisplay"));
+const CustomerPublic = lazy(() => import("./pages/CustomerPublic"));
+const CustomerProfileSettings = lazy(() => import("./pages/CustomerProfileSettings"));
+const AccountProfileSettings = lazy(() => import("./pages/AccountProfileSettings"));
+const IntegrationsSettings = lazy(() => import("./pages/IntegrationsSettings"));
+const CustomerPortal = lazy(() => import("./pages/CustomerPortal"));
+const SupportManagement = lazy(() => import("./pages/SupportManagement"));
+const VcardCardsAdmin = lazy(() => import("./pages/VcardCardsAdmin"));
+const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
+const CustomerProfileSettingsRoute = () => <CustomerProfileSettings />;
 import { PricingPage, FeaturesPage, HowItWorksPage, LandingPage } from "./pages/PublicInfoPages";
 import { useAuth } from "./_core/hooks/useAuth";
+
+function PageLoading() {
+  return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground" aria-live="polite"><div className="rounded-2xl border border-border bg-card px-6 py-5 text-center shadow-sm"><div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-primary/20 border-t-primary" /><p className="mt-3 text-sm font-bold">Loading NFOOD…</p></div></main>;
+}
 
 function AppContent() {
   const { direction, language, setLanguage } = useLanguage();
@@ -29,10 +34,10 @@ function AppContent() {
     const stored = window.localStorage.getItem(key) as Language | null;
     const valid = stored === "ar" || stored === "en" || stored === "fr" || stored === "ur";
     if (valid && stored !== language) setLanguage(stored);
-    else if (!valid && key === DASHBOARD_LANGUAGE_STORAGE_KEY && language !== "ar") setLanguage("ar");
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, key === MENU_LANGUAGE_STORAGE_KEY ? (valid ? stored! : language) : "ar");
+    else if (!valid && key === DASHBOARD_LANGUAGE_STORAGE_KEY && language !== "en") setLanguage("en");
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, key === MENU_LANGUAGE_STORAGE_KEY ? (valid ? stored! : language) : "en");
   }, [location]);
-  return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Router /></div>;
+  return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<PageLoading />}><Router /></Suspense></div>;
 }
 
 function RootRoute() { const { user, loading } = useAuth(); if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#f7f8fb] text-sm font-bold text-slate-500">NFOOD</div>; return user ? <Home /> : <LandingPage />; }
@@ -58,8 +63,8 @@ function Router() {
       <Route path="/menu/:slug" component={RestaurantPublic} />
       <Route path="/customer/:slug" component={CustomerPublic} />
       <Route path="/vcard/:slug" component={CustomerPublic} />
-      <Route path="/customer-profile" component={() => <CustomerProfileSettings />} />
-      <Route path="/account-profile" component={() => <AccountProfileSettings />} />
+      <Route path="/customer-profile" component={CustomerProfileSettingsRoute} />
+      <Route path="/account-profile" component={AccountProfileSettings} />
       <Route path="/integrations" component={IntegrationsSettings} />
       <Route path="/customer-portal" component={CustomerPortal} />
       <Route path="/favorites" component={FavoritesPage} />

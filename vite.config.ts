@@ -167,6 +167,16 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (/[\\/]recharts[\\/]|[\\/]react-barcode[\\/]/.test(id)) return "vendor-visuals";
+          if (/[\\/](react|react-dom|wouter|@tanstack|@trpc)[\\/]/.test(id)) return "vendor-core";
+          return "vendor";
+        },
+      },
+    },
   },
   server: {
     host: true,
