@@ -41,6 +41,11 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={RootRoute} />
+      <Route path="/admin" component={RootRoute} />
+      <Route path="/admin/account" component={RootRoute} />
+      <Route path="/dashboard" component={RootRoute} />
+      <Route path="/restaurant/dashboard" component={RootRoute} />
+      <Route path="/restaurant/account" component={RootRoute} />
       <Route path="/login" component={Home} />
       <Route path="/register" component={Home} />
       <Route path="/restaurant/register" component={Home} />
