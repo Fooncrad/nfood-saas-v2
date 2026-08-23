@@ -13,6 +13,10 @@ describe("audit export and alerts", () => {
     expect(panel).toContain("type=\"date\"");
     expect(panel).toContain("اسم المستخدم");
     expect(panel).toContain("PDF / طباعة");
+    expect(panel).toContain("كل مستويات الخطورة");
+    expect(panel).toContain("severity");
+    expect(router).toContain("summary-card");
+    expect(router).toContain("severity-${row.severity}");
   });
   it("surfaces sensitive audit events in the dashboard", () => {
     const alerts = read("client/src/components/AuditSecurityAlerts.tsx");
@@ -20,6 +24,18 @@ describe("audit export and alerts", () => {
     expect(alerts).toContain("order.status.updated");
     expect(alerts).toContain("team.account.updated");
     expect(alerts).toContain("refetchInterval: 5000");
+    expect(alerts).toContain("toast.error");
+    expect(alerts).toContain("toast.warning");
     expect(home).toContain("<AuditSecurityAlerts restaurantId={restaurantId} />");
+  });
+  it("supports previous and discounted prices", () => {
+    const schema = read("drizzle/schema.ts");
+    const db = read("server/db.ts");
+    const router = read("server/routers.ts");
+    const publicMenu = read("client/src/pages/RestaurantPublic.tsx");
+    expect(schema).toContain("compareAtPrice");
+    expect(db).toContain("compareAtPrice: menuItems.compareAtPrice");
+    expect(router).toContain("السعر قبل الخصم يجب أن يكون أعلى من السعر الحالي");
+    expect(publicMenu).toContain("discountLabel");
   });
 });

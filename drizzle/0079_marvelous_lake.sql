@@ -1,0 +1,1 @@
+ALTER TABLE `menuItems` ADD `compareAtPrice` decimal(10,2);

@@ -8,6 +8,7 @@ export type AuditCsvRow = {
   entityType: string | null;
   entityId: string | null;
   outcome: string | null;
+  severity?: "critical" | "warning" | "info";
   actorRole: string | null;
   requestId: string | null;
   createdAt: Date | string;
@@ -34,7 +35,7 @@ function safeMetadata(raw: string | null) {
 }
 
 export function auditLogsToCsv(rows: AuditCsvRow[]) {
-  const header = ["id", "action", "entity_type", "entity_id", "outcome", "actor_role", "request_id", "created_at", "metadata"].map(csvCell).join(",");
-  const body = rows.map((row) => [row.id, row.action, row.entityType, row.entityId, row.outcome, row.actorRole, row.requestId, row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt, safeMetadata(row.metadata)].map(csvCell).join(","));
+  const header = ["id", "action", "entity_type", "entity_id", "outcome", "severity", "actor_role", "request_id", "created_at", "metadata"].map(csvCell).join(",");
+  const body = rows.map((row) => [row.id, row.action, row.entityType, row.entityId, row.outcome, row.severity ?? "info", row.actorRole, row.requestId, row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt, safeMetadata(row.metadata)].map(csvCell).join(","));
   return `\uFEFF${[header, ...body].join("\r\n")}\r\n`;
 }
