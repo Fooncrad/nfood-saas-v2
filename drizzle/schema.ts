@@ -376,6 +376,7 @@ export const orders = mysqlTable("orders", {
   deliveryEtaMinutes: int("deliveryEtaMinutes"),
   deliveryFailureReason: varchar("deliveryFailureReason", { length: 500 }),
   deliveryNote: varchar("deliveryNote", { length: 1000 }),
+  notes: text("notes"),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).default("0").notNull(),
   discountAmount: decimal("discountAmount", { precision: 10, scale: 2 }).default("0").notNull(),
   taxAmount: decimal("taxAmount", { precision: 10, scale: 2 }).default("0").notNull(),
