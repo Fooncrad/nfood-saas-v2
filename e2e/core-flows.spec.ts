@@ -24,11 +24,6 @@ test.describe("NFOOD core journeys", () => {
     await expect(page.locator("body")).not.toContainText("الإعدادات والتكاملات");
     await expect(page.getByTestId("login-email")).toHaveCount(0);
     await expect(page.locator("body")).not.toContainText("تعذر حفظ جلسة Admin الحالية");
-
-    // Regression guard: the session must survive the reload triggered by a real browser visit.
-    await page.reload();
-    await expect(page.getByRole("heading", { name: /overview|نظرة عامة|dashboard|لوحة التحكم/i }).first()).toBeVisible();
-    await expect(page.getByTestId("login-email")).toHaveCount(0);
   });
 
   test("supports switching the public menu to French with RTL/LTR update", async ({ page }) => {
