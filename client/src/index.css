@@ -43,39 +43,39 @@
 }
 
 :root {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-600);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.235 0.015 65);
+  --primary: oklch(0.33 0.11 313);
+  --primary-foreground: oklch(0.98 0.01 300);
+  --sidebar-primary: oklch(0.42 0.12 313);
+  --sidebar-primary-foreground: oklch(0.98 0.01 300);
+  --chart-1: oklch(0.74 0.17 55);
+  --chart-2: oklch(0.66 0.14 158);
+  --chart-3: oklch(0.70 0.17 45);
+  --chart-4: oklch(0.45 0.14 330);
+  --chart-5: oklch(0.58 0.21 25);
+  --radius: 1rem;
+  --background: oklch(0.976 0.006 300);
+  --foreground: oklch(0.22 0.05 305);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.235 0.015 65);
+  --card-foreground: oklch(0.22 0.05 305);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.235 0.015 65);
-  --secondary: oklch(0.98 0.001 286.375);
-  --secondary-foreground: oklch(0.4 0.015 65);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.141 0.005 285.823);
-  --destructive: oklch(0.577 0.245 27.325);
+  --popover-foreground: oklch(0.22 0.05 305);
+  --secondary: oklch(0.95 0.015 310);
+  --secondary-foreground: oklch(0.3 0.08 310);
+  --muted: oklch(0.955 0.01 305);
+  --muted-foreground: oklch(0.53 0.03 305);
+  --accent: oklch(0.70 0.17 45);
+  --accent-foreground: oklch(0.99 0.01 60);
+  --destructive: oklch(0.58 0.21 25);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.235 0.015 65);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
+  --border: oklch(0.91 0.012 305);
+  --input: oklch(0.91 0.012 305);
+  --ring: oklch(0.70 0.17 45);
+  --sidebar: oklch(0.24 0.07 310);
+  --sidebar-foreground: oklch(0.90 0.02 305);
+  --sidebar-accent: oklch(0.31 0.08 312);
+  --sidebar-accent-foreground: oklch(0.98 0.01 300);
+  --sidebar-border: oklch(0.33 0.07 312);
+  --sidebar-ring: oklch(0.70 0.17 45);
 }
 
 .dark {
@@ -179,12 +179,12 @@
 
 /* NFOOD X visual system — premium Arabic SaaS surface */
 @layer base {
-  html { font-family: "Cairo", ui-sans-serif, system-ui, sans-serif; }
+  html { font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif; }
   body {
     background:
       radial-gradient(circle at 8% 0%, oklch(0.98 0.035 58 / 0.75), transparent 28rem),
       radial-gradient(circle at 100% 18%, oklch(0.96 0.025 250 / 0.7), transparent 32rem),
-      linear-gradient(135deg, oklch(0.985 0.008 250), oklch(0.965 0.012 80));
+      linear-gradient(135deg, oklch(0.976 0.006 300), oklch(0.965 0.012 80));
     min-height: 100vh;
   }
 }
@@ -277,3 +277,102 @@
 .nfood-menu-theme .nfood-menu-muted-surface { background-color: color-mix(in srgb, var(--menu-primary) 8%, var(--menu-surface)); }
 .nfood-menu-dark .shadow-sm, .nfood-menu-dark .shadow-lg { box-shadow: 0 18px 40px -28px rgba(0, 0, 0, .75); }
 @media (prefers-reduced-motion: reduce) { .nfood-menu-theme { transition: none; } }
+
+/* NFOOD style guide — shared Plum & Amber polish */
+@theme inline {
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning-foreground: var(--warning-foreground);
+}
+
+:root {
+  --success: oklch(0.66 0.14 158);
+  --success-foreground: oklch(0.98 0.01 158);
+  --warning: oklch(0.79 0.15 80);
+  --warning-foreground: oklch(0.24 0.05 80);
+  --gradient-brand: linear-gradient(135deg, oklch(0.33 0.11 313), oklch(0.45 0.14 330));
+  --gradient-accent: linear-gradient(135deg, oklch(0.74 0.17 55), oklch(0.65 0.19 32));
+  --shadow-card: 0 1px 2px oklch(0.3 0.06 310 / 0.05), 0 8px 24px -12px oklch(0.3 0.06 310 / 0.18);
+  --shadow-float: 0 18px 40px -18px oklch(0.3 0.08 310 / 0.35);
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif; }
+}
+
+@layer components {
+  [data-slot="card"] {
+    background-color: var(--card);
+    border-color: color-mix(in srgb, var(--primary) 10%, var(--border));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+  }
+
+  [data-slot="button"]:not(:disabled),
+  [data-slot="input"],
+  [data-slot="textarea"],
+  select { min-height: 2.75rem; }
+
+  .nfood-menu-theme {
+    background-color: var(--menu-page, var(--background));
+    color: var(--menu-ink, var(--foreground));
+    font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .nfood-menu-theme main {
+    width: min(100%, 1440px);
+    margin-inline: auto;
+  }
+
+  .nfood-menu-theme footer {
+    background-color: var(--menu-dark, var(--sidebar)) !important;
+  }
+
+  .nfood-menu-theme nav[aria-label] {
+    border-color: color-mix(in srgb, var(--menu-primary, var(--primary)) 16%, white);
+    box-shadow: var(--shadow-float);
+  }
+
+  .nfood-menu-theme input:focus,
+  .nfood-menu-theme textarea:focus,
+  .nfood-menu-theme select:focus {
+    border-color: var(--menu-primary, var(--primary));
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--menu-primary, var(--primary)) 18%, transparent);
+  }
+}
+
+@layer utilities {
+  .surface-card {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+  }
+  .bg-brand { background-image: var(--gradient-brand); }
+  .bg-accent-gradient { background-image: var(--gradient-accent); }
+  .nfood-gradient-text {
+    background-image: linear-gradient(110deg, var(--primary), var(--accent) 48%, var(--success));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+@layer components {
+  .nfood-dashboard-shell,
+  .nfood-dashboard-shell main,
+  .nfood-dashboard-shell main > header {
+    min-width: 0;
+  }
+  .nfood-dashboard-shell { overflow-x: clip; }
+  @media (max-width: 639px) {
+    .nfood-dashboard-shell main { padding-inline: 0.75rem; }
+    .nfood-dashboard-shell main > header { gap: 0.5rem; }
+  }
+}
