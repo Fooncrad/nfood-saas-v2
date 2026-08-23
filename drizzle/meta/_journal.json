@@ -519,6 +519,13 @@
       "when": 1787507374189,
       "tag": "0073_smiling_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "5",
+      "when": 1787513824558,
+      "tag": "0074_tan_black_widow",
+      "breakpoints": true
     }
   ]
 }

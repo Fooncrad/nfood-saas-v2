@@ -1,7 +1,7 @@
 import { and, count, desc, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, receiptTemplates } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, receiptTemplates, kitchenSectionSla, orderStatusHistory } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -226,6 +226,44 @@ export async function listOrdersByRestaurant(restaurantId: number, limit = 200) 
   const itemsByOrder = new Map<number, typeof items>();
   for (const item of items) itemsByOrder.set(item.orderId, [...(itemsByOrder.get(item.orderId) ?? []), item]);
   return rows.map((order) => ({ ...order, items: itemsByOrder.get(order.id) ?? [] }));
+}
+export async function listKitchenSectionsWithSla(restaurantId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select({ id: kitchenSections.id, name: kitchenSections.name, isEnabled: kitchenSections.isEnabled, thresholdMinutes: kitchenSectionSla.thresholdMinutes })
+    .from(kitchenSections).leftJoin(kitchenSectionSla, and(eq(kitchenSectionSla.kitchenSectionId, kitchenSections.id), eq(kitchenSectionSla.restaurantId, restaurantId)))
+    .where(eq(kitchenSections.restaurantId, restaurantId)).orderBy(kitchenSections.name);
+}
+export async function saveKitchenSectionSla(input: { restaurantId: number; kitchenSectionId: number; thresholdMinutes: number; updatedByUserId: number }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const section = (await db.select({ id: kitchenSections.id }).from(kitchenSections).where(and(eq(kitchenSections.id, input.kitchenSectionId), eq(kitchenSections.restaurantId, input.restaurantId))).limit(1))[0];
+  if (!section) throw new Error("قسم المطبخ غير مرتبط بالمطعم");
+  const existing = (await db.select({ id: kitchenSectionSla.id }).from(kitchenSectionSla).where(and(eq(kitchenSectionSla.restaurantId, input.restaurantId), eq(kitchenSectionSla.kitchenSectionId, input.kitchenSectionId))).limit(1))[0];
+  if (existing) { await db.update(kitchenSectionSla).set({ thresholdMinutes: input.thresholdMinutes, updatedByUserId: input.updatedByUserId, updatedAt: new Date() }).where(eq(kitchenSectionSla.id, existing.id)); return existing.id; }
+  const result = await db.insert(kitchenSectionSla).values(input); return Number(result[0].insertId);
+}
+export async function listOrderStatusHistory(orderId: number, restaurantId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(orderStatusHistory).where(and(eq(orderStatusHistory.orderId, orderId), eq(orderStatusHistory.restaurantId, restaurantId))).orderBy(orderStatusHistory.createdAt);
+}
+export async function recordOrderStatusTransition(input: { restaurantId: number; orderId: number; fromStatus?: string | null; toStatus: string; actorUserId?: number | null; at?: Date }) {
+  const db = await getDb(); if (!db) return null;
+  const at = input.at ?? new Date();
+  const previous = (await db.select({ createdAt: orderStatusHistory.createdAt }).from(orderStatusHistory).where(and(eq(orderStatusHistory.orderId, input.orderId), eq(orderStatusHistory.restaurantId, input.restaurantId))).orderBy(desc(orderStatusHistory.createdAt)).limit(1))[0];
+  const durationSeconds = previous?.createdAt ? Math.max(0, Math.round((at.getTime() - new Date(previous.createdAt).getTime()) / 1000)) : null;
+  const result = await db.insert(orderStatusHistory).values({ restaurantId: input.restaurantId, orderId: input.orderId, fromStatus: input.fromStatus ?? null, toStatus: input.toStatus, actorUserId: input.actorUserId ?? null, durationSeconds, createdAt: at });
+  return Number(result[0].insertId);
+}
+export async function getDailyOrderPerformance(restaurantId: number, from: Date, to: Date) {
+  const db = await getDb(); if (!db) return { summary: { total: 0, completed: 0, delayed: 0, averagePreparationSeconds: 0 }, orders: [] };
+  const rows = await db.select({ id: orders.id, status: orders.status, createdAt: orders.createdAt, updatedAt: orders.updatedAt, historyId: orderStatusHistory.id, fromStatus: orderStatusHistory.fromStatus, toStatus: orderStatusHistory.toStatus, durationSeconds: orderStatusHistory.durationSeconds, transitionAt: orderStatusHistory.createdAt })
+    .from(orders).leftJoin(orderStatusHistory, and(eq(orderStatusHistory.orderId, orders.id), eq(orderStatusHistory.restaurantId, restaurantId)))
+    .where(and(eq(orders.restaurantId, restaurantId), gte(orders.createdAt, from), lte(orders.createdAt, to))).orderBy(desc(orders.createdAt), orderStatusHistory.createdAt);
+  const grouped = new Map<number, { id: number; status: string; createdAt: Date; updatedAt: Date; transitions: typeof rows }>();
+  for (const row of rows) { const current = grouped.get(row.id); if (current) current.transitions.push(row); else grouped.set(row.id, { id: row.id, status: row.status, createdAt: row.createdAt, updatedAt: row.updatedAt, transitions: [row] }); }
+  const ordersOut = Array.from(grouped.values()).map((order) => { const transitions = order.transitions.filter((item) => item.historyId); const prepStart = transitions.find((item) => item.toStatus === "preparing")?.transitionAt ?? order.createdAt; const completedAt = transitions.find((item) => item.toStatus === "completed")?.transitionAt; const preparationSeconds = completedAt ? Math.max(0, Math.round((new Date(completedAt).getTime() - new Date(prepStart).getTime()) / 1000)) : 0; return { id: order.id, status: order.status, createdAt: order.createdAt, updatedAt: order.updatedAt, preparationSeconds, transitions }; });
+  const completed = ordersOut.filter((order) => order.status === "completed"); const delayed = ordersOut.filter((order) => order.transitions.some((item) => Number(item.durationSeconds ?? 0) > 900 && ["new", "preparing"].includes(item.toStatus ?? ""))).length;
+  const averagePreparationSeconds = completed.length ? Math.round(completed.reduce((sum, order) => sum + order.preparationSeconds, 0) / completed.length) : 0;
+  return { summary: { total: ordersOut.length, completed: completed.length, delayed, averagePreparationSeconds }, orders: ordersOut };
 }
 export async function listInventory(restaurantId: number) { const db = await getDb(); return db ? db.select().from(inventoryItems).where(eq(inventoryItems.restaurantId, restaurantId)) : []; }
 export async function listEmployees(restaurantId: number) { const db = await getDb(); return db ? db.select().from(employees).where(eq(employees.restaurantId, restaurantId)) : []; }

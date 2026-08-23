@@ -296,6 +296,31 @@ export const kitchenSections = mysqlTable("kitchenSections", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const kitchenSectionSla = mysqlTable("kitchenSectionSla", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  kitchenSectionId: int("kitchenSectionId").notNull().references(() => kitchenSections.id),
+  thresholdMinutes: int("thresholdMinutes").default(15).notNull(),
+  updatedByUserId: int("updatedByUserId").references(() => users.id),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  restaurantSectionUidx: uniqueIndex("kitchenSectionSla_restaurant_section_uidx").on(table.restaurantId, table.kitchenSectionId),
+}));
+
+export const orderStatusHistory = mysqlTable("orderStatusHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  orderId: int("orderId").notNull().references(() => orders.id),
+  fromStatus: varchar("fromStatus", { length: 40 }),
+  toStatus: varchar("toStatus", { length: 40 }).notNull(),
+  actorUserId: int("actorUserId").references(() => users.id),
+  durationSeconds: int("durationSeconds"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  orderCreatedAtIdx: index("orderStatusHistory_order_created_idx").on(table.orderId, table.createdAt),
+  restaurantCreatedAtIdx: index("orderStatusHistory_restaurant_created_idx").on(table.restaurantId, table.createdAt),
+}));
+
 export const printerRoutingRules = mysqlTable("printerRoutingRules", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
