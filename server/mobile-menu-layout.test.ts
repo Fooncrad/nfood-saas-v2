@@ -23,11 +23,19 @@ describe("mobile menu order preferences and notes", () => {
     expect(source).toContain("notes: orderNotes.trim() || undefined");
   });
 
+  it("includes hotel service and requires sign-in before checkout", () => {
+    const source = page();
+    expect(source).toContain('setOrderType("hotel")');
+    expect(source).toContain('hotelName.trim()');
+    expect(source).toContain('if (!user)');
+    expect(source).toContain('startLogin()');
+  });
+
   it("keeps the mobile cart full-width without horizontal distortion", () => {
     const source = page();
-    expect(source).toContain("w-screen items-end");
+    expect(source).toContain("w-screen flex-col items-stretch");
     expect(source).toContain("overflow-x-hidden");
-    expect(source).toContain("w-[100dvw]");
+    expect(source).toContain("w-full min-w-0 max-w-none");
     expect(source).toContain("backdrop-blur-[2px]");
   });
 
