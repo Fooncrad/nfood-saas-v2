@@ -43,5 +43,3 @@ export const navItems: { key: NavKey; label: string; icon: LucideIcon }[] = [
 ];
 
 export const navTranslationKeys: Record<NavKey, TranslationKey> = { overview: "overview", admin: "platformAdmin", accounts: "platformAdmin", languages: "language", files: "mediaLibrary", branches: "branches", orders: "orders", pos: "pos", kds: "kds", menu: "menu", tables: "tables", inventory: "inventory", team: "team", marketing: "marketing", reservations: "reservations", remote: "remote", security: "security", health: "health" };
-export const statusLabels: Record<OrderStatus, string> = { new: "جديد", preparing: "قيد التحضير", ready: "جاهز", completed: "مكتمل" };
-export const statusStyles: Record<OrderStatus, string> = { new: "bg-amber-50 text-amber-700 border-amber-200", preparing: "bg-blue-50 text-blue-700 border-blue-200", ready: "bg-emerald-50 text-emerald-700 border-emerald-200", completed: "bg-slate-100 text-slate-600 border-slate-200" };

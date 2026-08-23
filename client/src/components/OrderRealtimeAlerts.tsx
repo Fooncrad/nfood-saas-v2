@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
+import { getOrderStatusPalette } from "@/lib/statusPalette";
 
 export type RealtimeOrder = { id: string; status: string; table: string; time: string };
 type Props = { orders: RealtimeOrder[]; mode: "pos" | "kds" };
@@ -62,10 +63,16 @@ export function OrderRealtimeAlerts({ orders, mode }: Props) {
     }
     previous.current = snapshot;
   }, [orders, snapshot, soundEnabled, text]);
-  const activeCount = orders.filter((order) => !["completed", "cancelled"].includes(order.status)).length;
+  const activeCount = useMemo(() => orders.filter((order) => !["completed", "cancelled"].includes(order.status)).length, [orders]);
+  const eventTone = useMemo(() => {
+    if (!event) return null;
+    if (event.type === "new") return { container: "border-orange-200 bg-orange-50 text-orange-900", icon: "bg-[#e76f3c] text-white", dot: "bg-[#e76f3c]" };
+    const palette = getOrderStatusPalette(event.order.status);
+    return { container: palette.className, icon: `${palette.className} shadow-sm`, dot: palette.dotClassName };
+  }, [event]);
   return <div dir={direction} className="space-y-3">
     <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm"><CardContent className="flex flex-wrap items-center justify-between gap-3 p-3"><div className="flex items-center gap-2"><span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><Radio className="h-4 w-4" /><span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" /></span><div><p className="text-xs font-bold text-slate-800">{mode === "kds" ? text.syncKds : text.syncPos}</p><p className="text-[10px] text-slate-500">{text.lastUpdate} {lastSync.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</p></div></div><div className="flex items-center gap-2"><button type="button" onClick={() => setSoundEnabled((current) => { const next = !current; localStorage.setItem(`nfood-order-alert-sound-${mode}`, next ? "on" : "off"); return next; })} aria-label={soundEnabled ? text.soundOn : text.soundOff} title={soundEnabled ? text.soundOn : text.soundOff} className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-500 transition hover:bg-orange-50 hover:text-orange-600">{soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}</button><Badge className="rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-50">{text.connected}</Badge><span className="text-xs font-semibold text-slate-500">{activeCount} {text.activeOrders}</span></div></CardContent></Card>
-    {event && <div className={`flex items-start gap-3 rounded-2xl border p-4 shadow-sm ${event.type === "new" ? "border-orange-200 bg-orange-50 text-orange-900" : "border-sky-200 bg-sky-50 text-sky-900"}`} role="status"><div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${event.type === "new" ? "bg-orange-500 text-white" : "bg-sky-500 text-white"}`}>{event.type === "new" ? <ShoppingBag className="h-4 w-4" /> : <BellRing className="h-4 w-4" />}</div><div className="min-w-0 flex-1"><p className="text-sm font-bold">{event.type === "new" ? text.newAlert : text.statusAlert}</p><p className="mt-1 text-xs">{event.order.id} · {event.order.table} · {text.status[event.order.status] ?? event.order.status}</p></div><button type="button" aria-label={text.close} onClick={() => setEvent(null)} className="rounded-lg p-1 opacity-70 transition hover:bg-black/5 hover:opacity-100"><X className="h-4 w-4" /></button></div>}
+    {event && eventTone && <div className={`flex items-start gap-3 rounded-2xl border p-4 shadow-sm ${eventTone.container}`} role="status"><div className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${eventTone.icon}`}><span className={`absolute -mr-7 -mt-7 h-2 w-2 rounded-full border border-white ${eventTone.dot}`} />{event.type === "new" ? <ShoppingBag className="h-4 w-4" /> : <BellRing className="h-4 w-4" />}</div><div className="min-w-0 flex-1"><p className="text-sm font-bold">{event.type === "new" ? text.newAlert : text.statusAlert}</p><p className="mt-1 text-xs">{event.order.id} · {event.order.table} · {text.status[event.order.status] ?? event.order.status}</p></div><button type="button" aria-label={text.close} onClick={() => setEvent(null)} className="rounded-lg p-1 opacity-70 transition hover:bg-black/5 hover:opacity-100"><X className="h-4 w-4" /></button></div>}
     {activeCount === 0 && <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500"><CheckCircle2 className="h-4 w-4 text-emerald-500" />{text.empty}</div>}
   </div>;
 }

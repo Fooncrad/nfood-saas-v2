@@ -438,7 +438,9 @@ describe("platform procedures", () => {
     const menuItem = (await db.select({ id: menuItems.id, price: menuItems.price }).from(menuItems).where(eq(menuItems.restaurantId, restaurant.id)).limit(1))[0];
     if (!branch || !menuItem) return;
     const caller = appRouter.createCaller(context("admin"));
-    const created = await caller.platform.createOrder({ restaurantId: restaurant.id, branchId: branch.id, channel: "takeaway", paymentMethod: "cash", items: [{ menuItemId: menuItem.id, quantity: 1, unitPrice: String(menuItem.price) }], total: String(menuItem.price) });
+    const clientRequestId = `test-order-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const created = await caller.platform.createOrder({ restaurantId: restaurant.id, branchId: branch.id, clientRequestId, channel: "takeaway", paymentMethod: "cash", items: [{ menuItemId: menuItem.id, quantity: 1, unitPrice: String(menuItem.price) }], total: String(menuItem.price) });
+    await expect(caller.platform.createOrder({ restaurantId: restaurant.id, branchId: branch.id, clientRequestId, channel: "takeaway", paymentMethod: "cash", items: [{ menuItemId: menuItem.id, quantity: 1, unitPrice: String(menuItem.price) }], total: String(menuItem.price) })).rejects.toMatchObject({ code: "CONFLICT" });
     try {
       const persisted = (await db.select({ id: orders.id, branchId: orders.branchId }).from(orders).where(eq(orders.id, created.id)).limit(1))[0];
       expect(persisted?.branchId).toBe(branch.id);

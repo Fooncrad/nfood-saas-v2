@@ -20,7 +20,8 @@ describe("POS and KDS realtime alerts", () => {
   it("is wired into both POS and KDS with fast refresh and focus recovery", () => {
     expect(dashboard).toContain('mode="pos"');
     expect(dashboard).toContain('mode="kds"');
-    expect(dashboard).toContain("refetchInterval: 2000");
+    expect(dashboard).toContain("refetchInterval: 3000");
+    expect(dashboard).toContain("refetchIntervalInBackground: false");
     expect(dashboard).toContain("refetchOnWindowFocus: true");
   });
 

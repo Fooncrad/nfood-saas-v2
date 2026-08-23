@@ -216,10 +216,11 @@ export async function listBranches(restaurantId: number) { const db = await getD
 export async function listMenuCategories(restaurantId: number) { const db = await getDb(); return db ? db.select().from(menuCategories).where(eq(menuCategories.restaurantId, restaurantId)) : []; }
 export async function listMenuItems(restaurantId?: number, categoryId?: number) { const db = await getDb(); if (!db) return []; if (restaurantId && categoryId) return db.select().from(menuItems).where(and(eq(menuItems.restaurantId, restaurantId), eq(menuItems.categoryId, categoryId))); if (restaurantId) return db.select().from(menuItems).where(eq(menuItems.restaurantId, restaurantId)); if (categoryId) return db.select().from(menuItems).where(eq(menuItems.categoryId, categoryId)); return db.select().from(menuItems); }
 export async function listOrders(branchId: number, restaurantId?: number) { const db = await getDb(); if (!db) return []; const filters = [eq(orders.branchId, branchId)]; if (restaurantId) filters.push(eq(orders.restaurantId, restaurantId)); return db.select().from(orders).where(and(...filters)).orderBy(desc(orders.createdAt)); }
-export async function listOrdersByRestaurant(restaurantId: number) {
+export async function listOrdersByRestaurant(restaurantId: number, limit = 200) {
   const db = await getDb();
   if (!db) return [];
-  const rows = await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, customerId: orders.customerId, driverId: orders.driverId, tableName: orders.tableName, channel: orders.channel, paymentMethod: orders.paymentMethod, paymentStatus: orders.paymentStatus, total: orders.total, status: orders.status, createdAt: orders.createdAt, updatedAt: orders.updatedAt }).from(orders).innerJoin(branches, eq(orders.branchId, branches.id)).where(and(eq(orders.restaurantId, restaurantId), eq(branches.restaurantId, restaurantId))).orderBy(desc(orders.createdAt));
+  const safeLimit = Math.max(25, Math.min(500, Math.trunc(limit)));
+  const rows = await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, customerId: orders.customerId, driverId: orders.driverId, tableName: orders.tableName, channel: orders.channel, paymentMethod: orders.paymentMethod, paymentStatus: orders.paymentStatus, total: orders.total, status: orders.status, createdAt: orders.createdAt, updatedAt: orders.updatedAt }).from(orders).innerJoin(branches, eq(orders.branchId, branches.id)).where(and(eq(orders.restaurantId, restaurantId), eq(branches.restaurantId, restaurantId))).orderBy(desc(orders.createdAt)).limit(safeLimit);
   if (!rows.length) return rows.map((order) => ({ ...order, items: [] as { orderItemId: number; menuItemId: number; itemName: string; quantity: number; unitPrice: string }[] }));
   const items = await db.select({ orderItemId: orderItems.id, orderId: orderItems.orderId, menuItemId: orderItems.menuItemId, itemName: menuItems.name, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice }).from(orderItems).innerJoin(menuItems, eq(orderItems.menuItemId, menuItems.id)).where(and(eq(menuItems.restaurantId, restaurantId), inArray(orderItems.orderId, rows.map((order) => order.id))));
   const itemsByOrder = new Map<number, typeof items>();
@@ -257,32 +258,64 @@ const PLAN_FEATURES: Record<string, ReadonlySet<string>> = {
   Enterprise: new Set(RESTAURANT_FEATURE_KEYS),
 };
 
-export async function getFeatureAccess(restaurantId: number, featureKey: string): Promise<{ key: string; enabled: boolean; limit: number | null; reason: "enabled" | "disabled" | "missing" | "dependency_disabled" | "database_unavailable" }> {
+type FeatureAccessReason = "enabled" | "disabled" | "missing" | "dependency_disabled" | "database_unavailable";
+type FeatureAccess = { key: string; enabled: boolean; limit: number | null; reason: FeatureAccessReason };
+type FeatureDefinitionRow = typeof featureDefinitions.$inferSelect;
+type RestaurantFeatureRow = typeof restaurantFeatures.$inferSelect;
+type PlanFeatureRow = { key: string; enabled: boolean; featureLimit: number | null };
+type FeatureAccessContext = {
+  definitions: FeatureDefinitionRow[];
+  byKey: Map<string, FeatureDefinitionRow>;
+  byFeatureId: Map<number, RestaurantFeatureRow>;
+  planFeatureByKey: Map<string, PlanFeatureRow>;
+  configuredPlan: boolean;
+  planFeatures: ReadonlySet<string>;
+};
+
+async function loadFeatureAccessContext(restaurantId: number): Promise<FeatureAccessContext | null> {
   const db = await getDb();
-  if (!db) return { key: featureKey, enabled: false, limit: null, reason: "database_unavailable" };
+  if (!db) return null;
   const definitions = await db.select().from(featureDefinitions);
   const overrides = await db.select().from(restaurantFeatures).where(eq(restaurantFeatures.restaurantId, restaurantId));
   const restaurant = (await db.select({ plan: restaurants.plan }).from(restaurants).where(eq(restaurants.id, restaurantId)).limit(1))[0];
   const subscription = (await db.select({ plan: subscriptions.plan }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), eq(subscriptions.status, "active"))).orderBy(desc(subscriptions.id)).limit(1))[0];
   const activePlan = subscription?.plan ?? restaurant?.plan ?? "Starter";
   const configuredPlanRows = await db.select({ key: featureDefinitions.key, enabled: packagePlanFeatures.enabled, featureLimit: packagePlanFeatures.featureLimit }).from(packagePlanFeatures).innerJoin(packagePlans, eq(packagePlanFeatures.planId, packagePlans.id)).innerJoin(featureDefinitions, eq(packagePlanFeatures.featureId, featureDefinitions.id)).where(and(or(eq(packagePlans.key, activePlan), eq(packagePlans.name, activePlan)), eq(packagePlans.isActive, true)));
-  const configuredPlan = configuredPlanRows.length > 0;
-  const planFeatureByKey = new Map(configuredPlanRows.map((row) => [row.key, row]));
-  const planFeatures = PLAN_FEATURES[activePlan] ?? PLAN_FEATURES.Starter;
-  const byKey = new Map(definitions.map((definition) => [definition.key, definition]));
-  const byFeatureId = new Map(overrides.map((override) => [override.featureId, override]));
-  const evaluate = (key: string, visited = new Set<string>()): { enabled: boolean; limit: number | null; reason: "enabled" | "disabled" | "missing" | "dependency_disabled" } => {
-    if (visited.has(key)) return { enabled: false, limit: null, reason: "dependency_disabled" };
-    const definition = byKey.get(key);
-    if (!definition) return { enabled: false, limit: null, reason: "missing" };
-    const override = byFeatureId.get(definition.id);
-    if (definition.dependencyKey) { const dependency = evaluate(definition.dependencyKey, new Set(Array.from(visited).concat(key))); if (!dependency.enabled) return { enabled: false, limit: null, reason: "dependency_disabled" }; }
-    if (override?.enabled === false) return { enabled: false, limit: override.overrideLimit ?? planFeatureByKey.get(key)?.featureLimit ?? definition.defaultLimit ?? null, reason: "disabled" };
-    const packageFeature = planFeatureByKey.get(key);
-    if (!override && ((configuredPlan && packageFeature?.enabled !== true) || (!configuredPlan && !planFeatures.has(key)))) return { enabled: false, limit: packageFeature?.featureLimit ?? definition.defaultLimit ?? null, reason: "disabled" };
-    return { enabled: true, limit: override?.overrideLimit ?? packageFeature?.featureLimit ?? definition.defaultLimit ?? null, reason: "enabled" };
+  return {
+    definitions,
+    byKey: new Map(definitions.map((definition) => [definition.key, definition])),
+    byFeatureId: new Map(overrides.map((override) => [override.featureId, override])),
+    planFeatureByKey: new Map(configuredPlanRows.map((row) => [row.key, row])),
+    configuredPlan: configuredPlanRows.length > 0,
+    planFeatures: PLAN_FEATURES[activePlan] ?? PLAN_FEATURES.Starter,
   };
-  return { key: featureKey, ...evaluate(featureKey) };
+}
+
+function evaluateFeatureAccess(context: FeatureAccessContext, key: string, visited = new Set<string>()): Omit<FeatureAccess, "key"> {
+  if (visited.has(key)) return { enabled: false, limit: null, reason: "dependency_disabled" };
+  const definition = context.byKey.get(key);
+  if (!definition) return { enabled: false, limit: null, reason: "missing" };
+  const override = context.byFeatureId.get(definition.id);
+  if (definition.dependencyKey) {
+    const dependency = evaluateFeatureAccess(context, definition.dependencyKey, new Set(Array.from(visited).concat(key)));
+    if (!dependency.enabled) return { enabled: false, limit: null, reason: "dependency_disabled" };
+  }
+  if (override?.enabled === false) return { enabled: false, limit: override.overrideLimit ?? context.planFeatureByKey.get(key)?.featureLimit ?? definition.defaultLimit ?? null, reason: "disabled" };
+  const packageFeature = context.planFeatureByKey.get(key);
+  if (!override && ((context.configuredPlan && packageFeature?.enabled !== true) || (!context.configuredPlan && !context.planFeatures.has(key)))) return { enabled: false, limit: packageFeature?.featureLimit ?? definition.defaultLimit ?? null, reason: "disabled" };
+  return { enabled: true, limit: override?.overrideLimit ?? packageFeature?.featureLimit ?? definition.defaultLimit ?? null, reason: "enabled" };
+}
+
+export async function getFeatureAccess(restaurantId: number, featureKey: string): Promise<FeatureAccess> {
+  const context = await loadFeatureAccessContext(restaurantId);
+  if (!context) return { key: featureKey, enabled: false, limit: null, reason: "database_unavailable" };
+  return { key: featureKey, ...evaluateFeatureAccess(context, featureKey) };
+}
+
+export async function getFeatureAccessMap(restaurantId: number): Promise<Map<string, FeatureAccess>> {
+  const context = await loadFeatureAccessContext(restaurantId);
+  if (!context) return new Map();
+  return new Map(context.definitions.map((definition) => [definition.key, { key: definition.key, ...evaluateFeatureAccess(context, definition.key) }]));
 }
 
 export async function getUserSecurity(userId: number) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(userSecurity).where(eq(userSecurity.userId, userId)).limit(1); return rows[0]; }

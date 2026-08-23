@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, uniqueIndex } from "drizzle-orm/mysql-core";
+import { int, index, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, uniqueIndex } from "drizzle-orm/mysql-core";
 
 export const platformSettings = mysqlTable("platformSettings", {
   id: int("id").autoincrement().primaryKey(),
@@ -330,6 +330,7 @@ export const orders = mysqlTable("orders", {
   paymentMethod: mysqlEnum("paymentMethod", ["cash", "card", "bank_transfer", "online", "other"]).default("cash").notNull(),
   paymentStatus: mysqlEnum("paymentStatus", ["unpaid", "paid", "failed", "refunded"]).default("unpaid").notNull(),
   customerId: int("customerId").references(() => users.id),
+  clientRequestId: varchar("clientRequestId", { length: 64 }),
   guestName: varchar("guestName", { length: 160 }),
   guestPhone: varchar("guestPhone", { length: 32 }),
   driverId: int("driverId").references(() => users.id),
@@ -343,7 +344,12 @@ export const orders = mysqlTable("orders", {
   total: decimal("total", { precision: 10, scale: 2 }).default("0").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  restaurantBranchStatusCreatedAtIdx: index("orders_restaurant_branch_status_created_idx").on(table.restaurantId, table.branchId, table.status, table.createdAt),
+  restaurantCreatedAtIdx: index("orders_restaurant_created_at_idx").on(table.restaurantId, table.createdAt),
+  driverDeliveryStatusIdx: index("orders_driver_delivery_status_idx").on(table.driverId, table.deliveryStatus, table.updatedAt),
+  restaurantClientRequestUidx: uniqueIndex("orders_restaurant_client_request_uidx").on(table.restaurantId, table.clientRequestId),
+}));
 
 export const orderItems = mysqlTable("orderItems", {
   id: int("id").autoincrement().primaryKey(),
@@ -351,7 +357,9 @@ export const orderItems = mysqlTable("orderItems", {
   menuItemId: int("menuItemId").notNull(),
   quantity: int("quantity").default(1).notNull(),
   unitPrice: decimal("unitPrice", { precision: 10, scale: 2 }).notNull(),
-});
+}, (table) => ({
+  orderIdIdx: index("orderItems_order_id_idx").on(table.orderId),
+}));
 
 export const loyaltyAccounts = mysqlTable("loyaltyAccounts", {
   id: int("id").autoincrement().primaryKey(),
