@@ -6,6 +6,13 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import viteConfig from "../../vite.config";
 
+export function prepareDevTemplate(template: string, analyticsEndpoint = process.env.VITE_ANALYTICS_ENDPOINT?.trim(), analyticsId = process.env.VITE_ANALYTICS_WEBSITE_ID?.trim()) {
+  const withEntryVersion = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid()}"`);
+  return analyticsEndpoint && analyticsId
+    ? withEntryVersion.replaceAll("%VITE_ANALYTICS_ENDPOINT%", analyticsEndpoint).replaceAll("%VITE_ANALYTICS_WEBSITE_ID%", analyticsId)
+    : withEntryVersion.replace(/\s*<script defer src="%VITE_ANALYTICS_ENDPOINT%\/umami" data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"><\/script>/, "");
+}
+
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
@@ -37,12 +44,11 @@ export async function setupVite(app: Express, server: Server) {
 
       // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
-      const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      // The managed preview proxy does not expose Vite's HMR websocket endpoint.
+      // Serving the template directly prevents transformIndexHtml from injecting
+      // /@vite/client, while Vite middleware still transforms /src/main.tsx.
+      template = prepareDevTemplate(template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(template);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);
