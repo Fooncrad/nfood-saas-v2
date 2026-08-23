@@ -24,6 +24,7 @@ import { MenuAddonsPanel } from "@/components/MenuAddonsPanel";
 import { TranslationReviewPanel } from "@/components/TranslationReviewPanel";
 import AccountManagementPanel from "@/components/AccountManagementPanel";
 import { RestaurantTeamAccountsPanel } from "@/components/RestaurantTeamAccountsPanel";
+import { RestaurantAccessControlPanel } from "@/components/RestaurantAccessControlPanel";
 import { MediaLibraryPanel } from "@/components/MediaLibraryPanel";
 import { ReservationsView } from "@/pages/ReservationsView";
 import { PlatformSettingsPanel } from "@/components/PlatformSettingsPanel";
@@ -84,7 +85,7 @@ export function ModuleView({ active, orders, advanceOrder, orderUpdatePending, s
   if (active === "menu") return <MenuView restaurantId={restaurantId} />;
   if (active === "tables") return <OperationalModuleShell title="الطاولات"><TablesView restaurantId={restaurantId} /></OperationalModuleShell>;
   if (active === "inventory") return <OperationalModuleShell title="المخزون والمشتريات"><InventoryView restaurantId={restaurantId} /></OperationalModuleShell>;
-  if (active === "team") return <div className="space-y-4"><TeamView restaurantId={restaurantId} /><RestaurantTeamAccountsPanel restaurantId={restaurantId} /></div>;
+  if (active === "team") return <div className="space-y-4"><TeamView restaurantId={restaurantId} /><RestaurantTeamAccountsPanel restaurantId={restaurantId} /><RestaurantAccessControlPanel restaurantId={restaurantId} /></div>;
   if (active === "marketing") return <RestaurantMarketingCenter restaurantId={restaurantId} branchId={branchId} />;
   if (active === "reservations") return <OperationalModuleShell title="الحجوزات وقائمة الانتظار"><ReservationsView restaurantId={restaurantId} /></OperationalModuleShell>;
   if (active === "admin") return <SuperAdminRestaurantCatalog />;

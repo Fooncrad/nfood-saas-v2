@@ -15,6 +15,20 @@ describe("team and branding controls", () => {
     expect(editor).toContain("animate-spin");
   });
 
+  it("keeps detailed permissions and audit procedures protected", () => {
+    const permissions = read("shared/rolePermissions.ts");
+    const router = read("server/routers.ts");
+    const panel = read("client/src/components/RestaurantAccessControlPanel.tsx");
+    expect(permissions).toContain('"orders.update"');
+    expect(permissions).toContain('"finance.read"');
+    expect(permissions).toContain('"reports.read"');
+    expect(router).toContain('assertTeamPermission(ctx, input.status === "cancelled" ? "orders.cancel" : "orders.update")');
+    expect(router).toContain('action: "order.status.updated"');
+    expect(router).toContain('activityAuditLogs:');
+    expect(panel).toContain("الصلاحيات التفصيلية حسب الدور");
+    expect(panel).toContain("سجل نشاط المطعم");
+  });
+
   it("keeps team account fields and protected server procedures", () => {
     const schema = read("drizzle/schema.ts");
     const router = read("server/routers.ts");
