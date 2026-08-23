@@ -408,3 +408,72 @@
   .dark .nfood-dashboard-shell select { background-color: var(--input); color: var(--foreground); border-color: var(--border); }
   .dark .nfood-dashboard-shell header { background-color: color-mix(in oklab, var(--background) 90%, transparent); border-color: var(--border); }
 }
+
+/* Plum & Amber foundation: shared across dashboard and public surfaces */
+:root {
+  --brand-plum: oklch(0.33 0.11 313);
+  --brand-plum-deep: oklch(0.18 0.06 313);
+  --brand-plum-soft: oklch(0.45 0.10 313);
+  --brand-amber: oklch(0.74 0.16 55);
+  --brand-amber-soft: oklch(0.86 0.12 65);
+  --focus-ring: color-mix(in oklab, var(--brand-amber) 38%, transparent);
+}
+
+html[lang="en"] body,
+html[lang="fr"] body {
+  font-family: "IBM Plex Sans", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+}
+
+html[lang="ar"] body,
+html[lang="ur"] body {
+  font-family: "IBM Plex Sans Arabic", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+[dir="rtl"] {
+  text-align: start;
+}
+
+[dir="rtl"] .nfood-dashboard-shell,
+[dir="rtl"] .nfood-menu-theme {
+  direction: rtl;
+}
+
+[dir="ltr"] .nfood-dashboard-shell,
+[dir="ltr"] .nfood-menu-theme {
+  direction: ltr;
+}
+
+.nfood-plum-surface {
+  background: linear-gradient(135deg, var(--brand-plum-deep), var(--brand-plum));
+  color: var(--primary-foreground);
+}
+
+.nfood-amber-action {
+  background: var(--brand-amber);
+  color: var(--primary-foreground);
+  box-shadow: 0 12px 24px -16px var(--brand-amber);
+}
+
+.nfood-amber-action:hover {
+  background: var(--brand-amber-soft);
+}
+
+.nfood-dashboard-shell :is(button, a, input, textarea, select):focus-visible,
+.nfood-menu-theme :is(button, a, input, textarea, select):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.dark .nfood-dashboard-shell,
+.dark .nfood-menu-theme {
+  color-scheme: dark;
+}
+
+.dark .nfood-plum-surface {
+  background: linear-gradient(135deg, oklch(0.14 0.04 313), oklch(0.25 0.08 313));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nfood-amber-action,
+  .nfood-plum-surface { transition: none !important; }
+}

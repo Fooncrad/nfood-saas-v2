@@ -22,6 +22,14 @@ describe("NFOOD visual style guide", () => {
     expect(css).toContain(".dark .nfood-dashboard-shell header");
   });
 
+  it("defines the Plum & Amber foundation and bidirectional language rules", () => {
+    expect(css).toContain("--brand-plum:");
+    expect(css).toContain("--brand-amber:");
+    expect(css).toContain('html[lang="en"] body');
+    expect(css).toContain('[dir="rtl"]');
+    expect(css).toContain('[dir="ltr"]');
+  });
+
   it("loads the Arabic product font and protects reduced-motion users", () => {
     expect(html).toContain("IBM+Plex+Sans+Arabic");
     expect(css).toContain('font-family: "IBM Plex Sans Arabic"');
