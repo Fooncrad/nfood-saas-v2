@@ -14,7 +14,19 @@ describe("attachment implementation wiring", () => {
     const modules = read("client/src/components/HomeModules.tsx");
     expect(modules).toContain("BrandingFeatureMatrix");
     expect(modules).toContain("BrandingEditorPanel");
-    expect(read("client/src/components/BrandingEditorPanel.tsx")).toContain("المعاينة الحية");
+    const editor = read("client/src/components/BrandingEditorPanel.tsx");
+    expect(editor).toContain("المعاينة الحية");
+    expect(editor).toContain("uploadBrandAsset");
+    expect(editor).toContain("رفع الشعار");
+  });
+
+  it("wires secure brand asset upload and drag-drop widget ordering", () => {
+    const router = read("server/routers.ts");
+    const quickAccess = read("client/src/components/DashboardQuickAccess.tsx");
+    expect(router).toContain("uploadBrandAsset");
+    expect(router).toContain("storagePut");
+    expect(quickAccess).toContain("draggable");
+    expect(quickAccess).toContain("nfood.dashboard.widget-order");
   });
 
   it("keeps dashboard density choices persistent", () => {
