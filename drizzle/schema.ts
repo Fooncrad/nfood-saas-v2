@@ -109,6 +109,7 @@ export const receiptTemplates = mysqlTable("receiptTemplates", {
   headerText: varchar("headerText", { length: 240 }).default("").notNull(),
   footerText: varchar("footerText", { length: 240 }).default("شكراً لزيارتكم").notNull(),
   logoUrl: varchar("logoUrl", { length: 500 }),
+  messageTemplatesJson: text("messageTemplatesJson"),
   createdByUserId: int("createdByUserId").references(() => users.id),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

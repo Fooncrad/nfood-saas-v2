@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTwilioSmsRequest, formatReceiptDeliveryHtml, formatReceiptDeliveryText, parseTwilioSmsConfig } from "./receiptDelivery";
+import { buildTwilioSmsRequest, formatReceiptDeliveryHtml, formatReceiptDeliveryText, formatReceiptSubject, parseReceiptMessageTemplates, parseTwilioSmsConfig, resolveReceiptLocale } from "./receiptDelivery";
 
 describe("receipt delivery", () => {
   const receipt = {
@@ -24,6 +24,18 @@ describe("receipt delivery", () => {
     expect(text).toContain("المجموع قبل الخصم: 20.00 SAR");
     expect(text).toContain("الإجمالي النهائي: 20.70 SAR");
     expect(text).toContain("شكراً لزيارتكم");
+  });
+
+  it("localizes receipt labels and the email subject", () => {
+    const templates = parseReceiptMessageTemplates(JSON.stringify({ en: { subject: "Receipt {{orderId}} · {{restaurantName}}", footer: "See you soon" }, fr: { footer: "À bientôt" } }));
+    const english = formatReceiptDeliveryText({ ...receipt, locale: "en", messageTemplate: templates.en });
+    expect(english).toContain("Order receipt #42");
+    expect(english).toContain("Subtotal: 20.00 SAR");
+    expect(english).toContain("See you soon");
+    expect(formatReceiptSubject({ orderId: 42, restaurantName: "Nasser Cafe", locale: "en", template: templates.en })).toBe("Receipt 42 · Nasser Cafe");
+    expect(formatReceiptDeliveryText({ ...receipt, locale: "fr", messageTemplate: templates.fr })).toContain("Reçu de commande #42");
+    expect(resolveReceiptLocale("fr-FR")).toBe("fr");
+    expect(resolveReceiptLocale("de-DE")).toBe("ar");
   });
 
   it("escapes customer-facing HTML and includes a remote logo", () => {

@@ -1,3 +1,7 @@
+export const RECEIPT_AUDIT_ACTIONS = ["restaurant.pricing.updated", "receipt.template.updated", "receipt.logo.updated", "receipt.delivery.sent", "receipt.delivery.failed"] as const;
+export type ReceiptAuditAction = typeof RECEIPT_AUDIT_ACTIONS[number];
+export function getReceiptAuditActions(input: { action?: ReceiptAuditAction; financialOnly?: boolean }): ReceiptAuditAction[] { return input.financialOnly ? ["restaurant.pricing.updated"] : input.action ? [input.action] : [...RECEIPT_AUDIT_ACTIONS]; }
+
 export type AuditCsvRow = {
   id: number;
   action: string;

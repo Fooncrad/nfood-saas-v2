@@ -1,0 +1,1 @@
+ALTER TABLE `receiptTemplates` ADD `messageTemplatesJson` text;
