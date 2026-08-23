@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `coverUrl` varchar(500);

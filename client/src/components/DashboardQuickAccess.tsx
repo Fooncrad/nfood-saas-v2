@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ArrowUpLeft, Layers3, SlidersHorizontal } from "lucide-react";
+import { ArrowUpLeft, Layers3, RotateCcw, SlidersHorizontal } from "lucide-react";
 import type { NavKey } from "@/components/homeNavigation";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export type DashboardQuickAccessItem = {
   key: NavKey;
@@ -62,7 +64,9 @@ export function DashboardQuickAccess({ items, onNavigate, title = "كل الأق
   const densityClasses = { comfortable: { section: "p-3 md:p-4", gap: "gap-3", card: "min-h-[72px] p-2.5" }, compact: { section: "p-2 md:p-3", gap: "gap-2", card: "min-h-[60px] p-2" }, spacious: { section: "p-4 md:p-5", gap: "gap-4", card: "min-h-[86px] p-3" } }[density];
   const available = items.filter((item) => item.key !== "overview");
   const knownKeys = new Set(groups.flatMap((group) => group.keys));
-  const normalizedOrder = [...orderedKeys, ...available.map((item) => item.key).filter((key) => !orderedKeys.includes(key))];
+  const defaultOrder = available.map((item) => item.key);
+  const normalizedOrder = [...orderedKeys, ...defaultOrder.filter((key) => !orderedKeys.includes(key))];
+  const resetOrder = () => { setOrderedKeys([]); try { localStorage.removeItem(`nfood.dashboard.widget-order:${storageScope}`); } catch { /* storage unavailable */ } toast.success("تمت إعادة ترتيب الودجات إلى الوضع الافتراضي"); };
   const orderIndex = new Map(normalizedOrder.map((key, index) => [key, index]));
   const sortItems = (groupItems: DashboardQuickAccessItem[]) => [...groupItems].sort((a, b) => (orderIndex.get(a.key) ?? 9999) - (orderIndex.get(b.key) ?? 9999));
   const grouped = groups.map((group) => ({ ...group, items: sortItems(group.keys.map((key) => available.find((item) => item.key === key)).filter((item): item is DashboardQuickAccessItem => Boolean(item))) })).filter((group) => group.items.length > 0);
@@ -82,9 +86,9 @@ export function DashboardQuickAccess({ items, onNavigate, title = "كل الأق
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2"><span className="hidden items-center gap-1 text-[10px] font-bold text-slate-400 sm:flex"><SlidersHorizontal className="h-3.5 w-3.5" /> اسحب لترتيب الودجات</span><div className="flex rounded-xl bg-slate-100 p-0.5" role="group" aria-label="كثافة لوحة التحكم">{(["compact", "comfortable", "spacious"] as const).map((value) => <button key={value} type="button" onClick={() => setDensity(value)} className={`rounded-lg px-2 py-1 text-[10px] font-bold ${density === value ? "bg-white text-[#e76f3c] shadow-sm" : "text-slate-500"}`}>{value === "compact" ? "مضغوط" : value === "comfortable" ? "مريح" : "واسع"}</button>)}</div><span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">{available.length} أقسام متاحة</span></div>
+        <div className="flex items-center gap-2"><span className="hidden items-center gap-1 text-[10px] font-bold text-slate-400 sm:flex"><SlidersHorizontal className="h-3.5 w-3.5" /> اسحب لترتيب الودجات</span><Button type="button" variant="outline" size="sm" onClick={resetOrder} className="h-7 rounded-lg border-slate-200 px-2 text-[10px] font-bold text-slate-500 hover:border-orange-200 hover:text-[#e76f3c]"><RotateCcw className="ms-1 h-3 w-3" /> إعادة الضبط</Button><div className="flex rounded-xl bg-slate-100 p-0.5" role="group" aria-label="كثافة لوحة التحكم">{(["compact", "comfortable", "spacious"] as const).map((value) => <button key={value} type="button" onClick={() => setDensity(value)} className={`rounded-lg px-2 py-1 text-[10px] font-bold ${density === value ? "bg-white text-[#e76f3c] shadow-sm" : "text-slate-500"}`}>{value === "compact" ? "مضغوط" : value === "comfortable" ? "مريح" : "واسع"}</button>)}</div><span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">{available.length} أقسام متاحة</span></div>
       </div>
-      <div className={`grid ${densityClasses.gap} xl:grid-cols-3`}>
+      <div className="grid gap-3 xl:grid-cols-3">
         {grouped.map((group) => (
           <div key={group.id}>
             <div className="mb-1.5 flex items-center justify-between gap-2">
