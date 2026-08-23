@@ -13,6 +13,15 @@ const modulesSource = readFileSync(new URL("../components/HomeModules.tsx", impo
     expect(homeSource.length).toBeLessThan(50000);
   });
 
+  it("organizes central admin navigation into collapsible platform groups", () => {
+    expect(sidebarSource).toContain('const platformGroups = [');
+    expect(sidebarSource).toContain('id: "platform-management"');
+    expect(sidebarSource).toContain('id: "platform-settings"');
+    expect(sidebarSource).toContain("collapsedGroups");
+    expect(sidebarSource).toContain('isCentralAdmin ? platformGroups : sidebarGroups');
+    expect(sidebarSource).toContain('aria');
+  });
+
   it("keeps the deferred operational modules self-contained", () => {
     expect(modulesSource).toContain("export function ModuleView(");
     expect(modulesSource).toContain("trpc.platform.menuItems.useQuery");
