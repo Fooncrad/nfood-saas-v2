@@ -39,3 +39,16 @@ export function auditLogsToCsv(rows: AuditCsvRow[]) {
   const body = rows.map((row) => [row.id, row.action, row.entityType, row.entityId, row.outcome, row.severity ?? "info", row.actorRole, row.requestId, row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt, safeMetadata(row.metadata)].map(csvCell).join(","));
   return `\uFEFF${[header, ...body].join("\r\n")}\r\n`;
 }
+
+function excelCell(value: string | number | null | undefined, tag = "td") {
+  const text = value == null ? "" : String(value);
+  const safe = text.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[char] ?? char);
+  return `<${tag}>${safe}</${tag}>`;
+}
+
+export function auditLogsToExcel(rows: AuditCsvRow[]) {
+  const header = ["id", "action", "entity_type", "entity_id", "outcome", "severity", "actor_role", "request_id", "created_at", "metadata"];
+  const body = rows.map((row) => `<tr>${[row.id, row.action, row.entityType, row.entityId, row.outcome, row.severity ?? "info", row.actorRole, row.requestId, row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt, safeMetadata(row.metadata)].map((value) => excelCell(value)).join("")}</tr>`).join("");
+  const headerCells = header.map((value) => excelCell(value, "th")).join("");
+  return `\uFEFF<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:Tahoma,Arial,sans-serif;direction:rtl}table{border-collapse:collapse}th,td{border:1px solid #d8d0ca;padding:7px;text-align:right;mso-number-format:"\\@"}th{background:#f7ede5;font-weight:700}</style></head><body><table><thead><tr>${headerCells}</tr></thead><tbody>${body}</tbody></table></body></html>`;
+}
