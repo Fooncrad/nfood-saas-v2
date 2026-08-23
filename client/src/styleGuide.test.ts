@@ -13,6 +13,13 @@ describe("NFOOD visual style guide", () => {
     expect(css).toContain("--success: oklch(0.66 0.14 158)");
   });
 
+  it("keeps dark mode aligned with the Plum & Amber identity", () => {
+    expect(css).toContain("--primary: oklch(0.74 0.16 55)");
+    expect(css).toContain("--sidebar: oklch(0.14 0.035 310)");
+    expect(css).toContain(".dark body");
+    expect(css).not.toContain("--primary: var(--color-blue-700)");
+  });
+
   it("loads the Arabic product font and protects reduced-motion users", () => {
     expect(html).toContain("IBM+Plex+Sans+Arabic");
     expect(css).toContain('font-family: "IBM Plex Sans Arabic"');

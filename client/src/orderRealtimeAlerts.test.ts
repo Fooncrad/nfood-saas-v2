@@ -10,6 +10,9 @@ describe("POS and KDS realtime alerts", () => {
     expect(source).toContain("!old.has(order.id)");
     expect(source).toContain("old.get(order.id) !== order.status");
     expect(source).toContain("لا توجد طلبات نشطة حاليًا");
+    expect(source).toContain("soundEnabled");
+    expect(source).toContain("AudioContext");
+    expect(source).toContain("visual alerts remain the source of truth");
   });
 
   it("is wired into both POS and KDS with fast refresh and focus recovery", () => {
@@ -23,5 +26,13 @@ describe("POS and KDS realtime alerts", () => {
     expect(home).toContain("const [productSearch, setProductSearch] = useState(\"\");");
     expect(home).toContain("const availableProducts = posProducts.filter");
     expect(home).toContain("placeholder=\"ابحث عن صنف...\"");
+    expect(home).toContain("order.items.map((item) => `${item.quantity} × ${item.itemName}`)");
+  });
+
+  it("keeps order detail lookup tenant-scoped", () => {
+    const db = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
+    expect(db).toContain("eq(orders.restaurantId, restaurantId), eq(branches.restaurantId, restaurantId)");
+    expect(db).toContain("eq(menuItems.restaurantId, restaurantId)");
+    expect(db).toContain("inArray(orderItems.orderId, rows.map((order) => order.id))");
   });
 });

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { validateReservationDraft } from "./ReservationsView";
 
 describe("reservation draft validation", () => {
@@ -15,5 +17,17 @@ describe("reservation draft validation", () => {
 
   it("rejects an invalid phone number", () => {
     expect(validateReservationDraft({ customerName: "عميل", phone: "abc", partySize: "2", reservedFor: future }, Date.parse("2029-01-01T00:00:00Z"))).toContain("هاتف");
+  });
+});
+
+describe("reservation operations wiring", () => {
+  const source = readFileSync(resolve(process.cwd(), "client/src/pages/ReservationsView.tsx"), "utf8");
+
+  it("collects branch, slot, email, and duration for the protected reservation flow", () => {
+    expect(source).toContain("reservationSlotsForRestaurant");
+    expect(source).toContain("slotId");
+    expect(source).toContain("durationMinutes");
+    expect(source).toContain("email");
+    expect(source).toContain("branchId");
   });
 });
