@@ -50,12 +50,21 @@ const driverDeliverySource = readFileSync(new URL("../components/DriverDeliveryV
 
   it("uses compact single-screen summaries for orders and driver delivery", () => {
     expect(modulesSource).toContain('import { CompactOrdersBoard }');
-    expect(modulesSource).toContain('if (active === "orders") return <CompactOrdersBoard');
+    expect(modulesSource).toContain('if (active === "orders") return <OperationalModuleShell title="إدارة الطلبات"><CompactOrdersBoard');
     expect(compactOrdersSource).toContain("<CompactModuleSummary metrics={metrics} />");
     expect(compactOrdersSource).toContain("ordersLoading");
+    expect(compactOrdersSource).toContain('viewMode === "kanban"');
+    expect(compactOrdersSource).toContain("nfood:orders-view");
+    expect(compactOrdersSource).toContain("طريقة عرض الطلبات");
     expect(driverDeliverySource).toContain("<CompactModuleSummary metrics={summary} />");
     expect(driverDeliverySource).toContain("summary");
     expect(driverDeliverySource).toContain("<CompactModuleSummary metrics={summary}");
+    expect(modulesSource).toContain('title="المخزون والمشتريات"');
+    expect(modulesSource).toContain('title="الحجوزات وقائمة الانتظار"');
+    expect(modulesSource).toContain('title="الفروع والإعدادات"');
+    expect(modulesSource).toContain('title="نقطة البيع POS"');
+    expect(modulesSource).toContain('title={info.title}');
+    expect(modulesSource).toContain('title="الطاولات"');
   });
 
   it("keeps the deferred operational modules self-contained", () => {
