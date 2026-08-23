@@ -105,6 +105,7 @@ export const restaurants = mysqlTable("restaurants", {
   taxPercent: decimal("taxPercent", { precision: 5, scale: 2 }).default("0").notNull(),
   showBranchesOnMenu: boolean("showBranchesOnMenu").default(false).notNull(),
   orderModesJson: varchar("orderModesJson", { length: 255 }).default('["dineIn","takeaway","delivery","reservation","hotel"]').notNull(),
+  reservationEventTypesJson: varchar("reservationEventTypesJson", { length: 1000 }).default('["حفل عيد ميلاد","فعالية","اجتماع","عشاء خاص"]').notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -357,6 +358,7 @@ export const orders = mysqlTable("orders", {
   currencyCode: varchar("currencyCode", { length: 3 }).default("SAR").notNull(),
   currencyDecimals: int("currencyDecimals").default(2).notNull(),
   reservationDate: timestamp("reservationDate"),
+  reservationEventType: varchar("reservationEventType", { length: 160 }),
   hotelName: varchar("hotelName", { length: 180 }),
   hotelRoom: varchar("hotelRoom", { length: 80 }),
   hotelFloor: varchar("hotelFloor", { length: 40 }),

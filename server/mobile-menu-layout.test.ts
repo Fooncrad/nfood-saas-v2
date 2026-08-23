@@ -31,6 +31,14 @@ describe("mobile menu order preferences and notes", () => {
     expect(source).toContain('startLogin()');
   });
 
+  it("supports event reservations with a pre-order", () => {
+    const source = page();
+    expect(source).toContain("reservationEventTypes");
+    expect(source).toContain("reservationEventType: orderType === \"reservation\"");
+    expect(source).toContain("partySize: orderType === \"dineIn\" || orderType === \"reservation\"");
+    expect(source).toContain("نوع المناسبة مطلوب");
+  });
+
   it("removes the public previous-order tracking card", () => {
     const source = page();
     expect(source).not.toContain("copy.trackPrevious");

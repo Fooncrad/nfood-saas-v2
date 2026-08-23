@@ -1,0 +1,2 @@
+ALTER TABLE `orders` ADD `reservationEventType` varchar(160);--> statement-breakpoint
+ALTER TABLE `restaurants` ADD `reservationEventTypesJson` varchar(1000) DEFAULT '["حفل عيد ميلاد","فعالية","اجتماع","عشاء خاص"]' NOT NULL;
