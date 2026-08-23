@@ -60,40 +60,40 @@ export function DashboardQuickAccess({ items, onNavigate, title = "كل الأق
   if (!grouped.length) return null;
 
   return (
-    <section aria-labelledby="dashboard-quick-access-title" className="mb-6 rounded-[1.6rem] border border-slate-200/80 bg-white/70 p-4 shadow-sm md:p-5">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <section aria-labelledby="dashboard-quick-access-title" className="mb-4 rounded-[1.35rem] border border-slate-200/80 bg-white/70 p-3 shadow-sm md:p-4">
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-[#e76f3c]"><Layers3 className="h-4 w-4" /></div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-[#e76f3c]"><Layers3 className="h-4 w-4" /></div>
             <div>
-              <h3 id="dashboard-quick-access-title" className="text-base font-black text-[#111c2e]">{title}</h3>
+              <h3 id="dashboard-quick-access-title" className="text-lg font-black tracking-tight text-[#111c2e]">{title}</h3>
               <p className="mt-0.5 text-xs text-slate-500">{description}</p>
             </div>
           </div>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">{available.length} أقسام متاحة</span>
       </div>
-      <div className="space-y-4">
+      <div className="grid gap-3 xl:grid-cols-3">
         {grouped.map((group) => (
           <div key={group.id}>
-            <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
               <div>
                 <h4 className="text-xs font-black text-slate-700">{group.label}</h4>
                 <p className="mt-0.5 text-[11px] text-slate-400">{group.description}</p>
               </div>
               <span className="text-[10px] font-bold text-slate-400">{group.items.length} وحدات</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {group.items.map((item) => {
                 const Icon = item.icon;
                 return (
                   <button key={item.key} type="button" onClick={() => onNavigate(item.key)} className="group text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e76f3c] focus-visible:ring-offset-2">
                     <Card className="h-full rounded-2xl border-slate-200/90 bg-white transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-orange-200 group-hover:shadow-md group-active:translate-y-0">
-                      <CardContent className="flex min-h-[84px] items-center gap-3 p-3">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-colors group-hover:bg-orange-50 group-hover:text-[#e76f3c]"><Icon className="h-[18px] w-[18px]" /></span>
+                      <CardContent className="flex min-h-[72px] items-center gap-2.5 p-2.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500 transition-colors group-hover:bg-orange-50 group-hover:text-[#e76f3c]"><Icon className="h-[18px] w-[18px]" /></span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-xs font-bold text-slate-800">{item.label}</span>
-                          <span className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-slate-400 group-hover:text-[#e76f3c]">فتح القسم <ArrowUpLeft className="h-3 w-3" /></span>
+                          <span className="block truncate text-[13px] font-bold text-slate-800">{item.label}</span>
+                          <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-slate-400 group-hover:text-[#e76f3c]">فتح القسم <ArrowUpLeft className="h-3 w-3" /></span>
                         </span>
                       </CardContent>
                     </Card>

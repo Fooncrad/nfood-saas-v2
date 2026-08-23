@@ -188,13 +188,14 @@
 }
 
 @layer base {
-  html { font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif; }
+  html { font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif; font-size: 15px; }
   body {
     background:
       radial-gradient(circle at 8% 0%, oklch(0.98 0.035 58 / 0.75), transparent 28rem),
       radial-gradient(circle at 100% 18%, oklch(0.96 0.025 250 / 0.7), transparent 32rem),
       linear-gradient(135deg, oklch(0.976 0.006 300), oklch(0.965 0.012 80));
     min-height: 100vh;
+    line-height: 1.55;
   }
 }
 
