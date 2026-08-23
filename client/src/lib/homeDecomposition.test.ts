@@ -25,6 +25,16 @@ const modulesSource = readFileSync(new URL("../components/HomeModules.tsx", impo
     expect(sidebarSource).toContain('aria');
   });
 
+  it("keeps the translation manager usable for platform and restaurant admins", () => {
+    const panelSource = readFileSync(new URL("../components/TranslationReviewPanel.tsx", import.meta.url), "utf8");
+    expect(panelSource).toContain("استيراد JSON");
+    expect(panelSource).toContain("تصدير JSON");
+    expect(panelSource).toContain("ابحث عن نص أو كلمة محددة");
+    expect(panelSource).toContain('role="tablist"');
+    expect(panelSource).toContain("updateMenuCategory");
+    expect(panelSource).toContain("updateMenuItem");
+  });
+
   it("keeps the deferred operational modules self-contained", () => {
     expect(modulesSource).toContain("export function ModuleView(");
     expect(modulesSource).toContain("trpc.platform.menuItems.useQuery");

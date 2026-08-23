@@ -28,7 +28,7 @@ describe("role navigation matrix", () => {
     expect(central).not.toContain("orders");
     expect(central).toContain("accounts");
     expect(central).toContain("languages");
-    expect(getVisibleNavigation("restaurant_admin")).not.toContain("languages");
+    expect(getVisibleNavigation("restaurant_admin")).toContain("languages");
     expect(getVisibleNavigation("customer")).not.toContain("accounts");
     expect(central).not.toContain("pos");
     expect(getVisibleNavigation("restaurant_admin")).toContain("orders");
