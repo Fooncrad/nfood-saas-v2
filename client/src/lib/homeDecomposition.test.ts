@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 const homeSource = readFileSync(new URL("../pages/Home.tsx", import.meta.url), "utf8");
 const sidebarSource = readFileSync(new URL("../components/HomeSidebar.tsx", import.meta.url), "utf8");
 const modulesSource = readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
+const quickAccessSource = readFileSync(new URL("../components/DashboardQuickAccess.tsx", import.meta.url), "utf8");
 
  describe("Home decomposition", () => {
   it("keeps the primary shell small and delegates navigation to HomeSidebar", () => {
@@ -23,6 +24,16 @@ const modulesSource = readFileSync(new URL("../components/HomeModules.tsx", impo
     expect(sidebarSource).toContain("localStorage.setItem(sidebarStorageKey");
     expect(sidebarSource).toContain('isCentralAdmin ? platformGroups : sidebarGroups');
     expect(sidebarSource).toContain('aria');
+  });
+
+  it("shows a role-aware quick access grid and a visible, compact sidebar", () => {
+    expect(homeSource).toContain("<DashboardQuickAccess items={quickItems}");
+    expect(homeSource).toContain("lg:mr-[304px]");
+    expect(sidebarSource).toContain("w-[304px]");
+    expect(sidebarSource).toContain("overflow-y-auto");
+    expect(quickAccessSource).toContain('keys: ["pos", "orders", "kds", "menu"');
+    expect(quickAccessSource).toContain('keys: ["branches", "inventory", "team"');
+    expect(quickAccessSource).toContain("group.items.map");
   });
 
   it("keeps the translation manager usable for platform and restaurant admins", () => {
