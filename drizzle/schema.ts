@@ -97,6 +97,8 @@ export const restaurants = mysqlTable("restaurants", {
   cancellationEnabled: boolean("cancellationEnabled").default(true).notNull(),
   cancellationWindowMinutes: int("cancellationWindowMinutes").default(15).notNull(),
   reservationNoShowGraceMinutes: int("reservationNoShowGraceMinutes").default(10).notNull(),
+  defaultDiscountPercent: decimal("defaultDiscountPercent", { precision: 5, scale: 2 }).default("0").notNull(),
+  taxPercent: decimal("taxPercent", { precision: 5, scale: 2 }).default("0").notNull(),
   showBranchesOnMenu: boolean("showBranchesOnMenu").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -323,6 +325,9 @@ export const orders = mysqlTable("orders", {
   deliveryEtaMinutes: int("deliveryEtaMinutes"),
   deliveryFailureReason: varchar("deliveryFailureReason", { length: 500 }),
   deliveryNote: varchar("deliveryNote", { length: 1000 }),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).default("0").notNull(),
+  discountAmount: decimal("discountAmount", { precision: 10, scale: 2 }).default("0").notNull(),
+  taxAmount: decimal("taxAmount", { precision: 10, scale: 2 }).default("0").notNull(),
   total: decimal("total", { precision: 10, scale: 2 }).default("0").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
