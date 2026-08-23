@@ -49,6 +49,21 @@ describe("audit export and alerts", () => {
     expect(menu).toContain("discountDesc");
     expect(menu).toContain("ابحث بالاسم أو الفئة");
   });
+  it("supports item tags, addon ownership, and public sharing", () => {
+    const schema = read("drizzle/schema.ts");
+    const router = read("server/routers.ts");
+    const publicMenu = read("client/src/pages/RestaurantPublic.tsx");
+    const adminMenu = read("client/src/components/HomeModules.tsx");
+    expect(schema).toContain("tagsJson");
+    expect(schema).toContain("selectedAddonsJson");
+    expect(router).toContain("إضافة غير مرتبطة بالصنف المحدد");
+    expect(router).toContain("tagsJson: z.string().max(2000).optional()");
+    expect(publicMenu).toContain("addons: item.selectedAddonIds.map");
+    expect(publicMenu).toContain("كل العلامات");
+    expect(publicMenu).toContain("wa.me/?text=");
+    expect(publicMenu).toContain("تمت إضافة الصنف إلى المفضلة");
+    expect(adminMenu).toContain("العلامات");
+  });
   it("supports previous and discounted prices", () => {
     const schema = read("drizzle/schema.ts");
     const db = read("server/db.ts");

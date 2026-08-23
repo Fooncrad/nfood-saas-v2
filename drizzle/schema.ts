@@ -253,6 +253,7 @@ export const menuItems = mysqlTable("menuItems", {
   compareAtPrice: decimal("compareAtPrice", { precision: 10, scale: 2 }),
   imageUrl: text("imageUrl"),
   translationsJson: text("translationsJson"),
+  tagsJson: text("tagsJson"),
   isAvailable: boolean("isAvailable").default(true).notNull(),
 });
 
@@ -395,6 +396,7 @@ export const orderItems = mysqlTable("orderItems", {
   menuItemId: int("menuItemId").notNull(),
   quantity: int("quantity").default(1).notNull(),
   unitPrice: decimal("unitPrice", { precision: 10, scale: 2 }).notNull(),
+  selectedAddonsJson: text("selectedAddonsJson"),
 }, (table) => ({
   orderIdIdx: index("orderItems_order_id_idx").on(table.orderId),
 }));
