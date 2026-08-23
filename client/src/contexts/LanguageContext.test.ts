@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_MANUAL_STORAGE_KEY, detectVisitorLanguage, isPublicLanguagePath, languageMeta, legacyUiTranslations, translations } from "./LanguageContext";
+import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_MANUAL_STORAGE_KEY, autoTranslateText, detectVisitorLanguage, findUntranslatedArabic, isPublicLanguagePath, languageMeta, legacyUiTranslations, translations } from "./LanguageContext";
 
 describe("language configuration", () => {
   it("contains Arabic, English, and French with correct directions", () => {
@@ -12,6 +12,30 @@ describe("language configuration", () => {
     expect(translations.ar.dashboard).toBe("لوحة التحكم");
     expect(translations.en.dashboard).toBe("Dashboard");
     expect(translations.fr.dashboard).toBe("Tableau de bord");
+  });
+
+  it("translates compound legacy UI text and preserves dynamic values", () => {
+    expect(autoTranslateText("الحالة: قيد التحضير · الإجمالي: 45 ر.س", "en")).toContain("Status:");
+    expect(autoTranslateText("الحالة: قيد التحضير · الإجمالي: 45 ر.س", "en")).toContain("45 SAR");
+    expect(autoTranslateText("الحالة: قيد التحضير", "ar")).toBe("الحالة: قيد التحضير");
+  });
+
+  it("detects untranslated Arabic after automatic localization", () => {
+    expect(findUntranslatedArabic("الحالة: قيد التحضير · الإجمالي: 45 ر.س", "en")).toEqual([]);
+    expect(findUntranslatedArabic("الحالة: قيد التحضير · الإجمالي: 45 ر.س", "fr")).toEqual([]);
+    expect(findUntranslatedArabic("الحالة: قيد التحضير", "ar")).toEqual([]);
+  });
+
+  it("does not alias Urdu to English for core labels", () => {
+    expect(translations.ur.dashboard).not.toBe(translations.en.dashboard);
+    expect(translations.ur.dashboard).not.toBe("");
+  });
+
+  it("auto-translates every core Arabic label to English and French", () => {
+    for (const [key, arabicValue] of Object.entries(translations.ar)) {
+      expect(autoTranslateText(arabicValue, "en"), `Missing English auto-translation for ${key}`).toBe(translations.en[key as keyof typeof translations.en]);
+      expect(autoTranslateText(arabicValue, "fr"), `Missing French auto-translation for ${key}`).toBe(translations.fr[key as keyof typeof translations.fr]);
+    }
   });
 
   it("keeps all translation keys aligned across the three languages", () => {

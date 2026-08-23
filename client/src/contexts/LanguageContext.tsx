@@ -284,30 +284,64 @@ export const modernUiTranslations: Record<Exclude<Language, "ar">, Record<string
     "العودة للرئيسية": "ہوم پر واپس جائیں"
   }
 };
+const autoFallbackTranslations: Record<Exclude<Language, "ar">, Record<string, string>> = {
+  en: {
+    "الحالة": "Status", "الإجمالي": "Total", "قيد التحضير": "Preparing", "لا يوجد نطاق توصيل متاح": "No delivery zone available", "حدد موقعك أولًا": "Select your location first", "رقم الطلب": "Order number", "الفترة المتاحة": "Available slot", "الفترات المتاحة للحجز": "Available reservation slots", "مقاعد": "seats", "إلغاء الطلب": "Cancel order", "إعادة الطلب": "Reorder", "الدفع نقدي عند الاستلام": "Cash on delivery", "تواصل معنا": "Contact us", "الحجز": "Reservations", "تجربة طعام مميز": "A remarkable dining experience", "طلب أسهل، وذكريات أجمل": "Easier ordering, better memories", "الكل": "All", "متوفر": "Available", "ر.س": "SAR"
+  },
+  fr: {
+    "الحالة": "Statut", "الإجمالي": "Total", "قيد التحضير": "En préparation", "لا يوجد نطاق توصيل متاح": "Aucune zone de livraison disponible", "حدد موقعك أولًا": "Sélectionnez d’abord votre position", "رقم الطلب": "Numéro de commande", "الفترة المتاحة": "Créneau disponible", "الفترات المتاحة للحجز": "Créneaux de réservation disponibles", "مقاعد": "places", "إلغاء الطلب": "Annuler la commande", "إعادة الطلب": "Commander à nouveau", "الدفع نقدي عند الاستلام": "Paiement en espèces à la livraison", "تواصل معنا": "Nous contacter", "الحجز": "Réservations", "الكل": "Tout", "متوفر": "Disponible", "ر.س": "SAR"
+  },
+  ur: {
+    "لوحة التحكم": "ڈیش بورڈ", "نظرة عامة": "جائزہ", "اللغة": "زبان", "حفظ": "محفوظ کریں", "إلغاء": "منسوخ کریں", "تسجيل الخروج": "لاگ آؤٹ", "البحث": "تلاش", "الإشعارات": "اطلاعات", "الحالة": "حیثیت", "الإجمالي": "کل", "قيد التحضير": "تیاری میں", "رقم الطلب": "آرڈر نمبر", "متوفر": "دستیاب", "الكل": "سب", "ر.س": "سعودی ریال", "المطعم": "ریستوران", "الفرع": "برانچ", "المنيو": "مینو", "الطلبات": "آرڈرز", "الحجوزات": "ریزرویشنز", "العملاء": "صارفین", "السائقون": "ڈرائیورز", "الإعدادات": "ترتیبات", "تواصل معنا": "ہم سے رابطہ کریں"
+  }
+};
+
+const coreAutoTranslations: Record<"en" | "fr", Record<string, string>> = {
+  en: Object.fromEntries(Object.entries(arabic).map(([key, arabicText]) => [arabicText, english[key as keyof typeof english]])),
+  fr: Object.fromEntries(Object.entries(arabic).map(([key, arabicText]) => [arabicText, french[key as keyof typeof french]])),
+};
+
+function getAutoTranslationDictionary(language: Language): Record<string, string> | null {
+  if (language === "ar") return null;
+  const coreDictionary = language === "ur" ? {} : coreAutoTranslations[language];
+  return { ...autoFallbackTranslations[language], ...legacyUiTranslations[language], ...modernUiTranslations[language], ...coreDictionary };
+}
+
+export function autoTranslateText(source: string, language: Language): string {
+  if (language === "ar" || !source.trim()) return source;
+  const dictionary = getAutoTranslationDictionary(language);
+  if (!dictionary) return source;
+  return Object.entries(dictionary)
+    .filter(([from, to]) => from.trim() && to.trim() && from !== to)
+    .sort(([left], [right]) => right.length - left.length)
+    .reduce((text, [from, to]) => text.split(from).join(to), source);
+}
+
+export function findUntranslatedArabic(source: string, language: Language): string[] {
+  if (language === "ar" || language === "ur") return [];
+  return autoTranslateText(source, language).match(/[\u0600-\u06FF]+/g) ?? [];
+}
+
 function applyLegacyUiTranslations(language: Language) {
   if (typeof document === "undefined" || legacyTranslationInProgress) return;
   legacyTranslationInProgress = true;
-  const dictionary = language === "ar" ? null : { ...legacyUiTranslations[language], ...modernUiTranslations[language] };
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   let node: Node | null;
   while ((node = walker.nextNode())) {
     const textNode = node as Text;
     if (!legacyNodeSources.has(textNode)) legacyNodeSources.set(textNode, textNode.nodeValue ?? "");
     const source = legacyNodeSources.get(textNode) ?? "";
-    const trimmed = source.trim();
-    if (!trimmed) continue;
-    const translated = dictionary?.[trimmed] ?? (dictionary ? source : source);
-    if (translated !== source) textNode.nodeValue = source.replace(trimmed, translated);
-    else if (!dictionary) textNode.nodeValue = source;
+    if (!source.trim()) continue;
+    const translated = autoTranslateText(source, language);
+    if (translated !== source) textNode.nodeValue = translated;
   }
   try {
     for (const element of Array.from(document.querySelectorAll<HTMLElement>("input, textarea, [aria-label], [title]"))) {
       for (const attribute of ["placeholder", "aria-label", "title"] as const) {
         const source = element.getAttribute(attribute);
         if (!source) continue;
-        const translated = dictionary?.[source.trim()];
-        if (translated) element.setAttribute(attribute, translated);
-        else if (!dictionary && legacyUiTranslations.en[source]) element.setAttribute(attribute, source);
+        const translated = autoTranslateText(source, language);
+        if (translated !== source) element.setAttribute(attribute, translated);
       }
     }
   } finally {
@@ -315,7 +349,9 @@ function applyLegacyUiTranslations(language: Language) {
   }
 }
 
-const urdu: Record<keyof typeof arabic, string> = english;
+const urdu: Record<keyof typeof arabic, string> = Object.fromEntries(
+  Object.entries(arabic).map(([key, arabicText]) => [key, getAutoTranslationDictionary("ur")?.[arabicText] ?? english[key as keyof typeof english]])
+) as Record<keyof typeof arabic, string>;
 export const translations = { ar: arabic, en: english, fr: french, ur: urdu } as const;
 export type TranslationKey = keyof typeof arabic;
 type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; setLanguage: (language: Language, persist?: boolean) => void; t: (key: TranslationKey) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
@@ -332,8 +368,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.body.dir = meta.dir;
     document.body.dataset.language = language;
     if (!isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(DASHBOARD_LANGUAGE_STORAGE_KEY, language);
-    const isPublicMenu = isPublicLanguagePath(window.location.pathname);
-    if (isPublicMenu) return;
     applyLegacyUiTranslations(language);
     const observer = new MutationObserver(() => scheduleLegacyUiTranslations(language));
     observer.observe(document.body, { subtree: true, childList: true });
