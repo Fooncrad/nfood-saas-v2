@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { DashboardQuickAccess, type DashboardQuickAccessItem } from "@/components/DashboardQuickAccess";
+import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";
 
 type SparklineProps = { values: number[]; tone: "emerald" | "orange" | "violet" | "slate" };
 
@@ -64,7 +65,7 @@ export function PlatformOverview({ onNavigate, quickItems }: { onNavigate: (key:
         {cards.map((card) => { const Icon = card.icon; const tone = card.tint === "orange" ? "bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300" : card.tint === "violet" ? "bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300" : card.tint === "emerald" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300"; return <button key={card.label} type="button" onClick={() => onNavigate("admin")} className="group text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e76f3c] focus-visible:ring-offset-2"><Card className="h-full rounded-2xl border-slate-200/80 bg-white text-right shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-lg dark:border-slate-700/80 dark:bg-slate-900/90"><CardContent className="p-4 md:p-5"><div className="flex items-start justify-between gap-3"><div className={`flex h-11 w-11 items-center justify-center rounded-2xl shadow-sm transition-transform duration-200 group-hover:scale-105 ${tone}`}><Icon className="h-5 w-5" /></div><span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">تفاصيل التقرير</span></div><div className="mt-4 flex items-end justify-between gap-3"><div><p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{card.label}</p><p className="mt-1 text-xl font-black tracking-tight text-slate-950 dark:text-white md:text-2xl">{loading ? "جارٍ..." : card.value}</p></div><Sparkline values={card.history} tone={card.tint} /></div></CardContent></Card></button>; })}
       </div>
       <DashboardQuickAccess items={quickItems} onNavigate={onNavigate} title="كل أدوات المنصة في مكان واحد" description="الوحدات مرتبة حسب الأولوية. اضغط على أي بطاقة للوصول المباشر دون البحث في الشريط الجانبي." />
-      <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-900/90"><CardContent className="p-5"><p className="text-sm font-black text-slate-950 dark:text-white">نبض المنصة</p><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">تعود هذه النظرة عند الضغط على «نظرة عامة»، بينما تفتح البطاقات الوحدات الفعلية مباشرة.</p></CardContent></Card>
+      <SuperAdminRestaurantCatalog />
     </div>
   );
 }
