@@ -610,6 +610,13 @@
       "when": 1787533571564,
       "tag": "0086_flashy_captain_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "5",
+      "when": 1787534039218,
+      "tag": "0087_black_spectrum",
+      "breakpoints": true
     }
   ]
 }
