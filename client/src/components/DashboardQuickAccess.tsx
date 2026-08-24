@@ -43,8 +43,8 @@ const groups: AccessGroup[] = [
   {
     id: "control",
     label: "التحكم والمتابعة",
-    description: "الإعدادات، اللغات، الأمان، وصحة النظام.",
-    keys: ["languages", "security", "health", "accounts"],
+    description: "الإعدادات، الأمان، وصحة النظام.",
+    keys: ["security", "health", "accounts"],
   },
 ];
 

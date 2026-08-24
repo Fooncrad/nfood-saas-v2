@@ -83,7 +83,6 @@ export function HomeSidebar({
   const platformGroups = [
     { id: "platform-overview", label: t("overview"), keys: ["overview"] as NavKey[] },
     { id: "platform-management", label: "إدارة المنصة", keys: ["admin", "accounts", "files"] as NavKey[] },
-    { id: "platform-languages", label: "اللغات", keys: ["languages"] as NavKey[] },
     { id: "platform-settings", label: "الإعدادات والتشغيل", keys: ["branches", "health"] as NavKey[] },
     { id: "platform-security", label: t("security"), keys: ["security"] as NavKey[] },
   ].map((group) => ({ ...group, items: group.keys.map((key) => visibleNavItems.find((item) => item.key === key)).filter((item): item is SidebarItem => Boolean(item)) })).filter((group) => group.items.length > 0);
