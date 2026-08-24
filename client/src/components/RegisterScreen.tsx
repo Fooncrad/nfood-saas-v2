@@ -14,6 +14,7 @@ const plans = [
   { value: "Free", label: "البداية", price: "مجانية", description: "لإطلاق مطعمك وتجربة الأساسيات", features: ["فرع رئيسي", "منيو رقمي", "طلبات QR"] },
   { value: "Starter", label: "Starter", price: "تُحدد لاحقًا", description: "للمطاعم الصغيرة والفرق الناشئة", features: ["فروع إضافية", "تقارير موسعة", "إدارة الفريق"] },
   { value: "Growth", label: "Growth", price: "تُحدد لاحقًا", description: "للمطاعم النشطة ومتعددة القنوات", features: ["POS وKDS", "حملات وولاء", "تحليلات متقدمة"] },
+  { value: "Business", label: "Business", price: "399 ر.س / شهريًا", description: "للفرق متعددة الفروع", features: ["فروع متعددة", "التوصيل والتسويق", "API والتكاملات"] },
   { value: "Enterprise", label: "Enterprise", price: "مخصص", description: "للشركات وسلاسل المطاعم", features: ["White Label", "دعم مخصص", "صلاحيات متقدمة"] },
 ] as const;
 const steps = ["نوع الحساب", "البيانات", "المستندات أو الباقة", "المراجعة"];
@@ -33,7 +34,7 @@ export function RegisterScreen({ onBack, onOAuth }: { onBack: () => void; onOAut
   const [files, setFiles] = useState<Record<string, File | undefined>>({});
   const [applicationId, setApplicationId] = useState<number | null>(null);
   const [temporaryPassword, setTemporaryPassword] = useState("");
-  const [plan, setPlan] = useState<(typeof plans)[number]["value"]>("Free");
+  const [plan, setPlan] = useState<(typeof plans)[number]["value"]>(() => { if (typeof window === "undefined") return "Free"; const requested = new URLSearchParams(window.location.search).get("plan"); return plans.some((item) => item.value === requested) ? requested as (typeof plans)[number]["value"] : "Free"; });
   const [driverDialogOpen, setDriverDialogOpen] = useState(false);
   const restaurantRegister = trpc.auth.registerRestaurant.useMutation({ onSuccess: (result) => { setTemporaryPassword(result.temporaryPassword); toast.success("تم إنشاء الحساب. احفظ كلمة المرور وأكمل تأكيد البريد لاحقًا."); }, onError: (error) => toast.error(error.message || "تعذر إنشاء الحساب") });
   const driverRegister = trpc.auth.submitDriverApplication.useMutation({ onSuccess: (result) => { setApplicationId(result.applicationId); toast.success(result.message); }, onError: (error) => toast.error(error.message || "تعذر إرسال طلب السائق") });

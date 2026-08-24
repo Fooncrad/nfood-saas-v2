@@ -297,7 +297,7 @@ export async function getBranchAllowance(restaurantId: number): Promise<{ plan: 
   const used = Number((await db.select({ total: count() }).from(branches).where(eq(branches.restaurantId, restaurantId)))[0]?.total ?? 0);
   const plan = subscription?.plan ?? null;
   const normalizedPlan = plan?.trim().toLowerCase();
-  const planLimits: Record<string, number | null> = { starter: 1, basic: 3, growth: 5, professional: 15, pro: 15, enterprise: null };
+  const planLimits: Record<string, number | null> = { starter: 1, basic: 3, growth: 5, business: 50, professional: 15, pro: 15, enterprise: null };
   const limit = normalizedPlan ? (Object.prototype.hasOwnProperty.call(planLimits, normalizedPlan) ? planLimits[normalizedPlan] : 3) : 1;
   const source = limit === null ? "unlimited" : subscription ? "subscription" : "default";
   return { plan, limit, used, canCreate: limit === null || used < limit, source };
@@ -310,7 +310,7 @@ export async function getEmployeeAllowance(restaurantId: number): Promise<{ plan
   const used = Number((await db.select({ total: count() }).from(employees).where(eq(employees.restaurantId, restaurantId)))[0]?.total ?? 0);
   const plan = subscription?.plan ?? null;
   const normalizedPlan = plan?.trim().toLowerCase();
-  const planLimits: Record<string, number | null> = { starter: 5, basic: 15, growth: 50, professional: 150, pro: 150, enterprise: null };
+  const planLimits: Record<string, number | null> = { starter: 5, basic: 15, growth: 50, business: 300, professional: 150, pro: 150, enterprise: null };
   const limit = normalizedPlan ? (Object.prototype.hasOwnProperty.call(planLimits, normalizedPlan) ? planLimits[normalizedPlan] : 15) : 5;
   const source = limit === null ? "unlimited" : subscription ? "subscription" : "default";
   return { plan, limit, used, canCreate: limit === null || used < limit, source };
