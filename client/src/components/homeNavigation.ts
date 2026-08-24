@@ -20,7 +20,7 @@ import type { TranslationKey } from "@/contexts/LanguageContext";
 
 export type OrderStatus = "new" | "preparing" | "ready" | "completed";
 export type NavKey = "overview" | "admin" | "accounts" | "languages" | "files" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "reservations" | "remote" | "security" | "health";
-export type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string; ageMinutes: number; kitchenSectionId?: number | null };
+export type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string; ageMinutes: number; kitchenSectionId?: number | null; reservationDate?: string | Date | null; reservationEventType?: string | null; partySize?: number | null; childrenCount?: number | null; splitBillMode?: string | null };
 
 export const navItems: { key: NavKey; label: string; icon: LucideIcon }[] = [
   { key: "overview", label: "نظرة عامة", icon: LayoutDashboard },
