@@ -50,4 +50,15 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(css).toContain("background-color: #111c2f");
     expect(css).toContain("color: #f8fafc");
   });
+
+  it("keeps restaurant cards consolidated without duplicate stats or horizontal scrolling", () => {
+    const catalog = read("components/SuperAdminRestaurantCatalog.tsx");
+    expect(catalog).toContain("grid min-w-0 gap-3 sm:grid-cols-2");
+    expect(catalog).toContain("دخول المطعم");
+    expect(catalog).toContain("فتح Menu");
+    expect(catalog).not.toContain("إجمالي المطاعم");
+    expect(catalog).not.toContain("مميزات مفعلة في الباقات");
+    expect(catalog).not.toContain("overflow-x-auto");
+    expect(catalog).not.toContain("min-w-[980px]");
+  });
 });

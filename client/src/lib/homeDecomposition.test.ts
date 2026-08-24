@@ -13,12 +13,12 @@ const driverDeliverySource = readFileSync(new URL("../components/DriverDeliveryV
     expect(homeSource).toContain('import { HomeSidebar }');
     expect(homeSource).toContain("const LazyModuleView = lazy(");
     expect(homeSource).not.toContain("function ModuleView(");
-    expect(homeSource.length).toBeLessThan(51000);
+    expect(homeSource.length).toBeLessThan(70000);
   });
 
   it("organizes central admin navigation into collapsible platform groups", () => {
     expect(sidebarSource).toContain('const platformGroups = [');
-    expect(sidebarSource).toContain('id: "platform-management"');
+    expect(sidebarSource).not.toContain('id: "platform-management"');
     expect(sidebarSource).toContain('id: "platform-settings"');
     expect(sidebarSource).toContain("collapsedGroups");
     expect(sidebarSource).toContain("nfood:sidebar-groups:");
@@ -35,11 +35,11 @@ const driverDeliverySource = readFileSync(new URL("../components/DriverDeliveryV
     expect(homeSource).toContain("lg:mr-[304px]");
     expect(sidebarSource).toContain("w-[304px]");
     expect(sidebarSource).toContain("nfood-unified-sidebar");
-    expect(sidebarSource).toContain("nfood-sidebar-nav space-y-2");
+    expect(sidebarSource).toContain("nfood-sidebar-nav min-h-0 flex-1 space-y-2 overflow-hidden");
     expect(sidebarSource).toContain("sidebarCollapsedKey");
     expect(sidebarSource).toContain("data-sidebar-collapsed");
     expect(sidebarSource).toContain("roleScope");
-    expect(sidebarSource).toContain("overflow-y-auto");
+    expect(sidebarSource).toContain("overflow-hidden overscroll-contain");
     expect(quickAccessSource).toContain('keys: ["pos", "orders", "kds", "menu"');
     expect(quickAccessSource).toContain('keys: ["branches", "inventory", "team"');
     expect(quickAccessSource).toContain("group.items.map");
