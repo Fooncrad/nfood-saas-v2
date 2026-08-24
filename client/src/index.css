@@ -490,6 +490,10 @@ html[lang="ur"] body {
 @media (prefers-reduced-motion: reduce) {
   .category-results { animation: none; }
 }
+@keyframes nfood-social-float {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(2px) translateY(-2px); }
+}
 @keyframes nfood-cart-pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.045); }
