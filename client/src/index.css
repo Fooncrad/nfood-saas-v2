@@ -722,3 +722,48 @@ html[lang="ur"] body {
 }
 .nfood-notification-pulse { animation: nfood-notification-pulse 560ms cubic-bezier(0.23, 1, 0.32, 1) both; }
 @media (prefers-reduced-motion: reduce) { .nfood-notification-pulse { animation: none; } }
+
+/* Dashboard dark-mode contrast guardrails */
+@layer components {
+  .dark .nfood-dashboard-shell {
+    color: #f1f5f9;
+  }
+  .dark .nfood-dashboard-shell [data-slot="card"],
+  .dark .nfood-dashboard-shell .bg-white {
+    background-color: #111c2f !important;
+    color: #f1f5f9;
+    border-color: rgba(148, 163, 184, 0.28) !important;
+  }
+  .dark .nfood-dashboard-shell [class*="bg-slate-50"],
+  .dark .nfood-dashboard-shell [class*="bg-slate-100"] {
+    background-color: #1a2940 !important;
+    color: #e2e8f0;
+  }
+  .dark .nfood-dashboard-shell [class*="border-slate-100"],
+  .dark .nfood-dashboard-shell [class*="border-slate-200"] {
+    border-color: rgba(148, 163, 184, 0.28) !important;
+  }
+  .dark .nfood-dashboard-shell .text-slate-900,
+  .dark .nfood-dashboard-shell .text-slate-800,
+  .dark .nfood-dashboard-shell .text-slate-700 {
+    color: #f8fafc !important;
+  }
+  .dark .nfood-dashboard-shell .text-slate-600,
+  .dark .nfood-dashboard-shell .text-slate-500 {
+    color: #cbd5e1 !important;
+  }
+  .dark .nfood-dashboard-shell .text-slate-400 {
+    color: #94a3b8 !important;
+  }
+  .dark .nfood-dashboard-shell input,
+  .dark .nfood-dashboard-shell textarea,
+  .dark .nfood-dashboard-shell select {
+    background-color: #0f1a2d !important;
+    color: #f8fafc !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+  }
+  .dark .nfood-dashboard-shell input::placeholder,
+  .dark .nfood-dashboard-shell textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+}

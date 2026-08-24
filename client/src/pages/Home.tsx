@@ -242,7 +242,7 @@ export default function Home() {
     updateOrderStatus.mutate({ restaurantId: selectedRestaurantId, orderId: numericId, status: next });
   };
 
-  if (loading) return <div dir={direction} className="flex h-dvh items-center justify-center overflow-hidden bg-[#f6f7f9] text-slate-500"><div className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/80 px-5 py-4 text-sm shadow-sm backdrop-blur"><span className="h-4 w-4 animate-spin rounded-full border-2 border-[#e76f3c]/25 border-t-[#e76f3c]" />جارٍ التحقق من الجلسة...</div></div>;
+  if (loading) return <div dir={direction} className="flex h-dvh items-center justify-center overflow-hidden bg-[#f6f7f9] text-slate-500 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-300"><div className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/80 px-5 py-4 text-sm shadow-sm backdrop-blur"><span className="h-4 w-4 animate-spin rounded-full border-2 border-[#e76f3c]/25 border-t-[#e76f3c]" />جارٍ التحقق من الجلسة...</div></div>;
     if (resetToken) return <PasswordResetScreen token={resetToken} onComplete={() => { window.history.replaceState({}, "", window.location.pathname); setResetToken(null); }} onBack={() => { window.history.replaceState({}, "", window.location.pathname); setResetToken(null); }} />;
     if (location === "/register" || location === "/restaurant/register") return <RegisterScreen onBack={() => setLocation("/login")} onOAuth={() => startLogin()} />;
     if (location === "/login") return <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} onRegister={() => setLocation("/restaurant/register")} onForgotPassword={() => { setForgotMessage(null); requestPasswordReset.mutate({ email: testEmail }); }} forgotPending={requestPasswordReset.isPending} forgotMessage={forgotMessage} loginError={testLogin.error?.message ?? null} />;
@@ -258,7 +258,7 @@ export default function Home() {
   const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success(t("logout")), notifyError: (message) => toast.error(message) }); };
   const handleSwitchAccount = async () => { await executeSwitchAccountFlow({ logout, closeMenu: () => setProfileOpen(false), startLogin, redirect: () => undefined, notifyError: (message) => toast.error(message) }); };
   return (
-    <div dir={direction} lang={language} className="min-h-screen bg-[#f6f7f9] nfood-dashboard-shell text-[#182230]">
+    <div dir={direction} lang={language} className="min-h-screen bg-[#f6f7f9] nfood-dashboard-shell text-[#182230] transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
       <HomeSidebar
         direction={direction}
         sidebarGroups={sidebarGroups}
