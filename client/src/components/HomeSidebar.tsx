@@ -170,7 +170,7 @@ export function HomeSidebar({
       data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}
       className={`nfood-unified-sidebar fixed inset-y-0 z-20 hidden h-full overflow-hidden overscroll-contain border-slate-200 bg-[#0b1425] text-white shadow-2xl transition-[width] duration-200 lg:flex lg:flex-col ${sidebarCollapsed ? "w-[72px]" : "w-[304px]"} ${direction === "rtl" ? "right-0 border-l" : "left-0 border-r"}`}
     >
-      <div className="flex h-[68px] items-center gap-3 border-b border-white/10 px-5">
+      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3">
         <button
           type="button"
           onClick={() => setSidebarCollapsed(value => !value)}
@@ -201,11 +201,11 @@ export function HomeSidebar({
           </div>
         </div>
       </div>
-      <div className="nfood-sidebar-body flex min-h-0 flex-1 flex-col space-y-2 overflow-hidden px-2.5 pb-2.5 pt-2.5">
+      <div className="nfood-sidebar-body flex min-h-0 flex-1 flex-col gap-1 overflow-hidden px-2 pb-1.5 pt-1.5">
         {showRestaurantWorkspace && (
           <div
             key={`${roleScope}-${selectedRestaurantId}-${branch}`}
-            className="animate-[nfood-enter_220ms_ease-out] rounded-xl border border-white/10 bg-white/[.04] p-2 transition-[border-color,background-color,transform] duration-200 ease-out"
+            className="animate-[nfood-enter_220ms_ease-out] rounded-xl border border-white/10 bg-white/[.04] p-1.5 transition-[border-color,background-color,transform] duration-200 ease-out"
           >
             <div className="mb-2 flex items-center justify-between gap-2 px-2">
               <p className="text-[10px] font-bold tracking-[.14em] text-slate-300">
@@ -319,14 +319,14 @@ export function HomeSidebar({
             </div>
           </div>
         )}
-        <nav className="nfood-sidebar-nav min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5">
+        <nav className="nfood-sidebar-nav nfood-scroll-area min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5">
           {(isCentralAdmin ? platformGroups : sidebarGroups).map(group => {
             const isCollapsed =
               collapsedGroups[group.id ?? group.label] ?? false;
             return (
               <div
                 key={group.id ?? group.label}
-                className="nfood-sidebar-group rounded-xl border border-white/15 bg-[#15233a] p-1.5 shadow-sm"
+                className="nfood-sidebar-group rounded-xl border border-white/15 bg-[#15233a] p-1 shadow-sm"
               >
                 <button
                   type="button"
@@ -336,7 +336,7 @@ export function HomeSidebar({
                       [group.id ?? group.label]: !isCollapsed,
                     }))
                   }
-                  className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-right transition-colors hover:bg-white/10"
+                  className="flex w-full items-center justify-between rounded-lg px-1.5 py-1.5 text-right transition-colors hover:bg-white/10"
                 >
                   <span className="text-[10px] font-bold tracking-[.14em] text-slate-300">
                     {group.label}
@@ -354,7 +354,7 @@ export function HomeSidebar({
                         <button
                           key={item.key}
                           onClick={() => onNavigate(item.key)}
-                          className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-right text-[13px] transition-all duration-200 ${isActive ? "bg-[#e76f3c] font-semibold text-white shadow-lg shadow-orange-950/20" : "text-slate-200 hover:bg-white/10 hover:text-white"}`}
+                          className={`flex w-full items-center gap-2 rounded-lg px-1.5 py-1.5 text-right text-xs transition-all duration-200 ${isActive ? "bg-[#e76f3c] font-semibold text-white shadow-lg shadow-orange-950/20" : "text-slate-200 hover:bg-white/10 hover:text-white"}`}
                         >
                           <Icon className="h-[18px] w-[18px]" />
                           <span>{item.label}</span>
@@ -373,8 +373,8 @@ export function HomeSidebar({
           })}
         </nav>
       </div>
-      <div className="nfood-sidebar-footer mt-auto shrink-0 space-y-1 p-2">
-        <div className="rounded-xl border border-white/10 bg-white/[.04] p-2">
+      <div className="nfood-sidebar-footer mt-auto shrink-0 space-y-0.5 p-1.5">
+        <div className="rounded-xl border border-white/10 bg-white/[.04] p-1.5">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold">
             <Zap className="h-4 w-4 text-[#f0ad65]" /> {t("subscriptionLabel")}
           </div>
@@ -428,20 +428,6 @@ export function HomeSidebar({
         {pushStatus === "granted" && (
           <p className="px-3 py-2 text-xs text-emerald-400">
             {t("notificationsEnabled")}
-          </p>
-        )}
-        {pwaInstalled ? (
-          <p className="px-3 py-2 text-xs text-emerald-400">{t("installed")}</p>
-        ) : canInstall ? (
-          <button
-            onClick={onInstall}
-            className="flex w-full items-center gap-3 px-3 py-2 text-sm text-[#f0ad65] hover:text-white"
-          >
-            <Zap className="h-4 w-4" /> {t("installApp")}
-          </button>
-        ) : (
-          <p className="px-3 py-2 text-xs text-slate-500">
-            {t("installAvailableBrowser")}
           </p>
         )}
         <button

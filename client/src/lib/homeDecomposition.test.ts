@@ -70,7 +70,7 @@ describe("Home decomposition", () => {
     expect(sidebarSource).toContain("w-[304px]");
     expect(sidebarSource).toContain("nfood-unified-sidebar");
     expect(sidebarSource).toContain(
-      "nfood-sidebar-nav min-h-0 flex-1 space-y-2 overflow-y-auto"
+      "nfood-sidebar-nav nfood-scroll-area min-h-0 flex-1 space-y-1 overflow-y-auto"
     );
     expect(sidebarSource).toContain("sidebarCollapsedKey");
     expect(sidebarSource).toContain("data-sidebar-collapsed");

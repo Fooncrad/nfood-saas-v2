@@ -793,3 +793,19 @@ html[lang="ur"] body {
     background-color: rgba(17, 28, 47, 0.94) !important;
   }
 }
+
+/* Bounded dashboard viewport: content remains accessible without visible scrollbars. */
+@layer components {
+  .nfood-scroll-area { scrollbar-width: none; -ms-overflow-style: none; }
+  .nfood-scroll-area::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .nfood-dashboard-shell { height: 100dvh; min-height: 0; overflow: hidden; }
+  .nfood-dashboard-shell > main { min-height: 0; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+  .nfood-dashboard-shell > main > header { flex: 0 0 3.5rem; }
+  .nfood-dashboard-content { overscroll-behavior: contain; }
+}
+
+@media (max-width: 1023px) {
+  .nfood-dashboard-shell { overflow: visible; min-height: 100dvh; height: auto; }
+  .nfood-dashboard-shell > main { height: auto; min-height: 100dvh; overflow: visible; }
+  .nfood-dashboard-content { overflow: visible; }
+}

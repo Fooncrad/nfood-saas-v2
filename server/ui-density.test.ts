@@ -20,13 +20,14 @@ describe("dashboard density and hierarchy", () => {
     const sidebar = source("client/src/components/HomeSidebar.tsx");
     expect(sidebar).toContain('nfood-unified-sidebar');
     expect(sidebar).toContain('text-[13px] text-white');
-    expect(sidebar).toContain('nfood-sidebar-nav min-h-0 flex-1 space-y-2 overflow-y-auto');
+    expect(sidebar).toContain('nfood-sidebar-nav nfood-scroll-area min-h-0 flex-1 space-y-1 overflow-y-auto');
   });
 
   it("reduces shell chrome without removing mobile support", () => {
     const home = source("client/src/pages/Home.tsx");
-    expect(home).toContain('h-[68px]');
-    expect(home).toContain('p-3 pb-16 md:p-4 xl:p-5');
+    expect(home).toContain('h-14 shrink-0');
+    expect(home).toContain('h-dvh min-h-0 overflow-hidden');
+    expect(home).toContain('nfood-dashboard-content nfood-scroll-area');
     expect(home).toContain('lg:hidden');
   });
 });
