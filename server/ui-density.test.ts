@@ -20,7 +20,7 @@ describe("dashboard density and hierarchy", () => {
     const sidebar = source("client/src/components/HomeSidebar.tsx");
     expect(sidebar).toContain('nfood-unified-sidebar');
     expect(sidebar).toContain('text-[13px] text-white');
-    expect(sidebar).toContain('nfood-sidebar-nav min-h-0 flex-1 space-y-2 overflow-hidden');
+    expect(sidebar).toContain('nfood-sidebar-nav min-h-0 flex-1 space-y-2 overflow-y-auto');
   });
 
   it("reduces shell chrome without removing mobile support", () => {
