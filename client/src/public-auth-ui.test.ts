@@ -14,6 +14,7 @@ describe("public authentication and social UI contracts", () => {
     const source = read("./components/TestLoginScreen.tsx");
     expect(source).toContain('disabled={pending}');
     expect(source).toContain("Enter your email and password first.");
+    expect(source).toContain("text-slate-900 dark:text-white");
   });
 
   it("exposes a visible registration back action and left social rail", () => {
