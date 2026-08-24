@@ -713,3 +713,12 @@ html[lang="ur"] body {
 @media (prefers-reduced-motion: reduce) {
   .nfood-notification-popover { animation: none; }
 }
+
+@keyframes nfood-notification-pulse {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  25% { transform: translateX(-2px) rotate(-5deg); }
+  50% { transform: translateX(2px) rotate(5deg); }
+  75% { transform: translateX(-1px) rotate(-3deg); }
+}
+.nfood-notification-pulse { animation: nfood-notification-pulse 560ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+@media (prefers-reduced-motion: reduce) { .nfood-notification-pulse { animation: none; } }

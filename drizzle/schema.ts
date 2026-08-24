@@ -235,6 +235,7 @@ export const userPreferences = mysqlTable("userPreferences", {
   themeMode: mysqlEnum("themeMode", ["light", "dark", "system"]).default("system").notNull(),
   themePreset: varchar("themePreset", { length: 40 }).default("nfood-sunset").notNull(),
   noteTemplatesJson: text("noteTemplatesJson"),
+  notificationPreferencesJson: text("notificationPreferencesJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
