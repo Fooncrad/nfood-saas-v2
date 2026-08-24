@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, lte, like, ne, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNull, lte, like, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
@@ -391,6 +391,7 @@ export async function listRemoteWorkers(restaurantId: number) { const db = await
 export async function listRemoteTasks(restaurantId: number) { const db = await getDb(); return db ? db.select().from(remoteTasks).where(eq(remoteTasks.restaurantId, restaurantId)).orderBy(desc(remoteTasks.createdAt)) : []; }
 export async function listTaskMessages(taskId: number) { const db = await getDb(); return db ? db.select().from(taskMessages).where(eq(taskMessages.taskId, taskId)).orderBy(taskMessages.createdAt) : []; }
 export async function listNotifications(userId: number) { const db = await getDb(); return db ? db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt)) : []; }
+export async function markAllNotificationsRead(userId: number) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.update(notifications).set({ readAt: new Date() }).where(and(eq(notifications.userId, userId), isNull(notifications.readAt))); return { updated: result[0].affectedRows ?? 0 }; }
 export async function getTestAccountByEmail(email: string) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(testAccounts).where(eq(testAccounts.email, email.toLowerCase())).limit(1); return rows[0]; }
 export async function listManagedTestAccounts() { const db = await getDb(); if (!db) return []; return db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, email: testAccounts.email, displayName: testAccounts.displayName, role: testAccounts.role, isActive: testAccounts.isActive, createdAt: testAccounts.createdAt }).from(testAccounts).orderBy(testAccounts.role, testAccounts.displayName); }
 export async function updateManagedTestAccount(id: number, changes: { email?: string; displayName?: string; role?: "admin" | "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver"; isActive?: boolean; passwordHash?: string }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const existing = (await db.select({ id: testAccounts.id }).from(testAccounts).where(eq(testAccounts.id, id)).limit(1))[0]; if (!existing) return false; await db.update(testAccounts).set(changes).where(eq(testAccounts.id, id)); return true; }
