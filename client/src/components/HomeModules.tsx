@@ -325,6 +325,11 @@ export function ModuleView({
       description: "إدارة الدخول والحالة وبيانات جميع أدوار النظام.",
       icon: Users,
     },
+    settings: {
+      title: "الإعدادات العامة",
+      description: "الهوية والملف العام والسياسات وروابط التواصل والإعدادات المتاحة لدورك.",
+      icon: Settings2,
+    },
     files: {
       title: "مكتبة الملفات",
       description: "رفع وتنظيم صور المنيو وملفات المطعم ضمن مساحة معزولة.",
@@ -514,6 +519,14 @@ export function ModuleView({
       </OperationalModuleShell>
     );
   if (active === "admin") return <SuperAdminRestaurantCatalog />;
+  if (active === "settings")
+    return role === "admin" ? (
+      <PlatformSettingsPanel />
+    ) : (
+      <OperationalModuleShell title="الإعدادات العامة">
+        <RestaurantSettingsHub restaurantId={restaurantId} />
+      </OperationalModuleShell>
+    );
   if (active === "accounts") return <AccountManagementPanel />;
   if (active === "files")
     return (
@@ -9803,6 +9816,27 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
           ))
         )}
       </div>
+    </div>
+  );
+}
+
+function RestaurantSettingsHub({ restaurantId }: { restaurantId: number }) {
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-orange-100 bg-orange-50/70 p-4 text-sm text-slate-700 shadow-sm">
+        <p className="font-bold">إعدادات مساحة المطعم</p>
+        <p className="mt-1 text-xs leading-6 text-slate-500">
+          عدّل الهوية والملف العام والسياسات والتكاملات واللغة من هذه الصفحة. تظهر التعديلات في المسارات العامة للمطعم بحسب الصلاحيات.
+        </p>
+      </div>
+      <RestaurantProfilePanel restaurantId={restaurantId} />
+      <RestaurantPricingSettings restaurantId={restaurantId} />
+      <RestaurantIntegrationSettings restaurantId={restaurantId} />
+      <ReceiptCustomizationPanel restaurantId={restaurantId} />
+      <BrandingPanel restaurantId={restaurantId} />
+      <BrandingFeatureMatrix restaurantId={restaurantId} />
+      <BrandingEditorPanel restaurantId={restaurantId} />
+      <LanguageSettingsPanel restaurantId={restaurantId} />
     </div>
   );
 }

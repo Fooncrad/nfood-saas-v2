@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { getVisibleNavigation, isRoleActionAllowed, isRoleNavigationAllowed, roleActions, roleNavigation } from "./roleNavigation";
+import { navItems, navTranslationKeys } from "@/components/homeNavigation";
 
 describe("role navigation matrix", () => {
+  it("exposes the settings entry with a translated label contract", () => {
+    expect(navItems.some(item => item.key === "settings")).toBe(true);
+    expect(navTranslationKeys.settings).toBe("generalSettings");
+  });
+
   it("keeps every role scoped to an explicit navigation allow-list", () => {
     const roles = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "customer", "driver"] as const;
     for (const role of roles) {
@@ -25,7 +31,7 @@ describe("role navigation matrix", () => {
 
   it("keeps operational modules out of the central admin context", () => {
     const central = getVisibleNavigation("admin", true);
-    expect(central).toEqual(["overview", "admin", "accounts", "languages", "files", "security", "health"]);
+    expect(central).toEqual(["overview", "admin", "accounts", "settings", "languages", "files", "security", "health"]);
     expect(central).not.toContain("orders");
     expect(central).toContain("accounts");
     expect(central).toContain("languages");
@@ -33,6 +39,8 @@ describe("role navigation matrix", () => {
     expect(getVisibleNavigation("customer")).not.toContain("accounts");
     expect(central).not.toContain("pos");
     expect(getVisibleNavigation("restaurant_admin")).toContain("orders");
+    expect(getVisibleNavigation("restaurant_admin")).toContain("settings");
+    expect(getVisibleNavigation("waiter")).not.toContain("settings");
     expect(getVisibleNavigation("restaurant_admin")).toContain("pos");
     expect(getVisibleNavigation("restaurant_admin")).not.toContain("admin");
     expect(getVisibleNavigation("restaurant_admin")).not.toContain("health");

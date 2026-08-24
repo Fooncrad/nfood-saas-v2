@@ -149,7 +149,7 @@ export function HomeSidebar({
     {
       id: "platform-settings",
       label: "الإعدادات والتشغيل",
-      keys: ["branches", "health"] as NavKey[],
+      keys: ["settings", "branches", "health"] as NavKey[],
     },
     {
       id: "platform-security",
@@ -444,7 +444,7 @@ export function HomeSidebar({
           </p>
         )}
         <button
-          onClick={() => onNavigate("branches")}
+          onClick={() => onNavigate("settings")}
           className="flex w-full items-center gap-3 px-3 py-2 text-sm text-slate-400 hover:text-white"
         >
           <Settings2 className="h-4 w-4" />
