@@ -14,10 +14,19 @@ describe("kitchen SLA and order performance reporting", () => {
   it("exposes protected admin procedures and records transitions", () => {
     const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
     expect(router).toContain("kitchenSla: protectedProcedure");
+    expect(router).toContain('kitchenTickets: testRoleProcedure("restaurant_admin", "kitchen", "bar")');
+    expect(router).toContain("isBarKitchenSectionName");
     expect(router).toContain('saveKitchenSla: testRoleProcedure("restaurant_admin")');
     expect(router).toContain("orderStatusHistory: protectedProcedure");
     expect(router).toContain("dailyOrderPerformance: protectedProcedure");
     expect(router).toContain("recordOrderStatusTransition");
+  });
+
+  it("links new menu categories to kitchen sections during synchronization", () => {
+    const db = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
+    expect(db).toContain("syncMenuCategoriesToKitchenSections");
+    expect(db).toContain("db.update(menuCategories).set({ kitchenSectionId: section.id })");
+    expect(db).toContain("isBarKitchenSectionName");
   });
 
   it("keeps the Arabic timeline and both export paths visible in KDS", () => {
@@ -30,5 +39,9 @@ describe("kitchen SLA and order performance reporting", () => {
     expect(panel).toContain("bySection");
     expect(panel).toContain("byHour");
     expect(panel).toContain("toLocaleString(\"ar-SA\")");
+    const kds = readFileSync(resolve(process.cwd(), "client/src/components/KdsOperationsBoard.tsx"), "utf8");
+    expect(kds).toContain("getStationSectionIds");
+    expect(kds).toContain("getStationLabel");
+    expect(kds).toContain('station === "bar"');
   });
 });

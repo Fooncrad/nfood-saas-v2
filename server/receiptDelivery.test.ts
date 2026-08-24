@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTwilioSmsRequest, formatReceiptDeliveryHtml, formatReceiptDeliveryText, formatReceiptSubject, parseReceiptMessageTemplates, parseTwilioSmsConfig, resolveReceiptLocale } from "./receiptDelivery";
+import { buildTwilioSmsRequest, formatReceiptDeliveryHtml, formatReceiptDeliveryText, formatReceiptSubject, parseReceiptMessageTemplates, parseSmtpConfig, parseTwilioSmsConfig, resolveReceiptLocale } from "./receiptDelivery";
 
 describe("receipt delivery", () => {
   const receipt = {
@@ -43,6 +43,13 @@ describe("receipt delivery", () => {
     expect(html).toContain("https://cdn.example.test/logo.png");
     expect(html).toContain("&lt;script&gt;");
     expect(html).not.toContain("<script>");
+  });
+
+  it("accepts a complete restaurant SMTP JSON configuration without exposing its password", () => {
+    const config = parseSmtpConfig(JSON.stringify({ host: "smtp.restaurant.test", port: 465, user: "mail@restaurant.test", pass: "private", from: "Nasser Cafe <mail@restaurant.test>" }));
+    expect(config).toMatchObject({ host: "smtp.restaurant.test", port: 465, user: "mail@restaurant.test", from: "Nasser Cafe <mail@restaurant.test>" });
+    expect(config).not.toHaveProperty("password");
+    expect(parseSmtpConfig(JSON.stringify({ host: "smtp.restaurant.test", user: "mail@restaurant.test" }))).toBeNull();
   });
 
   it("accepts only complete Twilio JSON configuration", () => {

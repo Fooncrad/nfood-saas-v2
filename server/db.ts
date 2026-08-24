@@ -2,7 +2,7 @@ import { and, count, desc, eq, gte, inArray, isNull, lte, like, ne, or, sql } fr
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -27,10 +27,21 @@ export function getLoyaltyTier(points: number): LoyaltyTier {
 }
 export type PlatformSettingKey = typeof PLATFORM_SETTING_KEYS[number];
 
+export async function getEffectiveIntegrationSecret(restaurantId: number, providerKey: string) {
+  const db = await getDb(); if (!db) return null;
+  const restaurant = (await db.select({ integrationMode: restaurants.integrationMode, plan: restaurants.plan }).from(restaurants).where(eq(restaurants.id, restaurantId)).limit(1))[0];
+  if (!restaurant) return null;
+  const paidProvider = ["otp_sms", "tamara", "stc_pay", "whatsapp_business", "smtp", "google_maps"].includes(providerKey);
+  const eligible = !paidProvider || !["free", "starter"].includes(String(restaurant.plan ?? "Free").toLowerCase());
+  if (!eligible) return null;
+  const scope = restaurant.integrationMode === "custom" ? "restaurant" : "platform";
+  return getIntegrationSecret(scope, providerKey, scope === "restaurant" ? restaurantId : undefined);
+}
+
 export async function listIntegrationSettings(scope: "platform" | "restaurant", restaurantId?: number) {
   const db = await getDb(); if (!db) return [];
   const filters = scope === "platform" ? eq(integrationSettings.scope, "platform") : and(eq(integrationSettings.scope, "restaurant"), restaurantId ? eq(integrationSettings.restaurantId, restaurantId) : eq(integrationSettings.restaurantId, 0));
-  return db.select().from(integrationSettings).where(filters).orderBy(integrationSettings.category, integrationSettings.providerKey);
+  return db.select({ id: integrationSettings.id, scope: integrationSettings.scope, restaurantId: integrationSettings.restaurantId, providerKey: integrationSettings.providerKey, category: integrationSettings.category, status: integrationSettings.status, keyReference: integrationSettings.keyReference, updatedByUserId: integrationSettings.updatedByUserId, updatedAt: integrationSettings.updatedAt }).from(integrationSettings).where(filters).orderBy(integrationSettings.category, integrationSettings.providerKey);
 }
 function integrationKey() { return createHash("sha256").update(process.env.JWT_SECRET || "nfood-integration-secret").digest(); }
 export function encryptIntegrationSecret(secret: string) { const iv = randomBytes(12); const cipher = createCipheriv("aes-256-gcm", integrationKey(), iv); const ciphertext = Buffer.concat([cipher.update(secret, "utf8"), cipher.final()]); return `${iv.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}.${ciphertext.toString("base64url")}`; }
@@ -246,6 +257,54 @@ export async function redeemLoyaltyPoints(input: { restaurantId: number; custome
   });
 }
 
+export async function getOrCreateWalletAccount(customerId: number, currencyCode = "SAR") {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const existing = (await db.select().from(walletAccounts).where(eq(walletAccounts.customerId, customerId)).limit(1))[0];
+  if (existing) return existing;
+  const result = await db.insert(walletAccounts).values({ customerId, currencyCode, balance: "0.00" });
+  return (await db.select().from(walletAccounts).where(eq(walletAccounts.id, Number(result[0].insertId))).limit(1))[0];
+}
+export async function getCustomerWallet(customerId: number) {
+  const account = await getOrCreateWalletAccount(customerId);
+  const db = await getDb(); if (!db || !account) return { account, transactions: [], topups: [] };
+  const [transactions, topups] = await Promise.all([
+    db.select().from(walletTransactions).where(eq(walletTransactions.walletAccountId, account.id)).orderBy(desc(walletTransactions.createdAt)).limit(30),
+    db.select().from(walletTopupRequests).where(eq(walletTopupRequests.walletAccountId, account.id)).orderBy(desc(walletTopupRequests.createdAt)).limit(20),
+  ]);
+  return { account, transactions, topups };
+}
+export async function listWalletTopupRequests(status?: "pending" | "approved" | "rejected") {
+  const db = await getDb(); if (!db) return [];
+  return db.select({ id: walletTopupRequests.id, customerId: walletTopupRequests.customerId, customerName: users.name, customerEmail: users.email, amount: walletTopupRequests.amount, currencyCode: walletTopupRequests.currencyCode, paymentMethod: walletTopupRequests.paymentMethod, receiptUrl: walletTopupRequests.receiptUrl, status: walletTopupRequests.status, reviewNote: walletTopupRequests.reviewNote, reviewedAt: walletTopupRequests.reviewedAt, createdAt: walletTopupRequests.createdAt }).from(walletTopupRequests).leftJoin(users, eq(walletTopupRequests.customerId, users.id)).where(status ? eq(walletTopupRequests.status, status) : undefined).orderBy(desc(walletTopupRequests.createdAt)).limit(250);
+}
+
+export async function createWalletTopup(input: { customerId: number; amount: number; currencyCode: string; paymentMethod: "bank_transfer" | "cash" | "apple_pay"; receiptUrl?: string | null }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  if (!Number.isFinite(input.amount) || input.amount <= 0 || input.amount > 1000000) throw new Error("قيمة الشحن غير صالحة");
+  const account = await getOrCreateWalletAccount(input.customerId, input.currencyCode);
+  if (!account) throw new Error("تعذر إنشاء المحفظة");
+  const result = await db.insert(walletTopupRequests).values({ customerId: input.customerId, walletAccountId: account.id, amount: input.amount.toFixed(2), currencyCode: input.currencyCode, paymentMethod: input.paymentMethod, receiptUrl: input.receiptUrl ?? null, status: "pending" });
+  return { id: Number(result[0].insertId), status: "pending" as const };
+}
+
+export async function reviewWalletTopup(input: { id: number; status: "approved" | "rejected"; reviewNote?: string | null; reviewedByUserId: number }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  return db.transaction(async (tx) => {
+    const topup = (await tx.select().from(walletTopupRequests).where(eq(walletTopupRequests.id, input.id)).limit(1))[0];
+    if (!topup) throw new Error("طلب الشحن غير موجود");
+    if (topup.status !== "pending") throw new Error("تمت مراجعة طلب الشحن مسبقًا");
+    const now = new Date();
+    await tx.update(walletTopupRequests).set({ status: input.status, reviewNote: input.reviewNote?.trim() || null, reviewedByUserId: input.reviewedByUserId, reviewedAt: now, updatedAt: now }).where(eq(walletTopupRequests.id, input.id));
+    if (input.status !== "approved") return { customerId: topup.customerId, status: input.status, amount: Number(topup.amount) };
+    const account = (await tx.select().from(walletAccounts).where(eq(walletAccounts.id, topup.walletAccountId)).limit(1))[0];
+    if (!account) throw new Error("محفظة العميل غير موجودة");
+    const nextBalance = Number(account.balance) + Number(topup.amount);
+    await tx.update(walletAccounts).set({ balance: nextBalance.toFixed(2), updatedAt: now }).where(eq(walletAccounts.id, account.id));
+    const transaction = await tx.insert(walletTransactions).values({ walletAccountId: account.id, customerId: topup.customerId, type: "credit", amount: Number(topup.amount).toFixed(2), balanceAfter: nextBalance.toFixed(2), referenceType: "wallet_topup", referenceId: topup.id, note: input.reviewNote?.trim() || "اعتماد طلب شحن المحفظة", createdAt: now });
+    return { customerId: topup.customerId, status: input.status, amount: Number(topup.amount), balanceAfter: nextBalance, transactionId: Number(transaction[0].insertId) };
+  });
+}
+
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
@@ -331,7 +390,34 @@ export async function listOrdersByRestaurant(restaurantId: number, limit = 200) 
   for (const item of items) itemsByOrder.set(item.orderId, [...(itemsByOrder.get(item.orderId) ?? []), item]);
   return rows.map((order) => ({ ...order, items: itemsByOrder.get(order.id) ?? [] }));
 }
+const BAR_SECTION_TOKENS = ["bar", "مشروبات", "مشروب", "بار", "قهوة", "كوفي", "عصائر", "coffee", "beverage", "juice"];
+export function isBarKitchenSectionName(name: string) { const normalized = name.trim().toLocaleLowerCase(); return BAR_SECTION_TOKENS.some((token) => normalized.includes(token)); }
+
+export async function syncMenuCategoriesToKitchenSections(restaurantId: number) {
+  const db = await getDb(); if (!db) return [];
+  const [categories, sections] = await Promise.all([
+    db.select({ id: menuCategories.id, name: menuCategories.name, kitchenSectionId: menuCategories.kitchenSectionId }).from(menuCategories).where(eq(menuCategories.restaurantId, restaurantId)),
+    db.select({ id: kitchenSections.id, name: kitchenSections.name }).from(kitchenSections).where(eq(kitchenSections.restaurantId, restaurantId)),
+  ]);
+  const sectionByName = new Map(sections.map((section) => [section.name.trim().toLocaleLowerCase(), section]));
+  const created: Array<{ id: number; name: string }> = [];
+  for (const category of categories) {
+    const normalizedName = category.name.trim().toLocaleLowerCase();
+    if (!normalizedName) continue;
+    let section = sectionByName.get(normalizedName);
+    if (!section) {
+      const result = await db.insert(kitchenSections).values({ restaurantId, name: category.name.trim(), printerType: "none", isEnabled: true });
+      section = { id: Number(result[0].insertId), name: category.name.trim() };
+      sectionByName.set(normalizedName, section);
+      created.push(section);
+    }
+    if (!category.kitchenSectionId) await db.update(menuCategories).set({ kitchenSectionId: section.id }).where(and(eq(menuCategories.id, category.id), eq(menuCategories.restaurantId, restaurantId)));
+  }
+  return [...sections, ...created];
+}
+
 export async function listKitchenSectionsWithSla(restaurantId: number) {
+  await syncMenuCategoriesToKitchenSections(restaurantId);
   const db = await getDb(); if (!db) return [];
   return db.select({ id: kitchenSections.id, name: kitchenSections.name, isEnabled: kitchenSections.isEnabled, thresholdMinutes: kitchenSectionSla.thresholdMinutes })
     .from(kitchenSections).leftJoin(kitchenSectionSla, and(eq(kitchenSectionSla.kitchenSectionId, kitchenSections.id), eq(kitchenSectionSla.restaurantId, restaurantId)))
@@ -395,7 +481,7 @@ export async function markAllNotificationsRead(userId: number) { const db = awai
 export async function deleteAllNotifications(userId: number) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.delete(notifications).where(eq(notifications.userId, userId)); return { deleted: result[0].affectedRows ?? 0 }; }
 export async function getTestAccountByEmail(email: string) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(testAccounts).where(eq(testAccounts.email, email.toLowerCase())).limit(1); return rows[0]; }
 export async function listManagedTestAccounts() { const db = await getDb(); if (!db) return []; return db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, email: testAccounts.email, displayName: testAccounts.displayName, role: testAccounts.role, isActive: testAccounts.isActive, createdAt: testAccounts.createdAt }).from(testAccounts).orderBy(testAccounts.role, testAccounts.displayName); }
-export async function updateManagedTestAccount(id: number, changes: { email?: string; displayName?: string; role?: "admin" | "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver"; isActive?: boolean; passwordHash?: string }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const existing = (await db.select({ id: testAccounts.id }).from(testAccounts).where(eq(testAccounts.id, id)).limit(1))[0]; if (!existing) return false; await db.update(testAccounts).set(changes).where(eq(testAccounts.id, id)); return true; }
+export async function updateManagedTestAccount(id: number, changes: { email?: string; displayName?: string; role?: "admin" | "restaurant_admin" | "waiter" | "kitchen" | "bar" | "cashier" | "customer" | "driver"; isActive?: boolean; passwordHash?: string }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const existing = (await db.select({ id: testAccounts.id }).from(testAccounts).where(eq(testAccounts.id, id)).limit(1))[0]; if (!existing) return false; await db.update(testAccounts).set(changes).where(eq(testAccounts.id, id)); return true; }
 export async function getManagedTestAccount(id: number) { const db = await getDb(); if (!db) return undefined; return (await db.select().from(testAccounts).where(eq(testAccounts.id, id)).limit(1))[0]; }
 export async function getTestAccountById(id: number) { const db = await getDb(); if (!db) return undefined; const rows = await db.select().from(testAccounts).where(eq(testAccounts.id, id)).limit(1); return rows[0]; }
 export async function listAuthSessions(userId: number) { const db = await getDb(); return db ? db.select().from(authSessions).where(eq(authSessions.userId, userId)).orderBy(desc(authSessions.lastSeenAt)) : []; }

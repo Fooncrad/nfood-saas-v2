@@ -708,6 +708,27 @@
       "when": 1787593265854,
       "tag": "0100_omniscient_titania",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "5",
+      "when": 1787602887762,
+      "tag": "0101_mixed_wallop",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "5",
+      "when": 1787603278783,
+      "tag": "0102_wealthy_ravenous",
+      "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "5",
+      "when": 1787604579156,
+      "tag": "0103_little_tombstone",
+      "breakpoints": true
     }
   ]
 }

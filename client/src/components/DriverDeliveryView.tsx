@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock3, MapPin, Truck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,6 @@ import { actionPalette, getDeliveryStatusPalette } from "@/lib/statusPalette";
 
 export function DriverDeliveryView({ restaurantId }: { restaurantId: number }) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [demoTrackingTick, setDemoTrackingTick] = useState(0);
-  useEffect(() => { const timer = window.setInterval(() => setDemoTrackingTick((value) => (value + 1) % 4), 3000); return () => window.clearInterval(timer); }, []);
   const [eta, setEta] = useState("20");
   const [failureReason, setFailureReason] = useState("");
   const [note, setNote] = useState("");
@@ -41,7 +39,6 @@ export function DriverDeliveryView({ restaurantId }: { restaurantId: number }) {
       <Badge className="rounded-xl bg-sky-50 px-3 py-2 text-sky-700"><Truck className="ml-1 h-4 w-4" /> تحديث تلقائي</Badge>
     </div>
     <CompactModuleSummary metrics={summary} />
-    <Card className="rounded-2xl border-dashed border-sky-200 bg-sky-50/60"><CardContent className="flex flex-wrap items-center justify-between gap-3 p-3"><div><p className="text-xs font-black text-sky-900">تتبع حي · Demo Preview</p><p className="mt-1 text-xs leading-5 text-sky-700">معاينة محلية لمسار السائق، لا تُرسل موقعًا حقيقيًا حتى استبدال DEMO_REPLACE_REALTIME_KEY.</p></div><div className="flex items-center gap-2 text-xs font-bold text-sky-900"><span className="h-2.5 w-2.5 animate-pulse rounded-full bg-sky-500" />نقطة تجريبية {demoTrackingTick + 1}/4</div></CardContent></Card>
     {orders.isError && <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">تعذر تحميل طلباتك. Request ID: driver-orders-{restaurantId}<Button variant="outline" onClick={() => void orders.refetch()} className="mr-3 rounded-lg">إعادة المحاولة</Button></div>}
     {!orders.isLoading && deliveryOrders.length === 0 && <Card className="rounded-2xl border-slate-200"><CardContent className="flex min-h-40 flex-col items-center justify-center p-6 text-center"><MapPin className="mb-3 h-9 w-9 text-slate-300" /><p className="font-bold text-slate-700">لا توجد طلبات توصيل معينة لك</p><p className="mt-2 text-sm text-slate-500">ستظهر الطلبات هنا بعد أن يعيّنك المطعم عليها.</p></CardContent></Card>}
     <div className="grid gap-3 lg:grid-cols-[minmax(0,1.25fr)_300px]">

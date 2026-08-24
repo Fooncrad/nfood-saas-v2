@@ -6,7 +6,7 @@ import { branches, menuCategories, menuItems, menuItemAddons, orderItems, orders
 import { and, eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
-function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver", restaurantId?: number): TrpcContext {
+function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" | "waiter" | "kitchen" | "bar" | "cashier" | "customer" | "driver", restaurantId?: number): TrpcContext {
   return {
     user: { id: 1, openId: "platform-test", name: "اختبار", email: "test@nfood.local", loginMethod: "test", role, testRole, restaurantId, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
@@ -54,7 +54,9 @@ describe("platform procedures", () => {
   });
   it("protects kitchen ticket reads by restaurant and role", async () => {
     const kitchen = appRouter.createCaller({ ...context("user", "kitchen"), user: { ...context("user", "kitchen").user, restaurantId: 1 } });
+    const bar = appRouter.createCaller({ ...context("user", "bar"), user: { ...context("user", "bar").user, restaurantId: 1 } });
     await expect(kitchen.platform.kitchenTickets({ restaurantId: 1, orderId: 999999 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(bar.platform.kitchenTickets({ restaurantId: 1, orderId: 999999 })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(kitchen.platform.kitchenTickets({ restaurantId: 2, orderId: 999999 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
   it("exposes system health only to central admin", async () => {

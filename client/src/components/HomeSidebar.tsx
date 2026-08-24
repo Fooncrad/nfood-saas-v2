@@ -89,6 +89,7 @@ export function HomeSidebar({
     "restaurant_admin",
     "waiter",
     "kitchen",
+    "bar",
     "cashier",
   ].includes(roleScope);
   const [workspaceQuery, setWorkspaceQuery] = useState("");

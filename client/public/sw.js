@@ -5,6 +5,7 @@ const SHELL = [
   "/manifest.admin.webmanifest",
   "/manifest.restaurant_admin.webmanifest",
   "/manifest.kitchen.webmanifest",
+  "/manifest.bar.webmanifest",
   "/manifest.waiter.webmanifest",
   "/manifest.cashier.webmanifest",
   "/manifest.driver.webmanifest",

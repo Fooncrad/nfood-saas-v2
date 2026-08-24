@@ -49,6 +49,7 @@ export function TestLoginScreen({
     { label: t("restaurant"), value: "nfood@ret.com" },
     { label: t("waiter"), value: "nfood.waiter@ret.com" },
     { label: t("kitchen"), value: "nfood.kitchen@ret.com" },
+    { label: language === "fr" ? "Bar" : language === "en" ? "Bar" : "البار", value: "nfood.bar@ret.com" },
     { label: t("cashier"), value: "nfood.cashier@ret.com" },
     { label: t("customer"), value: "nfood.client@ret.com" },
     { label: t("driver"), value: "nfood.driver@ret.com" },
@@ -59,6 +60,7 @@ export function TestLoginScreen({
     { role: "customer", email: "nfood.client@ret.com", label: language === "fr" ? "Client" : language === "en" ? "Customer" : "العميل", description: language === "fr" ? "Portail client, commandes et fidélité" : language === "en" ? "Customer portal, orders and loyalty" : "بوابة العميل والطلبات والولاء" },
     { role: "driver", email: "nfood.driver@ret.com", label: language === "fr" ? "Livreur" : language === "en" ? "Driver" : "السائق", description: language === "fr" ? "Livraisons et statuts" : language === "en" ? "Deliveries and status updates" : "التوصيل وتحديث الحالات" },
     { role: "kitchen", email: "nfood.kitchen@ret.com", label: language === "fr" ? "Cuisine" : language === "en" ? "Kitchen" : "المطبخ", description: language === "fr" ? "Écran cuisine et tickets" : language === "en" ? "Kitchen display and tickets" : "شاشة المطبخ والتذاكر" },
+    { role: "bar", email: "nfood.bar@ret.com", label: language === "fr" ? "Bar" : language === "en" ? "Bar" : "البار", description: language === "fr" ? "Poste boissons et tickets" : language === "en" ? "Beverage station and tickets" : "محطة المشروبات والتذاكر" },
   ];
   const copyField = async (account: (typeof demoAccounts)[number], field: "email" | "password") => { const value = field === "email" ? account.email : "123456"; try { await navigator.clipboard.writeText(value); setCopiedField(`${account.role}:${field}`); window.setTimeout(() => setCopiedField((current) => current === `${account.role}:${field}` ? null : current), 1800); toast.success(language === "fr" ? `${field === "email" ? "E-mail" : "Mot de passe"} copié` : language === "en" ? `${field === "email" ? "Email" : "Password"} copied` : `تم نسخ ${field === "email" ? "البريد الإلكتروني" : "كلمة المرور"}`); } catch { toast.error(language === "fr" ? "Copie indisponible" : language === "en" ? "Copy is unavailable" : "تعذر النسخ تلقائيًا"); } };
 

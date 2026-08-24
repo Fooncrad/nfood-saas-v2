@@ -106,6 +106,7 @@ export const restaurants = mysqlTable("restaurants", {
   showBranchesOnMenu: boolean("showBranchesOnMenu").default(false).notNull(),
   mediaShowcaseEnabled: boolean("mediaShowcaseEnabled").default(true).notNull(),
   motionEffectsEnabled: boolean("motionEffectsEnabled").default(true).notNull(),
+  integrationMode: mysqlEnum("integrationMode", ["platform", "custom"]).default("platform").notNull(),
   manualPaymentMethodsJson: text("manualPaymentMethodsJson"),
   manualPaymentInstructions: varchar("manualPaymentInstructions", { length: 1000 }),
   orderModesJson: varchar("orderModesJson", { length: 255 }).default('["dineIn","takeaway","delivery","reservation","hotel"]').notNull(),
@@ -451,6 +452,44 @@ export const loyaltyTransactions = mysqlTable("loyaltyTransactions", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const walletAccounts = mysqlTable("walletAccounts", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull().references(() => users.id),
+  currencyCode: varchar("currencyCode", { length: 3 }).default("SAR").notNull(),
+  balance: decimal("balance", { precision: 12, scale: 2 }).default("0.00").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ customerUnique: uniqueIndex("walletAccounts_customer_unique").on(table.customerId) }));
+
+export const walletTopupRequests = mysqlTable("walletTopupRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull().references(() => users.id),
+  walletAccountId: int("walletAccountId").notNull().references(() => walletAccounts.id),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  currencyCode: varchar("currencyCode", { length: 3 }).default("SAR").notNull(),
+  paymentMethod: mysqlEnum("paymentMethod", ["bank_transfer", "cash", "apple_pay"]).default("bank_transfer").notNull(),
+  receiptUrl: text("receiptUrl"),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  reviewNote: varchar("reviewNote", { length: 500 }),
+  reviewedByUserId: int("reviewedByUserId").references(() => users.id),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const walletTransactions = mysqlTable("walletTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  walletAccountId: int("walletAccountId").notNull().references(() => walletAccounts.id),
+  customerId: int("customerId").notNull().references(() => users.id),
+  type: mysqlEnum("type", ["credit", "debit", "refund", "adjustment"]).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  balanceAfter: decimal("balanceAfter", { precision: 12, scale: 2 }).notNull(),
+  referenceType: varchar("referenceType", { length: 60 }),
+  referenceId: int("referenceId"),
+  note: varchar("note", { length: 300 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const referralRecords = mysqlTable("referralRecords", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
@@ -712,7 +751,7 @@ export const testAccounts = mysqlTable("testAccounts", {
   email: varchar("email", { length: 320 }).notNull().unique(),
   displayName: varchar("displayName", { length: 120 }).notNull(),
   phone: varchar("phone", { length: 40 }),
-  role: mysqlEnum("role", ["admin", "restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"]).notNull(),
+  role: mysqlEnum("role", ["admin", "restaurant_admin", "waiter", "kitchen", "bar", "cashier", "customer", "driver"]).notNull(),
   passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

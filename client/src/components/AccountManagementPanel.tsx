@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-const roleLabels: Record<string, string> = { admin: "Admin", restaurant_admin: "مدير مطعم", waiter: "نادل", kitchen: "Kitchen", cashier: "كاشير", customer: "Customer", driver: "Driver" };
-type AccountRole = "admin" | "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "customer" | "driver";
+const roleLabels: Record<string, string> = { admin: "Admin", restaurant_admin: "مدير مطعم", waiter: "نادل", kitchen: "Kitchen", bar: "Bar", cashier: "كاشير", customer: "Customer", driver: "Driver" };
+type AccountRole = "admin" | "restaurant_admin" | "waiter" | "kitchen" | "bar" | "cashier" | "customer" | "driver";
 type Account = { id: number; restaurantId: number | null; email: string; displayName: string; role: AccountRole; isActive: boolean; createdAt: Date };
 
 export default function AccountManagementPanel() {

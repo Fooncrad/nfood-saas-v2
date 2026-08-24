@@ -7,7 +7,7 @@ const dashboardSource = `${homeSource}\n${homeModulesSource}`;
 const reservationsSource = readFileSync(new URL("../pages/ReservationsView.tsx", import.meta.url), "utf8");
 const publicRestaurantSource = readFileSync(new URL("../pages/RestaurantPublic.tsx", import.meta.url), "utf8");
 const skeletonSource = readFileSync(new URL("../components/DashboardLayoutSkeleton.tsx", import.meta.url), "utf8");
-const roleManifests = ["restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"].map((role) => readFileSync(new URL(`../../public/manifest.${role}.webmanifest`, import.meta.url), "utf8"));
+const roleManifests = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "customer", "driver"].map((role) => readFileSync(new URL(`../../public/manifest.${role}.webmanifest`, import.meta.url), "utf8"));
 
 describe("UI placeholder audit", () => {
   it("keeps role navigation filtering and a 403 fallback in the dashboard shell", () => {

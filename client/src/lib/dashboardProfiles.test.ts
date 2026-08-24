@@ -3,7 +3,7 @@ import { dashboardProfiles } from "./dashboardProfiles";
 
 describe("role dashboard profiles", () => {
   it("keeps central administration out of operational role profiles", () => {
-    const operationalRoles = ["waiter", "kitchen", "cashier", "customer", "driver"] as const;
+    const operationalRoles = ["waiter", "kitchen", "bar", "cashier", "customer", "driver"] as const;
     for (const role of operationalRoles) {
       expect(dashboardProfiles[role].target).not.toBe("admin");
       expect(dashboardProfiles[role].secondary.some((item) => item.target === "admin")).toBe(false);

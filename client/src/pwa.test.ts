@@ -23,7 +23,7 @@ describe("NFOOD PWA contract", () => {
   });
 
   it("ships role-specific manifests with maskable icon support", () => {
-    for (const role of ["cashier", "customer", "driver", "kitchen", "restaurant_admin", "waiter"]) {
+    for (const role of ["bar", "cashier", "customer", "driver", "kitchen", "restaurant_admin", "waiter"]) {
       const manifestPath = `client/public/manifest.${role}.webmanifest`;
       expect(existsSync(resolve(root, manifestPath))).toBe(true);
       const manifest = read(manifestPath);

@@ -144,7 +144,7 @@ describe("Home decomposition", () => {
     expect(modulesSource).toContain('title="الحجوزات وقائمة الانتظار"');
     expect(modulesSource).toContain('title="الفروع والإعدادات"');
     expect(modulesSource).toContain('title="نقطة البيع POS"');
-    expect(modulesSource).toContain("title={info.title}");
+    expect(modulesSource).toContain("title={station === \"bar\"");
     expect(modulesSource).toContain('title="الطاولات"');
   });
 

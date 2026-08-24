@@ -86,6 +86,8 @@ import { CompactModuleSummary } from "@/components/CompactModuleSummary";
 import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";
 import { KitchenPrinterSettings } from "@/components/KitchenPrinterSettings";
 import { RestaurantPricingSettings } from "@/components/RestaurantPricingSettings";
+import { RestaurantIntegrationSettings } from "@/components/RestaurantIntegrationSettings";
+import { CustomerRewardsWalletPanel } from "@/components/CustomerRewardsWalletPanel";
 import { ReceiptCustomizationPanel } from "@/components/ReceiptCustomizationPanel";
 import { BrandingFeatureMatrix } from "@/components/BrandingFeatureMatrix";
 import { BrandingEditorPanel } from "@/components/BrandingEditorPanel";
@@ -396,6 +398,13 @@ export function ModuleView({
   };
   const info = labels[active];
   const Icon = info.icon;
+  const station = role === "bar" ? "bar" : role === "kitchen" ? "kitchen" : undefined;
+  if (role === "customer" && active === "overview")
+    return (
+      <OperationalModuleShell title="مساحة العميل">
+        <CustomerRewardsWalletPanel />
+      </OperationalModuleShell>
+    );
   if (active === "orders" && role === "driver")
     return (
       <OperationalModuleShell title="مركز السائق والتوصيل">
@@ -417,7 +426,7 @@ export function ModuleView({
     );
   if (active === "kds")
     return (
-      <OperationalModuleShell title={info.title}>
+          <OperationalModuleShell title={station === "bar" ? "محطة البار" : station === "kitchen" ? "محطة المطبخ" : info.title}>
         <>
           <div className="mb-4 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-[#e76f3c]">
@@ -449,9 +458,10 @@ export function ModuleView({
             orders={orders}
             advanceOrder={advanceOrder}
             orderUpdatePending={orderUpdatePending}
+            station={station}
           />
           <OrderRealtimeAlerts orders={orders} mode="kds" />
-          <KitchenTicketBoard restaurantId={restaurantId} orders={orders} />
+          <KitchenTicketBoard restaurantId={restaurantId} orders={orders} station={station} />
           <KitchenPerformancePanel
             restaurantId={restaurantId}
             orders={orders}
@@ -9610,6 +9620,7 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
       </Card>
       <RestaurantProfilePanel restaurantId={restaurantId} />
       <RestaurantPricingSettings restaurantId={restaurantId} />
+      <RestaurantIntegrationSettings restaurantId={restaurantId} />
       <ReceiptCustomizationPanel restaurantId={restaurantId} />
       <BrandingPanel restaurantId={restaurantId} />
       <BrandingFeatureMatrix restaurantId={restaurantId} />

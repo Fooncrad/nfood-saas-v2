@@ -3,7 +3,7 @@ import { getVisibleNavigation, isRoleActionAllowed, isRoleNavigationAllowed, rol
 
 describe("role navigation matrix", () => {
   it("keeps every role scoped to an explicit navigation allow-list", () => {
-    const roles = ["restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"] as const;
+    const roles = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "customer", "driver"] as const;
     for (const role of roles) {
       expect(roleNavigation[role].length).toBeGreaterThan(0);
       expect(isRoleNavigationAllowed(role, "overview")).toBe(true);
@@ -12,12 +12,13 @@ describe("role navigation matrix", () => {
   });
 
   it("keeps action-level permissions aligned with operational roles", () => {
-    const roles = ["restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"] as const;
+    const roles = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "customer", "driver"] as const;
     for (const role of roles) expect(roleActions[role]).toBeDefined();
     expect(isRoleActionAllowed("restaurant_admin", "inventory.manage")).toBe(true);
     expect(isRoleActionAllowed("waiter", "orders.create")).toBe(true);
     expect(isRoleActionAllowed("cashier", "orders.create")).toBe(true);
     expect(isRoleActionAllowed("kitchen", "orders.create")).toBe(false);
+    expect(isRoleActionAllowed("bar", "orders.status.update")).toBe(true);
     expect(isRoleActionAllowed("customer", "orders.create")).toBe(false);
     expect(isRoleActionAllowed("driver", "orders.create")).toBe(false);
   });
@@ -36,6 +37,7 @@ describe("role navigation matrix", () => {
     expect(getVisibleNavigation("restaurant_admin")).not.toContain("admin");
     expect(getVisibleNavigation("restaurant_admin")).not.toContain("health");
     expect(getVisibleNavigation("cashier")).toContain("pos");
+    expect(getVisibleNavigation("bar")).toEqual(["overview", "kds", "files", "security"]);
   });
 
   it("denies unknown or missing roles by default", () => {

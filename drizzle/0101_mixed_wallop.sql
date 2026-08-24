@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `integrationMode` enum('platform','custom') DEFAULT 'platform' NOT NULL;

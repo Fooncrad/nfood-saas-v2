@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-type TeamRole = "restaurant_admin" | "waiter" | "kitchen" | "cashier" | "driver" | "customer";
-const roleLabels: Record<TeamRole, string> = { restaurant_admin: "مدير مطعم", waiter: "نادل", kitchen: "مطبخ", cashier: "كاشير", driver: "سائق", customer: "عميل" };
+type TeamRole = "restaurant_admin" | "waiter" | "kitchen" | "bar" | "cashier" | "driver" | "customer";
+const roleLabels: Record<TeamRole, string> = { restaurant_admin: "مدير مطعم", waiter: "نادل", kitchen: "مطبخ", bar: "بار", cashier: "كاشير", driver: "سائق", customer: "عميل" };
 
 export function RestaurantTeamAccountsPanel({ restaurantId }: { restaurantId: number }) {
   const utils = trpc.useUtils();
