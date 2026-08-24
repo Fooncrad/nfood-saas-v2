@@ -100,4 +100,21 @@ describe("menu AI import, translation, and content showcase", () => {
     expect(panel).toContain("المعاينة للرجوع والمطابقة فقط");
     expect(panel).toContain("اقتراح التحليل الذكي");
   });
+
+  it("supports amount matching, filtered CSV export, and customer rejection reasons", () => {
+    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
+    const schema = readFileSync(resolve(process.cwd(), "drizzle/schema.ts"), "utf8");
+    const panel = readFileSync(resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"), "utf8");
+    const customerPage = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerContentOrders.tsx"), "utf8");
+    expect(schema).toContain("receiptAmountMatch");
+    expect(schema).toContain("receiptAmountDifference");
+    expect(schema).toContain("rejectionReason");
+    expect(router).toContain("compareReceiptAmount");
+    expect(router).toContain("rejectionReason: z.string");
+    expect(router).toContain("اكتب سبب رفض الإيصال");
+    expect(panel).toContain("تنبيه: مبلغ الإيصال");
+    expect(panel).toContain("downloadContentOrdersCsv");
+    expect(panel).toContain("تصدير CSV");
+    expect(customerPage).toContain("سبب رفض الإيصال");
+  });
 });

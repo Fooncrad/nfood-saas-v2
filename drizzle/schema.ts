@@ -891,6 +891,9 @@ export const contentPurchaseOrders = mysqlTable("contentPurchaseOrders", {
   receiptExtractedDate: varchar("receiptExtractedDate", { length: 40 }),
   receiptExtractionConfidence: decimal("receiptExtractionConfidence", { precision: 5, scale: 4 }),
   receiptExtractedAt: timestamp("receiptExtractedAt"),
+  receiptAmountMatch: mysqlEnum("receiptAmountMatch", ["not_checked", "matched", "mismatch", "unknown"]).default("not_checked").notNull(),
+  receiptAmountDifference: decimal("receiptAmountDifference", { precision: 10, scale: 2 }),
+  rejectionReason: varchar("rejectionReason", { length: 500 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
