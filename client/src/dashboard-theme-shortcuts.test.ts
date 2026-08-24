@@ -39,10 +39,12 @@ describe("dashboard theme, notifications, and shortcuts", () => {
   it("keeps platform KPIs data-backed and readable in both themes", () => {
     const overview = read("components/PlatformOverview.tsx");
     const css = read("index.css");
-    expect(overview).toContain("monthlyRecurringRevenue");
-    expect(overview).toContain("تفاصيل التقرير");
+    expect(overview).toContain("SuperAdminRestaurantCatalog");
+    expect(overview).toContain("فتح مركز المطاعم");
+    expect(overview).not.toContain("نبض المنصة");
+    expect(overview).not.toContain("monthlyRecurringRevenue");
     expect(overview).toContain("dark:bg-slate-900/90");
-    expect(overview).toContain("hover:-translate-y-0.5");
+    expect(overview).toContain("hover:bg-[#d85f2e]");
     expect(css).toContain(".dark .nfood-dashboard-shell");
     expect(css).toContain("background-color: #111c2f");
     expect(css).toContain("color: #f8fafc");
