@@ -887,6 +887,10 @@ export const contentPurchaseOrders = mysqlTable("contentPurchaseOrders", {
   customerName: varchar("customerName", { length: 160 }),
   customerPhone: varchar("customerPhone", { length: 40 }),
   note: varchar("note", { length: 500 }),
+  receiptExtractedAmount: decimal("receiptExtractedAmount", { precision: 10, scale: 2 }),
+  receiptExtractedDate: varchar("receiptExtractedDate", { length: 40 }),
+  receiptExtractionConfidence: decimal("receiptExtractionConfidence", { precision: 5, scale: 4 }),
+  receiptExtractedAt: timestamp("receiptExtractedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

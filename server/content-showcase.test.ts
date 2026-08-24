@@ -57,7 +57,8 @@ describe("menu AI import, translation, and content showcase", () => {
     expect(publicPage).toContain("إرسال الطلب مع الإيصال");
     expect(panel).toContain("سجل طلبات المحتوى المرئي");
     expect(panel).toContain("updateContentPurchaseOrderStatus");
-    expect(panel).toContain("فتح الإيصال");
+    expect(panel).toContain("معاينة الإيصال");
+    expect(panel).toContain("قراءة المبلغ والتاريخ");
   });
 
   it("supports customer history, receipt alerts, and searchable restaurant filters", () => {
@@ -80,5 +81,23 @@ describe("menu AI import, translation, and content showcase", () => {
     expect(panel).toContain('value=\"newest\"');
     expect(readFileSync(resolve(process.cwd(), "client/src/App.tsx"), "utf8")).toContain("/customer-content-orders");
     expect(readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8")).toContain("refetchInterval: 5000");
+  });
+
+  it("supports receipt preview, customer pagination, and reviewable AI extraction", () => {
+    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
+    const schema = readFileSync(resolve(process.cwd(), "drizzle/schema.ts"), "utf8");
+    const customerPage = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerContentOrders.tsx"), "utf8");
+    const panel = readFileSync(resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"), "utf8");
+    expect(schema).toContain("receiptExtractedAmount");
+    expect(schema).toContain("receiptExtractedDate");
+    expect(router).toContain("analyzeContentReceipt");
+    expect(router).toContain("gemini-3-flash-preview");
+    expect(router).toContain("ai_suggestion");
+    expect(router).toContain("parseReceiptExtractionPayload");
+    expect(customerPage).toContain("pageSize = 6");
+    expect(customerPage).toContain("صفحة {currentPage} من {pageCount}");
+    expect(panel).toContain("<Dialog open={Boolean(receiptPreview)}");
+    expect(panel).toContain("المعاينة للرجوع والمطابقة فقط");
+    expect(panel).toContain("اقتراح التحليل الذكي");
   });
 });
