@@ -617,6 +617,20 @@
       "when": 1787534039218,
       "tag": "0087_black_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "5",
+      "when": 1787537098893,
+      "tag": "0088_blushing_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "5",
+      "when": 1787537150008,
+      "tag": "0089_free_onslaught",
+      "breakpoints": true
     }
   ]
 }

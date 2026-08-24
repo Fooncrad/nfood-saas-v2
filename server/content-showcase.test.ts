@@ -9,6 +9,8 @@ describe("menu AI import, translation, and content showcase", () => {
     expect(source).toContain("application/pdf");
     expect(source).toContain("needsReview");
     expect(source).toContain("menu_import_draft");
+    expect(source).toContain("applyMenuImportDraft");
+    expect(readFileSync(resolve(process.cwd(), "client/src/components/MenuImportReviewPanel.tsx"), "utf8")).toContain("اعتماد ونشر المنيو");
   });
 
   it("keeps one bulk translation action for categories and items", () => {
@@ -28,6 +30,11 @@ describe("menu AI import, translation, and content showcase", () => {
     expect(router).toContain("createContentListing");
     expect(router).toContain('paymentStatus: "not_configured"');
     expect(panel).toContain("تسعير وبيع المحتوى");
+    expect(panel).toContain("contentCategory");
+    expect(panel).toContain("watermarkEnabled");
+    expect(publicPage).toContain("contentCategoryFilter");
+    expect(publicPage).toContain("NFOOD · PREVIEW");
+    expect(publicPage).toContain("paymentMethod");
     expect(publicPage).toContain("media-showcase");
     expect(publicPage).toContain("شراء المحتوى · قريبًا");
   });

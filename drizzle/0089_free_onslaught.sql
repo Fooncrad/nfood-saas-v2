@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` MODIFY COLUMN `manualPaymentMethodsJson` text;
