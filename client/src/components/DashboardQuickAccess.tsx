@@ -75,14 +75,14 @@ export function DashboardQuickAccess({ items, onNavigate, title = "كل الأق
   if (!grouped.length) return null;
 
   return (
-    <section aria-labelledby="dashboard-quick-access-title" className={`nfood-quick-access mb-4 rounded-[1.15rem] border border-slate-200/80 bg-white/70 shadow-sm ${densityClasses.section}`}>
+    <section aria-labelledby="dashboard-quick-access-title" className={`nfood-quick-access mb-4 rounded-[1.15rem] border border-slate-200/80 bg-white/70 shadow-sm transition-colors duration-300 dark:border-slate-700/80 dark:bg-slate-900/85 ${densityClasses.section}`}>
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-[#e76f3c]"><Layers3 className="h-4 w-4" /></div>
             <div>
-              <h3 id="dashboard-quick-access-title" className="text-lg font-black tracking-tight text-[#111c2e]">{title}</h3>
-              <p className="mt-0.5 text-xs text-slate-500">{description}</p>
+              <h3 id="dashboard-quick-access-title" className="text-lg font-black tracking-tight text-[#111c2e] dark:text-white">{title}</h3>
+              <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{description}</p>
             </div>
           </div>
         </div>
@@ -93,7 +93,7 @@ export function DashboardQuickAccess({ items, onNavigate, title = "كل الأق
           <div key={group.id}>
             <div className="mb-1.5 flex items-center justify-between gap-2">
               <div>
-                <h4 className="text-xs font-black text-slate-700">{group.label}</h4>
+                <h4 className="text-xs font-black text-slate-800 dark:text-slate-100">{group.label}</h4>
                 <p className="mt-0.5 text-[11px] text-slate-400">{group.description}</p>
               </div>
               <span className="text-[10px] font-bold text-slate-400">{group.items.length} وحدات</span>
@@ -103,9 +103,9 @@ export function DashboardQuickAccess({ items, onNavigate, title = "كل الأق
                 const Icon = item.icon;
                 return (
                   <button key={item.key} type="button" draggable onDragStart={() => setDragKey(item.key)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (!dragKey || dragKey === item.key) return; const next = [...normalizedOrder]; const from = next.indexOf(dragKey); const to = next.indexOf(item.key); if (from >= 0 && to >= 0) { next.splice(from, 1); next.splice(to, 0, dragKey); setOrderedKeys(next); } setDragKey(null); }} onDragEnd={() => setDragKey(null)} onClick={() => onNavigate(item.key)} title="اسحب لتغيير ترتيب الودجت" className={`group text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e76f3c] focus-visible:ring-offset-2 motion-safe:transition-transform motion-safe:duration-200 hover:-translate-y-0.5 ${dragKey === item.key ? "opacity-50" : ""}`}>
-                    <Card className="nfood-quick-card h-full rounded-xl border-slate-300/90 bg-white shadow-[0_6px_18px_-14px_rgba(15,23,42,0.5)] transition-all duration-200 group-hover:border-orange-300 group-hover:shadow-[0_14px_28px_-18px_rgba(15,23,42,0.55)] group-active:translate-y-0 dark:border-slate-700 dark:bg-slate-900">
+                    <Card className="nfood-quick-card h-full rounded-xl border-slate-300/90 bg-white shadow-[0_6px_18px_-14px_rgba(15,23,42,0.5)] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-orange-300 group-hover:shadow-[0_14px_28px_-18px_rgba(15,23,42,0.55)] group-active:translate-y-0 dark:border-slate-700 dark:bg-slate-900/95">
                       <CardContent className={`flex items-center gap-2.5 ${densityClasses.card}`}>
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500 transition-colors group-hover:bg-orange-50 group-hover:text-[#e76f3c]"><Icon className="h-[18px] w-[18px]" /></span>
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500 transition-colors group-hover:bg-orange-50 group-hover:text-[#e76f3c] dark:bg-slate-800 dark:text-slate-300 dark:group-hover:bg-orange-500/15"><Icon className="h-[18px] w-[18px]" /></span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[13px] font-bold text-slate-900 dark:text-slate-100">{item.label}</span>
                           <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-slate-600 group-hover:text-[#c75325] dark:text-slate-400">فتح القسم <ArrowUpLeft className="h-3 w-3" /></span>

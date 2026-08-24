@@ -35,4 +35,16 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(css).toContain("nfood-notification-pulse");
     expect(css).toContain("prefers-reduced-motion: reduce");
   });
+
+  it("keeps platform KPIs data-backed and readable in both themes", () => {
+    const overview = read("components/PlatformOverview.tsx");
+    const css = read("index.css");
+    expect(overview).toContain("monthlyRecurringRevenue");
+    expect(overview).toContain("مؤشر مباشر");
+    expect(overview).toContain("dark:bg-slate-900/90");
+    expect(overview).toContain("hover:-translate-y-0.5");
+    expect(css).toContain(".dark .nfood-dashboard-shell");
+    expect(css).toContain("background-color: #111c2f");
+    expect(css).toContain("color: #f8fafc");
+  });
 });

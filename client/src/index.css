@@ -767,3 +767,27 @@ html[lang="ur"] body {
     color: #94a3b8 !important;
   }
 }
+
+/* Preserve contrast for translucent and gradient dashboard surfaces */
+@layer components {
+  .dark .nfood-dashboard-shell [class*="bg-white/"] {
+    background-color: rgba(17, 28, 47, 0.92) !important;
+    color: #f1f5f9;
+  }
+  .dark .nfood-dashboard-shell [class*="from-orange-50"],
+  .dark .nfood-dashboard-shell [class*="from-emerald-50"],
+  .dark .nfood-dashboard-shell [class*="to-white"] {
+    background-image: none !important;
+    background-color: #111c2f !important;
+  }
+  .dark .nfood-dashboard-shell [class*="bg-orange-50"],
+  .dark .nfood-dashboard-shell [class*="bg-emerald-50"],
+  .dark .nfood-dashboard-shell [class*="bg-cyan-50"],
+  .dark .nfood-dashboard-shell [class*="bg-violet-50"] {
+    background-color: rgba(249, 115, 22, 0.14) !important;
+  }
+  .dark .nfood-dashboard-shell .nfood-quick-access {
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    background-color: rgba(17, 28, 47, 0.94) !important;
+  }
+}
