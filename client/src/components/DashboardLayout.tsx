@@ -154,7 +154,7 @@ function DashboardLayoutContent({
       <div className="relative" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
-          className="border-r-0"
+          className="nfood-unified-sidebar border-r-0"
           disableTransition={isResizing}
         >
           <SidebarHeader className="h-14 justify-center transition-[height,padding] duration-200">

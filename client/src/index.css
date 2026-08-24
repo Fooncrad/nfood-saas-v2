@@ -569,3 +569,57 @@ html[lang="ur"] body {
     .nfood-dashboard-shell .nfood-quick-card [data-slot="card-content"] > span:last-child > span:first-child { font-size: 0.73rem; }
   }
 }
+
+
+/* Unified sidebar language: one shell for platform, restaurant, customer, driver and kitchen workspaces */
+@layer components {
+  .nfood-unified-sidebar,
+  [data-sidebar="sidebar"] {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--accent) 55%, transparent) transparent;
+  }
+  .nfood-unified-sidebar .nfood-sidebar-nav,
+  .nfood-unified-sidebar nav {
+    min-width: 0;
+  }
+  .nfood-unified-sidebar .nfood-sidebar-group {
+    background: color-mix(in srgb, white 4%, transparent);
+    border-color: color-mix(in srgb, white 12%, transparent);
+    transition: background-color 160ms ease, border-color 160ms ease;
+  }
+  .nfood-unified-sidebar .nfood-sidebar-group:focus-within,
+  .nfood-unified-sidebar .nfood-sidebar-group:hover {
+    background: color-mix(in srgb, white 7%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+  .nfood-unified-sidebar nav button:not([data-slot="button"]),
+  .nfood-unified-sidebar > div button {
+    min-height: 2.45rem;
+  }
+  .nfood-unified-sidebar nav button[aria-current="page"],
+  .nfood-unified-sidebar nav button.bg-\[\#e76f3c\] {
+    box-shadow: 0 8px 18px -12px color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+  [data-sidebar="sidebar"] {
+    background: var(--sidebar);
+    border-color: var(--sidebar-border);
+  }
+  [data-sidebar="sidebar"] [data-sidebar="menu-button"] {
+    min-height: 2.5rem;
+    border-radius: 0.7rem;
+    font-size: 0.84rem;
+    transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+  }
+  [data-sidebar="sidebar"] [data-sidebar="menu-button"][data-active="true"] {
+    background: var(--sidebar-primary);
+    color: var(--sidebar-primary-foreground);
+    box-shadow: 0 8px 18px -12px color-mix(in srgb, var(--sidebar-primary) 75%, transparent);
+  }
+  [data-sidebar="sidebar"] [data-sidebar="menu-button"]:hover:not([data-active="true"]) {
+    background: var(--sidebar-accent);
+    color: var(--sidebar-accent-foreground);
+  }
+  @media (max-width: 639px) {
+    .nfood-unified-sidebar { width: min(88vw, 304px); }
+  }
+}

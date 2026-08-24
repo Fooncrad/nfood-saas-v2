@@ -32,6 +32,8 @@ const driverDeliverySource = readFileSync(new URL("../components/DriverDeliveryV
     expect(homeSource).toContain("<DashboardQuickAccess items={quickItems}");
     expect(homeSource).toContain("lg:mr-[304px]");
     expect(sidebarSource).toContain("w-[304px]");
+    expect(sidebarSource).toContain("nfood-unified-sidebar");
+    expect(sidebarSource).toContain("nfood-sidebar-nav space-y-2");
     expect(sidebarSource).toContain("overflow-y-auto");
     expect(quickAccessSource).toContain('keys: ["pos", "orders", "kds", "menu"');
     expect(quickAccessSource).toContain('keys: ["branches", "inventory", "team"');

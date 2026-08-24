@@ -18,9 +18,9 @@ describe("dashboard density and hierarchy", () => {
 
   it("uses compact, readable sidebar controls", () => {
     const sidebar = source("client/src/components/HomeSidebar.tsx");
-    expect(sidebar).toContain('h-[68px]');
+    expect(sidebar).toContain('nfood-unified-sidebar');
     expect(sidebar).toContain('text-[13px] text-white');
-    expect(sidebar).toContain('grid grid-cols-2 gap-1.5');
+    expect(sidebar).toContain('nfood-sidebar-nav space-y-2');
   });
 
   it("reduces shell chrome without removing mobile support", () => {
