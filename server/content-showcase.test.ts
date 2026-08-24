@@ -36,6 +36,8 @@ describe("menu AI import, translation, and content showcase", () => {
     expect(publicPage).toContain("NFOOD · PREVIEW");
     expect(publicPage).toContain("paymentMethod");
     expect(publicPage).toContain("media-showcase");
-    expect(publicPage).toContain("شراء المحتوى · قريبًا");
+    expect(publicPage).toContain("إضافة إلى سلة المحتوى");
+    expect(publicPage).toContain("سلة المحتوى المرئي");
+    expect(publicPage).toContain("manualPaymentInstructions");
   });
 });

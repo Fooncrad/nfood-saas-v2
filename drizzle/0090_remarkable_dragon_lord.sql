@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `motionEffectsEnabled` boolean DEFAULT true NOT NULL;

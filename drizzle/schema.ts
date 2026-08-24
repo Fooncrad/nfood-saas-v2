@@ -105,6 +105,7 @@ export const restaurants = mysqlTable("restaurants", {
   taxPercent: decimal("taxPercent", { precision: 5, scale: 2 }).default("0").notNull(),
   showBranchesOnMenu: boolean("showBranchesOnMenu").default(false).notNull(),
   mediaShowcaseEnabled: boolean("mediaShowcaseEnabled").default(true).notNull(),
+  motionEffectsEnabled: boolean("motionEffectsEnabled").default(true).notNull(),
   manualPaymentMethodsJson: text("manualPaymentMethodsJson"),
   manualPaymentInstructions: varchar("manualPaymentInstructions", { length: 1000 }),
   orderModesJson: varchar("orderModesJson", { length: 255 }).default('["dineIn","takeaway","delivery","reservation","hotel"]').notNull(),

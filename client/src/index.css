@@ -498,3 +498,13 @@ html[lang="ur"] body {
   .nfood-menu-theme .motion-safe\:animate-\[nfood-cart-pulse_1\.8s_ease-in-out_infinite\] { animation: none !important; }
   .nfood-menu-theme .motion-safe\:animate-ping { animation: none !important; }
 }
+
+
+@media (prefers-reduced-motion: reduce), (data-nfood-motion="off") {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
