@@ -874,6 +874,22 @@ export const contentListings = mysqlTable("contentListings", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+export const contentPurchaseOrders = mysqlTable("contentPurchaseOrders", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  customerUserId: int("customerUserId").references(() => users.id),
+  receiptMediaFileId: int("receiptMediaFileId").references(() => mediaFiles.id),
+  itemsJson: text("itemsJson").notNull(),
+  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  currencyCode: varchar("currencyCode", { length: 8 }).default("SAR").notNull(),
+  status: mysqlEnum("status", ["unpaid", "verifying", "approved", "rejected"]).default("unpaid").notNull(),
+  customerName: varchar("customerName", { length: 160 }),
+  customerPhone: varchar("customerPhone", { length: 40 }),
+  note: varchar("note", { length: 500 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
 export const restaurantDisplayScreens = mysqlTable("restaurantDisplayScreens", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),

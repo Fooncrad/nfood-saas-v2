@@ -40,4 +40,23 @@ describe("menu AI import, translation, and content showcase", () => {
     expect(publicPage).toContain("سلة المحتوى المرئي");
     expect(publicPage).toContain("manualPaymentInstructions");
   });
+
+  it("supports transfer receipt upload and restaurant content order history", () => {
+    const schema = readFileSync(resolve(process.cwd(), "drizzle/schema.ts"), "utf8");
+    const db = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
+    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
+    const publicPage = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"), "utf8");
+    const panel = readFileSync(resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"), "utf8");
+    expect(schema).toContain("contentPurchaseOrders");
+    expect(schema).toContain('status: mysqlEnum("status", ["unpaid", "verifying", "approved", "rejected"])');
+    expect(db).toContain("createContentPurchaseOrder");
+    expect(db).toContain("listContentPurchaseOrders");
+    expect(router).toContain("uploadContentReceipt");
+    expect(router).toContain('status: "verifying" as const');
+    expect(publicPage).toContain('accept="image/png,image/jpeg,image/webp"');
+    expect(publicPage).toContain("إرسال الطلب مع الإيصال");
+    expect(panel).toContain("سجل طلبات المحتوى المرئي");
+    expect(panel).toContain("updateContentPurchaseOrderStatus");
+    expect(panel).toContain("فتح الإيصال");
+  });
 });
