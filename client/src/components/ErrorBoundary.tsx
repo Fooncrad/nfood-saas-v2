@@ -19,13 +19,15 @@ function getErrorLanguage(): ErrorLanguage {
   return stored === "en" || stored === "fr" || stored === "ur" ? stored : "ar";
 }
 
+export function recordUiError(error: Error, requestId: string) { if (typeof window === "undefined") return; try { const key = "nfood:ui-error-log"; const current = JSON.parse(window.localStorage.getItem(key) || "[]") as Array<Record<string, string>>; const next = [{ requestId, message: error.message, path: window.location.pathname, occurredAt: new Date().toISOString() }, ...current].slice(0, 50); window.localStorage.setItem(key, JSON.stringify(next)); } catch { /* storage is best-effort */ } }
+
 function createRequestId() {
   try { return `ui-${crypto.randomUUID().slice(0, 8)}`; } catch { return `ui-${Date.now().toString(36)}`; }
 }
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) { super(props); this.state = { hasError: false, error: null, requestId: createRequestId() }; }
-  static getDerivedStateFromError(error: Error): Partial<State> { return { hasError: true, error, requestId: createRequestId() }; }
+  static getDerivedStateFromError(error: Error): Partial<State> { const requestId = createRequestId(); recordUiError(error, requestId); return { hasError: true, error, requestId }; }
   copyRequestId = () => { void navigator.clipboard?.writeText(this.state.requestId); };
   render() {
     if (!this.state.hasError) return this.props.children;

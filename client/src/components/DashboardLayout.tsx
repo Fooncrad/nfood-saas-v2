@@ -27,6 +27,7 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import CookieBanner from "./CookieBanner";
+import FloatingSupportActions from "./FloatingSupportActions";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Page 1", path: "/" },
@@ -256,7 +257,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4">{children}</main><CookieBanner />
+        <main className="flex-1 p-4">{children}</main><CookieBanner /><FloatingSupportActions />
       </SidebarInset>
     </>
   );
