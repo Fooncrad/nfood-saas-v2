@@ -11,8 +11,8 @@ function source(relativePath: string) {
 describe("dashboard density and hierarchy", () => {
   it("keeps overview groups in a responsive dense grid", () => {
     const quickAccess = source("client/src/components/DashboardQuickAccess.tsx");
-    expect(quickAccess).toContain('className="grid gap-3 xl:grid-cols-3"');
-    expect(quickAccess).toContain("min-h-[72px]");
+    expect(quickAccess).toContain('className="grid gap-4 xl:grid-cols-2"');
+    expect(quickAccess).toContain("nfood-quick-card");
     expect(quickAccess).toContain("text-[13px] font-bold");
   });
 

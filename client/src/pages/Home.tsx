@@ -184,7 +184,7 @@ export default function Home() {
   const sidebarGroups = [
     { label: t("overview"), keys: ["overview", "admin"] as NavKey[] },
     { label: t("operations"), keys: ["orders", "pos", "kds", "menu", "tables", "inventory", "team", "marketing", "reservations", "remote"] as NavKey[] },
-    { label: t("accountPlatform"), keys: ["branches", "languages", "security", "health"] as NavKey[] },
+    { label: t("accountPlatform"), keys: ["branches", "security", "health"] as NavKey[] },
   ].map((group) => ({ ...group, items: group.keys.map((key) => visibleNavItems.find((item) => item.key === key)).filter((item): item is (typeof visibleNavItems)[number] => Boolean(item)) })).filter((group) => group.items.length > 0);
   const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success(t("logout")), notifyError: (message) => toast.error(message) }); };
   const handleSwitchAccount = async () => { await executeSwitchAccountFlow({ logout, closeMenu: () => setProfileOpen(false), startLogin, redirect: () => undefined, notifyError: (message) => toast.error(message) }); };

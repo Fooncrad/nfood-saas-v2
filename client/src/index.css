@@ -518,3 +518,54 @@ html[lang="ur"] body {
 @media (prefers-reduced-motion: reduce), (data-nfood-motion="off") {
   .content-added-feedback { animation: none !important; }
 }
+
+
+/* Unified NFOOD dashboard surface: calmer density, clearer hierarchy, one visual language */
+@layer components {
+  .nfood-dashboard-shell {
+    --dashboard-gap: clamp(0.75rem, 1.4vw, 1.25rem);
+    --dashboard-radius: 1rem;
+  }
+  .nfood-dashboard-shell main {
+    color: var(--foreground);
+  }
+  .nfood-dashboard-shell [data-slot="card"] {
+    border-radius: var(--dashboard-radius);
+    box-shadow: 0 8px 24px -18px oklch(0.22 0.05 305 / 0.32);
+  }
+  .nfood-dashboard-shell [data-slot="button"] {
+    border-radius: 0.75rem;
+    font-size: 0.82rem;
+  }
+  .nfood-dashboard-shell .nfood-quick-access {
+    background: color-mix(in srgb, var(--card) 92%, var(--primary) 8%);
+  }
+  .nfood-dashboard-shell .nfood-quick-card {
+    min-height: 0;
+  }
+  .nfood-dashboard-shell .nfood-quick-card [data-slot="card-content"] {
+    min-height: 4.35rem;
+  }
+  .nfood-dashboard-shell h1,
+  .nfood-dashboard-shell h2,
+  .nfood-dashboard-shell h3,
+  .nfood-dashboard-shell h4 {
+    text-wrap: balance;
+  }
+  html[lang="en"] .nfood-dashboard-shell [dir="rtl"],
+  html[lang="fr"] .nfood-dashboard-shell [dir="rtl"] {
+    direction: ltr;
+    text-align: left;
+  }
+  html[lang="en"] .nfood-dashboard-shell [dir="rtl"] .text-right,
+  html[lang="fr"] .nfood-dashboard-shell [dir="rtl"] .text-right { text-align: left; }
+  @media (max-width: 639px) {
+    .nfood-dashboard-shell main > header { padding-block: 0.7rem; }
+    .nfood-dashboard-shell [data-slot="card"] { border-radius: 0.9rem; }
+    .nfood-dashboard-shell .nfood-quick-access { padding: 0.75rem; }
+    .nfood-dashboard-shell .nfood-quick-access > div:last-child { gap: 0.75rem; }
+    .nfood-dashboard-shell .nfood-quick-card [data-slot="card-content"] { min-height: 3.85rem; padding: 0.7rem; }
+    .nfood-dashboard-shell .nfood-quick-card [data-slot="card-content"] > span:first-child { height: 2rem; width: 2rem; }
+    .nfood-dashboard-shell .nfood-quick-card [data-slot="card-content"] > span:last-child > span:first-child { font-size: 0.73rem; }
+  }
+}
