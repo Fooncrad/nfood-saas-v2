@@ -25,6 +25,10 @@ const driverDeliverySource = readFileSync(
   new URL("../components/DriverDeliveryView.tsx", import.meta.url),
   "utf8"
 );
+const integrationsSource = readFileSync(
+  new URL("../pages/IntegrationsSettings.tsx", import.meta.url),
+  "utf8"
+);
 
 describe("Home decomposition", () => {
   it("keeps the primary shell small and delegates navigation to HomeSidebar", () => {
@@ -50,10 +54,10 @@ describe("Home decomposition", () => {
     expect(sidebarSource).toContain("const showRestaurantWorkspace = [");
     expect(sidebarSource).toContain('"restaurant_admin"');
     expect(sidebarSource).toContain('"cashier"');
-    expect(sidebarSource).toContain('{showRestaurantWorkspace && (');
-    expect(sidebarSource).toContain('workspaceQuery');
-    expect(sidebarSource).toContain('filteredBranches');
-    expect(sidebarSource).toContain('nfood-enter_220ms');
+    expect(sidebarSource).toContain("{showRestaurantWorkspace && (");
+    expect(sidebarSource).toContain("workspaceQuery");
+    expect(sidebarSource).toContain("filteredBranches");
+    expect(sidebarSource).toContain("nfood-enter_220ms");
   });
 
   it("shows a role-aware quick access grid and a visible, compact sidebar", () => {
@@ -81,6 +85,20 @@ describe("Home decomposition", () => {
     expect(quickAccessSource).toContain("group.items.map");
   });
 
+  it("keeps package cards collapsed and integrations platform-scoped", () => {
+    expect(modulesSource).toContain(
+      "const [isOpen, setIsOpen] = useState(false)"
+    );
+    expect(modulesSource).toContain("aria-expanded={isOpen}");
+    expect(modulesSource).toContain("enabledCount");
+    expect(integrationsSource).toContain('scope: "platform"');
+    expect(integrationsSource).toContain(
+      'provider.providerKey === "google_oauth"'
+    );
+    expect(integrationsSource).not.toContain('setScope("restaurant")');
+    expect(integrationsSource).not.toContain("تكاملات المطعم");
+  });
+
   it("keeps the translation manager usable for platform and restaurant admins", () => {
     const panelSource = readFileSync(
       new URL("../components/TranslationReviewPanel.tsx", import.meta.url),
@@ -96,9 +114,11 @@ describe("Home decomposition", () => {
 
   it("uses compact single-screen summaries for orders and driver delivery", () => {
     expect(modulesSource).toContain("import { CompactOrdersBoard }");
+    expect(modulesSource).toContain('if (active === "orders")');
     expect(modulesSource).toContain(
-      'if (active === "orders") return <OperationalModuleShell title="إدارة الطلبات"><CompactOrdersBoard'
+      '<OperationalModuleShell title="إدارة الطلبات">'
     );
+    expect(modulesSource).toContain("<CompactOrdersBoard");
     expect(compactOrdersSource).toContain(
       "<CompactModuleSummary metrics={metrics} />"
     );

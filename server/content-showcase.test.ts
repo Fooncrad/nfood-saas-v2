@@ -4,27 +4,52 @@ import { resolve } from "node:path";
 
 describe("menu AI import, translation, and content showcase", () => {
   it("keeps AI menu extraction as a reviewable PDF/image draft", () => {
-    const source = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
+    const source = readFileSync(
+      resolve(process.cwd(), "server/routers.ts"),
+      "utf8"
+    );
     expect(source).toContain("importMenuDraft");
     expect(source).toContain("application/pdf");
     expect(source).toContain("needsReview");
     expect(source).toContain("menu_import_draft");
     expect(source).toContain("applyMenuImportDraft");
-    expect(readFileSync(resolve(process.cwd(), "client/src/components/MenuImportReviewPanel.tsx"), "utf8")).toContain("اعتماد ونشر المنيو");
+    expect(
+      readFileSync(
+        resolve(
+          process.cwd(),
+          "client/src/components/MenuImportReviewPanel.tsx"
+        ),
+        "utf8"
+      )
+    ).toContain("اعتماد ونشر المنيو");
   });
 
   it("keeps one bulk translation action for categories and items", () => {
-    const source = readFileSync(resolve(process.cwd(), "client/src/components/HomeModules.tsx"), "utf8");
+    const source = readFileSync(
+      resolve(process.cwd(), "client/src/components/HomeModules.tsx"),
+      "utf8"
+    );
     expect(source).toContain("ترجمة القائمة كاملة");
-    expect(source).toContain("getMissingTranslationTasks(remoteCategories.data ?? [], remoteMenu.data ?? [])");
+    expect(source).toContain("getMissingTranslationTasks(");
+    expect(source).toContain("remoteCategories.data");
+    expect(source).toContain("remoteMenu.data");
     expect(source).toContain("translateMenuEntity.mutateAsync");
   });
 
   it("publishes only approved restaurant video listings and labels payment as unconfigured", () => {
     const db = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
-    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
-    const publicPage = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"), "utf8");
-    const panel = readFileSync(resolve(process.cwd(), "client/src/components/MediaLibraryPanel.tsx"), "utf8");
+    const router = readFileSync(
+      resolve(process.cwd(), "server/routers.ts"),
+      "utf8"
+    );
+    const publicPage = readFileSync(
+      resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"),
+      "utf8"
+    );
+    const panel = readFileSync(
+      resolve(process.cwd(), "client/src/components/MediaLibraryPanel.tsx"),
+      "utf8"
+    );
     expect(db).toContain('eq(contentListings.status, "published")');
     expect(db).toContain("mediaShowcaseEnabled");
     expect(router).toContain("createContentListing");
@@ -42,13 +67,27 @@ describe("menu AI import, translation, and content showcase", () => {
   });
 
   it("supports transfer receipt upload and restaurant content order history", () => {
-    const schema = readFileSync(resolve(process.cwd(), "drizzle/schema.ts"), "utf8");
+    const schema = readFileSync(
+      resolve(process.cwd(), "drizzle/schema.ts"),
+      "utf8"
+    );
     const db = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
-    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
-    const publicPage = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"), "utf8");
-    const panel = readFileSync(resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"), "utf8");
+    const router = readFileSync(
+      resolve(process.cwd(), "server/routers.ts"),
+      "utf8"
+    );
+    const publicPage = readFileSync(
+      resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"),
+      "utf8"
+    );
+    const panel = readFileSync(
+      resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"),
+      "utf8"
+    );
     expect(schema).toContain("contentPurchaseOrders");
-    expect(schema).toContain('status: mysqlEnum("status", ["unpaid", "verifying", "approved", "rejected"])');
+    expect(schema).toContain(
+      'status: mysqlEnum("status", ["unpaid", "verifying", "approved", "rejected"])'
+    );
     expect(db).toContain("createContentPurchaseOrder");
     expect(db).toContain("listContentPurchaseOrders");
     expect(router).toContain("uploadContentReceipt");
@@ -63,10 +102,22 @@ describe("menu AI import, translation, and content showcase", () => {
 
   it("supports customer history, receipt alerts, and searchable restaurant filters", () => {
     const db = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
-    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
-    const customerPage = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerContentOrders.tsx"), "utf8");
-    const portal = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerPortal.tsx"), "utf8");
-    const panel = readFileSync(resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"), "utf8");
+    const router = readFileSync(
+      resolve(process.cwd(), "server/routers.ts"),
+      "utf8"
+    );
+    const customerPage = readFileSync(
+      resolve(process.cwd(), "client/src/pages/CustomerContentOrders.tsx"),
+      "utf8"
+    );
+    const portal = readFileSync(
+      resolve(process.cwd(), "client/src/pages/CustomerPortal.tsx"),
+      "utf8"
+    );
+    const panel = readFileSync(
+      resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"),
+      "utf8"
+    );
     expect(db).toContain("listCustomerContentPurchaseOrders");
     expect(db).toContain("listRestaurantManagerUserIds");
     expect(router).toContain("myContentPurchaseOrders");
@@ -79,15 +130,31 @@ describe("menu AI import, translation, and content showcase", () => {
     expect(panel).toContain("fromDate");
     expect(panel).toContain("toDate");
     expect(panel).toContain('value=\"newest\"');
-    expect(readFileSync(resolve(process.cwd(), "client/src/App.tsx"), "utf8")).toContain("/customer-content-orders");
-    expect(readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8")).toContain("refetchInterval: 5000");
+    expect(
+      readFileSync(resolve(process.cwd(), "client/src/App.tsx"), "utf8")
+    ).toContain("/customer-content-orders");
+    expect(
+      readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8")
+    ).toContain("refetchInterval: 5000");
   });
 
   it("supports receipt preview, customer pagination, and reviewable AI extraction", () => {
-    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
-    const schema = readFileSync(resolve(process.cwd(), "drizzle/schema.ts"), "utf8");
-    const customerPage = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerContentOrders.tsx"), "utf8");
-    const panel = readFileSync(resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"), "utf8");
+    const router = readFileSync(
+      resolve(process.cwd(), "server/routers.ts"),
+      "utf8"
+    );
+    const schema = readFileSync(
+      resolve(process.cwd(), "drizzle/schema.ts"),
+      "utf8"
+    );
+    const customerPage = readFileSync(
+      resolve(process.cwd(), "client/src/pages/CustomerContentOrders.tsx"),
+      "utf8"
+    );
+    const panel = readFileSync(
+      resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"),
+      "utf8"
+    );
     expect(schema).toContain("receiptExtractedAmount");
     expect(schema).toContain("receiptExtractedDate");
     expect(router).toContain("analyzeContentReceipt");
@@ -102,10 +169,22 @@ describe("menu AI import, translation, and content showcase", () => {
   });
 
   it("supports amount matching, filtered CSV export, and customer rejection reasons", () => {
-    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
-    const schema = readFileSync(resolve(process.cwd(), "drizzle/schema.ts"), "utf8");
-    const panel = readFileSync(resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"), "utf8");
-    const customerPage = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerContentOrders.tsx"), "utf8");
+    const router = readFileSync(
+      resolve(process.cwd(), "server/routers.ts"),
+      "utf8"
+    );
+    const schema = readFileSync(
+      resolve(process.cwd(), "drizzle/schema.ts"),
+      "utf8"
+    );
+    const panel = readFileSync(
+      resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"),
+      "utf8"
+    );
+    const customerPage = readFileSync(
+      resolve(process.cwd(), "client/src/pages/CustomerContentOrders.tsx"),
+      "utf8"
+    );
     expect(schema).toContain("receiptAmountMatch");
     expect(schema).toContain("receiptAmountDifference");
     expect(schema).toContain("rejectionReason");
