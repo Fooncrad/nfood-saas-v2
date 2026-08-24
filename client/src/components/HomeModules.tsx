@@ -496,13 +496,13 @@ export function ModuleView({
   if (active === "tables")
     return (
       <OperationalModuleShell title="الطاولات">
-        <TablesView restaurantId={restaurantId} />
+        <TablesView restaurantId={restaurantId} branchId={branchId} />
       </OperationalModuleShell>
     );
   if (active === "qr")
     return (
-      <OperationalModuleShell title={info.title}>
-        <QROperationsPanel restaurantId={restaurantId} branchId={branchId} />
+      <OperationalModuleShell title="الطاولات">
+        <TablesView restaurantId={restaurantId} branchId={branchId} />
       </OperationalModuleShell>
     );
   if (active === "inventory")
@@ -4077,13 +4077,16 @@ function SeatingSectionsPanel({ restaurantId }: { restaurantId: number }) {
   );
 }
 
-function TablesView({ restaurantId }: { restaurantId: number }) {
+function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId?: number }) {
   const { user } = useAuth();
   const utils = trpc.useUtils();
   const [tableFormOpen, setTableFormOpen] = useState(false);
   const [tableBranchId, setTableBranchId] = useState("");
   const [tableName, setTableName] = useState("");
   const [tableSeats, setTableSeats] = useState("2");
+  const [tableType, setTableType] = useState("standard");
+  const [minimumCharge, setMinimumCharge] = useState("0");
+  const [tableFee, setTableFee] = useState("0");
   const remoteTables = trpc.platform.tables.useQuery(
     { restaurantId },
     { enabled: Boolean(user), retry: false }
@@ -4121,7 +4124,7 @@ function TablesView({ restaurantId }: { restaurantId: number }) {
       <SeatingSectionsPanel restaurantId={restaurantId} />
       {tableFormOpen && (
         <Card className="mb-4 rounded-2xl border-orange-100 bg-orange-50/40">
-          <CardContent className="grid gap-3 p-4 sm:grid-cols-[150px_1fr_150px_auto]">
+          <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[140px_1fr_130px_150px_130px_130px_auto]">
             <Input
               value={tableBranchId}
               onChange={event => setTableBranchId(event.target.value)}
@@ -4142,6 +4145,26 @@ function TablesView({ restaurantId }: { restaurantId: number }) {
               placeholder="عدد المقاعد"
               className="rounded-xl bg-white"
             />
+            <Input
+              value={tableType}
+              onChange={event => setTableType(event.target.value)}
+              placeholder="نوع الطاولة"
+              className="rounded-xl bg-white"
+            />
+            <Input
+              value={minimumCharge}
+              onChange={event => setMinimumCharge(event.target.value)}
+              inputMode="decimal"
+              placeholder="الحد الأدنى"
+              className="rounded-xl bg-white"
+            />
+            <Input
+              value={tableFee}
+              onChange={event => setTableFee(event.target.value)}
+              inputMode="decimal"
+              placeholder="رسوم الطاولة"
+              className="rounded-xl bg-white"
+            />
             <Button
               disabled={
                 createTable.isPending ||
@@ -4149,7 +4172,9 @@ function TablesView({ restaurantId }: { restaurantId: number }) {
                 Number(tableBranchId) < 1 ||
                 tableName.trim().length < 1 ||
                 !Number.isInteger(Number(tableSeats)) ||
-                Number(tableSeats) < 1
+                Number(tableSeats) < 1 ||
+                !Number.isFinite(Number(minimumCharge)) || Number(minimumCharge) < 0 ||
+                !Number.isFinite(Number(tableFee)) || Number(tableFee) < 0
               }
               onClick={() =>
                 createTable.mutate({
@@ -4157,6 +4182,9 @@ function TablesView({ restaurantId }: { restaurantId: number }) {
                   branchId: Number(tableBranchId),
                   name: tableName.trim(),
                   seats: Number(tableSeats),
+                  tableType: tableType.trim() || "standard",
+                  minimumCharge: Number(minimumCharge) || 0,
+                  tableFee: Number(tableFee) || 0,
                 })
               }
               className="rounded-xl bg-[#e76f3c]"
@@ -4203,6 +4231,8 @@ function TablesView({ restaurantId }: { restaurantId: number }) {
                 >
                   <Table2 className="mb-2 h-7 w-7" />
                   <span className="text-sm font-bold">{table.name}</span>
+                  <span className="mt-1 text-[10px]">{table.tableType} · {table.seats} مقاعد</span>
+                  <span className="mt-1 text-[10px]">حد أدنى {table.minimumCharge ?? "0.00"} · رسوم {table.tableFee ?? "0.00"}</span>
                   <span className="mt-1 text-[10px]">
                     {occupied
                       ? "مشغولة"
@@ -4228,7 +4258,8 @@ function TablesView({ restaurantId }: { restaurantId: number }) {
             })
           )}
         </CardContent>
-      </Card>
+                </Card>
+      <QROperationsPanel restaurantId={restaurantId} branchId={branchId} />
     </div>
   );
 }
@@ -8667,6 +8698,10 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
     cancellationEnabled: true,
     cancellationWindowMinutes: 15,
     reservationNoShowGraceMinutes: 10,
+    tipsEnabled: false,
+    tipPercent: 0,
+    serviceFeeEnabled: false,
+    serviceFeePercent: 0,
     showBranchesOnMenu: false,
     customDomain: "",
   });
@@ -8712,6 +8747,10 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
         cancellationWindowMinutes: brandingQuery.data.cancellationWindowMinutes,
         reservationNoShowGraceMinutes:
           brandingQuery.data.reservationNoShowGraceMinutes,
+        tipsEnabled: brandingQuery.data.tipsEnabled,
+        tipPercent: Number(brandingQuery.data.tipPercent),
+        serviceFeeEnabled: brandingQuery.data.serviceFeeEnabled,
+        serviceFeePercent: Number(brandingQuery.data.serviceFeePercent),
         showBranchesOnMenu: brandingQuery.data.showBranchesOnMenu,
         customDomain: brandingQuery.data.customDomain,
       });
@@ -8954,6 +8993,24 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
                 />{" "}
                 استقبال الحجوزات العامة
               </label>
+              <div className="grid gap-3 rounded-2xl border border-orange-100 bg-orange-50/60 p-4 sm:col-span-2 sm:grid-cols-2">
+                <label className="flex items-center gap-3 text-sm font-semibold">
+                  <input type="checkbox" checked={draft.tipsEnabled} onChange={event => setDraft({ ...draft, tipsEnabled: event.target.checked })} className="h-4 w-4 accent-orange-500" />
+                  <span>تفعيل الإكرامية</span>
+                </label>
+                <label className="space-y-2 text-sm font-semibold">
+                  نسبة الإكرامية
+                  <Input type="number" min={0} max={100} step="0.01" value={draft.tipPercent} onChange={event => setDraft({ ...draft, tipPercent: Number(event.target.value) })} className="rounded-xl bg-white" />
+                </label>
+                <label className="flex items-center gap-3 text-sm font-semibold">
+                  <input type="checkbox" checked={draft.serviceFeeEnabled} onChange={event => setDraft({ ...draft, serviceFeeEnabled: event.target.checked })} className="h-4 w-4 accent-orange-500" />
+                  <span>تفعيل رسوم الخدمة</span>
+                </label>
+                <label className="space-y-2 text-sm font-semibold">
+                  نسبة رسوم الخدمة
+                  <Input type="number" min={0} max={100} step="0.01" value={draft.serviceFeePercent} onChange={event => setDraft({ ...draft, serviceFeePercent: Number(event.target.value) })} className="rounded-xl bg-white" />
+                </label>
+              </div>
               <label className="space-y-2 text-sm font-semibold">
                 مهلة عدم الحضور بالدقائق
                 <Input

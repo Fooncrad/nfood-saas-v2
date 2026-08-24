@@ -114,6 +114,10 @@ export const restaurants = mysqlTable("restaurants", {
   reservationNoShowGraceMinutes: int("reservationNoShowGraceMinutes").default(10).notNull(),
   defaultDiscountPercent: decimal("defaultDiscountPercent", { precision: 5, scale: 2 }).default("0").notNull(),
   taxPercent: decimal("taxPercent", { precision: 5, scale: 2 }).default("0").notNull(),
+  tipsEnabled: boolean("tipsEnabled").default(false).notNull(),
+  tipPercent: decimal("tipPercent", { precision: 5, scale: 2 }).default("0").notNull(),
+  serviceFeeEnabled: boolean("serviceFeeEnabled").default(false).notNull(),
+  serviceFeePercent: decimal("serviceFeePercent", { precision: 5, scale: 2 }).default("0").notNull(),
   showBranchesOnMenu: boolean("showBranchesOnMenu").default(false).notNull(),
   mediaShowcaseEnabled: boolean("mediaShowcaseEnabled").default(true).notNull(),
   motionEffectsEnabled: boolean("motionEffectsEnabled").default(true).notNull(),
@@ -420,6 +424,8 @@ export const orders = mysqlTable("orders", {
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).default("0").notNull(),
   discountAmount: decimal("discountAmount", { precision: 10, scale: 2 }).default("0").notNull(),
   taxAmount: decimal("taxAmount", { precision: 10, scale: 2 }).default("0").notNull(),
+  serviceFeeAmount: decimal("serviceFeeAmount", { precision: 10, scale: 2 }).default("0").notNull(),
+  tipAmount: decimal("tipAmount", { precision: 10, scale: 2 }).default("0").notNull(),
   total: decimal("total", { precision: 10, scale: 2 }).default("0").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -541,6 +547,9 @@ export const restaurantTables = mysqlTable("restaurantTables", {
   seats: int("seats").default(2).notNull(),
   status: mysqlEnum("status", ["available", "occupied", "reserved"]).default("available").notNull(),
   seatingSectionId: int("seatingSectionId").references(() => seatingSections.id),
+  tableType: varchar("tableType", { length: 80 }).default("standard").notNull(),
+  minimumCharge: decimal("minimumCharge", { precision: 10, scale: 2 }).default("0").notNull(),
+  tableFee: decimal("tableFee", { precision: 10, scale: 2 }).default("0").notNull(),
 });
 
 export const qrCodes = mysqlTable("qrCodes", {

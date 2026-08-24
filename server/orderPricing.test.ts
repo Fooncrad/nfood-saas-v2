@@ -11,6 +11,15 @@ describe("central order pricing", () => {
     expect(centsToMoney(pricing.totalCents)).toBe("212.69");
   });
 
+  it("adds enabled service fee and tip after discount", () => {
+    const pricing = calculateOrderPricing([{ unitPrice: "100.00", quantity: 1 }], 10, 15, 5, 10);
+    expect(pricing.serviceFeePercent).toBe(5);
+    expect(pricing.serviceFeeCents).toBe(450);
+    expect(pricing.tipPercent).toBe(10);
+    expect(pricing.tipCents).toBe(900);
+    expect(pricing.totalCents).toBe(11700);
+  });
+
   it("uses the higher valid promotion discount without stacking", () => {
     expect(getAppliedDiscountPercent(10, 25)).toBe(25);
     expect(getAppliedDiscountPercent(35, 25)).toBe(35);

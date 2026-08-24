@@ -40,7 +40,8 @@ describe("role navigation matrix", () => {
     expect(central).not.toContain("pos");
     expect(getVisibleNavigation("restaurant_admin")).toContain("orders");
     expect(getVisibleNavigation("restaurant_admin")).toContain("settings");
-    expect(getVisibleNavigation("restaurant_admin")).toContain("qr");
+    expect(getVisibleNavigation("restaurant_admin")).toContain("tables");
+    expect(getVisibleNavigation("restaurant_admin")).not.toContain("qr");
     expect(central).not.toContain("qr");
     expect(getVisibleNavigation("waiter")).not.toContain("qr");
     expect(getVisibleNavigation("kitchen")).not.toContain("qr");

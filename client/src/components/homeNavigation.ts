@@ -14,7 +14,6 @@ import {
   Table2,
   Users,
   Utensils,
-  QrCode,
   WalletCards,
 } from "lucide-react";
 import type { TranslationKey } from "@/contexts/LanguageContext";
@@ -34,7 +33,6 @@ export const navItems: { key: NavKey; label: string; icon: LucideIcon }[] = [
   { key: "kds", label: "شاشة المطبخ KDS", icon: ChefHat },
   { key: "menu", label: "المنيو والأصناف", icon: Utensils },
   { key: "tables", label: "الطاولات", icon: Table2 },
-  { key: "qr", label: "تخصيص QR والباركود", icon: QrCode },
   { key: "inventory", label: "المخزون والمشتريات", icon: Boxes },
   { key: "team", label: "الموظفون والحضور", icon: Users },
   { key: "marketing", label: "التسويق والحملات", icon: Megaphone },

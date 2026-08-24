@@ -743,6 +743,20 @@
       "when": 1787610456663,
       "tag": "0105_loose_luke_cage",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "5",
+      "when": 1787615087098,
+      "tag": "0106_plain_jane_foster",
+      "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "5",
+      "when": 1787615357814,
+      "tag": "0107_gray_wendell_vaughn",
+      "breakpoints": true
     }
   ]
 }
