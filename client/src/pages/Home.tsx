@@ -157,7 +157,7 @@ export default function Home() {
     };
   }, [brandingQuery.data, user?.role, user?.testRole, Boolean(workspaceReady)]);
   useEffect(() => { const onKeyDown = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setCommandOpen(true); } if (event.key === "Escape") setCommandOpen(false); }; window.addEventListener("keydown", onKeyDown); return () => window.removeEventListener("keydown", onKeyDown); }, []);
-  const notificationsQuery = trpc.notifications.mine.useQuery(undefined, { enabled: Boolean(user) && notificationOpen, retry: 2 });
+  const notificationsQuery = trpc.notifications.mine.useQuery(undefined, { enabled: Boolean(user), retry: 2, refetchInterval: 5000, refetchIntervalInBackground: false, refetchOnWindowFocus: true, staleTime: 1000 });
   const markNotificationRead = trpc.notifications.markRead.useMutation({ onSuccess: () => notificationsQuery.refetch() });
   const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId, limit: 200 }, { enabled: workspaceReady && user?.role !== "admin" && (user?.testRole as string | undefined) !== "admin", retry: false, refetchInterval: 3000, refetchIntervalInBackground: false, refetchOnWindowFocus: true, staleTime: 1000 });
   const updateOrderStatus = trpc.platform.updateOrderStatus.useMutation({ onSuccess: () => { remoteOrders.refetch(); toast.success("تم حفظ حالة الطلب في قاعدة البيانات"); }, onError: (error) => toast.error(`تعذر تحديث الطلب: ${error.message}`) });

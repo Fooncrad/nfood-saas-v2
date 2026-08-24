@@ -59,4 +59,26 @@ describe("menu AI import, translation, and content showcase", () => {
     expect(panel).toContain("updateContentPurchaseOrderStatus");
     expect(panel).toContain("فتح الإيصال");
   });
+
+  it("supports customer history, receipt alerts, and searchable restaurant filters", () => {
+    const db = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
+    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
+    const customerPage = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerContentOrders.tsx"), "utf8");
+    const portal = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerPortal.tsx"), "utf8");
+    const panel = readFileSync(resolve(process.cwd(), "client/src/components/ContentOrdersPanel.tsx"), "utf8");
+    expect(db).toContain("listCustomerContentPurchaseOrders");
+    expect(db).toContain("listRestaurantManagerUserIds");
+    expect(router).toContain("myContentPurchaseOrders");
+    expect(router).toContain("إيصال تحويل محتوى جديد");
+    expect(router).toContain("sendPushToUser(managerId");
+    expect(customerPage).toContain("طلباتي السابقة");
+    expect(customerPage).toContain("myContentPurchaseOrders");
+    expect(portal).toContain("/customer-content-orders");
+    expect(panel).toContain("statusFilter");
+    expect(panel).toContain("fromDate");
+    expect(panel).toContain("toDate");
+    expect(panel).toContain('value=\"newest\"');
+    expect(readFileSync(resolve(process.cwd(), "client/src/App.tsx"), "utf8")).toContain("/customer-content-orders");
+    expect(readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8")).toContain("refetchInterval: 5000");
+  });
 });

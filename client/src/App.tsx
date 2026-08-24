@@ -15,6 +15,7 @@ const CustomerProfileSettings = lazy(() => import("./pages/CustomerProfileSettin
 const AccountProfileSettings = lazy(() => import("./pages/AccountProfileSettings"));
 const IntegrationsSettings = lazy(() => import("./pages/IntegrationsSettings"));
 const CustomerPortal = lazy(() => import("./pages/CustomerPortal"));
+const CustomerContentOrders = lazy(() => import("./pages/CustomerContentOrders"));
 const SupportManagement = lazy(() => import("./pages/SupportManagement"));
 const VcardCardsAdmin = lazy(() => import("./pages/VcardCardsAdmin"));
 const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
@@ -68,6 +69,7 @@ function Router() {
       <Route path="/account-profile" component={AccountProfileSettings} />
       <Route path="/integrations" component={IntegrationsSettings} />
       <Route path="/customer-portal" component={CustomerPortal} />
+      <Route path="/customer-content-orders" component={CustomerContentOrders} />
       <Route path="/favorites" component={FavoritesPage} />
       <Route path="/support" component={SupportManagement} />
       <Route path="/vcard-cards" component={VcardCardsAdmin} />
