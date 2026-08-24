@@ -342,13 +342,27 @@ export const printerRoutingRules = mysqlTable("printerRoutingRules", {
   isEnabled: boolean("isEnabled").default(true).notNull(),
 });
 
+export const seatingSections = mysqlTable("seatingSections", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").notNull().references(() => branches.id),
+  name: varchar("name", { length: 120 }).notNull(),
+  seatingType: mysqlEnum("seatingType", ["indoor", "outdoor"]).default("indoor").notNull(),
+  smokingAllowed: boolean("smokingAllowed").default(false).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ branchActiveIdx: index("seatingSections_branch_active_idx").on(table.branchId, table.isActive) }));
+
 export const orders = mysqlTable("orders", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull(),
   branchId: int("branchId").notNull(),
   kitchenSectionId: int("kitchenSectionId").references(() => kitchenSections.id),
+  seatingSectionId: int("seatingSectionId").references(() => seatingSections.id),
   tableName: varchar("tableName", { length: 80 }),
   partySize: int("partySize"),
+  childrenCount: int("childrenCount").default(0).notNull(),
   pickupPoint: varchar("pickupPoint", { length: 240 }),
   deliveryAddress: varchar("deliveryAddress", { length: 500 }),
   deliveryLatitude: decimal("deliveryLatitude", { precision: 10, scale: 7 }),
@@ -359,6 +373,9 @@ export const orders = mysqlTable("orders", {
   currencyDecimals: int("currencyDecimals").default(2).notNull(),
   reservationDate: timestamp("reservationDate"),
   reservationEventType: varchar("reservationEventType", { length: 160 }),
+  policyAcceptedAt: timestamp("policyAcceptedAt"),
+  splitBillMode: mysqlEnum("splitBillMode", ["single", "restaurant_required", "customer_choice", "friends"]).default("single").notNull(),
+  splitBillGroupId: varchar("splitBillGroupId", { length: 80 }),
   hotelName: varchar("hotelName", { length: 180 }),
   hotelRoom: varchar("hotelRoom", { length: 80 }),
   hotelFloor: varchar("hotelFloor", { length: 40 }),
@@ -465,6 +482,7 @@ export const restaurantTables = mysqlTable("restaurantTables", {
   name: varchar("name", { length: 80 }).notNull(),
   seats: int("seats").default(2).notNull(),
   status: mysqlEnum("status", ["available", "occupied", "reserved"]).default("available").notNull(),
+  seatingSectionId: int("seatingSectionId").references(() => seatingSections.id),
 });
 
 export const purchases = mysqlTable("purchases", {
@@ -648,11 +666,14 @@ export const reservations = mysqlTable("reservations", {
   slotId: int("slotId").references(() => reservationSlots.id),
   createdByUserId: int("createdByUserId").references(() => users.id),
   assignedTableId: int("assignedTableId").references(() => restaurantTables.id),
+  seatingSectionId: int("seatingSectionId").references(() => seatingSections.id),
   kind: mysqlEnum("kind", ["reservation", "waitlist"]).default("reservation").notNull(),
   customerName: varchar("customerName", { length: 160 }).notNull(),
   email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 40 }),
   partySize: int("partySize").default(1).notNull(),
+  childrenCount: int("childrenCount").default(0).notNull(),
+  policyAcceptedAt: timestamp("policyAcceptedAt"),
   durationMinutes: int("durationMinutes").default(60).notNull(),
   reservedFor: timestamp("reservedFor").notNull(),
   status: mysqlEnum("status", ["pending", "confirmed", "seated", "completed", "cancelled", "no_show"]).default("pending").notNull(),

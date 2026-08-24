@@ -177,7 +177,7 @@ describe("platform procedures", () => {
     const table = await db.insert(restaurantTables).values({ branchId: branch.id, name: `اختبار-${Date.now()}`, seats: 2, status: "available" });
     const tableId = Number(table[0].insertId);
     try {
-      const created = await appRouter.createCaller(context()).platform.createPublicReservation({ slug: restaurant.slug, branchId: branch.id, customerName: "ضيف حجز", phone: "0500000000", partySize: 2, reservedFor: new Date(Date.now() + 86400000), notes: "اختبار" });
+      const created = await appRouter.createCaller(context()).platform.createPublicReservation({ slug: restaurant.slug, branchId: branch.id, customerName: "ضيف حجز", phone: "0500000000", partySize: 2, policyAccepted: true, reservedFor: new Date(Date.now() + 86400000), notes: "اختبار" });
       expect(created).toEqual(expect.objectContaining({ success: true, status: "confirmed", tableId: expect.any(Number), tableName: expect.any(String) }));
       expect(created.tableId).toBeGreaterThan(0);
       await db.delete(reservations).where(eq(reservations.id, created.id));
