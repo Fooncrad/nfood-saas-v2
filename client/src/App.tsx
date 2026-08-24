@@ -23,7 +23,7 @@ const SupportManagement = lazy(() => import("./pages/SupportManagement"));
 const VcardCardsAdmin = lazy(() => import("./pages/VcardCardsAdmin"));
 const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
 const CustomerProfileSettingsRoute = () => <CustomerProfileSettings />;
-import { PricingPage, FeaturesPage, HowItWorksPage, LandingPage } from "./pages/PublicInfoPages";
+import { PricingPage, FeaturesPage, HowItWorksPage, LandingPage, LegalPage, ContactPage, SubscriptionStatusPage } from "./pages/PublicInfoPages";
 import { useAuth } from "./_core/hooks/useAuth";
 
 function PageLoading() {
@@ -61,6 +61,11 @@ function Router() {
       <Route path="/pricing" component={PricingPage} />
       <Route path="/features" component={FeaturesPage} />
       <Route path="/how-it-works" component={HowItWorksPage} />
+      <Route path="/terms" component={() => <LegalPage kind="terms" />} />
+      <Route path="/privacy" component={() => <LegalPage kind="privacy" />} />
+      <Route path="/refund-policy" component={() => <LegalPage kind="refund" />} />
+      <Route path="/contact" component={ContactPage} />
+      <Route path="/subscription-status" component={SubscriptionStatusPage} />
       <Route path="/display/:token" component={PublicDisplay} />
       <Route path="/tv/:token" component={PublicDisplay} />
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
