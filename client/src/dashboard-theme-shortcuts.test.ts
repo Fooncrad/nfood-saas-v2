@@ -21,5 +21,11 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(home).toContain('aria-expanded={notificationOpen}');
     expect(home).toContain("markNotificationRead.mutate");
     expect(home).toContain('aria-label={t("globalSearch")}');
+    expect(home).toContain('notificationFilter === "unread"');
+    expect(home).toContain('notificationFilter === "all"');
+    expect(home).toContain('title="الإشعارات · Ctrl+Shift+N"');
+    const css = read("index.css");
+    expect(css).toContain("nfood-notification-popover");
+    expect(css).toContain("prefers-reduced-motion: reduce");
   });
 });

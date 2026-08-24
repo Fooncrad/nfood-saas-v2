@@ -700,3 +700,16 @@ html[lang="ur"] body {
     .nfood-dashboard-shell:has(.nfood-unified-sidebar[data-sidebar-collapsed="true"]) > main { margin-inline-end: 0 !important; }
   }
 }
+
+/* Notification popover motion: transform and opacity only for a smooth, low-cost transition. */
+@keyframes nfood-notification-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.nfood-notification-popover {
+  transform-origin: top right;
+  animation: nfood-notification-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nfood-notification-popover { animation: none; }
+}
