@@ -27,6 +27,10 @@ const driverDeliverySource = readFileSync(new URL("../components/DriverDeliveryV
     expect(sidebarSource).toContain("sidebarStorageKey");
     expect(sidebarSource).toContain('isCentralAdmin ? platformGroups : sidebarGroups');
     expect(sidebarSource).toContain('aria');
+    expect(sidebarSource).toContain("const showRestaurantWorkspace = [");
+    expect(sidebarSource).toContain('"restaurant_admin"');
+    expect(sidebarSource).toContain('"cashier"');
+    expect(sidebarSource).toContain('{showRestaurantWorkspace && (');
   });
 
   it("shows a role-aware quick access grid and a visible, compact sidebar", () => {

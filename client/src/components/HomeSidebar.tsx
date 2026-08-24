@@ -87,6 +87,12 @@ export function HomeSidebar({
   const integrationScope = isCentralAdmin
     ? "/integrations?scope=platform"
     : `/integrations?scope=restaurant&restaurantId=${selectedRestaurantId}`;
+  const showRestaurantWorkspace = [
+    "restaurant_admin",
+    "waiter",
+    "kitchen",
+    "cashier",
+  ].includes(roleScope);
   const sidebarStorageKey = `nfood:sidebar-groups:${String(managerId)}:${roleScope}`;
   const sidebarCollapsedKey = `nfood:sidebar-collapsed:${String(managerId)}:${roleScope}`;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -185,57 +191,65 @@ export function HomeSidebar({
         </div>
       </div>
       <div className="nfood-sidebar-body flex min-h-0 flex-1 flex-col space-y-2 overflow-hidden px-2.5 pb-2.5 pt-2.5">
-        <div className="rounded-xl border border-white/10 bg-white/[.04] p-2">
-          <p className="mb-2 px-2 text-[10px] font-bold tracking-[.14em] text-slate-500">
-            {t("workspace")}
-          </p>
-          <div className="space-y-1.5">
-            <select
-              aria-label={t("selectRestaurant")}
-              value={selectedRestaurantId}
-              onChange={event => onRestaurantChange(Number(event.target.value))}
-              className="h-9 w-full rounded-lg border border-white/10 bg-[#17263d] px-3 text-[13px] text-white outline-none"
-            >
-              <option value={selectedRestaurantId}>
-                {restaurants.length ? t("selectRestaurant") : restaurantMessage}
-              </option>
-              {restaurants.map(restaurant => (
-                <option key={restaurant.id} value={restaurant.id}>
-                  {restaurant.name}
+        {showRestaurantWorkspace && (
+          <div className="rounded-xl border border-white/10 bg-white/[.04] p-2">
+            <p className="mb-2 px-2 text-[10px] font-bold tracking-[.14em] text-slate-500">
+              {t("workspace")}
+            </p>
+            <div className="space-y-1.5">
+              <select
+                aria-label={t("selectRestaurant")}
+                value={selectedRestaurantId}
+                onChange={event =>
+                  onRestaurantChange(Number(event.target.value))
+                }
+                className="h-9 w-full rounded-lg border border-white/10 bg-[#17263d] px-3 text-[13px] text-white outline-none"
+              >
+                <option value={selectedRestaurantId}>
+                  {restaurants.length
+                    ? t("selectRestaurant")
+                    : restaurantMessage}
                 </option>
-              ))}
-            </select>
-            <select
-              aria-label={t("selectBranch")}
-              value={branch}
-              onChange={event => onBranchChange(event.target.value)}
-              disabled={
-                (branchesLoading && !branches.length) ||
-                branchesError ||
-                branches.length === 0
-              }
-              className="h-9 w-full rounded-lg border border-white/10 bg-[#17263d] px-3 text-[13px] text-white outline-none"
-            >
-              <option value="">
-                {branches.length ? t("selectBranch") : branchMessage}
-              </option>
-              {branches.map(item => (
-                <option key={item.id} value={item.name}>
-                  {item.name}
+                {restaurants.map(restaurant => (
+                  <option key={restaurant.id} value={restaurant.id}>
+                    {restaurant.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label={t("selectBranch")}
+                value={branch}
+                onChange={event => onBranchChange(event.target.value)}
+                disabled={
+                  (branchesLoading && !branches.length) ||
+                  branchesError ||
+                  branches.length === 0
+                }
+                className="h-9 w-full rounded-lg border border-white/10 bg-[#17263d] px-3 text-[13px] text-white outline-none"
+              >
+                <option value="">
+                  {branches.length ? t("selectBranch") : branchMessage}
                 </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={onOpenCommand}
-              className="flex h-9 w-full items-center gap-2 rounded-lg border border-white/10 bg-[#17263d] px-3 text-[13px] text-slate-300 hover:text-white"
-            >
-              <Search className="h-4 w-4" />
-              {t("search")}{" "}
-              <span className="mr-auto text-[10px] text-slate-500">Ctrl K</span>
-            </button>
+                {branches.map(item => (
+                  <option key={item.id} value={item.name}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={onOpenCommand}
+                className="flex h-9 w-full items-center gap-2 rounded-lg border border-white/10 bg-[#17263d] px-3 text-[13px] text-slate-300 hover:text-white"
+              >
+                <Search className="h-4 w-4" />
+                {t("search")}{" "}
+                <span className="mr-auto text-[10px] text-slate-500">
+                  Ctrl K
+                </span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
         {(isCentralAdmin ||
           visibleNavItems.some(item => item.key === "branches")) && (
           <div className="rounded-2xl border border-orange-300/20 bg-orange-400/10 p-2.5">
