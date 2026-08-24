@@ -22,6 +22,7 @@ const CustomerRewards = lazy(() => import("./pages/CustomerRewards"));
 const SupportManagement = lazy(() => import("./pages/SupportManagement"));
 const VcardCardsAdmin = lazy(() => import("./pages/VcardCardsAdmin"));
 const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
+const SubscriptionReceiptsAdminPage = lazy(() => import("./pages/SubscriptionReceiptsAdminPage"));
 const CustomerProfileSettingsRoute = () => <CustomerProfileSettings />;
 import { PricingPage, FeaturesPage, HowItWorksPage, LandingPage, LegalPage, ContactPage, SubscriptionStatusPage } from "./pages/PublicInfoPages";
 import { useAuth } from "./_core/hooks/useAuth";
@@ -66,6 +67,7 @@ function Router() {
       <Route path="/refund-policy" component={() => <LegalPage kind="refund" />} />
       <Route path="/contact" component={ContactPage} />
       <Route path="/subscription-status" component={SubscriptionStatusPage} />
+      <Route path="/admin/subscription-receipts" component={SubscriptionReceiptsAdminPage} />
       <Route path="/display/:token" component={PublicDisplay} />
       <Route path="/tv/:token" component={PublicDisplay} />
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
