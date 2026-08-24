@@ -19,6 +19,9 @@ describe("public authentication and social UI contracts", () => {
     expect(source).toContain("role=\"alert\"");
     expect(source).toContain("backdrop-blur-2xl");
     expect(source).toContain("nfood-auth-slide-in");
+    expect(source).toContain("showPassword");
+    expect(source).toContain("EyeOff");
+    expect(source).toContain('role="status"');
   });
 
   it("exposes a visible registration back action and left social rail", () => {
