@@ -659,6 +659,41 @@
       "when": 1787543213434,
       "tag": "0093_bored_excalibur",
       "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "5",
+      "when": 1787545625147,
+      "tag": "0094_fuzzy_rick_jones",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "5",
+      "when": 1787545670100,
+      "tag": "0095_aspiring_rhino",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "5",
+      "when": 1787546162310,
+      "tag": "0096_jittery_rogue",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "5",
+      "when": 1787546541355,
+      "tag": "0097_gifted_dragon_lord",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "5",
+      "when": 1787547538156,
+      "tag": "0098_sad_princess_powerful",
+      "breakpoints": true
     }
   ]
 }

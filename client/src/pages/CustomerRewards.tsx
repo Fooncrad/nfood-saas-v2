@@ -1,0 +1,30 @@
+import { useState } from "react";
+import { ArrowRight, Award, CheckCircle2, Copy, Gift, Loader2, Store } from "lucide-react";
+import { Link } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+
+const rewards = [
+  { key: "discount_10" as const, points: 100, percent: 10, label: "خصم 10%", color: "bg-emerald-50 border-emerald-100 text-emerald-900" },
+  { key: "discount_25" as const, points: 250, percent: 25, label: "خصم 25%", color: "bg-amber-50 border-amber-100 text-amber-900" },
+  { key: "discount_50" as const, points: 500, percent: 50, label: "خصم 50%", color: "bg-orange-50 border-orange-100 text-orange-900" },
+];
+
+export default function CustomerRewards() {
+  const { user, loading } = useAuth();
+  const engagement = trpc.platform.engagement.useQuery(undefined, { enabled: Boolean(user), retry: false });
+  const utils = trpc.useUtils();
+  const redeem = trpc.platform.redeemPoints.useMutation({ onSuccess: async (result) => { setCode(result.code); toast.success("تم إصدار قسيمة المكافأة"); await utils.platform.engagement.invalidate(); }, onError: (error) => toast.error(error.message) });
+  const [selectedRestaurant, setSelectedRestaurant] = useState<number | null>(null);
+  const [code, setCode] = useState<string | null>(null);
+  const loyalty = engagement.data?.loyalty ?? [];
+
+  if (loading) return <main dir="rtl" className="grid min-h-screen place-items-center bg-[#f7f8fb]"><Loader2 className="h-7 w-7 animate-spin text-[#e76f3c]" /></main>;
+  if (!user) return <main dir="rtl" className="grid min-h-screen place-items-center bg-[#f7f8fb] p-5"><Card className="w-full max-w-md rounded-3xl"><CardContent className="p-8 text-center"><Gift className="mx-auto h-10 w-10 text-[#e76f3c]" /><h1 className="mt-4 text-2xl font-black">مكافآتك مرتبطة بحسابك</h1><p className="mt-2 text-sm leading-6 text-slate-500">سجّل الدخول لمشاهدة نقاطك واستبدالها بقسائم خصم.</p><Button onClick={() => startLogin()} className="mt-5 rounded-xl bg-[#e76f3c]">تسجيل الدخول</Button></CardContent></Card></main>;
+
+  return <main dir="rtl" className="min-h-screen bg-[#f7f8fb] p-5 text-slate-900 sm:p-8"><div className="mx-auto max-w-5xl"><header className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold text-[#e76f3c]">NFOOD · الولاء</p><h1 className="mt-2 text-3xl font-black">استبدال نقاطك</h1><p className="mt-2 text-sm text-slate-500">اختر مطعمًا من مطاعمك المرتبطة واستبدل النقاط بقسيمة خصم أحادية الاستخدام.</p></div><Link href="/customer-portal"><Button variant="outline" className="rounded-xl"><ArrowRight className="ml-2 h-4 w-4" />بوابة العميل</Button></Link></header>{code && <Card className="mb-6 rounded-3xl border-emerald-200 bg-emerald-50"><CardContent className="flex flex-wrap items-center justify-between gap-4 p-5"><div><p className="flex items-center gap-2 text-sm font-black text-emerald-900"><CheckCircle2 className="h-5 w-5" />تم إصدار القسيمة</p><p className="mt-1 text-xs text-emerald-800">استخدم الرمز خلال 30 يومًا في طلبك من المطعم نفسه.</p></div><Button type="button" variant="outline" className="rounded-xl border-emerald-200 bg-white font-mono" onClick={() => { void navigator.clipboard?.writeText(code); toast.success("تم نسخ رمز القسيمة"); }}><Copy className="ml-2 h-4 w-4" />{code}</Button></CardContent></Card>}{engagement.isLoading ? <Card className="rounded-3xl"><CardContent className="p-12 text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[#e76f3c]" /></CardContent></Card> : loyalty.length === 0 ? <Card className="rounded-3xl border-dashed"><CardContent className="p-14 text-center"><Award className="mx-auto h-10 w-10 text-slate-300" /><p className="mt-3 font-black">لا توجد أرصدة ولاء بعد</p><p className="mt-2 text-sm text-slate-500">أكمل طلباتك من المطاعم المسجلة لتجميع النقاط.</p></CardContent></Card> : <div className="grid gap-5 md:grid-cols-2">{loyalty.map((account) => { const selected = selectedRestaurant === account.restaurantId; return <Card key={account.id} className="rounded-3xl border-slate-200 bg-white shadow-sm"><CardHeader className="flex flex-row items-center justify-between gap-3"><CardTitle className="flex items-center gap-2 text-lg font-black"><span className="flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ backgroundColor: account.brandColor ?? "#e76f3c" }}>{account.brandLogoUrl ? <img src={account.brandLogoUrl} alt="" className="h-full w-full rounded-xl object-contain p-1" /> : <Store className="h-5 w-5" />}</span>{account.restaurantName}</CardTitle><div className="text-left"><strong className="text-xl text-amber-700">{account.pointsBalance}</strong><p className="text-[11px] text-slate-500">نقطة</p></div></CardHeader><CardContent><p className="mb-4 text-xs text-slate-500">المستوى الحالي: <strong>{account.tier === "gold" ? "ذهبي" : account.tier === "silver" ? "فضي" : "قياسي"}</strong></p><Button type="button" variant="outline" className="mb-3 w-full rounded-xl" onClick={() => setSelectedRestaurant(selected ? null : account.restaurantId)}>{selected ? "إخفاء المكافآت" : "عرض المكافآت"}</Button>{selected && <div className="space-y-2">{rewards.map((reward) => <div key={reward.key} className={`flex items-center justify-between gap-3 rounded-2xl border p-3 ${reward.color}`}><div><p className="font-black">{reward.label}</p><p className="mt-1 text-[11px]">مقابل {reward.points} نقطة</p></div><Button type="button" size="sm" disabled={redeem.isPending || account.pointsBalance < reward.points} onClick={() => redeem.mutate({ restaurantId: account.restaurantId, reward: reward.key })} className="rounded-xl bg-slate-900 text-white disabled:opacity-40">{redeem.isPending ? "جارٍ..." : account.pointsBalance < reward.points ? "غير متاح" : "استبدال"}</Button></div>)}</div>}</CardContent></Card>; })}</div>}</div></main>;
+}

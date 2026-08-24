@@ -1,0 +1,1 @@
+ALTER TABLE `userPreferences` MODIFY COLUMN `noteTemplatesJson` text;

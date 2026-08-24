@@ -1,0 +1,1 @@
+ALTER TABLE `menuItems` ADD `prepTimeMinutes` int DEFAULT 10 NOT NULL;

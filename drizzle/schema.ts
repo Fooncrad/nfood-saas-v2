@@ -234,6 +234,7 @@ export const userPreferences = mysqlTable("userPreferences", {
   language: varchar("language", { length: 10 }).default("ar").notNull(),
   themeMode: mysqlEnum("themeMode", ["light", "dark", "system"]).default("system").notNull(),
   themePreset: varchar("themePreset", { length: 40 }).default("nfood-sunset").notNull(),
+  noteTemplatesJson: text("noteTemplatesJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -261,6 +262,8 @@ export const menuItems = mysqlTable("menuItems", {
   translationsJson: text("translationsJson"),
   tagsJson: text("tagsJson"),
   isAvailable: boolean("isAvailable").default(true).notNull(),
+  prepTimeMinutes: int("prepTimeMinutes").default(10).notNull(),
+  calories: int("calories"),
 });
 
 export const favoriteMenuItems = mysqlTable("favoriteMenuItems", {
@@ -669,6 +672,7 @@ export const reservations = mysqlTable("reservations", {
   branchId: int("branchId").references(() => branches.id),
   slotId: int("slotId").references(() => reservationSlots.id),
   createdByUserId: int("createdByUserId").references(() => users.id),
+  customerId: int("customerId").references(() => users.id),
   assignedTableId: int("assignedTableId").references(() => restaurantTables.id),
   seatingSectionId: int("seatingSectionId").references(() => seatingSections.id),
   kind: mysqlEnum("kind", ["reservation", "waitlist"]).default("reservation").notNull(),

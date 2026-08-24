@@ -1,0 +1,1 @@
+ALTER TABLE `menuItems` ADD `calories` int;

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { TEST_SESSION_COOKIE } from "@shared/const";
 import { getDb, getLoyaltyTier, getFeatureAccess } from "./db";
-import { branches, menuCategories, menuItems, menuItemAddons, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, driverApplications, kitchenSections, printerRoutingRules, restaurantTables, testAccounts, auditLogs, featureDefinitions, restaurantFeatures, orderStatusHistory } from "../drizzle/schema";
+import { branches, menuCategories, menuItems, menuItemAddons, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, campaigns, coupons, driverApplications, kitchenSections, printerRoutingRules, restaurantTables, testAccounts, auditLogs, featureDefinitions, restaurantFeatures, orderStatusHistory } from "../drizzle/schema";
 import { and, eq } from "drizzle-orm";
 import type { TrpcContext } from "./_core/context";
 
@@ -180,8 +180,38 @@ describe("platform procedures", () => {
       const created = await appRouter.createCaller(context()).platform.createPublicReservation({ slug: restaurant.slug, branchId: branch.id, customerName: "ضيف حجز", phone: "0500000000", partySize: 2, policyAccepted: true, reservedFor: new Date(Date.now() + 86400000), notes: "اختبار" });
       expect(created).toEqual(expect.objectContaining({ success: true, status: "confirmed", tableId: expect.any(Number), tableName: expect.any(String) }));
       expect(created.tableId).toBeGreaterThan(0);
+      const storedReservation = (await db.select({ customerId: reservations.customerId }).from(reservations).where(eq(reservations.id, created.id)).limit(1))[0];
+      expect(storedReservation?.customerId).toBe(1);
+      const customerReservations = await appRouter.createCaller(context("user", "customer")).platform.myReservations({ limit: 10 });
+      expect(customerReservations).toEqual(expect.arrayContaining([expect.objectContaining({ id: created.id, customerId: 1 })]));
       await db.delete(reservations).where(eq(reservations.id, created.id));
     } finally { await db.delete(restaurantTables).where(eq(restaurantTables.id, tableId)); }
+  });
+
+  it("redeems loyalty points into a single-use coupon and updates the balance", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(eq(restaurants.status, "active")).limit(1))[0];
+    if (!restaurant) return;
+    const account = (await db.select().from(loyaltyAccounts).where(and(eq(loyaltyAccounts.restaurantId, restaurant.id), eq(loyaltyAccounts.customerId, 1))).limit(1))[0];
+    if (!account) return;
+    const originalBalance = account.pointsBalance;
+    await db.update(loyaltyAccounts).set({ pointsBalance: Math.max(originalBalance, 100), tier: getLoyaltyTier(Math.max(originalBalance, 100)) }).where(eq(loyaltyAccounts.id, account.id));
+    let result: { code: string; pointsBalance: number } | undefined;
+    try {
+      result = await appRouter.createCaller(context("user", "customer")).platform.redeemPoints({ restaurantId: restaurant.id, reward: "discount_10" });
+      expect(result.code).toMatch(/^NFOOD-/);
+      expect(result.pointsBalance).toBe(Math.max(originalBalance, 100) - 100);
+      const coupon = (await db.select({ id: coupons.id, discountPercent: coupons.discountPercent, usageLimit: coupons.usageLimit }).from(coupons).where(eq(coupons.code, result.code)).limit(1))[0];
+      expect(coupon).toEqual(expect.objectContaining({ discountPercent: 10, usageLimit: 1 }));
+    } finally {
+      if (result) {
+        const coupon = (await db.select({ id: coupons.id, campaignId: coupons.campaignId }).from(coupons).where(eq(coupons.code, result.code)).limit(1))[0];
+        if (coupon) { await db.delete(coupons).where(eq(coupons.id, coupon.id)); await db.delete(campaigns).where(eq(campaigns.id, coupon.campaignId)); }
+        await db.delete(loyaltyTransactions).where(and(eq(loyaltyTransactions.customerId, 1), eq(loyaltyTransactions.restaurantId, restaurant.id), eq(loyaltyTransactions.type, "redeem")));
+      }
+      await db.update(loyaltyAccounts).set({ pointsBalance: originalBalance, tier: getLoyaltyTier(originalBalance) }).where(eq(loyaltyAccounts.id, account.id));
+    }
   });
 
   it("returns actual available menu items and categories on the public restaurant page", async () => { const db = await getDb(); if (!db) return; const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug }).from(restaurants).where(eq(restaurants.status, "active")).limit(1))[0]; if (!restaurant) return; const item = (await db.select({ id: menuItems.id, name: menuItems.name, price: menuItems.price, categoryId: menuItems.categoryId }).from(menuItems).where(and(eq(menuItems.restaurantId, restaurant.id), eq(menuItems.isAvailable, true))).limit(1))[0]; if (!item) return; const publicPage = await appRouter.createCaller(context()).platform.publicRestaurantPage({ slug: restaurant.slug }); expect(publicPage?.items).toEqual(expect.arrayContaining([expect.objectContaining({ id: item.id, name: item.name, price: item.price, categoryId: item.categoryId })])); expect(publicPage?.items.every((entry) => entry.id > 0 && entry.name && entry.price !== undefined)).toBe(true); });
