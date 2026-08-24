@@ -729,6 +729,20 @@
       "when": 1787604579156,
       "tag": "0103_little_tombstone",
       "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "5",
+      "when": 1787610291042,
+      "tag": "0104_bitter_grim_reaper",
+      "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "5",
+      "when": 1787610456663,
+      "tag": "0105_loose_luke_cage",
+      "breakpoints": true
     }
   ]
 }

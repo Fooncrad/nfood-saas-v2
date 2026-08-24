@@ -14,12 +14,13 @@ import {
   Table2,
   Users,
   Utensils,
+  QrCode,
   WalletCards,
 } from "lucide-react";
 import type { TranslationKey } from "@/contexts/LanguageContext";
 
 export type OrderStatus = "new" | "preparing" | "ready" | "completed";
-export type NavKey = "overview" | "admin" | "accounts" | "settings" | "files" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "reservations" | "remote" | "security" | "health";
+export type NavKey = "overview" | "admin" | "accounts" | "settings" | "files" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "qr" | "inventory" | "team" | "marketing" | "reservations" | "remote" | "security" | "health";
 export type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string; ageMinutes: number; kitchenSectionId?: number | null; reservationDate?: string | Date | null; reservationEventType?: string | null; partySize?: number | null; childrenCount?: number | null; splitBillMode?: string | null };
 
 export const navItems: { key: NavKey; label: string; icon: LucideIcon }[] = [
@@ -33,6 +34,7 @@ export const navItems: { key: NavKey; label: string; icon: LucideIcon }[] = [
   { key: "kds", label: "شاشة المطبخ KDS", icon: ChefHat },
   { key: "menu", label: "المنيو والأصناف", icon: Utensils },
   { key: "tables", label: "الطاولات", icon: Table2 },
+  { key: "qr", label: "تخصيص QR والباركود", icon: QrCode },
   { key: "inventory", label: "المخزون والمشتريات", icon: Boxes },
   { key: "team", label: "الموظفون والحضور", icon: Users },
   { key: "marketing", label: "التسويق والحملات", icon: Megaphone },
@@ -42,4 +44,4 @@ export const navItems: { key: NavKey; label: string; icon: LucideIcon }[] = [
   { key: "health", label: "صحة النظام", icon: Activity },
 ];
 
-export const navTranslationKeys: Record<NavKey, TranslationKey> = { overview: "overview", admin: "platformAdmin", accounts: "platformAdmin", settings: "generalSettings", files: "mediaLibrary", branches: "branches", orders: "orders", pos: "pos", kds: "kds", menu: "menu", tables: "tables", inventory: "inventory", team: "team", marketing: "marketing", reservations: "reservations", remote: "remote", security: "security", health: "health" };
+export const navTranslationKeys: Record<NavKey, TranslationKey> = { overview: "overview", admin: "platformAdmin", accounts: "platformAdmin", settings: "generalSettings", files: "mediaLibrary", branches: "branches", orders: "orders", pos: "pos", kds: "kds", menu: "menu", tables: "tables", qr: "qrCustomization", inventory: "inventory", team: "team", marketing: "marketing", reservations: "reservations", remote: "remote", security: "security", health: "health" };

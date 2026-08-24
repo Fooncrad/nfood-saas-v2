@@ -17,6 +17,14 @@ function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" 
 describe("platform procedures", () => {
   it("rejects enabling demo integration references at the API boundary", async () => { const admin = appRouter.createCaller(context("admin")); await expect(admin.platform.upsertIntegrationSetting({ scope: "platform", providerKey: "Google OAuth", category: "الهوية", status: "configured", keyReference: "DEMO_REPLACE_GOOGLE_CLIENT_ID" })).rejects.toMatchObject({ code: "BAD_REQUEST" }); });
 
+  it("keeps QR procedures separated between public scans and restaurant administration", async () => {
+    const publicCaller = appRouter.createCaller(context("user"));
+    await expect(publicCaller.platform.publicQrCode({ token: "missing-qr-token" })).resolves.toBeNull();
+    await expect(publicCaller.platform.notifyWaiterCall({ token: "missing-qr-token" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(appRouter.createCaller(context("admin")).platform.qrCodes({ restaurantId: 1, branchId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(appRouter.createCaller(context("user", "customer", 1)).platform.qrCodes({ restaurantId: 1, branchId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("returns a non-sending campaign message preview", async () => { const db = await getDb(); if (!db) return; const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).limit(1))[0]; if (!restaurant) return; const preview = await appRouter.createCaller({ ...context("user", "restaurant_admin"), user: { ...context("user", "restaurant_admin").user, restaurantId: restaurant.id } }).platform.campaignAudiencePreview({ restaurantId: restaurant.id, kind: "reengagement", reengagementDays: 30 }); expect(preview).toEqual(expect.objectContaining({ demoMode: true, providerReady: false, count: expect.any(Number) })); expect(preview.previewMessages.every((message) => message.sent === false && message.status === "preview")).toBe(true); });
 
   it("returns an SMTP demo preview when reviewing a driver application", async () => { const db = await getDb(); if (!db) return; const created = await db.insert(driverApplications).values({ fullName: `سائق Demo ${Date.now()}`, email: `driver-demo-${Date.now()}@nfood.local`, phone: "0500000000", city: "الرياض", vehicleType: "car", status: "pending_review" }); const id = Number(created[0].insertId); try { const result = await appRouter.createCaller(context("admin")).admin.reviewDriverApplication({ id, status: "approved", reviewNote: "Demo review" }); expect(result.demoEmailPreview).toEqual(expect.objectContaining({ status: "preview", sent: false, provider: "SMTP Demo" })); } finally { await db.delete(driverApplications).where(eq(driverApplications.id, id)); } });

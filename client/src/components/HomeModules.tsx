@@ -17,6 +17,7 @@ import {
   MonitorPlay,
   Package,
   Plus,
+  QrCode,
   RefreshCw,
   Search,
   Settings2,
@@ -92,6 +93,7 @@ import { ReceiptCustomizationPanel } from "@/components/ReceiptCustomizationPane
 import { BrandingFeatureMatrix } from "@/components/BrandingFeatureMatrix";
 import { BrandingEditorPanel } from "@/components/BrandingEditorPanel";
 import { ReceiptDeliveryPanel } from "@/components/ReceiptDeliveryPanel";
+import { QROperationsPanel } from "@/components/QROperationsPanel";
 import { KitchenTicketBoard } from "@/components/KitchenTicketBoard";
 import { KdsOperationsBoard } from "@/components/KdsOperationsBoard";
 import { KitchenPerformancePanel } from "@/components/KitchenPerformancePanel";
@@ -365,6 +367,11 @@ export function ModuleView({
       description: "عرض إشغال الطاولات وربطها بالطلبات الحالية.",
       icon: Table2,
     },
+    qr: {
+      title: "تخصيص QR والباركود",
+      description: "أنشئ رموزًا ثابتة للطاولات والطلبات واستدعاء النادل.",
+      icon: QrCode,
+    },
     inventory: {
       title: "المخزون والمشتريات",
       description: "متابعة المواد الخام والتنبيهات وتسجيل المشتريات.",
@@ -489,6 +496,12 @@ export function ModuleView({
     return (
       <OperationalModuleShell title="الطاولات">
         <TablesView restaurantId={restaurantId} />
+      </OperationalModuleShell>
+    );
+  if (active === "qr")
+    return (
+      <OperationalModuleShell title={info.title}>
+        <QROperationsPanel restaurantId={restaurantId} branchId={branchId} />
       </OperationalModuleShell>
     );
   if (active === "inventory")

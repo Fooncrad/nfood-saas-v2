@@ -27,6 +27,15 @@ const requireUser = t.middleware(async opts => {
 
 export const protectedProcedure = t.procedure.use(requireUser);
 
+export const restaurantAdminProcedure = protectedProcedure.use(
+  t.middleware(async opts => {
+    if (opts.ctx.user?.testRole !== "restaurant_admin") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "إجراء مخصص لمدير المطعم" });
+    }
+    return opts.next({ ctx: { ...opts.ctx, user: opts.ctx.user } });
+  }),
+);
+
 export const testRoleProcedure = (...roles: string[]) => protectedProcedure.use(
   t.middleware(async opts => {
     const role = opts.ctx.user?.testRole;
