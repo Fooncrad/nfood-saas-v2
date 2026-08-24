@@ -25,6 +25,25 @@ describe("platform procedures", () => {
     await expect(appRouter.createCaller(context("user", "customer", 1)).platform.qrCodes({ restaurantId: 1, branchId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("exposes SEO and Google settings for platform and restaurant scopes", async () => {
+    const admin = appRouter.createCaller(context("admin"));
+    const platformSettings = await admin.platform.platformSettings();
+    const publicSiteMeta = await admin.platform.publicSiteMeta();
+    expect(publicSiteMeta).toEqual(expect.objectContaining({ siteName: expect.any(String), seoRobots: expect.any(String), googleAnalyticsMeasurementId: expect.any(String) }));
+    expect(platformSettings).toEqual(expect.objectContaining({ seoTitle: expect.any(String), seoDescription: expect.any(String), seoKeywords: expect.any(String), seoHashtags: expect.any(String), seoImageUrl: expect.any(String), seoCanonicalUrl: expect.any(String), seoRobots: expect.any(String), googleSearchConsoleVerification: expect.any(String), googleAnalyticsMeasurementId: expect.any(String), googleTagManagerId: expect.any(String), structuredDataJson: expect.any(String) }));
+    const db = await getDb();
+    if (!db) return;
+    const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug }).from(restaurants).limit(1))[0];
+    if (!restaurant) return;
+    const restaurantAdmin = appRouter.createCaller(context("user", "restaurant_admin", restaurant.id));
+    const branding = await restaurantAdmin.platform.branding({ restaurantId: restaurant.id });
+    expect(branding).toEqual(expect.objectContaining({ seoTitle: expect.any(String), seoDescription: expect.any(String), seoKeywords: expect.any(String), seoHashtags: expect.any(String), seoRobots: expect.any(String), googleAnalyticsMeasurementId: expect.any(String), googleTagManagerId: expect.any(String) }));
+    const publicPage = await admin.platform.publicRestaurantPage({ slug: restaurant.slug, lang: "en" });
+    expect(publicPage?.restaurant).toEqual(expect.objectContaining({ seoRobots: "index,follow" }));
+    expect(publicPage?.restaurant).toHaveProperty("seoCanonicalUrl");
+    expect(publicPage?.restaurant).toHaveProperty("googleAnalyticsMeasurementId");
+  });
+
   it("returns a non-sending campaign message preview", async () => { const db = await getDb(); if (!db) return; const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).limit(1))[0]; if (!restaurant) return; const preview = await appRouter.createCaller({ ...context("user", "restaurant_admin"), user: { ...context("user", "restaurant_admin").user, restaurantId: restaurant.id } }).platform.campaignAudiencePreview({ restaurantId: restaurant.id, kind: "reengagement", reengagementDays: 30 }); expect(preview).toEqual(expect.objectContaining({ demoMode: true, providerReady: false, count: expect.any(Number) })); expect(preview.previewMessages.every((message) => message.sent === false && message.status === "preview")).toBe(true); });
 
   it("returns an SMTP demo preview when reviewing a driver application", async () => { const db = await getDb(); if (!db) return; const created = await db.insert(driverApplications).values({ fullName: `سائق Demo ${Date.now()}`, email: `driver-demo-${Date.now()}@nfood.local`, phone: "0500000000", city: "الرياض", vehicleType: "car", status: "pending_review" }); const id = Number(created[0].insertId); try { const result = await appRouter.createCaller(context("admin")).admin.reviewDriverApplication({ id, status: "approved", reviewNote: "Demo review" }); expect(result.demoEmailPreview).toEqual(expect.objectContaining({ status: "preview", sent: false, provider: "SMTP Demo" })); } finally { await db.delete(driverApplications).where(eq(driverApplications.id, id)); } });

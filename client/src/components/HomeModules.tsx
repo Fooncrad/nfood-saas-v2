@@ -41,6 +41,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -8651,6 +8652,17 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
     tiktokUrl: "",
     websiteUrl: "",
     address: "",
+    seoTitle: "",
+    seoDescription: "",
+    seoKeywords: "",
+    seoHashtags: "",
+    seoImageUrl: "",
+    seoCanonicalUrl: "",
+    seoRobots: "index,follow",
+    googleSearchConsoleVerification: "",
+    googleAnalyticsMeasurementId: "",
+    googleTagManagerId: "",
+    structuredDataJson: "",
     reservationEnabled: true,
     cancellationEnabled: true,
     cancellationWindowMinutes: 15,
@@ -8684,6 +8696,17 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
         tiktokUrl: brandingQuery.data.tiktokUrl,
         websiteUrl: brandingQuery.data.websiteUrl,
         address: brandingQuery.data.address,
+        seoTitle: brandingQuery.data.seoTitle,
+        seoDescription: brandingQuery.data.seoDescription,
+        seoKeywords: brandingQuery.data.seoKeywords,
+        seoHashtags: brandingQuery.data.seoHashtags,
+        seoImageUrl: brandingQuery.data.seoImageUrl,
+        seoCanonicalUrl: brandingQuery.data.seoCanonicalUrl,
+        seoRobots: brandingQuery.data.seoRobots,
+        googleSearchConsoleVerification: brandingQuery.data.googleSearchConsoleVerification,
+        googleAnalyticsMeasurementId: brandingQuery.data.googleAnalyticsMeasurementId,
+        googleTagManagerId: brandingQuery.data.googleTagManagerId,
+        structuredDataJson: brandingQuery.data.structuredDataJson,
         reservationEnabled: brandingQuery.data.reservationEnabled,
         cancellationEnabled: brandingQuery.data.cancellationEnabled,
         cancellationWindowMinutes: brandingQuery.data.cancellationWindowMinutes,
@@ -9149,6 +9172,25 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
                   className="mt-1 min-h-24 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
                 />
               </label>
+              <section className="space-y-4 rounded-2xl border border-orange-200 bg-orange-50/50 p-4 sm:col-span-2">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">SEO وGoogle للمطعم</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">هذه البيانات تخص صفحة المطعم العامة فقط، وتبقى منفصلة عن إعدادات المنصة المركزية.</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="space-y-2 text-sm font-semibold">عنوان SEO<Input value={draft.seoTitle} maxLength={180} onChange={event => setDraft({ ...draft, seoTitle: event.target.value })} className="mt-1 rounded-xl bg-white" placeholder="اسم المطعم — المنيو والحجز" /></label>
+                  <label className="space-y-2 text-sm font-semibold">رابط صورة المشاركة<Input value={draft.seoImageUrl} onChange={event => setDraft({ ...draft, seoImageUrl: event.target.value })} className="mt-1 rounded-xl bg-white" dir="ltr" placeholder="https://.../og-image.png" /></label>
+                  <label className="space-y-2 text-sm font-semibold sm:col-span-2">وصف SEO<Textarea value={draft.seoDescription} maxLength={320} onChange={event => setDraft({ ...draft, seoDescription: event.target.value })} className="mt-1 min-h-20 rounded-xl bg-white" placeholder="وصف مختصر يظهر عند مشاركة صفحة المطعم أو ظهورها في البحث" /><span className="text-[10px] font-normal text-slate-400">{draft.seoDescription.length}/320</span></label>
+                  <label className="space-y-2 text-sm font-semibold">الكلمات المفتاحية<Textarea value={draft.seoKeywords} onChange={event => setDraft({ ...draft, seoKeywords: event.target.value })} className="mt-1 min-h-20 rounded-xl bg-white" dir="ltr" placeholder="coffee, breakfast, Riyadh" /></label>
+                  <label className="space-y-2 text-sm font-semibold">هاشتاقات SEO<Textarea value={draft.seoHashtags} onChange={event => setDraft({ ...draft, seoHashtags: event.target.value })} className="mt-1 min-h-20 rounded-xl bg-white" dir="ltr" placeholder="#NasserCafe #Riyadh" /></label>
+                  <label className="space-y-2 text-sm font-semibold">Canonical URL<Input value={draft.seoCanonicalUrl} onChange={event => setDraft({ ...draft, seoCanonicalUrl: event.target.value })} className="mt-1 rounded-xl bg-white" dir="ltr" placeholder="https://.../restaurant/slug" /></label>
+                  <label className="space-y-2 text-sm font-semibold">سياسة الفهرسة<select value={draft.seoRobots} onChange={event => setDraft({ ...draft, seoRobots: event.target.value })} className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"><option value="index,follow">فهرسة ومتابعة الروابط</option><option value="index,nofollow">فهرسة دون متابعة الروابط</option><option value="noindex,nofollow">منع الفهرسة</option></select></label>
+                  <label className="space-y-2 text-sm font-semibold">Search Console Verification<Input value={draft.googleSearchConsoleVerification} onChange={event => setDraft({ ...draft, googleSearchConsoleVerification: event.target.value })} className="mt-1 rounded-xl bg-white" dir="ltr" placeholder="رمز التحقق" /></label>
+                  <label className="space-y-2 text-sm font-semibold">Google Analytics Measurement ID<Input value={draft.googleAnalyticsMeasurementId} onChange={event => setDraft({ ...draft, googleAnalyticsMeasurementId: event.target.value })} className="mt-1 rounded-xl bg-white" dir="ltr" placeholder="G-XXXXXXXXXX" /></label>
+                  <label className="space-y-2 text-sm font-semibold">Google Tag Manager ID<Input value={draft.googleTagManagerId} onChange={event => setDraft({ ...draft, googleTagManagerId: event.target.value })} className="mt-1 rounded-xl bg-white" dir="ltr" placeholder="GTM-XXXXXXX" /></label>
+                  <label className="space-y-2 text-sm font-semibold sm:col-span-2">Structured Data JSON اختياري<Textarea value={draft.structuredDataJson} onChange={event => setDraft({ ...draft, structuredDataJson: event.target.value })} className="mt-1 min-h-24 rounded-xl bg-white font-mono text-xs" dir="ltr" placeholder='{"@context":"https://schema.org","@type":"Restaurant"}' /></label>
+                </div>
+              </section>
               <Button
                 disabled={
                   updateBranding.isPending ||

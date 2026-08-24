@@ -9,7 +9,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerMarketingHeartbeat } from "../marketing";
 import { registerReservationHeartbeat } from "../reservations";
-import { getPublicRestaurantPage } from "../db";
+import { getPlatformSettings, getPublicRestaurantPage, listPublicRestaurants } from "../db";
 import { serveStatic, setupVite } from "./vite";
 import { attachDisplayRealtime } from "../displayRealtime";
 
@@ -47,6 +47,27 @@ async function startServer() {
   registerOAuthRoutes(app);
   registerMarketingHeartbeat(app);
   registerReservationHeartbeat(app);
+  const publicOrigin = async (req: express.Request) => {
+    const settings = await getPlatformSettings();
+    const configured = settings.baseDomain?.trim().replace(/\/+$/, "");
+    if (configured && /^https?:\/\/[^\s]+$/i.test(configured)) return configured;
+    const forwardedProto = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
+    return `${forwardedProto || req.protocol}://${req.get("host")}`;
+  };
+  app.get("/robots.txt", async (req, res) => {
+    const settings = await getPlatformSettings();
+    const origin = await publicOrigin(req);
+    const blocked = /noindex/i.test(settings.seoRobots ?? "");
+    const body = blocked ? `User-agent: *\nDisallow: /\n` : `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`;
+    res.type("text/plain").send(body);
+  });
+  app.get("/sitemap.xml", async (req, res) => {
+    const origin = await publicOrigin(req);
+    const restaurants = await listPublicRestaurants();
+    const urls = [origin, ...restaurants.flatMap((restaurant) => [`${origin}/menu/${restaurant.slug}`, `${origin}/restaurant/${restaurant.slug}`])];
+    const xml = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map((url) => `<url><loc>${url.replace(/&/g, "&amp;")}</loc></url>`).join("")}</urlset>`;
+    res.type("application/xml").send(xml);
+  });
   // tRPC API
   app.use(
     "/api/trpc",

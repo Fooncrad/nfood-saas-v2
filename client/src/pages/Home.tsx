@@ -87,6 +87,44 @@ export default function Home() {
   const { user, loading, logout, refresh } = useAuth();
   const { direction, language, locale, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const siteMeta = trpc.platform.publicSiteMeta.useQuery(undefined, { staleTime: 5 * 60 * 1000, retry: false });
+  useEffect(() => {
+    if (user || !siteMeta.data) return;
+    const meta = siteMeta.data;
+    const title = meta.seoTitle?.trim() || meta.siteName || "NFOOD Restaurant SaaS";
+    const description = meta.seoDescription?.trim() || meta.siteDescription?.trim() || "NFOOD Restaurant SaaS";
+    const previousTitle = document.title;
+    document.title = title;
+    const upsertMeta = (kind: "name" | "property", key: string, content: string) => {
+      const selector = `meta[data-nfood-platform-seo="${kind}:${key}"]`;
+      let element = document.head.querySelector<HTMLMetaElement>(selector);
+      if (!element) { element = document.createElement("meta"); element.dataset.nfoodPlatformSeo = `${kind}:${key}`; element.setAttribute(kind, key); document.head.appendChild(element); }
+      element.content = content;
+    };
+    upsertMeta("name", "description", description);
+    upsertMeta("name", "keywords", meta.seoKeywords ?? "");
+    upsertMeta("name", "robots", meta.seoRobots || "index,follow");
+    upsertMeta("property", "og:title", title);
+    upsertMeta("property", "og:description", description);
+    upsertMeta("property", "og:type", "website");
+    upsertMeta("property", "og:url", meta.seoCanonicalUrl?.trim() || window.location.href);
+    if (meta.seoImageUrl?.trim()) upsertMeta("property", "og:image", meta.seoImageUrl.trim());
+    const verification = meta.googleSearchConsoleVerification?.trim();
+    if (verification) upsertMeta("name", "google-site-verification", verification);
+    const analyticsId = meta.googleAnalyticsMeasurementId?.trim();
+    const tagManagerId = meta.googleTagManagerId?.trim();
+    const addedScripts: HTMLScriptElement[] = [];
+    if (/^G-[A-Z0-9]+$/i.test(analyticsId ?? "")) {
+      const script = document.createElement("script"); script.id = "nfood-platform-google-analytics"; script.async = true; script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(analyticsId!)}`; document.head.appendChild(script); addedScripts.push(script);
+      const inline = document.createElement("script"); inline.id = "nfood-platform-google-analytics-init"; inline.text = `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","${analyticsId}");`; document.head.appendChild(inline); addedScripts.push(inline);
+    }
+    if (/^GTM-[A-Z0-9]+$/i.test(tagManagerId ?? "")) {
+      const script = document.createElement("script"); script.id = "nfood-platform-google-tag-manager"; script.text = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!="dataLayer"?"&l="+l:"";j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;f.parentNode.insertBefore(j,f);})(window,document,"script","dataLayer","${tagManagerId}");`; document.head.appendChild(script); addedScripts.push(script);
+    }
+    let structuredNode: HTMLScriptElement | null = null;
+    if (meta.structuredDataJson?.trim()) { try { JSON.parse(meta.structuredDataJson); structuredNode = document.createElement("script"); structuredNode.id = "nfood-platform-structured-data"; structuredNode.type = "application/ld+json"; structuredNode.text = meta.structuredDataJson; document.head.appendChild(structuredNode); } catch { console.warn("[SEO] platform structuredDataJson is not valid JSON"); } }
+    return () => { document.title = previousTitle; addedScripts.forEach(script => script.remove()); structuredNode?.remove(); document.head.querySelectorAll("meta[data-nfood-platform-seo]").forEach(node => node.remove()); };
+  }, [siteMeta.data, user]);
   const [testEmail, setTestEmail] = useState(() => typeof window !== "undefined" ? window.localStorage.getItem("nfood-remembered-email") ?? "fooncards@gmail.com" : "fooncards@gmail.com");
   const [testPassword, setTestPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(() => typeof window !== "undefined" && window.localStorage.getItem("nfood-remember-me") === "true");

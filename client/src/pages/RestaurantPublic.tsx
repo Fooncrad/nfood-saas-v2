@@ -52,6 +52,52 @@ export default function RestaurantPublic() {
   const qrToken = useMemo(() => new URLSearchParams(location.split("?")[1] ?? "").get("qr")?.trim() ?? "", [location]);
   const publicQr = trpc.platform.publicQrCode.useQuery({ token: qrToken }, { enabled: qrToken.length >= 8, retry: false });
   const notifyWaiterCall = trpc.platform.notifyWaiterCall.useMutation({ onSuccess: () => toast.success(language === "ar" ? "تم إرسال طلب النادل" : language === "fr" ? "La demande a été envoyée" : language === "ur" ? "ویٹر کی درخواست بھیج دی گئی" : "Waiter request sent"), onError: error => toast.error(error.message) });
+  useEffect(() => {
+    const restaurant = page.data?.restaurant;
+    if (!restaurant) return;
+    const brand = restaurant.brandName || restaurant.name;
+    const title = restaurant.seoTitle?.trim() || `${brand} — ${copy.menu}`;
+    const description = restaurant.seoDescription?.trim() || restaurant.brandDescription?.trim() || `${brand} — ${copy.restaurantMenu}`;
+    document.title = title;
+    const upsertMeta = (kind: "name" | "property", key: string, content: string) => {
+      const selector = `meta[data-nfood-seo="${kind}:${key}"]`;
+      let element = document.head.querySelector<HTMLMetaElement>(selector);
+      if (!element) { element = document.createElement("meta"); element.dataset.nfoodSeo = `${kind}:${key}`; element.setAttribute(kind, key); document.head.appendChild(element); }
+      element.content = content;
+    };
+    upsertMeta("name", "description", description);
+    upsertMeta("name", "keywords", restaurant.seoKeywords ?? "");
+    upsertMeta("name", "robots", restaurant.seoRobots || "index,follow");
+    upsertMeta("property", "og:title", title);
+    upsertMeta("property", "og:description", description);
+    upsertMeta("property", "og:type", "website");
+    upsertMeta("property", "og:url", restaurant.seoCanonicalUrl?.trim() || window.location.href);
+    if (restaurant.seoImageUrl?.trim()) upsertMeta("property", "og:image", restaurant.seoImageUrl.trim());
+    upsertMeta("name", "twitter:card", restaurant.seoImageUrl?.trim() ? "summary_large_image" : "summary");
+    upsertMeta("name", "twitter:title", title);
+    upsertMeta("name", "twitter:description", description);
+    const tags = (restaurant.seoHashtags ?? "").split(/[\\s,]+/).map(tag => tag.replace(/^#+/, "").trim()).filter(Boolean).slice(0, 12);
+    tags.forEach((tag, index) => upsertMeta("property", `article:tag:${index}`, tag));
+    const canonicalKey = "link[data-nfood-seo=canonical]";
+    let canonical = document.head.querySelector<HTMLLinkElement>(canonicalKey);
+    if (!canonical) { canonical = document.createElement("link"); canonical.dataset.nfoodSeo = "canonical"; canonical.rel = "canonical"; document.head.appendChild(canonical); }
+    canonical.href = restaurant.seoCanonicalUrl?.trim() || window.location.href;
+    const verification = restaurant.googleSearchConsoleVerification?.trim();
+    if (verification) upsertMeta("name", "google-site-verification", verification);
+    const analyticsId = restaurant.googleAnalyticsMeasurementId?.trim();
+    const tagManagerId = restaurant.googleTagManagerId?.trim();
+    const addedNodes: HTMLElement[] = [];
+    if (/^G-[A-Z0-9]+$/i.test(analyticsId ?? "") && !document.getElementById("nfood-google-analytics-src")) {
+      const script = document.createElement("script"); script.id = "nfood-google-analytics-src"; script.async = true; script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(analyticsId!)}`; document.head.appendChild(script); addedNodes.push(script);
+      const inline = document.createElement("script"); inline.id = "nfood-google-analytics-init"; inline.text = `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","${analyticsId}");`; document.head.appendChild(inline); addedNodes.push(inline);
+    }
+    if (/^GTM-[A-Z0-9]+$/i.test(tagManagerId ?? "") && !document.getElementById("nfood-google-tag-manager")) {
+      const script = document.createElement("script"); script.id = "nfood-google-tag-manager"; script.text = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!="dataLayer"?"&l="+l:"";j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;f.parentNode.insertBefore(j,f);})(window,document,"script","dataLayer","${tagManagerId}");`; document.head.appendChild(script); addedNodes.push(script);
+    }
+    let structuredNode: HTMLScriptElement | null = null;
+    if (restaurant.structuredDataJson?.trim()) { try { JSON.parse(restaurant.structuredDataJson); structuredNode = document.createElement("script"); structuredNode.id = "nfood-structured-data"; structuredNode.type = "application/ld+json"; structuredNode.text = restaurant.structuredDataJson; document.head.appendChild(structuredNode); } catch { console.warn("[SEO] structuredDataJson is not valid JSON"); } }
+    return () => { addedNodes.forEach(node => node.remove()); structuredNode?.remove(); document.head.querySelectorAll("meta[data-nfood-seo], link[data-nfood-seo]").forEach(node => node.remove()); };
+  }, [copy.menu, copy.restaurantMenu, language, page.data?.restaurant]);
   const motionEffectsEnabled = page.data?.restaurant.motionEffectsEnabled !== false;
   useEffect(() => { document.documentElement.dataset.nfoodMotion = motionEffectsEnabled ? "on" : "off"; return () => { delete document.documentElement.dataset.nfoodMotion; }; }, [motionEffectsEnabled]);
   const fieldLabels = ({ ar: { reservation: "طلب مع حجز", hotel: "خدمة فندقية", party: "عدد الأشخاص", pickup: "نقطة الاستلام", address: "عنوان التوصيل", locate: "استخدام موقعي", date: "موعد الحجز", hotelName: "اسم الفندق", room: "رقم الغرفة", floor: "الدور", fee: "رسوم التوصيل" }, en: { reservation: "Reservation order", hotel: "Hotel service", party: "Guests", pickup: "Pickup point", address: "Delivery address", locate: "Use my location", date: "Reservation time", hotelName: "Hotel name", room: "Room number", floor: "Floor", fee: "Delivery fee" }, fr: { reservation: "Commande avec réservation", hotel: "Service hôtelier", party: "Nombre de personnes", pickup: "Point de retrait", address: "Adresse de livraison", locate: "Utiliser ma position", date: "Date de réservation", hotelName: "Nom de l’hôtel", room: "Numéro de chambre", floor: "Étage", fee: "Frais de livraison" }, ur: { reservation: "بکنگ کے ساتھ آرڈر", hotel: "ہوٹل سروس", party: "افراد کی تعداد", pickup: "پک اپ پوائنٹ", address: "ڈیلیوری کا پتہ", locate: "میرا مقام استعمال کریں", date: "بکنگ کا وقت", hotelName: "ہوٹل کا نام", room: "کمرہ نمبر", floor: "منزل", fee: "ڈیلیوری فیس" } } as const)[language] ?? ({ reservation: "Reservation order", hotel: "Hotel service", party: "Guests", pickup: "Pickup point", address: "Delivery address", locate: "Use my location", date: "Reservation time", hotelName: "Hotel name", room: "Room number", floor: "Floor", fee: "Delivery fee" });
