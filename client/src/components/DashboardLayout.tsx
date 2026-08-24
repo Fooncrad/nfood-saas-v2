@@ -257,7 +257,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4">{children}</main><CookieBanner /><FloatingSupportActions />
+        <main className="min-w-0 flex-1 p-3 sm:p-4">{children}</main><CookieBanner /><FloatingSupportActions />
       </SidebarInset>
     </>
   );

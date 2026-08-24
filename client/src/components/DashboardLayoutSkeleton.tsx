@@ -2,9 +2,9 @@ import { Skeleton } from './ui/skeleton';
 
 export function DashboardLayoutSkeleton() {
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       {/* Sidebar skeleton */}
-      <div className="w-[280px] border-r border-border bg-background p-4 space-y-6">
+      <div className="hidden w-[240px] shrink-0 border-r border-border bg-background p-3 lg:block">
         {/* Logo area */}
         <div className="flex items-center gap-3 px-2">
           <Skeleton className="h-8 w-8 rounded-md" />
@@ -31,7 +31,7 @@ export function DashboardLayoutSkeleton() {
       </div>
 
       {/* Main content skeleton */}
-      <div className="flex-1 p-4 space-y-4">
+      <div className="min-w-0 flex-1 overflow-hidden p-3 sm:p-4">
         {/* Content blocks */}
         <Skeleton className="h-12 w-48 rounded-lg" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -39,7 +39,7 @@ export function DashboardLayoutSkeleton() {
           <Skeleton className="h-32 rounded-xl" />
           <Skeleton className="h-32 rounded-xl" />
         </div>
-        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-40 rounded-xl" />
       </div>
     </div>
   );
