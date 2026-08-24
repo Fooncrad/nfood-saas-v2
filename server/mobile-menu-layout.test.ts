@@ -61,4 +61,28 @@ describe("mobile menu order preferences and notes", () => {
     expect(css()).toContain("nfood-category-enter");
     expect(css()).toContain("prefers-reduced-motion: reduce");
   });
+
+  it("keeps tracking out while making an occupied cart noticeable", () => {
+    const source = page();
+    expect(source).not.toContain("trackGuestOrder");
+    expect(source).not.toContain("تتبّع طلب");
+    expect(source).toContain("nfood-cart-pulse");
+    expect(source).toContain("itemCount > 0");
+  });
+
+  it("passes referral links through authenticated checkout", () => {
+    const source = page();
+    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
+    expect(source).toContain("new URLSearchParams(window.location.search).get(\"ref\")");
+    expect(source).toContain("referralCode,");
+    expect(router).toContain("createMyReferralLink");
+    expect(router).toContain("referredCustomerId: customerId");
+  });
+
+  it("exposes the waiting game only as an optional post-order experience", () => {
+    const source = page();
+    expect(source).toContain("افتح لعبة الانتظار");
+    expect(source).toContain("gameStatus.data?.status === \"ready\"");
+    expect(source).toContain("الطلب جاهز. شكرًا على استمتاعك باللعبة");
+  });
 });

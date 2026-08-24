@@ -76,21 +76,18 @@ describe("UI placeholder audit", () => {
     expect(reservationsSource).toContain("لا توجد");
   });
 
-  it("keeps guest checkout wired to the public restaurant page", () => {
+  it("keeps checkout wired while removing public guest tracking", () => {
     expect(publicRestaurantSource).toContain("trpc.platform.guestCheckout.useMutation");
-    expect(publicRestaurantSource).toContain("trpc.platform.trackGuestOrder.useQuery");
-    expect(publicRestaurantSource).toContain("trpc.platform.reorderGuestOrder.useMutation");
-    expect(publicRestaurantSource).toContain("إعادة الطلب");
-    expect(publicRestaurantSource).toContain("guestStatusLabels");
-    expect(publicRestaurantSource).toContain("setInterval");
-    expect(publicRestaurantSource).toContain("trackingQuery.refetch");
-    expect(publicRestaurantSource).toContain("قيد التحضير");
+    expect(publicRestaurantSource).not.toContain("trpc.platform.trackGuestOrder.useQuery");
+    expect(publicRestaurantSource).not.toContain("trpc.platform.reorderGuestOrder.useMutation");
+    expect(publicRestaurantSource).not.toContain("trackingQuery");
+    expect(publicRestaurantSource).not.toContain("guest-track");
+    expect(publicRestaurantSource).not.toContain("تتبع طلب سابق");
     expect(publicRestaurantSource).toContain("setCart({});");
     expect(publicRestaurantSource).toContain("setGuestPhone(\"\")");
     expect(publicRestaurantSource).toContain("setReceipt");
     expect(publicRestaurantSource).toContain("checkout.isError");
-    expect(publicRestaurantSource).toContain("reorder.isError");
-    expect(publicRestaurantSource).toContain("guest-track");
+    expect(publicRestaurantSource).toContain("checkout.isError");
     expect(publicRestaurantSource).toContain("guestName");
     expect(publicRestaurantSource).toContain("guestPhone");
     expect(publicRestaurantSource).toContain("الدفع نقدي عند الاستلام");

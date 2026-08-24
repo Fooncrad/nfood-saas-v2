@@ -490,3 +490,11 @@ html[lang="ur"] body {
 @media (prefers-reduced-motion: reduce) {
   .category-results { animation: none; }
 }
+@keyframes nfood-cart-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nfood-menu-theme .motion-safe\:animate-\[nfood-cart-pulse_1\.8s_ease-in-out_infinite\] { animation: none !important; }
+  .nfood-menu-theme .motion-safe\:animate-ping { animation: none !important; }
+}
