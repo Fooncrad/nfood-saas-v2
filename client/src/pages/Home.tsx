@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "wouter";
 import {
   Activity, Bell, ChefHat, ChevronDown, CircleDollarSign, Clock3, Eye, LayoutDashboard,
   Menu as MenuIcon, Package, Plus, Search, Settings2, ShoppingBag, Store, Table2,
@@ -70,14 +71,15 @@ function money(value: number) { return `${value.toLocaleString("ar-SA")} ر.س`;
 function orderAgeMinutes(value: Date | string | number) { const timestamp = value instanceof Date ? value.getTime() : new Date(value).getTime(); return Number.isFinite(timestamp) ? Math.max(0, Math.floor((Date.now() - timestamp) / 60000)) : 0; }
 
 export default function Home() {
+  const [location, setLocation] = useLocation();
   const { user, loading, logout, refresh } = useAuth();
   const { direction, language, locale, t } = useLanguage();
   const [testEmail, setTestEmail] = useState("fooncards@gmail.com");
   const [testPassword, setTestPassword] = useState("");
-  const [showRegister, setShowRegister] = useState(false);
+  const [showRegister, setShowRegister] = useState(() => location === "/register" || location === "/restaurant/register");
   const [resetToken, setResetToken] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("reset") : null);
   const [forgotMessage, setForgotMessage] = useState<string | null>(null);
-  const testLogin = trpc.auth.testLogin.useMutation({ onSuccess: async () => { toast.success("تم تسجيل الدخول لحساب الاختبار"); await refresh(); }, onError: (error) => toast.error(error.message || "بيانات الدخول غير صحيحة") });
+  const testLogin = trpc.auth.testLogin.useMutation({ onSuccess: async () => { toast.success("تم تسجيل الدخول لحساب الاختبار"); await refresh(); setLocation("/dashboard"); }, onError: (error) => toast.error(error.message || "بيانات الدخول غير صحيحة") });
   const requestPasswordReset = trpc.auth.requestPasswordReset.useMutation({ onSuccess: (result) => { setForgotMessage(result.message); toast.success(result.message); }, onError: (error) => toast.error(error.message || "تعذر إرسال رابط الاستعادة") });
   const adminReturn = trpc.auth.adminReturn.useMutation({ onSuccess: () => window.location.reload(), onError: (error) => toast.error(error.message || "تعذرت العودة إلى جلسة Admin") });
   const [active, setActive] = useState<NavKey>("overview");
@@ -177,6 +179,8 @@ export default function Home() {
 
   if (loading) return <div dir={direction} className="flex min-h-screen items-center justify-center bg-[#f6f7f9] text-slate-500">جارٍ التحقق من الجلسة...</div>;
     if (resetToken) return <PasswordResetScreen token={resetToken} onComplete={() => { window.history.replaceState({}, "", window.location.pathname); setResetToken(null); }} onBack={() => { window.history.replaceState({}, "", window.location.pathname); setResetToken(null); }} />;
+    if (location === "/register" || location === "/restaurant/register") return <RegisterScreen onBack={() => setLocation("/login")} onOAuth={() => startLogin()} />;
+    if (location === "/login") return <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} onRegister={() => setLocation("/restaurant/register")} onForgotPassword={() => { setForgotMessage(null); requestPasswordReset.mutate({ email: testEmail }); }} forgotPending={requestPasswordReset.isPending} forgotMessage={forgotMessage} />;
     if (!user) return showRegister ? <RegisterScreen onBack={() => setShowRegister(false)} onOAuth={() => startLogin()} /> : <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} onRegister={() => setShowRegister(true)} onForgotPassword={() => { setForgotMessage(null); requestPasswordReset.mutate({ email: testEmail }); }} forgotPending={requestPasswordReset.isPending} forgotMessage={forgotMessage} />;
   const title = localizedNavItems.find((item) => item.key === active)?.label ?? t("overview");
   const todayLabel = new Date().toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" });

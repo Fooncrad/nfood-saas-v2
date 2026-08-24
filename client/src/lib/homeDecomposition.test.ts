@@ -30,6 +30,8 @@ const driverDeliverySource = readFileSync(new URL("../components/DriverDeliveryV
 
   it("shows a role-aware quick access grid and a visible, compact sidebar", () => {
     expect(homeSource).toContain("<DashboardQuickAccess items={quickItems}");
+    expect(homeSource).toContain('location === "/register" || location === "/restaurant/register"');
+    expect(homeSource).toContain('location === "/login"');
     expect(homeSource).toContain("lg:mr-[304px]");
     expect(sidebarSource).toContain("w-[304px]");
     expect(sidebarSource).toContain("nfood-unified-sidebar");
