@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ExternalLink, KeyRound, Save } from "lucide-react";
+import { ExternalLink, KeyRound, LockKeyhole, Save } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,6 +121,14 @@ function IntegrationCard({
           <span className="flex items-center gap-2">
             <KeyRound className="h-5 w-5 text-[#e76f3c]" />
             {provider.label}
+            {!isPublicLogin && (
+              <span
+                title="يتطلب ترقية الباقة"
+                className="rounded-full bg-violet-50 p-1 text-violet-700"
+              >
+                <LockKeyhole className="h-3.5 w-3.5" />
+              </span>
+            )}
           </span>
           <span
             className={`rounded-full px-2 py-1 text-[10px] ${status === "configured" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}

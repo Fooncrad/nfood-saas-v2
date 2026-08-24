@@ -84,9 +84,7 @@ export function HomeSidebar({
   const restaurantMessage = restaurantsLoading
     ? t("loadingRestaurants")
     : t("noRestaurants");
-  const integrationScope = isCentralAdmin
-    ? "/integrations?scope=platform"
-    : `/integrations?scope=restaurant&restaurantId=${selectedRestaurantId}`;
+  const integrationScope = "/integrations?scope=platform";
   const showRestaurantWorkspace = [
     "restaurant_admin",
     "waiter",
@@ -291,8 +289,7 @@ export function HomeSidebar({
             </div>
           </div>
         )}
-        {(isCentralAdmin ||
-          visibleNavItems.some(item => item.key === "branches")) && (
+        {isCentralAdmin && (
           <div className="rounded-2xl border border-orange-300/20 bg-orange-400/10 p-2.5">
             <p className="mb-2 px-2 text-[10px] font-bold tracking-[.14em] text-orange-200">
               {t("integrationsCenter")}
@@ -306,11 +303,7 @@ export function HomeSidebar({
                 className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-right text-[13px] text-slate-300 transition-all hover:bg-white/10 hover:text-white"
               >
                 <Settings2 className="h-[18px] w-[18px]" />
-                <span>
-                  {isCentralAdmin
-                    ? t("integrationsCenter")
-                    : t("restaurantPortals")}
-                </span>
+                <span>{t("integrationsCenter")}</span>
               </button>
               {isCentralAdmin && (
                 <a

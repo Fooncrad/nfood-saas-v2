@@ -5589,6 +5589,9 @@ function PackagePlanCard({
   const [yearlyPrice, setYearlyPrice] = useState(plan.yearlyPrice);
   const [isActive, setIsActive] = useState(plan.isActive);
   const [isOpen, setIsOpen] = useState(false);
+  const isRecommended = ["growth", "pro", "business"].includes(
+    plan.key.toLowerCase()
+  );
   const [limits, setLimits] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       plan.features.map(feature => [
@@ -5676,6 +5679,11 @@ function PackagePlanCard({
               <span className="mt-1 block truncate text-base font-black text-slate-900">
                 {plan.name}
               </span>
+              {isRecommended && (
+                <span className="shrink-0 rounded-full bg-orange-100 px-2 py-1 text-[10px] font-black text-orange-700">
+                  الأكثر شيوعًا
+                </span>
+              )}
             </span>
             <span className="mr-auto flex shrink-0 items-center gap-2">
               <span className="rounded-full bg-slate-200 px-2 py-1 text-[10px] font-bold text-slate-600">
@@ -5699,121 +5707,125 @@ function PackagePlanCard({
           </button>
         </div>
       </CardHeader>
-      {isOpen && (
-        <CardContent className="space-y-4 p-5 animate-[nfood-enter_220ms_ease-out]">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input
-              value={name}
-              onChange={event => setName(event.target.value)}
-              placeholder="اسم الباقة"
-              className="rounded-xl"
-            />
-            <Input
-              value={description}
-              onChange={event => setDescription(event.target.value)}
-              placeholder="وصف الباقة"
-              className="rounded-xl"
-            />
-            <select
-              value={planType}
-              onChange={event =>
-                setPlanType(event.target.value as typeof planType)
-              }
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm"
+      <div
+        className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <CardContent className="space-y-4 p-5">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                value={name}
+                onChange={event => setName(event.target.value)}
+                placeholder="اسم الباقة"
+                className="rounded-xl"
+              />
+              <Input
+                value={description}
+                onChange={event => setDescription(event.target.value)}
+                placeholder="وصف الباقة"
+                className="rounded-xl"
+              />
+              <select
+                value={planType}
+                onChange={event =>
+                  setPlanType(event.target.value as typeof planType)
+                }
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm"
+              >
+                <option value="free">مجانية</option>
+                <option value="monthly">شهرية</option>
+                <option value="yearly">سنوية</option>
+                <option value="trial">تجريبية</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+              <Input
+                value={monthlyPrice}
+                onChange={event => setMonthlyPrice(event.target.value)}
+                placeholder="السعر الشهري"
+                inputMode="decimal"
+                className="rounded-xl"
+              />
+              <Input
+                value={yearlyPrice}
+                onChange={event => setYearlyPrice(event.target.value)}
+                placeholder="السعر السنوي"
+                inputMode="decimal"
+              />
+            </div>
+            <Button
+              type="button"
+              disabled={update.isPending || name.trim().length < 2}
+              onClick={savePlanChanges}
+              className="rounded-xl bg-[#111c2e] text-xs"
             >
-              <option value="free">مجانية</option>
-              <option value="monthly">شهرية</option>
-              <option value="yearly">سنوية</option>
-              <option value="trial">تجريبية</option>
-              <option value="enterprise">Enterprise</option>
-            </select>
-            <Input
-              value={monthlyPrice}
-              onChange={event => setMonthlyPrice(event.target.value)}
-              placeholder="السعر الشهري"
-              inputMode="decimal"
-              className="rounded-xl"
-            />
-            <Input
-              value={yearlyPrice}
-              onChange={event => setYearlyPrice(event.target.value)}
-              placeholder="السعر السنوي"
-              inputMode="decimal"
-            />
-          </div>
-          <Button
-            type="button"
-            disabled={update.isPending || name.trim().length < 2}
-            onClick={savePlanChanges}
-            className="rounded-xl bg-[#111c2e] text-xs"
-          >
-            {update.isPending ? "جارٍ الحفظ..." : "حفظ بيانات الباقة"}
-          </Button>
-          <div className="grid gap-2 border-t border-slate-100 pt-4 sm:grid-cols-2">
-            {definitions.map(definition => {
-              const link = links.get(definition.key);
-              const enabled = link?.enabled === true;
-              const limit =
-                limits[definition.key] ??
-                (link?.featureLimit === null || !link
-                  ? ""
-                  : String(link.featureLimit));
-              return (
-                <div
-                  key={definition.id}
-                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 transition-colors ${enabled ? "border-emerald-200 bg-emerald-50/60" : "border-slate-100 bg-slate-50"}`}
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      saveFeature({
-                        planId: plan.id,
-                        featureId: definition.id,
-                        enabled: !enabled,
-                        featureLimit: limit === "" ? null : Number(limit),
-                      })
-                    }
-                    className={`flex min-w-0 flex-1 items-center gap-2 text-right text-xs font-bold ${enabled ? "text-emerald-800" : "text-slate-500"}`}
+              {update.isPending ? "جارٍ الحفظ..." : "حفظ بيانات الباقة"}
+            </Button>
+            <div className="grid gap-2 border-t border-slate-100 pt-4 sm:grid-cols-2">
+              {definitions.map(definition => {
+                const link = links.get(definition.key);
+                const enabled = link?.enabled === true;
+                const limit =
+                  limits[definition.key] ??
+                  (link?.featureLimit === null || !link
+                    ? ""
+                    : String(link.featureLimit));
+                return (
+                  <div
+                    key={definition.id}
+                    className={`flex items-center gap-2 rounded-xl border px-3 py-2 transition-colors ${enabled ? "border-emerald-200 bg-emerald-50/60" : "border-slate-100 bg-slate-50"}`}
                   >
-                    <CheckCircle2
-                      className={`h-4 w-4 shrink-0 ${enabled ? "text-emerald-600" : "text-slate-300"}`}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        saveFeature({
+                          planId: plan.id,
+                          featureId: definition.id,
+                          enabled: !enabled,
+                          featureLimit: limit === "" ? null : Number(limit),
+                        })
+                      }
+                      className={`flex min-w-0 flex-1 items-center gap-2 text-right text-xs font-bold ${enabled ? "text-emerald-800" : "text-slate-500"}`}
+                    >
+                      <CheckCircle2
+                        className={`h-4 w-4 shrink-0 ${enabled ? "text-emerald-600" : "text-slate-300"}`}
+                      />
+                      {definition.label}
+                    </button>
+                    <Input
+                      aria-label={`حد ${plan.name} - ${definition.label}`}
+                      value={limit}
+                      onChange={event =>
+                        setLimits(current => ({
+                          ...current,
+                          [definition.key]: event.target.value.replace(
+                            /[^0-9]/g,
+                            ""
+                          ),
+                        }))
+                      }
+                      onBlur={() =>
+                        saveFeature({
+                          planId: plan.id,
+                          featureId: definition.id,
+                          enabled,
+                          featureLimit: limit === "" ? null : Number(limit),
+                        })
+                      }
+                      placeholder={
+                        definition.defaultLimit === null
+                          ? "∞"
+                          : String(definition.defaultLimit)
+                      }
+                      inputMode="numeric"
+                      className="h-8 w-20 rounded-lg bg-white text-center text-[11px]"
                     />
-                    {definition.label}
-                  </button>
-                  <Input
-                    aria-label={`حد ${plan.name} - ${definition.label}`}
-                    value={limit}
-                    onChange={event =>
-                      setLimits(current => ({
-                        ...current,
-                        [definition.key]: event.target.value.replace(
-                          /[^0-9]/g,
-                          ""
-                        ),
-                      }))
-                    }
-                    onBlur={() =>
-                      saveFeature({
-                        planId: plan.id,
-                        featureId: definition.id,
-                        enabled,
-                        featureLimit: limit === "" ? null : Number(limit),
-                      })
-                    }
-                    placeholder={
-                      definition.defaultLimit === null
-                        ? "∞"
-                        : String(definition.defaultLimit)
-                    }
-                    inputMode="numeric"
-                    className="h-8 w-20 rounded-lg bg-white text-center text-[11px]"
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </div>
+      </div>
     </Card>
   );
 }

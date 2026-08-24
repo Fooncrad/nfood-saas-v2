@@ -91,12 +91,19 @@ describe("Home decomposition", () => {
     );
     expect(modulesSource).toContain("aria-expanded={isOpen}");
     expect(modulesSource).toContain("enabledCount");
+    expect(modulesSource).toContain("isRecommended");
+    expect(modulesSource).toContain("الأكثر شيوعًا");
+    expect(modulesSource).toContain("grid-rows-[1fr]");
+    expect(integrationsSource).toContain("LockKeyhole");
+    expect(integrationsSource).toContain("يتطلب ترقية الباقة");
     expect(integrationsSource).toContain('scope: "platform"');
     expect(integrationsSource).toContain(
       'provider.providerKey === "google_oauth"'
     );
     expect(integrationsSource).not.toContain('setScope("restaurant")');
     expect(integrationsSource).not.toContain("تكاملات المطعم");
+    expect(sidebarSource).toContain("{isCentralAdmin && (");
+    expect(sidebarSource).not.toContain("scope=restaurant");
   });
 
   it("keeps the translation manager usable for platform and restaurant admins", () => {
