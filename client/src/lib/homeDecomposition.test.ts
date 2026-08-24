@@ -34,6 +34,9 @@ const driverDeliverySource = readFileSync(new URL("../components/DriverDeliveryV
     expect(sidebarSource).toContain("w-[304px]");
     expect(sidebarSource).toContain("nfood-unified-sidebar");
     expect(sidebarSource).toContain("nfood-sidebar-nav space-y-2");
+    expect(sidebarSource).toContain("sidebarCollapsedKey");
+    expect(sidebarSource).toContain("data-sidebar-collapsed");
+    expect(sidebarSource).toContain("roleScope");
     expect(sidebarSource).toContain("overflow-y-auto");
     expect(quickAccessSource).toContain('keys: ["pos", "orders", "kds", "menu"');
     expect(quickAccessSource).toContain('keys: ["branches", "inventory", "team"');

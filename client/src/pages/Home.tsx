@@ -197,6 +197,7 @@ export default function Home() {
         active={active}
         onNavigate={setActive}
         managerId={user.id}
+        roleScope={user.role === "admin" ? "admin" : (user.testRole ?? "customer")}
         isCentralAdmin={isCentralAdmin}
         selectedRestaurantId={selectedRestaurantId}
         restaurants={restaurantsQuery.data ?? []}

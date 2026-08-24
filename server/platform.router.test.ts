@@ -82,7 +82,7 @@ describe("platform procedures", () => {
     if (!restaurant) return;
     const branch = (await db.select({ id: branches.id }).from(branches).where(eq(branches.restaurantId, restaurant.id)).limit(1))[0];
     if (!branch) return;
-    const result = await db.insert(orders).values({ restaurantId: restaurant.id, branchId: branch.id, channel: "delivery", paymentMethod: "cash", paymentStatus: "unpaid", driverId: 7, total: "25.00", deliveryStatus: "assigned" });
+    const result = await db.insert(orders).values({ restaurantId: restaurant.id, branchId: branch.id, channel: "delivery", paymentMethod: "cash", paymentStatus: "unpaid", driverId: 1, total: "25.00", deliveryStatus: "assigned" });
     const orderId = Number(result[0].insertId);
     const driver = appRouter.createCaller({ ...context("user", "driver"), user: { ...context("user", "driver").user, restaurantId: restaurant.id } });
     await expect(driver.platform.updateDeliveryStatus({ restaurantId: restaurant.id, orderId, status: "out_for_delivery", etaMinutes: 15 })).resolves.toMatchObject({ deliveryStatus: "out_for_delivery" });
