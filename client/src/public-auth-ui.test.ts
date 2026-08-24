@@ -15,6 +15,10 @@ describe("public authentication and social UI contracts", () => {
     expect(source).toContain('disabled={pending}');
     expect(source).toContain("Enter your email and password first.");
     expect(source).toContain("text-slate-900 dark:text-white");
+    expect(source).toContain("LoaderCircle");
+    expect(source).toContain("role=\"alert\"");
+    expect(source).toContain("backdrop-blur-2xl");
+    expect(source).toContain("nfood-auth-slide-in");
   });
 
   it("exposes a visible registration back action and left social rail", () => {
