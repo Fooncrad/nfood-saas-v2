@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `mediaShowcaseEnabled` boolean DEFAULT true NOT NULL;
