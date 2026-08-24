@@ -540,6 +540,21 @@ export const subscriptions = mysqlTable("subscriptions", {
   renewsAt: timestamp("renewsAt"),
 });
 
+export const subscriptionTransferReceipts = mysqlTable("subscriptionTransferReceipts", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  email: varchar("email", { length: 320 }).notNull(),
+  plan: varchar("plan", { length: 80 }).notNull(),
+  billingCycle: mysqlEnum("billingCycle", ["monthly", "yearly"]).default("monthly").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  fileKey: varchar("fileKey", { length: 500 }).notNull(),
+  fileUrl: varchar("fileUrl", { length: 500 }).notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  reviewNote: text("reviewNote"),
+  reviewedByUserId: int("reviewedByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+});
 export const packagePlans = mysqlTable("packagePlans", {
   id: int("id").autoincrement().primaryKey(),
   key: varchar("key", { length: 80 }).notNull().unique(),
