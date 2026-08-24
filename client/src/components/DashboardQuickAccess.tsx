@@ -56,12 +56,12 @@ const fallbackGroup: AccessGroup = {
 };
 
 export function DashboardQuickAccess({ items, onNavigate, title = "كل الأقسام في مكان واحد", description = "بطاقات مرتبة حسب الأولوية؛ اضغط على أي بطاقة للانتقال مباشرة إلى الوحدة دون البحث في القائمة.", storageScope = "default" }: DashboardQuickAccessProps) {
-  const [density, setDensity] = useState<"comfortable" | "compact" | "spacious">(() => { try { return (localStorage.getItem("nfood.dashboard.density") as "comfortable" | "compact" | "spacious") || "comfortable"; } catch { return "comfortable"; } });
+  const [density, setDensity] = useState<"comfortable" | "compact" | "spacious">(() => { try { return (localStorage.getItem("nfood.dashboard.density") as "comfortable" | "compact" | "spacious") || "compact"; } catch { return "comfortable"; } });
   const [orderedKeys, setOrderedKeys] = useState<NavKey[]>(() => { try { const saved = JSON.parse(localStorage.getItem(`nfood.dashboard.widget-order:${storageScope}`) || "[]"); return Array.isArray(saved) ? saved.filter((value): value is NavKey => typeof value === "string") : []; } catch { return []; } });
   const [dragKey, setDragKey] = useState<NavKey | null>(null);
   useEffect(() => { try { localStorage.setItem("nfood.dashboard.density", density); } catch { /* storage unavailable */ } }, [density]);
   useEffect(() => { try { localStorage.setItem(`nfood.dashboard.widget-order:${storageScope}`, JSON.stringify(orderedKeys)); } catch { /* storage unavailable */ } }, [orderedKeys, storageScope]);
-  const densityClasses = { comfortable: { section: "p-3 md:p-4", gap: "gap-3", card: "min-h-[72px] p-2.5" }, compact: { section: "p-2 md:p-3", gap: "gap-2", card: "min-h-[60px] p-2" }, spacious: { section: "p-4 md:p-5", gap: "gap-4", card: "min-h-[86px] p-3" } }[density];
+  const densityClasses = { comfortable: { section: "p-3 md:p-4", gap: "gap-3", card: "min-h-[72px] p-2.5" }, compact: { section: "p-2", gap: "gap-1.5", card: "min-h-[52px] p-1.5" }, spacious: { section: "p-4 md:p-5", gap: "gap-4", card: "min-h-[86px] p-3" } }[density];
   const available = items.filter((item) => item.key !== "overview");
   const knownKeys = new Set(groups.flatMap((group) => group.keys));
   const defaultOrder = available.map((item) => item.key);
@@ -75,23 +75,23 @@ export function DashboardQuickAccess({ items, onNavigate, title = "كل الأق
   if (!grouped.length) return null;
 
   return (
-    <section aria-labelledby="dashboard-quick-access-title" className={`nfood-quick-access mb-4 rounded-[1.15rem] border border-slate-200/80 bg-white/70 shadow-sm transition-colors duration-300 dark:border-slate-700/80 dark:bg-slate-900/85 ${densityClasses.section}`}>
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+    <section aria-labelledby="dashboard-quick-access-title" className={`nfood-quick-access mb-3 rounded-xl border border-slate-200/80 bg-white/70 shadow-sm transition-colors duration-300 dark:border-slate-700/80 dark:bg-slate-900/85 ${densityClasses.section}`}>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-[#e76f3c]"><Layers3 className="h-4 w-4" /></div>
             <div>
-              <h3 id="dashboard-quick-access-title" className="text-lg font-black tracking-tight text-[#111c2e] dark:text-white">{title}</h3>
+              <h3 id="dashboard-quick-access-title" className="text-base font-black tracking-tight text-[#111c2e] dark:text-white">{title}</h3>
               <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{description}</p>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2"><span className="hidden items-center gap-1 text-[10px] font-bold text-slate-400 sm:flex"><SlidersHorizontal className="h-3.5 w-3.5" /> اسحب لترتيب الودجات</span><Button type="button" variant="outline" size="sm" onClick={resetOrder} className="h-7 rounded-lg border-slate-200 px-2 text-[10px] font-bold text-slate-500 hover:border-orange-200 hover:text-[#e76f3c]"><RotateCcw className="ms-1 h-3 w-3" /> إعادة الضبط</Button><div className="flex rounded-xl bg-slate-100 p-0.5" role="group" aria-label="كثافة لوحة التحكم">{(["compact", "comfortable", "spacious"] as const).map((value) => <button key={value} type="button" onClick={() => setDensity(value)} className={`rounded-lg px-2 py-1 text-[10px] font-bold ${density === value ? "bg-white text-[#e76f3c] shadow-sm" : "text-slate-500"}`}>{value === "compact" ? "مضغوط" : value === "comfortable" ? "مريح" : "واسع"}</button>)}</div><span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">{available.length} أقسام متاحة</span></div>
       </div>
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-3 xl:grid-cols-2">
         {grouped.map((group) => (
           <div key={group.id}>
-            <div className="mb-1.5 flex items-center justify-between gap-2">
+            <div className="mb-1 flex items-center justify-between gap-2">
               <div>
                 <h4 className="text-xs font-black text-slate-800 dark:text-slate-100">{group.label}</h4>
                 <p className="mt-0.5 text-[11px] text-slate-400">{group.description}</p>
@@ -105,10 +105,10 @@ export function DashboardQuickAccess({ items, onNavigate, title = "كل الأق
                   <button key={item.key} type="button" draggable onDragStart={() => setDragKey(item.key)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (!dragKey || dragKey === item.key) return; const next = [...normalizedOrder]; const from = next.indexOf(dragKey); const to = next.indexOf(item.key); if (from >= 0 && to >= 0) { next.splice(from, 1); next.splice(to, 0, dragKey); setOrderedKeys(next); } setDragKey(null); }} onDragEnd={() => setDragKey(null)} onClick={() => onNavigate(item.key)} title="اسحب لتغيير ترتيب الودجت" className={`group text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e76f3c] focus-visible:ring-offset-2 motion-safe:transition-transform motion-safe:duration-200 hover:-translate-y-0.5 ${dragKey === item.key ? "opacity-50" : ""}`}>
                     <Card className="nfood-quick-card h-full rounded-xl border-slate-300/90 bg-white shadow-[0_6px_18px_-14px_rgba(15,23,42,0.5)] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-orange-300 group-hover:shadow-[0_14px_28px_-18px_rgba(15,23,42,0.55)] group-active:translate-y-0 dark:border-slate-700 dark:bg-slate-900/95">
                       <CardContent className={`flex items-center gap-2.5 ${densityClasses.card}`}>
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500 transition-colors group-hover:bg-orange-50 group-hover:text-[#e76f3c] dark:bg-slate-800 dark:text-slate-300 dark:group-hover:bg-orange-500/15"><Icon className="h-[18px] w-[18px]" /></span>
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500 transition-colors group-hover:bg-orange-50 group-hover:text-[#e76f3c] dark:bg-slate-800 dark:text-slate-300 dark:group-hover:bg-orange-500/15"><Icon className="h-[18px] w-[18px]" /></span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-bold text-slate-900 dark:text-slate-100">{item.label}</span>
-                          <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-slate-600 group-hover:text-[#c75325] dark:text-slate-400">فتح القسم <ArrowUpLeft className="h-3 w-3" /></span>
+                          <span className="block truncate text-xs font-bold text-slate-900 dark:text-slate-100">{item.label}</span>
+                          <span className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold text-slate-600 group-hover:text-[#c75325] dark:text-slate-400">فتح القسم <ArrowUpLeft className="h-3 w-3" /></span>
                         </span>
                       </CardContent>
                     </Card>

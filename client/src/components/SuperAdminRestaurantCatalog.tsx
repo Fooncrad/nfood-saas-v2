@@ -186,21 +186,21 @@ export function SuperAdminRestaurantCatalog() {
     : definitions.slice(0, 8);
 
   return (
-    <div dir="rtl" className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div dir="rtl" className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-bold text-[#e76f3c]">مركز المطاعم</p>
-          <h2 className="mt-1 text-2xl font-black text-slate-900">
+          <h2 className="mt-1 text-xl font-black text-slate-900">
             قائمة المطاعم
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-xs text-slate-500">
             إدارة المطاعم المسجلة، الباقات، الحالة، والروابط العامة من شاشة
             واحدة.
           </p>
         </div>
         <Button
           onClick={() => setCreateOpen(true)}
-          className="gap-2 rounded-xl bg-[#e76f3c] shadow-sm hover:bg-[#d85f2e]"
+          className="h-9 gap-1.5 rounded-lg bg-[#e76f3c] px-3 text-xs shadow-sm hover:bg-[#d85f2e]"
         >
           <Plus className="h-4 w-4" /> إضافة مطعم جديد
         </Button>
@@ -550,12 +550,12 @@ export function SuperAdminRestaurantCatalog() {
                 return (
                   <article
                     key={restaurant.id}
-                    className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md sm:p-4"
+                    className="min-w-0 rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md"
                   >
                     <div className="flex min-w-0 items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-2.5">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#e76f3c]">
-                          <Store className="h-5 w-5" />
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-[#e76f3c]">
+                          <Store className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
                           <p className="truncate font-bold text-slate-800">
@@ -575,14 +575,14 @@ export function SuperAdminRestaurantCatalog() {
                       </Badge>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-                      <div className="min-w-0 rounded-xl bg-slate-50 px-2.5 py-2">
+                    <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px]">
+                      <div className="min-w-0 rounded-lg bg-slate-50 px-2 py-1.5">
                         <p className="text-slate-400">الباقة</p>
                         <p className="mt-0.5 truncate font-bold text-slate-700">
                           {restaurant.plan ?? "غير محددة"}
                         </p>
                       </div>
-                      <div className="min-w-0 rounded-xl bg-slate-50 px-2.5 py-2">
+                      <div className="min-w-0 rounded-lg bg-slate-50 px-2 py-1.5">
                         <p className="text-slate-400">الرابط العام</p>
                         <a
                           href={`/menu/${encodeURIComponent(restaurant.slug ?? "")}`}
@@ -596,7 +596,7 @@ export function SuperAdminRestaurantCatalog() {
                       </div>
                     </div>
 
-                    <div className="mt-3 flex min-w-0 flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3">
+                    <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1 border-t border-slate-100 pt-2">
                       <Button
                         type="button"
                         size="sm"
@@ -608,7 +608,7 @@ export function SuperAdminRestaurantCatalog() {
                             plan: restaurant.plan,
                           })
                         }
-                        className="h-8 max-w-full gap-1 rounded-lg px-2 text-[11px]"
+                        className="h-7 max-w-full gap-1 rounded-md px-2 text-[10px]"
                       >
                         <Eye className="h-3.5 w-3.5 shrink-0" /> التفاصيل
                       </Button>
@@ -619,7 +619,7 @@ export function SuperAdminRestaurantCatalog() {
                         onClick={() =>
                           enterRestaurant.mutate({ id: restaurant.id })
                         }
-                        className="h-8 max-w-full gap-1 rounded-lg bg-[#111c2e] px-2 text-[11px] text-white hover:bg-[#1b2a43]"
+                        className="h-7 max-w-full gap-1 rounded-md bg-[#111c2e] px-2 text-[10px] text-white hover:bg-[#1b2a43]"
                       >
                         <LogIn className="h-3.5 w-3.5 shrink-0" /> دخول المطعم
                       </Button>
@@ -637,7 +637,7 @@ export function SuperAdminRestaurantCatalog() {
                                 : "active",
                           })
                         }
-                        className="h-8 max-w-full gap-1 rounded-lg px-2 text-[11px]"
+                        className="h-7 max-w-full gap-1 rounded-md px-2 text-[10px]"
                       >
                         <Power className="h-3.5 w-3.5 shrink-0" />
                         {restaurant.status === "active"
@@ -665,7 +665,7 @@ export function SuperAdminRestaurantCatalog() {
                               ""
                           );
                         }}
-                        className="h-8 max-w-full gap-1 rounded-lg px-2 text-[11px]"
+                        className="h-7 max-w-full gap-1 rounded-md px-2 text-[10px]"
                       >
                         <Edit3 className="h-3.5 w-3.5 shrink-0" /> تعديل الباقة
                       </Button>
@@ -688,7 +688,7 @@ export function SuperAdminRestaurantCatalog() {
                               "كلمة المرور يجب أن تتكون من 6 أحرف أو أرقام على الأقل"
                             );
                         }}
-                        className="h-8 max-w-full gap-1 rounded-lg px-2 text-[11px]"
+                        className="h-7 max-w-full gap-1 rounded-md px-2 text-[10px]"
                       >
                         <KeyRound className="h-3.5 w-3.5 shrink-0" /> إعادة
                         تعيين كلمة المرور
