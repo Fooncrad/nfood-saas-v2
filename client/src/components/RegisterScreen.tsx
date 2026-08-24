@@ -22,7 +22,7 @@ type VehicleType = "bicycle" | "motorcycle" | "car" | "van" | "other";
 
 export function RegisterScreen({ onBack, onOAuth }: { onBack: () => void; onOAuth: () => void }) {
   const { t, direction } = useLanguage();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => typeof window !== "undefined" && window.location.pathname === "/restaurant/register" ? 1 : 0);
   const [accountType, setAccountType] = useState<"restaurant" | "driver">("restaurant");
   const nameLabel = accountType === "driver" ? t("name") : t("restaurant");
   const [name, setName] = useState("");
