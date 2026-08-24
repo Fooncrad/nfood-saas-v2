@@ -40,7 +40,7 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     const overview = read("components/PlatformOverview.tsx");
     const css = read("index.css");
     expect(overview).toContain("monthlyRecurringRevenue");
-    expect(overview).toContain("مؤشر مباشر");
+    expect(overview).toContain("تفاصيل التقرير");
     expect(overview).toContain("dark:bg-slate-900/90");
     expect(overview).toContain("hover:-translate-y-0.5");
     expect(css).toContain(".dark .nfood-dashboard-shell");
