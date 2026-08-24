@@ -93,6 +93,17 @@ export function HomeSidebar({
     "kitchen",
     "cashier",
   ].includes(roleScope);
+  const [workspaceQuery, setWorkspaceQuery] = useState("");
+  const selectedRestaurant = restaurants.find(
+    item => item.id === selectedRestaurantId
+  );
+  const normalizedWorkspaceQuery = workspaceQuery.trim().toLocaleLowerCase();
+  const filteredRestaurants = restaurants.filter(item =>
+    item.name.toLocaleLowerCase().includes(normalizedWorkspaceQuery)
+  );
+  const filteredBranches = branches.filter(item =>
+    item.name.toLocaleLowerCase().includes(normalizedWorkspaceQuery)
+  );
   const sidebarStorageKey = `nfood:sidebar-groups:${String(managerId)}:${roleScope}`;
   const sidebarCollapsedKey = `nfood:sidebar-collapsed:${String(managerId)}:${roleScope}`;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -192,29 +203,59 @@ export function HomeSidebar({
       </div>
       <div className="nfood-sidebar-body flex min-h-0 flex-1 flex-col space-y-2 overflow-hidden px-2.5 pb-2.5 pt-2.5">
         {showRestaurantWorkspace && (
-          <div className="rounded-xl border border-white/10 bg-white/[.04] p-2">
-            <p className="mb-2 px-2 text-[10px] font-bold tracking-[.14em] text-slate-500">
-              {t("workspace")}
-            </p>
+          <div
+            key={`${roleScope}-${selectedRestaurantId}-${branch}`}
+            className="animate-[nfood-enter_220ms_ease-out] rounded-xl border border-white/10 bg-white/[.04] p-2 transition-[border-color,background-color,transform] duration-200 ease-out"
+          >
+            <div className="mb-2 flex items-center justify-between gap-2 px-2">
+              <p className="text-[10px] font-bold tracking-[.14em] text-slate-500">
+                {t("workspace")}
+              </p>
+              {selectedRestaurant && (
+                <span
+                  className="max-w-[155px] truncate rounded-full border border-orange-300/20 bg-orange-300/10 px-2 py-0.5 text-[10px] font-bold text-orange-200"
+                  title={branch || selectedRestaurant.name}
+                >
+                  {branch
+                    ? `${t("branch")}: ${branch}`
+                    : selectedRestaurant.name}
+                </span>
+              )}
+            </div>
             <div className="space-y-1.5">
+              <div className="relative">
+                <Search className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+                <input
+                  value={workspaceQuery}
+                  onChange={event => setWorkspaceQuery(event.target.value)}
+                  onKeyDown={event => {
+                    if (event.key === "Enter") onOpenCommand();
+                  }}
+                  placeholder={`${t("globalSearch")} / ${t("selectBranch")}`}
+                  aria-label={`${t("globalSearch")} / ${t("selectBranch")}`}
+                  className="h-9 w-full rounded-lg border border-white/10 bg-[#17263d] px-9 text-[12px] text-white outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-slate-500 focus:border-orange-300/60 focus:ring-2 focus:ring-orange-300/10"
+                />
+              </div>
               <select
                 aria-label={t("selectRestaurant")}
                 value={selectedRestaurantId}
                 onChange={event =>
                   onRestaurantChange(Number(event.target.value))
                 }
-                className="h-9 w-full rounded-lg border border-white/10 bg-[#17263d] px-3 text-[13px] text-white outline-none"
+                className="h-9 w-full rounded-lg border border-white/10 bg-[#17263d] px-3 text-[13px] text-white outline-none transition-[border-color,box-shadow,transform] duration-200 ease-out focus:border-orange-300/60 focus:ring-2 focus:ring-orange-300/10 active:scale-[0.99]"
               >
                 <option value={selectedRestaurantId}>
                   {restaurants.length
                     ? t("selectRestaurant")
                     : restaurantMessage}
                 </option>
-                {restaurants.map(restaurant => (
-                  <option key={restaurant.id} value={restaurant.id}>
-                    {restaurant.name}
-                  </option>
-                ))}
+                {(workspaceQuery ? filteredRestaurants : restaurants).map(
+                  restaurant => (
+                    <option key={restaurant.id} value={restaurant.id}>
+                      {restaurant.name}
+                    </option>
+                  )
+                )}
               </select>
               <select
                 aria-label={t("selectBranch")}
@@ -225,12 +266,12 @@ export function HomeSidebar({
                   branchesError ||
                   branches.length === 0
                 }
-                className="h-9 w-full rounded-lg border border-white/10 bg-[#17263d] px-3 text-[13px] text-white outline-none"
+                className="h-9 w-full rounded-lg border border-white/10 bg-[#17263d] px-3 text-[13px] text-white outline-none transition-[border-color,box-shadow,transform] duration-200 ease-out focus:border-orange-300/60 focus:ring-2 focus:ring-orange-300/10 active:scale-[0.99]"
               >
                 <option value="">
                   {branches.length ? t("selectBranch") : branchMessage}
                 </option>
-                {branches.map(item => (
+                {(workspaceQuery ? filteredBranches : branches).map(item => (
                   <option key={item.id} value={item.name}>
                     {item.name}
                   </option>
