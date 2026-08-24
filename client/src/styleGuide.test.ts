@@ -30,6 +30,13 @@ describe("NFOOD visual style guide", () => {
     expect(css).toContain('[dir="ltr"]');
   });
 
+  it("protects dashboard sizing on iPad and wide screens", () => {
+    expect(html).toContain('viewport-fit=cover');
+    expect(html).not.toContain('maximum-scale=1');
+    expect(css).toContain('#root { width: 100%; min-width: 320px; }');
+    expect(css).toContain('.nfood-dashboard-shell { width: 100%; min-width: 0; overflow-x: clip; }');
+  });
+
   it("loads the Arabic product font and protects reduced-motion users", () => {
     expect(html).toContain("IBM+Plex+Sans+Arabic");
     expect(css).toContain('font-family: "IBM Plex Sans Arabic"');

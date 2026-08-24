@@ -308,8 +308,9 @@
 }
 
 @layer base {
-  html { scroll-behavior: smooth; }
-  body { font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif; min-width: 320px; }
+  #root { width: 100%; min-width: 320px; }
 }
 
 @layer components {
@@ -380,7 +381,8 @@
   .nfood-dashboard-shell main > header {
     min-width: 0;
   }
-  .nfood-dashboard-shell { overflow-x: clip; }
+  .nfood-dashboard-shell { width: 100%; min-width: 0; overflow-x: clip; }
+  .nfood-dashboard-shell > main { min-width: 0; }
   @media (max-width: 639px) {
     .nfood-dashboard-shell main { padding-inline: 0.75rem; }
     .nfood-dashboard-shell main > header { gap: 0.5rem; }
