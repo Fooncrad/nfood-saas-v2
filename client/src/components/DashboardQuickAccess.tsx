@@ -102,13 +102,13 @@ export function DashboardQuickAccess({ items, onNavigate, title = "كل الأق
               {group.items.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <button key={item.key} type="button" draggable onDragStart={() => setDragKey(item.key)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (!dragKey || dragKey === item.key) return; const next = [...normalizedOrder]; const from = next.indexOf(dragKey); const to = next.indexOf(item.key); if (from >= 0 && to >= 0) { next.splice(from, 1); next.splice(to, 0, dragKey); setOrderedKeys(next); } setDragKey(null); }} onDragEnd={() => setDragKey(null)} onClick={() => onNavigate(item.key)} title="اسحب لتغيير ترتيب الودجت" className={`group text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e76f3c] focus-visible:ring-offset-2 ${dragKey === item.key ? "opacity-50" : ""}`}>
-                    <Card className="nfood-quick-card h-full rounded-xl border-slate-200/90 bg-white transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-orange-200 group-hover:shadow-md group-active:translate-y-0">
+                  <button key={item.key} type="button" draggable onDragStart={() => setDragKey(item.key)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (!dragKey || dragKey === item.key) return; const next = [...normalizedOrder]; const from = next.indexOf(dragKey); const to = next.indexOf(item.key); if (from >= 0 && to >= 0) { next.splice(from, 1); next.splice(to, 0, dragKey); setOrderedKeys(next); } setDragKey(null); }} onDragEnd={() => setDragKey(null)} onClick={() => onNavigate(item.key)} title="اسحب لتغيير ترتيب الودجت" className={`group text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e76f3c] focus-visible:ring-offset-2 motion-safe:transition-transform motion-safe:duration-200 hover:-translate-y-0.5 ${dragKey === item.key ? "opacity-50" : ""}`}>
+                    <Card className="nfood-quick-card h-full rounded-xl border-slate-300/90 bg-white shadow-[0_6px_18px_-14px_rgba(15,23,42,0.5)] transition-all duration-200 group-hover:border-orange-300 group-hover:shadow-[0_14px_28px_-18px_rgba(15,23,42,0.55)] group-active:translate-y-0 dark:border-slate-700 dark:bg-slate-900">
                       <CardContent className={`flex items-center gap-2.5 ${densityClasses.card}`}>
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500 transition-colors group-hover:bg-orange-50 group-hover:text-[#e76f3c]"><Icon className="h-[18px] w-[18px]" /></span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-bold text-slate-800">{item.label}</span>
-                          <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-slate-400 group-hover:text-[#e76f3c]">فتح القسم <ArrowUpLeft className="h-3 w-3" /></span>
+                          <span className="block truncate text-[13px] font-bold text-slate-900 dark:text-slate-100">{item.label}</span>
+                          <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-slate-600 group-hover:text-[#c75325] dark:text-slate-400">فتح القسم <ArrowUpLeft className="h-3 w-3" /></span>
                         </span>
                       </CardContent>
                     </Card>
