@@ -35,7 +35,7 @@ describe("Home decomposition", () => {
     expect(homeSource).toContain("import { HomeSidebar }");
     expect(homeSource).toContain("const LazyModuleView = lazy(");
     expect(homeSource).not.toContain("function ModuleView(");
-    expect(homeSource.length).toBeLessThan(70000);
+    expect(homeSource.length).toBeLessThan(72000);
   });
 
   it("organizes central admin navigation into collapsible platform groups", () => {

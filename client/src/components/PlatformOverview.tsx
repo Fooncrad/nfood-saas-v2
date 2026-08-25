@@ -8,19 +8,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import type { DashboardQuickAccessItem } from "@/components/DashboardQuickAccess";
 import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type SparklineProps = {
   values: number[];
   tone: "emerald" | "orange" | "violet" | "slate";
+  emptyLabel?: string;
 };
 
-function Sparkline({ values, tone }: SparklineProps) {
+function Sparkline({ values, tone, emptyLabel = "No historical series available" }: SparklineProps) {
   const points =
     values.length > 1 && values.some(value => value > 0) ? values : [];
   if (!points.length)
     return (
       <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-        لا توجد سلسلة تاريخية كافية
+        {emptyLabel}
       </span>
     );
   const max = Math.max(...points, 1);
@@ -40,7 +42,7 @@ function Sparkline({ values, tone }: SparklineProps) {
           : "#94a3b8";
   return (
     <svg
-      aria-label="اتجاه تاريخي فعلي"
+      aria-label="Historical trend"
       role="img"
       viewBox="0 0 100 30"
       className="h-8 w-28"
@@ -99,6 +101,14 @@ export function PlatformOverview({
   onNavigate: (key: "admin" | DashboardQuickAccessItem["key"]) => void;
   quickItems: DashboardQuickAccessItem[];
 }) {
+  const { language } = useLanguage();
+  const copy = language === "ar"
+    ? { active: "المطاعم النشطة", inactive: "المطاعم غير النشطة", sales: "مبيعات الباقات اليوم", recurring: "الإيراد الشهري المتكرر", report: "تفاصيل التقرير", noHistory: "لا توجد سلسلة تاريخية كافية", error: "تعذر تحميل مؤشرات المنصة حاليًا." }
+    : language === "fr"
+      ? { active: "Restaurants actifs", inactive: "Restaurants inactifs", sales: "Ventes des offres aujourd’hui", recurring: "Revenu mensuel récurrent", report: "Détails du rapport", noHistory: "Historique insuffisant", error: "Impossible de charger les indicateurs de la plateforme." }
+      : language === "ur"
+        ? { active: "فعال ریستوران", inactive: "غیر فعال ریستوران", sales: "آج کی پیکیج فروخت", recurring: "ماہانہ بار بار آمدنی", report: "رپورٹ کی تفصیل", noHistory: "کافی تاریخی سلسلہ موجود نہیں", error: "پلیٹ فارم کے اشاریے لوڈ نہیں ہو سکے۔" }
+        : { active: "Active restaurants", inactive: "Inactive restaurants", sales: "Plan sales today", recurring: "Monthly recurring revenue", report: "Report details", noHistory: "Not enough historical data", error: "Unable to load platform metrics right now." };
   const restaurantsQuery = trpc.admin.restaurants.useQuery(undefined, {
     retry: 2,
   });
@@ -152,29 +162,29 @@ export function PlatformOverview({
   );
   const cards = [
     {
-      label: "المطاعم النشطة",
+      label: copy.active,
       value: activeRestaurants,
       icon: Store,
       tint: "emerald" as const,
       history: activeHistory,
     },
     {
-      label: "المطاعم غير النشطة",
+      label: copy.inactive,
       value: inactiveRestaurants,
       icon: TrendingDown,
       tint: "slate" as const,
       history: inactiveHistory,
     },
     {
-      label: "مبيعات الباقات اليوم",
-      value: `${dailySubscriptionSales.toLocaleString("en-US")} ر.س`,
+      label: copy.sales,
+      value: `${dailySubscriptionSales.toLocaleString("en-US")} SAR`,
       icon: CircleDollarSign,
       tint: "orange" as const,
       history: dailySalesHistory,
     },
     {
-      label: "الإيراد الشهري المتكرر",
-      value: `${monthlyRecurringRevenue.toLocaleString("en-US")} ر.س`,
+      label: copy.recurring,
+      value: `${monthlyRecurringRevenue.toLocaleString("en-US")} SAR`,
       icon: WalletCards,
       tint: "violet" as const,
       history: recurringHistory,
@@ -187,10 +197,10 @@ export function PlatformOverview({
     <div className="space-y-5">
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-950/30 dark:text-red-200">
-          تعذر تحميل مؤشرات المنصة. Request ID: platform-overview
+          {copy.error}
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 max-[1100px]:gap-2 xl:grid-cols-4">
         {cards.map(card => {
           const Icon = card.icon;
           const tone =
@@ -208,16 +218,16 @@ export function PlatformOverview({
               onClick={() => onNavigate("admin")}
               className="group text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e76f3c] focus-visible:ring-offset-2"
             >
-              <Card className="h-full rounded-2xl border-slate-200/80 bg-white text-right shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-lg dark:border-slate-700/80 dark:bg-slate-900/90">
-                <CardContent className="p-4 md:p-5">
+              <Card className="h-full min-h-[132px] rounded-2xl border-slate-200/80 bg-white text-right shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-lg max-[1100px]:min-h-[118px] max-[900px]:min-h-[104px] dark:border-slate-700/80 dark:bg-slate-900/90">
+                <CardContent className="p-4 md:p-5 max-[1100px]:p-3 max-[900px]:p-2.5">
                   <div className="flex items-start justify-between gap-3">
                     <div
-                      className={`flex h-11 w-11 items-center justify-center rounded-2xl shadow-sm transition-transform duration-200 group-hover:scale-105 ${tone}`}
+                      className={`flex h-11 w-11 items-center justify-center rounded-2xl shadow-sm transition-transform duration-200 group-hover:scale-105 max-[900px]:h-9 max-[900px]:w-9 ${tone}`}
                     >
                       <Icon className="h-5 w-5" />
                     </div>
                     <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                      تفاصيل التقرير
+                      {copy.report}
                     </span>
                   </div>
                   <div className="mt-4 flex items-end justify-between gap-3">
@@ -226,10 +236,10 @@ export function PlatformOverview({
                         {card.label}
                       </p>
                       <p className="mt-1 text-xl font-black tracking-tight text-slate-950 dark:text-white md:text-2xl">
-                        {loading ? "جارٍ..." : card.value}
+                        {loading ? (language === "ar" ? "جارٍ…" : language === "fr" ? "Chargement…" : language === "ur" ? "لوڈ ہو رہا ہے…" : "Loading…") : card.value}
                       </p>
                     </div>
-                    <Sparkline values={card.history} tone={card.tint} />
+                    <Sparkline values={card.history} tone={card.tint} emptyLabel={copy.noHistory} />
                   </div>
                 </CardContent>
               </Card>

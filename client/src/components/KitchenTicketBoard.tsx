@@ -12,7 +12,7 @@ type TicketOrder = { id: string; table: string; time: string; status: string; ag
 
 function ticketReservationDate(value: TicketOrder["reservationDate"]) { if (!value) return null; const date = new Date(value); return Number.isFinite(date.getTime()) ? date : null; }
 function ticketIsDeferred(order: TicketOrder) { const date = ticketReservationDate(order.reservationDate); return Boolean(date && date.getTime() > Date.now() + 5 * 60_000); }
-function ticketReservationLabel(order: TicketOrder) { const date = ticketReservationDate(order.reservationDate); if (!date) return null; return `${date.toLocaleDateString("ar-SA", { day: "numeric", month: "short" })} · ${date.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}${order.partySize ? ` · ${order.partySize} ضيف` : ""}${order.childrenCount ? ` · ${order.childrenCount} طفل` : ""}`; }
+function ticketReservationLabel(order: TicketOrder) { const date = ticketReservationDate(order.reservationDate); if (!date) return null; return `${date.toLocaleDateString("ar-SA-u-ca-gregory-nu-latn", { day: "numeric", month: "short" })} · ${date.toLocaleTimeString("ar-SA-u-ca-gregory-nu-latn", { hour: "2-digit", minute: "2-digit" })}${order.partySize ? ` · ${order.partySize} ضيف` : ""}${order.childrenCount ? ` · ${order.childrenCount} طفل` : ""}`; }
 
 export function KitchenTicketBoard({ restaurantId, orders, station }: { restaurantId: number; orders: TicketOrder[]; station?: KitchenStation }) {
   const slaQuery = trpc.admin.kitchenSla.useQuery({ restaurantId }, { staleTime: 30_000, retry: false });

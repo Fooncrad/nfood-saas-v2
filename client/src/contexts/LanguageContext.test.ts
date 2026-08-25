@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_MANUAL_STORAGE_KEY, autoTranslateText, detectVisitorLanguage, findUntranslatedArabic, isPublicLanguagePath, languageMeta, legacyUiTranslations, translations } from "./LanguageContext";
+import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_MANUAL_STORAGE_KEY, autoTranslateText, detectVisitorLanguage, findUntranslatedArabic, formatGregorianDate, formatLatinNumber, isPublicLanguagePath, languageMeta, legacyUiTranslations, translations } from "./LanguageContext";
 
 describe("language configuration", () => {
   it("contains Arabic, English, and French with correct directions", () => {
@@ -58,6 +58,15 @@ describe("language configuration", () => {
       expect(arabicPattern.test(value), `Arabic characters remain in English for: ${key} => ${value}`).toBe(false);
       expect(arabicPattern.test(frenchValue ?? ""), `Arabic characters remain in French for: ${key} => ${frenchValue}`).toBe(false);
     }
+  });
+
+  it("formats Arabic dates with Gregorian calendar and Latin numerals", () => {
+    const formattedDate = formatGregorianDate("2026-08-25T12:00:00.000Z", "ar");
+    const formattedNumber = formatLatinNumber(111000.45, "ar");
+    expect(formattedDate).toContain("2026");
+    expect(formattedDate).not.toMatch(/[٠-٩]/);
+    expect(formattedNumber).not.toMatch(/[٠-٩]/);
+    expect(formattedNumber).toContain("111");
   });
 
   it("uses separate dashboard and public manual-language storage keys", () => {

@@ -11,7 +11,7 @@ function escapePrintText(value: string) {
 }
 
 function money(value: number) {
-  return `${value.toLocaleString("ar-SA")} ر.س`;
+  return `${value.toLocaleString("ar-SA-u-ca-gregory-nu-latn")} SAR`;
 }
 
 export function printReceipt(receipt: PrintableReceipt, template: "thermal" | "detailed", branding: ReceiptBranding = {}) {

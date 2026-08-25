@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { CreateRestaurantDialog } from "@/components/CreateRestaurantDialog";
 import {
   Dialog,
@@ -65,6 +66,14 @@ type AccessRecord = FeatureDefinition & {
 };
 
 export function SuperAdminRestaurantCatalog() {
+  const { language } = useLanguage();
+  const ui = language === "ar"
+    ? { center: "مركز المطاعم", title: "قائمة المطاعم", subtitle: "إدارة المطاعم المسجلة والباقات والحالة والروابط العامة من شاشة واحدة.", add: "إضافة مطعم جديد", search: "ابحث باسم المطعم أو المعرّف أو الباقة", all: "الكل", active: "نشط", trial: "تجربة", pending: "معلّق", plans: "كل الباقات", actions: "إجراءات", retry: "إعادة المحاولة", empty: "لا توجد مطاعم مطابقة للبحث الحالي.", report: "تفاصيل التقرير", branches: "فروع", account: "حساب", statusActive: "نشط", statusTrial: "تجربة", statusPending: "معلّق", plan: "الباقة", publicLink: "الرابط العام", details: "التفاصيل", login: "دخول المطعم", pause: "إيقاف مؤقت", activate: "تفعيل المطعم", editPlan: "تعديل الباقة", resetPassword: "إعادة تعيين كلمة المرور", unspecified: "غير محددة" }
+    : language === "fr"
+      ? { center: "Centre des restaurants", title: "Liste des restaurants", subtitle: "Gérez les restaurants, offres, statuts et liens publics depuis un seul espace.", add: "Ajouter un restaurant", search: "Rechercher par nom, identifiant ou offre", all: "Tous", active: "Actif", trial: "Essai", pending: "En attente", plans: "Toutes les offres", actions: "Actions", retry: "Réessayer", empty: "Aucun restaurant ne correspond à la recherche.", report: "Détails du rapport", branches: "succursales", account: "Compte", statusActive: "Actif", statusTrial: "Essai", statusPending: "En attente", plan: "Offre", publicLink: "Lien public", details: "Détails", login: "Ouvrir le restaurant", pause: "Suspendre", activate: "Activer", editPlan: "Modifier l’offre", resetPassword: "Réinitialiser le mot de passe", unspecified: "Non définie" }
+      : language === "ur"
+        ? { center: "ریستوران مرکز", title: "ریستوران فہرست", subtitle: "ریستوران، پیکیجز، حیثیت اور عوامی لنکس ایک جگہ سے منظم کریں۔", add: "نیا ریستوران شامل کریں", search: "نام، شناخت یا پیکیج سے تلاش کریں", all: "سب", active: "فعال", trial: "آزمائشی", pending: "زیر التوا", plans: "تمام پیکیجز", actions: "اعمال", retry: "دوبارہ کوشش", empty: "تلاش سے کوئی ریستوران نہیں ملا۔", report: "رپورٹ کی تفصیل", branches: "برانچز", account: "اکاؤنٹ", statusActive: "فعال", statusTrial: "آزمائشی", statusPending: "زیر التوا", plan: "پیکیج", publicLink: "عوامی لنک", details: "تفصیل", login: "ریستوران کھولیں", pause: "روکیں", activate: "فعال کریں", editPlan: "پیکیج تبدیل کریں", resetPassword: "پاس ورڈ ری سیٹ کریں", unspecified: "متعین نہیں" }
+        : { center: "Restaurant center", title: "Restaurant list", subtitle: "Manage registered restaurants, plans, statuses, and public links from one workspace.", add: "Add restaurant", search: "Search by restaurant name, ID, or plan", all: "All", active: "Active", trial: "Trial", pending: "Pending", plans: "All plans", actions: "Actions", retry: "Try again", empty: "No restaurants match the current search.", report: "Report details", branches: "branches", account: "Account", statusActive: "Active", statusTrial: "Trial", statusPending: "Pending", plan: "Plan", publicLink: "Public link", details: "Details", login: "Open restaurant", pause: "Pause", activate: "Activate", editPlan: "Edit plan", resetPassword: "Reset password", unspecified: "Not set" };
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("الكل");
   const [createOpen, setCreateOpen] = useState(false);
@@ -181,29 +190,37 @@ export function SuperAdminRestaurantCatalog() {
   const catalogLoading = plansQuery.isLoading || definitionsQuery.isLoading;
   const catalogError = plansQuery.isError || definitionsQuery.isError;
   const [showAllFeatures, setShowAllFeatures] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(true);
   const visibleDefinitions = showAllFeatures
     ? definitions
     : definitions.slice(0, 8);
 
   return (
-    <div dir="rtl" className="space-y-3">
+    <div dir={language === "ar" || language === "ur" ? "rtl" : "ltr"} className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-bold text-[#e76f3c]">مركز المطاعم</p>
-          <h2 className="mt-1 text-xl font-black text-slate-900">
-            قائمة المطاعم
-          </h2>
-          <p className="mt-1 text-xs text-slate-500">
-            إدارة المطاعم المسجلة، الباقات، الحالة، والروابط العامة من شاشة
-            واحدة.
-          </p>
+          <p className="text-xs font-bold text-[#e76f3c]">{ui.center}</p>
+          <h2 className="mt-1 text-xl font-black text-slate-900">{ui.title}</h2>
+          <p className="mt-1 text-xs text-slate-500">{ui.subtitle}</p>
         </div>
-        <Button
-          onClick={() => setCreateOpen(true)}
-          className="h-9 gap-1.5 rounded-lg bg-[#e76f3c] px-3 text-xs shadow-sm hover:bg-[#d85f2e]"
-        >
-          <Plus className="h-4 w-4" /> إضافة مطعم جديد
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            aria-expanded={catalogOpen}
+            onClick={() => setCatalogOpen(open => !open)}
+            className="h-9 gap-1.5 rounded-lg border-slate-200 px-3 text-xs"
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${catalogOpen ? "rotate-180" : ""}`} />
+            {catalogOpen ? (language === "ar" ? "طي القائمة" : language === "fr" ? "Réduire la liste" : language === "ur" ? "فہرست سمیٹیں" : "Collapse list") : (language === "ar" ? "فتح القائمة" : language === "fr" ? "Ouvrir la liste" : language === "ur" ? "فہرست کھولیں" : "Open list")}
+          </Button>
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="h-9 gap-1.5 rounded-lg bg-[#e76f3c] px-3 text-xs shadow-sm hover:bg-[#d85f2e]"
+          >
+            <Plus className="h-4 w-4" /> {ui.add}
+          </Button>
+        </div>
       </div>
       <CreateRestaurantDialog
         open={createOpen}
@@ -255,7 +272,7 @@ export function SuperAdminRestaurantCatalog() {
                   ) : (
                     planOptionsForEditor.map(plan => (
                       <option key={plan.id} value={plan.key}>
-                        {plan.name} · {plan.monthlyPrice} ر.س شهريًا
+                        {plan.name} · {plan.monthlyPrice} SAR شهريًا
                       </option>
                     ))
                   )}
@@ -465,7 +482,9 @@ export function SuperAdminRestaurantCatalog() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
+      {catalogOpen && (
+        <div className="animate-[nfood-enter_180ms_ease-out]">
+        <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
         <CardHeader className="border-b border-slate-100 p-4">
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative min-w-[240px] flex-1">
@@ -473,7 +492,7 @@ export function SuperAdminRestaurantCatalog() {
               <Input
                 value={query}
                 onChange={event => setQuery(event.target.value)}
-                placeholder="ابحث باسم المطعم أو المعرّف أو الباقة"
+                placeholder={ui.search}
                 className="h-11 rounded-xl pr-9"
               />
             </div>
@@ -485,17 +504,17 @@ export function SuperAdminRestaurantCatalog() {
                   onClick={() => setFilter(item)}
                   className={`rounded-xl px-3 py-2 text-xs font-bold transition ${filter === item ? "bg-[#e76f3c] text-white" : "bg-slate-100 text-slate-500 hover:bg-orange-50 hover:text-[#e76f3c]"}`}
                 >
-                  {item}
+                  {item === "الكل" ? ui.all : item === "نشط" ? ui.active : item === "تجربة" ? ui.trial : ui.pending}
                 </button>
               ))}
             </div>
             <select
-              aria-label="تصفية حسب الباقة"
+              aria-label={ui.plans}
               value={planFilter}
               onChange={event => setPlanFilter(event.target.value)}
               className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none focus:border-[#e76f3c]"
             >
-              <option value="الكل">كل الباقات</option>
+              <option value="الكل">{ui.plans}</option>
               {planOptions.slice(1).map(plan => (
                 <option key={plan} value={plan}>
                   {plan}
@@ -503,7 +522,7 @@ export function SuperAdminRestaurantCatalog() {
               ))}
             </select>
             <Button variant="outline" className="gap-2 rounded-xl">
-              <MoreHorizontal className="h-4 w-4" /> إجراءات
+              <MoreHorizontal className="h-4 w-4" /> {ui.actions}
             </Button>
           </div>
         </CardHeader>
@@ -519,18 +538,18 @@ export function SuperAdminRestaurantCatalog() {
             </div>
           ) : restaurantsQuery.isError ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-600">
-              تعذر تحميل القائمة. Request ID: admin-restaurants{" "}
+              {language === "ar" ? "تعذر تحميل القائمة حاليًا." : language === "fr" ? "Impossible de charger la liste pour le moment." : language === "ur" ? "فہرست ابھی لوڈ نہیں ہو سکی۔" : "Unable to load the list right now."} <span className="text-[10px] opacity-70">(admin-restaurants)</span>{" "}
               <button
                 type="button"
                 onClick={() => void restaurantsQuery.refetch()}
                 className="mr-2 font-bold underline"
               >
-                إعادة المحاولة
+                {ui.retry}
               </button>
             </div>
           ) : rows.length === 0 ? (
             <div className="rounded-2xl bg-slate-50 p-10 text-center text-sm text-slate-500">
-              لا توجد مطاعم مطابقة للبحث الحالي.
+              {ui.empty}
             </div>
           ) : (
             <div className="grid min-w-0 gap-3 sm:grid-cols-2">
@@ -547,6 +566,7 @@ export function SuperAdminRestaurantCatalog() {
                     : status === "تجربة"
                       ? "border-amber-200 bg-amber-50 text-amber-700"
                       : "border-slate-200 bg-slate-50 text-slate-600";
+                const statusLabel = status === "نشط" ? ui.statusActive : status === "تجربة" ? ui.statusTrial : ui.statusPending;
                 return (
                   <article
                     key={restaurant.id}
@@ -562,8 +582,7 @@ export function SuperAdminRestaurantCatalog() {
                             {restaurant.name}
                           </p>
                           <p className="mt-0.5 text-[11px] text-slate-400">
-                            حساب #{restaurant.id} ·{" "}
-                            {restaurant.branchCount ?? 0} فروع
+                            {ui.account} #{restaurant.id} · {restaurant.branchCount ?? 0} {ui.branches}
                           </p>
                         </div>
                       </div>
@@ -571,19 +590,19 @@ export function SuperAdminRestaurantCatalog() {
                         variant="outline"
                         className={`shrink-0 rounded-lg text-[10px] ${statusClass}`}
                       >
-                        {status}
+                        {statusLabel}
                       </Badge>
                     </div>
 
                     <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px]">
                       <div className="min-w-0 rounded-lg bg-slate-50 px-2 py-1.5">
-                        <p className="text-slate-400">الباقة</p>
+                        <p className="text-slate-400">{ui.plan}</p>
                         <p className="mt-0.5 truncate font-bold text-slate-700">
-                          {restaurant.plan ?? "غير محددة"}
+                          {restaurant.plan ?? ui.unspecified}
                         </p>
                       </div>
                       <div className="min-w-0 rounded-lg bg-slate-50 px-2 py-1.5">
-                        <p className="text-slate-400">الرابط العام</p>
+                        <p className="text-slate-400">{ui.publicLink}</p>
                         <a
                           href={`/menu/${encodeURIComponent(restaurant.slug ?? "")}`}
                           target="_blank"
@@ -610,7 +629,7 @@ export function SuperAdminRestaurantCatalog() {
                         }
                         className="h-7 max-w-full gap-1 rounded-md px-2 text-[10px]"
                       >
-                        <Eye className="h-3.5 w-3.5 shrink-0" /> التفاصيل
+                        <Eye className="h-3.5 w-3.5 shrink-0" /> {ui.details}
                       </Button>
                       <Button
                         type="button"
@@ -621,7 +640,7 @@ export function SuperAdminRestaurantCatalog() {
                         }
                         className="h-7 max-w-full gap-1 rounded-md bg-[#111c2e] px-2 text-[10px] text-white hover:bg-[#1b2a43]"
                       >
-                        <LogIn className="h-3.5 w-3.5 shrink-0" /> دخول المطعم
+                        <LogIn className="h-3.5 w-3.5 shrink-0" /> {ui.login}
                       </Button>
                       <Button
                         type="button"
@@ -641,8 +660,8 @@ export function SuperAdminRestaurantCatalog() {
                       >
                         <Power className="h-3.5 w-3.5 shrink-0" />
                         {restaurant.status === "active"
-                          ? "إيقاف مؤقت"
-                          : "تفعيل المطعم"}
+                          ? ui.pause
+                          : ui.activate}
                       </Button>
                       <Button
                         type="button"
@@ -667,7 +686,7 @@ export function SuperAdminRestaurantCatalog() {
                         }}
                         className="h-7 max-w-full gap-1 rounded-md px-2 text-[10px]"
                       >
-                        <Edit3 className="h-3.5 w-3.5 shrink-0" /> تعديل الباقة
+                        <Edit3 className="h-3.5 w-3.5 shrink-0" /> {ui.editPlan}
                       </Button>
                       <Button
                         type="button"
@@ -690,8 +709,7 @@ export function SuperAdminRestaurantCatalog() {
                         }}
                         className="h-7 max-w-full gap-1 rounded-md px-2 text-[10px]"
                       >
-                        <KeyRound className="h-3.5 w-3.5 shrink-0" /> إعادة
-                        تعيين كلمة المرور
+                        <KeyRound className="h-3.5 w-3.5 shrink-0" /> {ui.resetPassword}
                       </Button>
                       <Button
                         type="button"
@@ -729,6 +747,8 @@ export function SuperAdminRestaurantCatalog() {
           )}
         </CardContent>
       </Card>
+        </div>
+      )}
 
       <div className="grid gap-5 xl:grid-cols-[1.2fr_1fr]">
         <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
@@ -809,7 +829,7 @@ export function SuperAdminRestaurantCatalog() {
                             {plan.name}
                           </span>
                           <span className="mt-0.5 block truncate font-mono text-[10px] text-slate-400">
-                            {plan.key} · {plan.monthlyPrice} ر.س/شهري ·{" "}
+                            {plan.key} · {plan.monthlyPrice} SAR/شهري ·{" "}
                             {enabledCount} مفعّلة
                           </span>
                         </span>
@@ -904,7 +924,7 @@ export function SuperAdminRestaurantCatalog() {
                       </div>
                       <Badge variant="outline" className="shrink-0 rounded-lg">
                         {definition.isAddOn
-                          ? `إضافة ${definition.addonPrice ?? "0"} ر.س`
+                          ? `إضافة ${definition.addonPrice ?? "0"} SAR`
                           : "ضمن الباقة"}
                       </Badge>
                     </div>

@@ -136,7 +136,7 @@ type InstallPromptEvent = Event & {
 };
 
 function money(value: number) {
-  return `${value.toLocaleString("ar-SA")} ر.س`;
+  return `${value.toLocaleString("ar-SA-u-ca-gregory-nu-latn")} SAR`;
 }
 function escapePrintText(value: string) {
   return value.replace(
@@ -3396,7 +3396,7 @@ function SystemHealthView() {
               <p className="text-xs text-slate-500">آخر فحص</p>
               <p className="mt-2 text-sm font-bold">
                 {health.data?.checkedAt
-                  ? new Date(health.data.checkedAt).toLocaleString("ar-SA")
+                  ? new Date(health.data.checkedAt).toLocaleString("ar-SA-u-ca-gregory-nu-latn")
                   : "—"}
               </p>
               <p className="mt-2 text-[10px] text-slate-400">
@@ -3457,7 +3457,7 @@ function SystemHealthView() {
                         : "فشل"}
                   </Badge>
                   <p className="mt-1 text-[10px] text-slate-400">
-                    {new Date(event.createdAt).toLocaleString("ar-SA")}
+                    {new Date(event.createdAt).toLocaleString("ar-SA-u-ca-gregory-nu-latn")}
                   </p>
                 </div>
               </div>
@@ -3805,7 +3805,7 @@ function SecurityView({ restaurantId }: { restaurantId?: number }) {
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
                       {session.ipAddress || "IP غير متاح"} · آخر نشاط{" "}
-                      {new Date(session.lastSeenAt).toLocaleString("ar-SA")}
+                      {new Date(session.lastSeenAt).toLocaleString("ar-SA-u-ca-gregory-nu-latn")}
                     </p>
                   </div>
                   <Badge
@@ -4394,7 +4394,7 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
                     <p className="font-black text-slate-900">سجل الحجوزات</p>
                     <Badge variant="secondary" className="rounded-full text-[10px]">{selectedReservations.length} حجز</Badge>
                   </div>
-                  {selectedReservations.length === 0 ? <p className="text-xs text-slate-500">لا يوجد سجل حجوزات لهذه الطاولة.</p> : <div className="space-y-2">{selectedReservations.slice(0, 12).map(reservation => <div key={reservation.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs"><span><strong>{reservation.customerName}</strong><span className="mr-2 text-slate-500">{new Date(reservation.reservedFor).toLocaleString("ar-SA")}</span></span><Badge className={`rounded-full text-[10px] ${reservation.noShowNotifiedAt ? "bg-amber-500" : "bg-slate-200 text-slate-700"}`}>{reservation.noShowNotifiedAt ? "إلغاء تلقائي" : reservation.status}</Badge></div>)}</div>}
+                  {selectedReservations.length === 0 ? <p className="text-xs text-slate-500">لا يوجد سجل حجوزات لهذه الطاولة.</p> : <div className="space-y-2">{selectedReservations.slice(0, 12).map(reservation => <div key={reservation.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs"><span><strong>{reservation.customerName}</strong><span className="mr-2 text-slate-500">{new Date(reservation.reservedFor).toLocaleString("ar-SA-u-ca-gregory-nu-latn")}</span></span><Badge className={`rounded-full text-[10px] ${reservation.noShowNotifiedAt ? "bg-amber-500" : "bg-slate-200 text-slate-700"}`}>{reservation.noShowNotifiedAt ? "إلغاء تلقائي" : reservation.status}</Badge></div>)}</div>}
                 </CardContent>
               </Card>
             </div>
@@ -4493,7 +4493,7 @@ function InventoryView({ restaurantId }: { restaurantId: number }) {
   ).length;
   const totalUnits = items
     .reduce((sum, item) => sum + item.quantity, 0)
-    .toLocaleString("ar-SA");
+    .toLocaleString("ar-SA-u-ca-gregory-nu-latn");
   const purchaseCount = remotePurchases.data?.length ?? 0;
   return (
     <div className="space-y-3">
@@ -4917,7 +4917,7 @@ function InventoryView({ restaurantId }: { restaurantId: number }) {
                       <td className="px-5 py-4 font-semibold">
                         {purchase.supplier}
                       </td>
-                      <td className="px-5 py-4">{purchase.total} ر.س</td>
+                      <td className="px-5 py-4">{purchase.total} SAR</td>
                       <td className="px-5 py-4">{purchase.status}</td>
                       <td className="px-5 py-4">
                         <div className="flex gap-2">
@@ -6243,7 +6243,7 @@ function PackagePlansAdminPanel() {
                     <p className="font-bold">
                       {receipt.plan} ·{" "}
                       {receipt.billingCycle === "yearly" ? "سنوي" : "شهري"} ·{" "}
-                      {receipt.amount} ر.س
+                      {receipt.amount} SAR
                     </p>
                     <p className="mt-1 text-slate-500" dir="ltr">
                       {receipt.email}
@@ -6724,7 +6724,7 @@ function FeatureOverrideAuditPanel({
                     {event.outcome === "success" ? "ناجح" : event.outcome}
                   </Badge>
                   <p className="mt-1 text-[10px] text-slate-400">
-                    {new Date(event.createdAt).toLocaleString("ar-SA")}
+                    {new Date(event.createdAt).toLocaleString("ar-SA-u-ca-gregory-nu-latn")}
                   </p>
                 </div>
               </div>
@@ -6909,7 +6909,7 @@ function AdminPwaSyncCard() {
                 ? `${queuedCount} عملية بانتظار المزامنة`
                 : "لا توجد عمليات معلقة للمزامنة"}
               {lastSyncAt
-                ? ` · آخر فحص ${new Date(lastSyncAt).toLocaleTimeString("ar-SA")}`
+                ? ` · آخر فحص ${new Date(lastSyncAt).toLocaleTimeString("ar-SA-u-ca-gregory-nu-latn")}`
                 : ""}
             </p>
           </div>
@@ -7140,7 +7140,7 @@ function SuperAdminView() {
               saasMetrics.isError
                 ? "تعذر"
                 : saasMetrics.data
-                  ? `${saasMetrics.data.mrr.toFixed(2)} ر.س`
+                  ? `${saasMetrics.data.mrr.toFixed(2)} SAR`
                   : "...",
               CircleDollarSign,
             ],
@@ -7149,7 +7149,7 @@ function SuperAdminView() {
               saasMetrics.isError
                 ? "تعذر"
                 : saasMetrics.data
-                  ? `${saasMetrics.data.arr.toFixed(2)} ر.س`
+                  ? `${saasMetrics.data.arr.toFixed(2)} SAR`
                   : "...",
               WalletCards,
             ],
@@ -7264,7 +7264,7 @@ function SuperAdminView() {
                         >
                           <span className="font-semibold">{plan}</span>
                           <span className="text-slate-500">
-                            {value.active} نشطة · {value.mrr.toFixed(2)} ر.س
+                            {value.active} نشطة · {value.mrr.toFixed(2)} SAR
                           </span>
                         </div>
                       )
@@ -7543,7 +7543,7 @@ function SuperAdminView() {
             [
               "الإيرادات المكتملة",
               platformSummary.data
-                ? `${platformSummary.data.revenue.toFixed(2)} ر.س`
+                ? `${platformSummary.data.revenue.toFixed(2)} SAR`
                 : "…",
               WalletCards,
               "text-cyan-600",
@@ -7551,7 +7551,7 @@ function SuperAdminView() {
             [
               "متوسط الاشتراك",
               platformSummary.data
-                ? `${platformSummary.data.subscriptions.averageMonthlyPrice.toFixed(2)} ر.س`
+                ? `${platformSummary.data.subscriptions.averageMonthlyPrice.toFixed(2)} SAR`
                 : "…",
               CircleDollarSign,
               "text-pink-600",
@@ -7727,7 +7727,7 @@ function SuperAdminView() {
                     : systemHealth.isError
                       ? "تعذر فحص الصحة"
                       : systemHealth.data?.status === "healthy"
-                        ? `API وDB يعملان · ${new Date(systemHealth.data.checkedAt).toLocaleTimeString("ar-SA")}`
+                        ? `API وDB يعملان · ${new Date(systemHealth.data.checkedAt).toLocaleTimeString("ar-SA-u-ca-gregory-nu-latn")}`
                         : `الحالة متدهورة · قاعدة البيانات: ${systemHealth.data?.database ?? "غير متاحة"}`}
                 </p>
               </div>
@@ -8158,7 +8158,7 @@ function SubscriptionAdminPanel() {
                       {subscription.plan}
                     </td>
                     <td className="px-5 py-4">
-                      {subscription.monthlyPrice} ر.س
+                      {subscription.monthlyPrice} SAR
                     </td>
                     <td className="px-5 py-4">{subscription.status}</td>
                     <td className="px-5 py-4">
@@ -8706,7 +8706,7 @@ function FeatureAccessPanel({ restaurantId }: { restaurantId: number }) {
                 <option key={feature.key} value={feature.key}>
                   {feature.label} · {feature.key}
                   {feature.isAddOn
-                    ? ` · Add-on${feature.addonPrice ? ` ${feature.addonPrice} ر.س` : ""}`
+                    ? ` · Add-on${feature.addonPrice ? ` ${feature.addonPrice} SAR` : ""}`
                     : ""}
                 </option>
               ))}
@@ -8734,7 +8734,7 @@ function FeatureAccessPanel({ restaurantId }: { restaurantId: number }) {
                 <p className="text-[11px] text-slate-500">النوع</p>
                 <p className="mt-1 text-sm font-bold">
                   {selected?.isAddOn
-                    ? `Add-on${selected.addonPrice ? ` · ${selected.addonPrice} ر.س` : ""}`
+                    ? `Add-on${selected.addonPrice ? ` · ${selected.addonPrice} SAR` : ""}`
                     : "ضمن الباقة"}
                 </p>
               </div>
@@ -10893,7 +10893,7 @@ function RemoteWorkView({ restaurantId }: { restaurantId: number }) {
                         >
                           {item.body}
                           <p className="mt-1 text-[10px] text-slate-400">
-                            {new Date(item.createdAt).toLocaleString("ar-SA")}
+                            {new Date(item.createdAt).toLocaleString("ar-SA-u-ca-gregory-nu-latn")}
                           </p>
                         </div>
                       ))}

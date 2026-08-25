@@ -4,6 +4,7 @@ import {
   Bell,
   ChevronDown,
   LifeBuoy,
+  PanelLeft,
   ReceiptText,
   Search,
   Settings2,
@@ -11,7 +12,7 @@ import {
   Utensils,
   Zap,
 } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { autoTranslateText, useLanguage } from "@/contexts/LanguageContext";
 import type { NavKey } from "@/components/homeNavigation";
 
 type SidebarItem = { key: NavKey; label: string; icon: LucideIcon };
@@ -25,6 +26,7 @@ type HomeSidebarProps = {
   visibleNavItems: SidebarItem[];
   active: NavKey;
   onNavigate: (key: NavKey) => void;
+  onCollapsedChange?: (collapsed: boolean) => void;
   managerId: number | string;
   roleScope: string;
 
@@ -46,6 +48,7 @@ type HomeSidebarProps = {
   onInstall: () => void;
   pushStatus: NotificationPermission | "unsupported";
   onEnablePush: () => void;
+  pendingReceiptCount?: number;
 };
 
 export function HomeSidebar({
@@ -54,6 +57,7 @@ export function HomeSidebar({
   visibleNavItems,
   active,
   onNavigate,
+  onCollapsedChange,
   managerId,
   roleScope,
   isCentralAdmin,
@@ -74,8 +78,9 @@ export function HomeSidebar({
   onInstall,
   pushStatus,
   onEnablePush,
+  pendingReceiptCount = 0,
 }: HomeSidebarProps) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const branchMessage = branchesLoading
     ? t("loadingBranches")
     : branchesError
@@ -85,6 +90,8 @@ export function HomeSidebar({
     ? t("loadingRestaurants")
     : t("noRestaurants");
   const integrationScope = "/integrations?scope=platform";
+  const transferReceiptLabel = language === "ar" ? "إيصالات التحويل" : language === "fr" ? "Reçus de virement" : language === "ur" ? "منتقلی کی رسیدیں" : "Transfer receipts";
+  const supportLabel = language === "ar" ? "مركز الدعم والتشخيص" : language === "fr" ? "Centre d’assistance et de diagnostic" : language === "ur" ? "مدد اور تشخیص مرکز" : "Support & diagnostics";
   const showRestaurantWorkspace = [
     "restaurant_admin",
     "waiter",
@@ -140,6 +147,28 @@ export function HomeSidebar({
       /* storage may be unavailable */
     }
   }, [collapsedGroups, sidebarStorageKey]);
+  useEffect(() => {
+    onCollapsedChange?.(sidebarCollapsed);
+  }, [onCollapsedChange, sidebarCollapsed]);
+  useEffect(() => {
+    const onShortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "b") {
+        event.preventDefault();
+        setSidebarCollapsed(current => !current);
+      }
+    };
+    window.addEventListener("keydown", onShortcut);
+    return () => window.removeEventListener("keydown", onShortcut);
+  }, []);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1023px)");
+    const syncTabletState = (event: MediaQueryList | MediaQueryListEvent) => {
+      if (event.matches) setSidebarCollapsed(true);
+    };
+    syncTabletState(media);
+    media.addEventListener?.("change", syncTabletState);
+    return () => media.removeEventListener?.("change", syncTabletState);
+  }, []);
   const platformGroups = [
     {
       id: "platform-overview",
@@ -148,7 +177,7 @@ export function HomeSidebar({
     },
     {
       id: "platform-settings",
-      label: "الإعدادات والتشغيل",
+      label: t("generalSettings"),
       keys: ["settings", "branches", "health"] as NavKey[],
     },
     {
@@ -168,7 +197,7 @@ export function HomeSidebar({
   return (
     <aside
       data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}
-      className={`nfood-unified-sidebar fixed inset-y-0 z-20 hidden h-full overflow-hidden overscroll-contain border-slate-200 bg-[#0b1425] text-white shadow-2xl transition-[width] duration-200 lg:flex lg:flex-col ${sidebarCollapsed ? "w-[72px]" : "w-[304px]"} ${direction === "rtl" ? "right-0 border-l" : "left-0 border-r"}`}
+      className={`nfood-unified-sidebar fixed inset-y-0 z-20 hidden h-full overflow-hidden overscroll-contain border-slate-200 bg-[#0b1425] text-white shadow-2xl transition-[width] duration-300 ease-in-out lg:flex lg:flex-col ${sidebarCollapsed ? "w-[72px]" : "w-[304px]"} ${direction === "rtl" ? "right-0 border-l" : "left-0 border-r"}`}
     >
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3">
         <button
@@ -187,8 +216,8 @@ export function HomeSidebar({
           }
           className="order-first flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
         >
-          <ChevronDown
-            className={`h-4 w-4 transition-transform ${sidebarCollapsed ? "-rotate-90" : "rotate-90"}`}
+          <PanelLeft
+            className={`h-4 w-4 transition-transform ${sidebarCollapsed ? "rotate-180" : ""}`}
           />
         </button>
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e76f3c] shadow-lg shadow-orange-900/20">
@@ -313,7 +342,8 @@ export function HomeSidebar({
                   className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-right text-[13px] text-slate-300 transition-all hover:bg-white/10 hover:text-white"
                 >
                   <ReceiptText className="h-[18px] w-[18px]" />
-                  <span>إيصالات التحويل</span>
+                  <span className="min-w-0 flex-1 truncate">{transferReceiptLabel}</span>
+                  {pendingReceiptCount > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[10px] font-black text-white">{pendingReceiptCount > 99 ? "99+" : pendingReceiptCount}</span>}
                 </a>
               )}
             </div>
@@ -354,6 +384,8 @@ export function HomeSidebar({
                         <button
                           key={item.key}
                           onClick={() => onNavigate(item.key)}
+                          title={sidebarCollapsed ? item.label : undefined}
+                          aria-label={item.label}
                           className={`flex w-full items-center gap-2 rounded-lg px-1.5 py-1.5 text-right text-xs transition-all duration-200 ${isActive ? "bg-[#e76f3c] font-semibold text-white shadow-lg shadow-orange-950/20" : "text-slate-200 hover:bg-white/10 hover:text-white"}`}
                         >
                           <Icon className="h-[18px] w-[18px]" />
@@ -444,7 +476,7 @@ export function HomeSidebar({
           className="flex w-full items-center gap-3 px-3 py-2 text-sm text-slate-400 transition-colors hover:text-white"
         >
           <LifeBuoy className="h-4 w-4" />
-          مركز الدعم والتشخيص
+          {supportLabel}
         </button>
       </div>
     </aside>

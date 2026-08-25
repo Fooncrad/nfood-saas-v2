@@ -14,7 +14,7 @@ const plans = [
   { value: "Free", label: "البداية", price: "مجانية", description: "لإطلاق مطعمك وتجربة الأساسيات", features: ["فرع رئيسي", "منيو رقمي", "طلبات QR"] },
   { value: "Starter", label: "Starter", price: "تُحدد لاحقًا", description: "للمطاعم الصغيرة والفرق الناشئة", features: ["فروع إضافية", "تقارير موسعة", "إدارة الفريق"] },
   { value: "Growth", label: "Growth", price: "تُحدد لاحقًا", description: "للمطاعم النشطة ومتعددة القنوات", features: ["POS وKDS", "حملات وولاء", "تحليلات متقدمة"] },
-  { value: "Business", label: "Business", price: "399 ر.س / شهريًا", description: "للفرق متعددة الفروع", features: ["فروع متعددة", "التوصيل والتسويق", "API والتكاملات"] },
+  { value: "Business", label: "Business", price: "399 SAR / شهريًا", description: "للفرق متعددة الفروع", features: ["فروع متعددة", "التوصيل والتسويق", "API والتكاملات"] },
   { value: "Enterprise", label: "Enterprise", price: "مخصص", description: "للشركات وسلاسل المطاعم", features: ["White Label", "دعم مخصص", "صلاحيات متقدمة"] },
 ] as const;
 const steps = ["type", "data", "docs", "review"] as const; const stepLabels = { ar: ["نوع الحساب", "البيانات", "المستندات أو الباقة", "المراجعة"], en: ["Account type", "Details", "Documents or plan", "Review"], fr: ["Type de compte", "Données", "Documents ou forfait", "Vérification"] } as const;

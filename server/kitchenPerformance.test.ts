@@ -38,7 +38,7 @@ describe("kitchen SLA and order performance reporting", () => {
     expect(panel).toContain("fromValue");
     expect(panel).toContain("bySection");
     expect(panel).toContain("byHour");
-    expect(panel).toContain("toLocaleString(\"ar-SA\")");
+    expect(panel).toContain("toLocaleString(\"ar-SA-u-ca-gregory-nu-latn\")");
     const kds = readFileSync(resolve(process.cwd(), "client/src/components/KdsOperationsBoard.tsx"), "utf8");
     expect(kds).toContain("getStationSectionIds");
     expect(kds).toContain("getStationLabel");

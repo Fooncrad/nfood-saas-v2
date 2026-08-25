@@ -2401,3 +2401,16 @@
 - KDS order times use Asia/Riyadh, 24-hour time, and Latin numerals; the admin overview now uses the same Gregorian/Latin display policy for visible dates and SAR values.
 - The public menu remains fixed at the viewport root with internal product browsing and a cart drawer; the checkout action now exposes a busy state and closes/redirects after success.
 - Visual validation was performed at desktop viewport for the public route and dashboard route; the dashboard preview loaded the authenticated overview shell.
+
+# إعادة تصميم شاملة من المرجع المرفق
+- [x] توحيد نصوص لوحة المطعم ومنع خلط العربية والإنجليزية داخل العنوان أو البطاقة
+- [x] تطبيق RTL/LTR ديناميكي كامل حسب اللغة مع ضبط اتجاه الشريط الجانبي والمحتوى
+- [x] إضافة اختصار Ctrl/Cmd+B لطي الشريط الجانبي مع حالة مرئية وTooltip
+- [x] تحسين تخطيط لوحة المطعم ليعمل ضمن 100vh مع تمرير داخلي فقط
+- [x] ضغط قسم مركز إدارة المطعم وبطاقات الأدوات مع إزالة التزاحم والتكرار
+- [x] توحيد تنسيق العملة والتاريخ وأرقام العرض في جميع لوحات الإدارة والمطبخ والمنيو
+- [x] إضافة اختصارات ملء الشاشة وإعادة ضبط التخطيط عند دعمها دون كسر الأجهزة اللوحية
+- [x] مراجعة المصادقة والتسجيل والاستعادة لتوحيد التحقق والتحميل والرسائل الواضحة
+- [x] مراجعة الصفحة العامة والتفاعلات العائمة والكوكيز والروابط الاجتماعية الرسمية
+- [x] مراجعة إعدادات البوابات وSEO ومعاينة Google Search والاختبارات التفاعلية
+- [x] اختبار TypeScript وVitest والبناء والمعاينة البصرية وحفظ checkpoint للنشر
