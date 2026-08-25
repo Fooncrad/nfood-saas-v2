@@ -6,7 +6,9 @@ const page = readFileSync(new URL("../pages/RestaurantPublic.tsx", import.meta.u
 
 describe("public menu UX", () => {
   it("uses a responsive product grid with consistent lazy-loaded media", () => {
-    expect(page).toContain("lg:grid-cols-3 2xl:grid-cols-4");
+    expect(page).toContain("lg:grid-cols-3 xl:grid-cols-4");
+    expect(page).toContain("h-[100dvh] overflow-hidden flex flex-col");
+    expect(page).toContain("ar-SA-u-nu-latn");
     expect(page).toContain("aspect-[4/3]");
     expect(page).toContain('loading="lazy"');
     expect(page).toContain('decoding="async"');

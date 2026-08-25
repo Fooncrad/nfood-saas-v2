@@ -2381,3 +2381,23 @@
 - [x] إضافة تحميل ومنع النقر المزدوج أثناء تأكيد السلة
 - [x] توحيد عرض التواريخ على التقويم الميلادي بصيغة واضحة
 - [x] إضافة اختبارات أمان وتشغيل TypeScript وVitest والبناء والمعاينة ثم حفظ checkpoint
+
+# إعادة تصميم منيو العملاء وتوحيد الطلب
+- [x] تثبيت تخطيط منيو العملاء ضمن 100vh مع هيدر مضغوط وشريط أقسام ثابت وشبكة منتجات كثيفة
+- [x] تحسين تباين البطاقات ومعالجة الصور الناقصة مع أحجام بطاقات موحدة
+- [x] عرض العملات بأرقام إنجليزية وتوحيد التواريخ الميلادية في الإدارة وKDS
+- [x] إضافة عداد OTP وإعادة الإرسال بعد 60 ثانية
+- [x] توجيه العميل إلى صفحة تتبع الطلب بعد التأكيد بحركة انتقال سلسة
+- [x] تشغيل اختبارات TypeScript وVitest والبناء والمعاينة ثم حفظ checkpoint
+
+- [x] إضافة عداد تحميل واضح لزر تأكيد الطلب مع منع النقر المزدوج وحركة انتقال إلى تتبع الطلب بعد النجاح
+- [x] توحيد عرض عملة لوحة الإدارة إلى English numerals وSAR
+- [x] تثبيت تاريخ لوحة الإدارة على التقويم الميلادي وأرقام لاتينية وتوقيت Asia/Riyadh
+- [x] تحديث اختبار تجربة المنيو ليتحقق من شبكة المنتجات والإطار الثابت والتنسيق المحلي الجديد
+- [x] التحقق عبر TypeScript وVitest والبناء والمعاينة البصرية بعد تحديثات المنيو وOTP والتاريخ
+
+## Session notes
+- OTP countdown and resend flow are present in CustomerOrders with a 60-second resend guard.
+- KDS order times use Asia/Riyadh, 24-hour time, and Latin numerals; the admin overview now uses the same Gregorian/Latin display policy for visible dates and SAR values.
+- The public menu remains fixed at the viewport root with internal product browsing and a cart drawer; the checkout action now exposes a busy state and closes/redirects after success.
+- Visual validation was performed at desktop viewport for the public route and dashboard route; the dashboard preview loaded the authenticated overview shell.

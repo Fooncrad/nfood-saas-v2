@@ -167,14 +167,14 @@ export function PlatformOverview({
     },
     {
       label: "مبيعات الباقات اليوم",
-      value: `${dailySubscriptionSales.toLocaleString("ar-SA")} ر.س`,
+      value: `${dailySubscriptionSales.toLocaleString("en-US")} ر.س`,
       icon: CircleDollarSign,
       tint: "orange" as const,
       history: dailySalesHistory,
     },
     {
       label: "الإيراد الشهري المتكرر",
-      value: `${monthlyRecurringRevenue.toLocaleString("ar-SA")} ر.س`,
+      value: `${monthlyRecurringRevenue.toLocaleString("en-US")} ر.س`,
       icon: WalletCards,
       tint: "violet" as const,
       history: recurringHistory,

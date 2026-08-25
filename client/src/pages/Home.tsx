@@ -68,7 +68,7 @@ import { AuditSecurityAlerts } from "@/components/AuditSecurityAlerts";
 
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
 
-function money(value: number) { return `${value.toLocaleString("ar-SA")} ر.س`; }
+function money(value: number) { return `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} SAR`; }
 function parseOrderDate(value: Date | string | number) { const timestamp = value instanceof Date ? value.getTime() : new Date(value).getTime(); return Number.isFinite(timestamp) ? new Date(timestamp) : null; }
 function formatOrderTime(value: Date | string | number) { const date = parseOrderDate(value); return date ? date.toLocaleTimeString("ar-SA-u-nu-latn", { timeZone: "Asia/Riyadh", hour: "2-digit", minute: "2-digit", hour12: false }) : "--:--"; }
 function orderAgeMinutes(value: Date | string | number) { const date = parseOrderDate(value); return date ? Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000)) : 0; }
@@ -290,7 +290,7 @@ export default function Home() {
     if (location === "/login") return <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} onRegister={() => setLocation("/restaurant/register")} onForgotPassword={() => { setForgotMessage(null); requestPasswordReset.mutate({ email: testEmail }); }} forgotPending={requestPasswordReset.isPending} forgotMessage={forgotMessage} loginError={testLogin.error?.message ?? null} />;
     if (!user) return showRegister ? <RegisterScreen onBack={() => setShowRegister(false)} onOAuth={() => startLogin()} /> : <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} onRegister={() => setShowRegister(true)} onForgotPassword={() => { setForgotMessage(null); requestPasswordReset.mutate({ email: testEmail }); }} forgotPending={requestPasswordReset.isPending} forgotMessage={forgotMessage} loginError={testLogin.error?.message ?? null} />;
   const title = localizedNavItems.find((item) => item.key === active)?.label ?? t("overview");
-  const todayLabel = new Date().toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const todayLabel = new Date().toLocaleDateString(locale === "ar-SA" ? "ar-SA-u-ca-gregory-nu-latn" : locale, { timeZone: "Asia/Riyadh", weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const roleDashboardTitle = "";
   const sidebarGroups = [
     { label: t("overview"), keys: ["overview", "admin"] as NavKey[] },
