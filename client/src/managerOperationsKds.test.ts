@@ -20,6 +20,15 @@ describe("manager operations monitor and KDS controls", () => {
     expect(filterAndSortKdsOrders(orders, "all", "newest").map((order) => order.id)).toEqual(["#1", "#3", "#2"]);
   });
 
+  it("locks KDS viewport and keeps scrolling inside Kanban columns", () => {
+    const kds = readFileSync(resolve(process.cwd(), "client/src/components/KdsOperationsBoard.tsx"), "utf8");
+    expect(kds).toContain("h-full");
+    expect(kds).toContain("overflow-hidden");
+    expect(kds).toContain("min-h-0 flex-1 gap-2 overflow-hidden");
+    expect(kds).toContain("min-h-0 flex-1 space-y-2 overflow-y-auto");
+    expect(kds).toContain("h-7 w-full");
+  });
+
   it("persists per-restaurant controls and renders delayed alert semantics", () => {
     const kds = readFileSync(resolve(process.cwd(), "client/src/components/KdsOperationsBoard.tsx"), "utf8");
     const monitor = readFileSync(resolve(process.cwd(), "client/src/components/ManagerOperationsPanel.tsx"), "utf8");
