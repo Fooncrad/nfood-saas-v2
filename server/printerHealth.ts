@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
-import { desc, eq } from "drizzle-orm";
-import { getDb } from "./db";
-import { kitchenSections, printerLogs } from "../drizzle/schema";
+import { and, desc, eq } from "drizzle-orm";
+import { getDb, getIntegrationSecret, listRestaurantManagerUserIds } from "./db";
+import { sendPushToUser } from "./push";
+import { integrationSettings, kitchenSections, printerLogs } from "../drizzle/schema";
 import { sdk } from "./_core/sdk";
 
 export async function printerHealthHeartbeatHandler(req: Request, res: Response) {
@@ -14,9 +15,17 @@ export async function printerHealthHeartbeatHandler(req: Request, res: Response)
     const sections = await db.select().from(kitchenSections);
     let checked = 0;
     for (const section of sections) {
-      const status = section.printerType === "browser" ? "connected" : "unknown";
-      await db.update(kitchenSections).set({ printerStatus: status, printerLastCheckedAt: new Date(), printerLastError: null }).where(eq(kitchenSections.id, section.id));
-      await db.insert(printerLogs).values({ restaurantId: section.restaurantId, kitchenSectionId: section.id, operation: "health_check", result: status === "connected" ? "success" : "error", message: status === "connected" ? "طباعة المتصفح متاحة" : "تحتاج طابعة الشبكة أو USB إلى بوابة محلية للفحص الحقيقي" });
+      const previousStatus = section.printerStatus;
+      let status: "unknown" | "connected" | "offline" = section.printerType === "browser" ? "connected" : "unknown";
+      let message = status === "connected" ? "طباعة المتصفح متاحة" : "لم يتم إعداد بوابة محلية للفحص الحقيقي";
+      if (section.printerType !== "browser" && section.printerType !== "none") {
+        const gateway = (await db.select({ url: integrationSettings.keyReference }).from(integrationSettings).where(and(eq(integrationSettings.scope, "restaurant"), eq(integrationSettings.restaurantId, section.restaurantId), eq(integrationSettings.providerKey, "printer_gateway"))).limit(1))[0];
+        const token = await getIntegrationSecret("restaurant", "printer_gateway", section.restaurantId);
+        if (gateway?.url && token) { try { const response = await fetch(`${gateway.url.replace(/\/+$/, "")}/probe`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ transport: section.printerType, host: section.printerAddress, port: section.printerPort }) }); const result = await response.json() as { ok?: boolean; message?: string }; status = result.ok ? "connected" : "offline"; message = result.message || (result.ok ? "تم الاتصال بالطابعة" : "تعذر الاتصال بالطابعة"); } catch (error) { status = "offline"; message = error instanceof Error ? error.message : "تعذر الوصول إلى بوابة الطباعة"; } }
+      }
+      await db.update(kitchenSections).set({ printerStatus: status, printerLastCheckedAt: new Date(), printerLastError: status === "offline" ? message : null }).where(eq(kitchenSections.id, section.id));
+      await db.insert(printerLogs).values({ restaurantId: section.restaurantId, kitchenSectionId: section.id, operation: "health_check", result: status === "connected" ? "success" : "error", message });
+      if (status === "offline" && previousStatus !== "offline") { const managerIds = await listRestaurantManagerUserIds(section.restaurantId); await Promise.all(managerIds.map((userId) => sendPushToUser(userId, { title: `انقطاع الطابعة: ${section.printerName || section.name}`, body: message, url: "/", tag: `printer-offline-${section.id}` }).catch((error) => console.warn("[Printer] offline push failed", error)))); }
       checked += 1;
     }
     return res.json({ ok: true, checked, timestamp });
