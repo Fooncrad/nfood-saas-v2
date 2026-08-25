@@ -1,0 +1,1 @@
+ALTER TABLE `kitchenSections` ADD `displayOrder` int DEFAULT 0 NOT NULL;

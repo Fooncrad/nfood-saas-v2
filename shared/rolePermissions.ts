@@ -11,6 +11,7 @@ export const TEAM_PERMISSION_CATALOG = [
   { key: "finance.read", label: "عرض البيانات المالية", group: "المالية" },
   { key: "team.manage", label: "إدارة الفريق والحسابات", group: "الإدارة" },
   { key: "settings.manage", label: "إدارة إعدادات المطعم", group: "الإدارة" },
+  { key: "printers.manage", label: "إدارة الطابعات وقوالب الطباعة", group: "التشغيل" },
 ] as const;
 
 export type TeamPermission = (typeof TEAM_PERMISSION_CATALOG)[number]["key"];

@@ -331,6 +331,7 @@ export const kitchenSections = mysqlTable("kitchenSections", {
   printerAddress: varchar("printerAddress", { length: 255 }),
   printerPort: int("printerPort"),
   printerPurpose: mysqlEnum("printerPurpose", ["kitchen", "receipt", "general"]).default("general").notNull(),
+  displayOrder: int("displayOrder").default(0).notNull(),
   printerStatus: mysqlEnum("printerStatus", ["unknown", "connected", "offline"]).default("unknown").notNull(),
   printerLastCheckedAt: timestamp("printerLastCheckedAt"),
   printerLastError: varchar("printerLastError", { length: 500 }),
