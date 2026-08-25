@@ -45,6 +45,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -4093,14 +4094,33 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
   const [tableFee, setTableFee] = useState("0");
   const [tableFilter, setTableFilter] = useState<TableFilter>("all");
   const [tableSort, setTableSort] = useState<TableSort>("name");
+  const [tableSearch, setTableSearch] = useState("");
+  const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
+  const [tableDialogOpen, setTableDialogOpen] = useState(false);
+  const [quickCustomerName, setQuickCustomerName] = useState("");
+  const [quickPartySize, setQuickPartySize] = useState("2");
+  const [quickReservedFor, setQuickReservedFor] = useState(() => new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16));
   const remoteReservations = trpc.platform.reservations.useQuery(
-    { restaurantId, status: "cancelled" },
+    { restaurantId },
     { enabled: Boolean(user), retry: false }
   );
   const remoteTables = trpc.platform.tables.useQuery(
     { restaurantId },
     { enabled: Boolean(user), retry: false }
   );
+  const remoteOrders = trpc.platform.orders.useQuery(
+    { branchId: Number(branchId ?? 0), restaurantId },
+    { enabled: Boolean(user) && Boolean(branchId), retry: false }
+  );
+  const createReservation = trpc.platform.createReservation.useMutation({
+    onSuccess: () => {
+      void utils.platform.reservations.invalidate();
+      void utils.platform.tables.invalidate();
+      setQuickCustomerName("");
+      toast.success("تم تعيين الحجز للطاولة");
+    },
+    onError: error => toast.error(`تعذر تعيين الحجز: ${error.message}`),
+  });
   const createTable = trpc.platform.createTable.useMutation({
     onSuccess: () => {
       void utils.platform.tables.invalidate();
@@ -4125,9 +4145,15 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
   const tables = remoteTables.data ?? [];
   const reservations = remoteReservations.data ?? [];
   const visibleTables = useMemo(
-    () => getVisibleTables(tables, reservations, tableFilter, tableSort),
-    [reservations, tableFilter, tableSort, tables]
+    () => getVisibleTables(tables, reservations, tableFilter, tableSort).filter(table => {
+      const query = tableSearch.trim().toLocaleLowerCase("ar");
+      return !query || table.name.toLocaleLowerCase("ar").includes(query) || String(table.id).includes(query);
+    }),
+    [reservations, tableFilter, tableSort, tableSearch, tables]
   );
+  const selectedTable = tables.find(table => table.id === selectedTableId) ?? null;
+  const selectedReservations = selectedTable ? reservations.filter(reservation => reservation.assignedTableId === selectedTable.id) : [];
+  const currentOrder = selectedTable ? (remoteOrders.data ?? []).find(order => order.tableName === selectedTable.name && !["completed", "cancelled"].includes(order.status)) : null;
   return (
     <div>
       <SectionHeading
@@ -4211,10 +4237,14 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
       )}
       <Card className="rounded-2xl border-slate-200 bg-white shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-            <SlidersHorizontal className="h-4 w-4 text-orange-500" />
-            <span>تصفية وترتيب الطاولات</span>
-            <Badge variant="secondary" className="rounded-full text-[10px]">{visibleTables.length} ظاهرة</Badge>
+          <div className="flex min-w-0 items-center gap-2 text-xs font-bold text-slate-700">
+            <SlidersHorizontal className="h-4 w-4 shrink-0 text-orange-500" />
+            <span className="hidden sm:inline">تصفية وترتيب الطاولات</span>
+            <Badge variant="secondary" className="shrink-0 rounded-full text-[10px]">{visibleTables.length} ظاهرة</Badge>
+            <div className="relative min-w-0 flex-1 sm:w-48">
+              <Search className="pointer-events-none absolute right-2 top-2 h-3.5 w-3.5 text-slate-400" />
+              <Input aria-label="البحث عن طاولة" value={tableSearch} onChange={event => setTableSearch(event.target.value)} placeholder="ابحث بالاسم أو الرقم" className="h-8 rounded-lg border-slate-200 pr-7 text-[11px]" />
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <select aria-label="تصفية الطاولات" value={tableFilter} onChange={event => setTableFilter(event.target.value as TableFilter)} className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
@@ -4261,13 +4291,10 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
                 <div
                   key={table.id}
                   tabIndex={0}
-                  onClick={() =>
-                    updateTable.mutate({
-                      restaurantId,
-                      tableId: table.id,
-                      status: occupied ? "available" : "occupied",
-                    })
-                  }
+                  onClick={() => {
+                    setSelectedTableId(table.id);
+                    setTableDialogOpen(true);
+                  }}
                   className={`group relative flex aspect-square flex-col items-center justify-center rounded-3xl border-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 ${recentlyAutoCancelled ? "border-amber-400 bg-amber-50 text-amber-800 shadow-[0_0_0_3px_rgba(245,158,11,0.15)]" : occupied ? "border-orange-200 bg-orange-50 text-orange-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}
                 >
                   <Table2 className="mb-2 h-7 w-7" />
@@ -4295,13 +4322,36 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
                     <p>رسوم الخدمة: تُطبق حسب إعدادات المطعم</p>
                     <p className="mt-1 font-bold text-orange-600">حد أدنى {table.minimumCharge ?? "0.00"} · رسوم طاولة {table.tableFee ?? "0.00"}</p>
                   </div>
+                  <div className="absolute bottom-3 flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+                    <button
+                      type="button"
+                      onClick={event => {
+                        event.stopPropagation();
+                        updateTable.mutate({ restaurantId, tableId: table.id, status: occupied ? "available" : "occupied" });
+                      }}
+                      className="rounded-md bg-slate-900/90 px-2 py-1 text-[10px] text-white"
+                    >
+                      {occupied ? "إتاحة" : "إشغال"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={event => {
+                        event.stopPropagation();
+                        setSelectedTableId(table.id);
+                        setTableDialogOpen(true);
+                      }}
+                      className="rounded-md bg-orange-500 px-2 py-1 text-[10px] text-white"
+                    >
+                      حجز جديد
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={event => {
                       event.stopPropagation();
                       deleteTable.mutate({ restaurantId, tableId: table.id });
                     }}
-                    className="absolute bottom-3 rounded-md bg-white/80 px-2 py-1 text-[10px] text-red-500"
+                    className="absolute left-3 top-3 rounded-md bg-white/80 px-2 py-1 text-[10px] text-red-500"
                   >
                     حذف
                   </button>
@@ -4311,6 +4361,54 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
           )}
         </CardContent>
                 </Card>
+      <Dialog open={tableDialogOpen} onOpenChange={setTableDialogOpen}>
+        <DialogContent dir="rtl" className="max-h-[88vh] max-w-2xl overflow-y-auto rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Table2 className="h-5 w-5 text-orange-500" />
+              {selectedTable ? `تفاصيل ${selectedTable.name}` : "تفاصيل الطاولة"}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedTable && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Card className="rounded-2xl border-slate-200 bg-slate-50/70">
+                <CardContent className="space-y-2 p-4 text-sm">
+                  <p className="font-black text-slate-900">الطلب الحالي</p>
+                  {currentOrder ? (
+                    <>
+                      <p>رقم الطلب: <strong>#{currentOrder.id}</strong></p>
+                      <p>الحالة: <strong>{currentOrder.status}</strong></p>
+                      <p>الإجمالي: <strong>{currentOrder.total} {currentOrder.currencyCode ?? "SAR"}</strong></p>
+                    </>
+                  ) : <p className="text-xs text-slate-500">لا يوجد طلب نشط مرتبط بهذه الطاولة.</p>}
+                </CardContent>
+              </Card>
+              <Card className="rounded-2xl border-slate-200 bg-white">
+                <CardContent className="space-y-2 p-4 text-sm">
+                  <p className="font-black text-slate-900">تعيين حجز جديد</p>
+                  <Input value={quickCustomerName} onChange={event => setQuickCustomerName(event.target.value)} placeholder="اسم العميل" className="rounded-xl" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input value={quickPartySize} onChange={event => setQuickPartySize(event.target.value)} inputMode="numeric" placeholder="عدد الأشخاص" className="rounded-xl" />
+                    <Input value={quickReservedFor} onChange={event => setQuickReservedFor(event.target.value)} type="datetime-local" className="rounded-xl text-xs" />
+                  </div>
+                  <Button type="button" disabled={createReservation.isPending || quickCustomerName.trim().length < 2} onClick={() => createReservation.mutate({ restaurantId, branchId: selectedTable.branchId, assignedTableId: selectedTable.id, customerName: quickCustomerName.trim(), partySize: Number(quickPartySize) || 1, reservedFor: new Date(quickReservedFor), durationMinutes: 60 })} className="w-full rounded-xl bg-orange-500 text-white">
+                    {createReservation.isPending ? "جارٍ التعيين..." : "تعيين الحجز على هذه الطاولة"}
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card className="sm:col-span-2 rounded-2xl border-slate-200 bg-white">
+                <CardContent className="p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="font-black text-slate-900">سجل الحجوزات</p>
+                    <Badge variant="secondary" className="rounded-full text-[10px]">{selectedReservations.length} حجز</Badge>
+                  </div>
+                  {selectedReservations.length === 0 ? <p className="text-xs text-slate-500">لا يوجد سجل حجوزات لهذه الطاولة.</p> : <div className="space-y-2">{selectedReservations.slice(0, 12).map(reservation => <div key={reservation.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs"><span><strong>{reservation.customerName}</strong><span className="mr-2 text-slate-500">{new Date(reservation.reservedFor).toLocaleString("ar-SA")}</span></span><Badge className={`rounded-full text-[10px] ${reservation.noShowNotifiedAt ? "bg-amber-500" : "bg-slate-200 text-slate-700"}`}>{reservation.noShowNotifiedAt ? "إلغاء تلقائي" : reservation.status}</Badge></div>)}</div>}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       <QROperationsPanel restaurantId={restaurantId} branchId={branchId} />
     </div>
   );
