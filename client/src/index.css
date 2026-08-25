@@ -1025,7 +1025,7 @@ html[lang="ur"] body {
   --menu-dark: #070b12 !important;
   background-color: #0b0f17 !important;
   background-image:
-    radial-gradient(circle at 84% -10%, rgba(249, 115, 22, 0.22), transparent 25rem),
+    radial-gradient(circle at 84% -10%, color-mix(in srgb, var(--menu-glass-glow) 22%, transparent), transparent 25rem),
     radial-gradient(circle at 0% 18%, rgba(56, 189, 248, 0.13), transparent 22rem),
     linear-gradient(135deg, #0b0f17 0%, #0e1622 48%, #080d15 100%);
 }
@@ -1033,7 +1033,7 @@ html[lang="ur"] body {
 .nfood-menu-template-glass .nfood-menu-header {
   background: rgba(11, 15, 23, 0.78) !important;
   border-bottom-color: rgba(148, 163, 184, 0.16) !important;
-  box-shadow: 0 16px 42px -30px rgba(249, 115, 22, 0.7);
+  box-shadow: 0 16px 42px -30px color-mix(in srgb, var(--menu-glass-glow) 70%, transparent);
   color: #f8fafc;
 }
 
@@ -1056,7 +1056,7 @@ html[lang="ur"] body {
 .nfood-menu-template-glass .nfood-menu-item-card,
 .nfood-menu-template-glass .nfood-template-picker {
   border-color: rgba(148, 163, 184, 0.18) !important;
-  background: rgba(18, 26, 39, 0.68) !important;
+  background: rgb(18 26 39 / calc(0.35 + var(--menu-glass-opacity))) !important;
   box-shadow: 0 24px 65px -38px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(22px) saturate(125%);
   -webkit-backdrop-filter: blur(22px) saturate(125%);
@@ -1065,13 +1065,13 @@ html[lang="ur"] body {
 .nfood-menu-template-glass .nfood-menu-hero {
   border-radius: 1.75rem;
   background:
-    linear-gradient(135deg, rgba(249, 115, 22, 0.12), transparent 42%),
-    rgba(18, 26, 39, 0.74) !important;
+    linear-gradient(135deg, color-mix(in srgb, var(--menu-glass-glow) 12%, transparent), transparent 42%),
+    rgb(18 26 39 / calc(0.40 + var(--menu-glass-opacity))) !important;
 }
 
 .nfood-menu-template-glass .nfood-menu-hero > div:first-child > div:first-child {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(30, 41, 59, 0.3)) !important;
-  border: 1px solid rgba(249, 115, 22, 0.25);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--menu-glass-glow) 18%, transparent), rgba(30, 41, 59, 0.3)) !important;
+  border: 1px solid color-mix(in srgb, var(--menu-glass-glow) 25%, transparent);
 }
 
 .nfood-menu-template-glass .nfood-menu-hero .text-slate-800,
@@ -1101,12 +1101,12 @@ html[lang="ur"] body {
 
 .nfood-menu-template-glass .nfood-menu-item-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(249, 115, 22, 0.55) !important;
-  box-shadow: 0 26px 55px -32px rgba(249, 115, 22, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  border-color: color-mix(in srgb, var(--menu-glass-glow) 55%, transparent) !important;
+  box-shadow: 0 26px 55px -32px color-mix(in srgb, var(--menu-glass-glow) 55%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .nfood-menu-template-glass .nfood-menu-item-image {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(30, 41, 59, 0.55)) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--menu-glass-glow) 18%, transparent), rgba(30, 41, 59, 0.55)) !important;
 }
 
 .nfood-menu-template-glass .nfood-menu-item-image > .absolute {
@@ -1134,7 +1134,7 @@ html[lang="ur"] body {
 
 .nfood-menu-template-glass .nfood-menu-item-content .bg-orange-50,
 .nfood-menu-template-glass .nfood-menu-item-content .bg-pink-50 {
-  background-color: rgba(249, 115, 22, 0.16) !important;
+  background-color: color-mix(in srgb, var(--menu-glass-glow) 16%, transparent) !important;
   color: #fdba74 !important;
 }
 

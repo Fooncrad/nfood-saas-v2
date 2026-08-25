@@ -8773,6 +8773,18 @@ const restaurantMenuTemplates = [
   { id: "bistro", name: "Bistro", description: "دافئ وحميم", swatch: "linear-gradient(135deg, #f3ebe2, #b86b45)" },
   { id: "glass", name: "NFOOD Glass", description: "داكن وزجاجي", swatch: "linear-gradient(135deg, #0b0f17, #f97316)" },
 ] as const;
+const menuScheduleDays = [
+  { value: 0, label: "الأحد" },
+  { value: 1, label: "الاثنين" },
+  { value: 2, label: "الثلاثاء" },
+  { value: 3, label: "الأربعاء" },
+  { value: 4, label: "الخميس" },
+  { value: 5, label: "الجمعة" },
+  { value: 6, label: "السبت" },
+] as const;
+type MenuTemplateId = (typeof restaurantMenuTemplates)[number]["id"];
+type MenuTemplateRuleDraft = { days: number[]; start: string; end: string; template: MenuTemplateId };
+const defaultMenuTemplateRule: MenuTemplateRuleDraft = { days: [0, 1, 2, 3, 4, 5, 6], start: "18:00", end: "02:00", template: "glass" };
 function BrandingPanel({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
   const utils = trpc.useUtils();
@@ -8798,6 +8810,12 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
       | "midnight-berry"
       | "ocean-mint",
     menuTemplate: "editorial" as "editorial" | "bistro" | "glass",
+    menuTemplateScheduleEnabled: false,
+    menuTemplateScheduleTimezone: "Asia/Riyadh",
+    menuTemplateScheduleFallback: "editorial" as MenuTemplateId,
+    menuTemplateScheduleRules: [defaultMenuTemplateRule] as MenuTemplateRuleDraft[],
+    glassGlowColor: "#F97316",
+    glassCardOpacity: 0.1,
     brandLogoUrl: "",
     pwaInstallMessage: "ثبّت منيو مطعمنا للوصول الأسرع",
     pwaInstallIconUrl: "",
@@ -8847,6 +8865,12 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
           | "midnight-berry"
           | "ocean-mint",
         menuTemplate: brandingQuery.data.menuTemplate as "editorial" | "bistro" | "glass",
+        menuTemplateScheduleEnabled: (() => { try { return Boolean(JSON.parse(brandingQuery.data.menuTemplateScheduleJson ?? "{}").enabled); } catch { return false; } })(),
+        menuTemplateScheduleTimezone: brandingQuery.data.menuTemplateScheduleTimezone ?? "Asia/Riyadh",
+        menuTemplateScheduleFallback: (() => { try { const parsed = JSON.parse(brandingQuery.data.menuTemplateScheduleJson ?? "{}"); return ["editorial", "bistro", "glass"].includes(parsed.fallbackTemplate) ? parsed.fallbackTemplate : brandingQuery.data.menuTemplate as MenuTemplateId; } catch { return brandingQuery.data.menuTemplate as MenuTemplateId; } })(),
+        menuTemplateScheduleRules: (() => { try { const parsed = JSON.parse(brandingQuery.data.menuTemplateScheduleJson ?? "{}"); return Array.isArray(parsed.rules) && parsed.rules.length ? parsed.rules : [defaultMenuTemplateRule]; } catch { return [defaultMenuTemplateRule]; } })(),
+        glassGlowColor: brandingQuery.data.glassGlowColor ?? "#F97316",
+        glassCardOpacity: Number(brandingQuery.data.glassCardOpacity ?? 0.1),
         brandLogoUrl: brandingQuery.data.brandLogoUrl,
         pwaInstallMessage: brandingQuery.data.pwaInstallMessage,
         pwaInstallIconUrl: brandingQuery.data.pwaInstallIconUrl,
@@ -8895,12 +8919,39 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
   });
   const updateCustomDomain = trpc.platform.updateCustomDomain.useMutation({
     onSuccess: () => {
-      void utils.platform.branding.invalidate();
+      void utils.platform.branding.invalidate({ restaurantId });
       void customDomainAccess.refetch();
       toast.success("تم حفظ نطاق المطعم");
     },
     onError: error => toast.error(`تعذر حفظ النطاق: ${error.message}`),
   });
+  const updateMenuTemplateSchedule = trpc.platform.updateMenuTemplateSchedule.useMutation({
+    onSuccess: async () => {
+      await brandingQuery.refetch();
+      toast.success("تم حفظ جدولة قالب المنيو");
+    },
+    onError: error => toast.error(`تعذر حفظ جدولة القالب: ${error.message}`),
+  });
+  const publicPreviewUrl = useMemo(() => {
+    if (!brandingQuery.data?.slug) return "";
+    const url = new URL(publicMenuUrl(publicOrigin, brandingQuery.data.slug), window.location.origin);
+    url.searchParams.set("template", draft.menuTemplate);
+    url.searchParams.set("preview", "1");
+    if (draft.menuTemplate === "glass") {
+      url.searchParams.set("glassGlow", draft.glassGlowColor);
+      url.searchParams.set("glassOpacity", draft.glassCardOpacity.toFixed(2));
+    }
+    return url.toString();
+  }, [brandingQuery.data?.slug, draft.glassCardOpacity, draft.glassGlowColor, draft.menuTemplate, publicOrigin]);
+  const openPublicPreview = () => {
+    if (!publicPreviewUrl) return;
+    window.open(publicPreviewUrl, "_blank", "noopener,noreferrer");
+  };
+  const updateScheduleRule = (index: number, patch: Partial<MenuTemplateRuleDraft>) => setDraft(current => ({ ...current, menuTemplateScheduleRules: current.menuTemplateScheduleRules.map((rule, ruleIndex) => ruleIndex === index ? { ...rule, ...patch } : rule) }));
+  const toggleScheduleDay = (index: number, day: number) => setDraft(current => ({ ...current, menuTemplateScheduleRules: current.menuTemplateScheduleRules.map((rule, ruleIndex) => ruleIndex === index ? { ...rule, days: rule.days.includes(day) ? rule.days.filter(value => value !== day) : [...rule.days, day].sort((a, b) => a - b) } : rule) }));
+  const addScheduleRule = () => setDraft(current => ({ ...current, menuTemplateScheduleRules: current.menuTemplateScheduleRules.length >= 12 ? current.menuTemplateScheduleRules : [...current.menuTemplateScheduleRules, { ...defaultMenuTemplateRule, days: [...defaultMenuTemplateRule.days] }] }));
+  const removeScheduleRule = (index: number) => setDraft(current => ({ ...current, menuTemplateScheduleRules: current.menuTemplateScheduleRules.filter((_, ruleIndex) => ruleIndex !== index) }));
+  const saveSchedule = () => updateMenuTemplateSchedule.mutate({ restaurantId, enabled: draft.menuTemplateScheduleEnabled, timezone: draft.menuTemplateScheduleTimezone, fallbackTemplate: draft.menuTemplateScheduleFallback, rules: draft.menuTemplateScheduleRules.filter(rule => rule.days.length) });
   return (
     <Card className="mb-6 overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
       <CardHeader>
@@ -9032,6 +9083,24 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
                   سيظهر القالب والوضع المختار في صفحة المنيو العامة بعد الحفظ. يمكن للزائر معاينة نمط آخر مؤقتًا.
                 </p>
               </div>
+              <section className="space-y-3 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 sm:col-span-2" data-menu-template-schedule>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="flex items-center gap-2 text-sm font-black text-slate-900"><Clock3 className="h-4 w-4 text-indigo-600" />جدولة قالب المنيو</h3>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">فعّل التبديل التلقائي حسب توقيت المطعم. المثال الافتراضي يعرض NFOOD Glass من 18:00 حتى 02:00.</p>
+                  </div>
+                  <button type="button" role="switch" aria-checked={draft.menuTemplateScheduleEnabled} onClick={() => setDraft(current => ({ ...current, menuTemplateScheduleEnabled: !current.menuTemplateScheduleEnabled }))} className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${draft.menuTemplateScheduleEnabled ? "bg-indigo-600" : "bg-slate-300"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${draft.menuTemplateScheduleEnabled ? "start-6" : "start-1"}`} /></button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="space-y-1 text-xs font-bold">القالب خارج الفترات<select value={draft.menuTemplateScheduleFallback} onChange={event => setDraft({ ...draft, menuTemplateScheduleFallback: event.target.value as MenuTemplateId })} className="mt-1 h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-sm"><option value="editorial">Editorial</option><option value="bistro">Bistro</option><option value="glass">NFOOD Glass</option></select></label>
+                  <label className="space-y-1 text-xs font-bold">المنطقة الزمنية<select value={draft.menuTemplateScheduleTimezone} onChange={event => setDraft({ ...draft, menuTemplateScheduleTimezone: event.target.value })} className="mt-1 h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-sm" dir="ltr"><option value="Asia/Riyadh">Asia/Riyadh · الرياض</option><option value="Asia/Dubai">Asia/Dubai · دبي</option><option value="Africa/Cairo">Africa/Cairo · القاهرة</option><option value="Europe/Paris">Europe/Paris · باريس</option><option value="UTC">UTC</option></select></label>
+                </div>
+                <div className="space-y-2">
+                  {draft.menuTemplateScheduleRules.map((rule, index) => <div key={`schedule-rule-${index}`} className="rounded-xl border border-indigo-100 bg-white p-3 shadow-sm"><div className="flex flex-wrap items-end gap-2"><label className="text-xs font-bold">من<input type="time" value={rule.start} onChange={event => updateScheduleRule(index, { start: event.target.value })} className="mt-1 h-9 rounded-lg border border-slate-200 px-2 text-sm" dir="ltr" /></label><label className="text-xs font-bold">إلى<input type="time" value={rule.end} onChange={event => updateScheduleRule(index, { end: event.target.value })} className="mt-1 h-9 rounded-lg border border-slate-200 px-2 text-sm" dir="ltr" /></label><label className="min-w-40 flex-1 text-xs font-bold">القالب<select value={rule.template} onChange={event => updateScheduleRule(index, { template: event.target.value as MenuTemplateId })} className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-sm"><option value="editorial">Editorial</option><option value="bistro">Bistro</option><option value="glass">NFOOD Glass</option></select></label><button type="button" onClick={() => removeScheduleRule(index)} disabled={draft.menuTemplateScheduleRules.length <= 1} className="h-9 rounded-lg px-2 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40" aria-label="حذف فترة الجدولة">حذف</button></div><div className="mt-2 flex flex-wrap gap-1">{menuScheduleDays.map(day => <button key={day.value} type="button" aria-pressed={rule.days.includes(day.value)} onClick={() => toggleScheduleDay(index, day.value)} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${rule.days.includes(day.value) ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500 hover:bg-indigo-50"}`}>{day.label}</button>)}</div></div>)}
+                  <div className="flex flex-wrap items-center justify-between gap-2"><button type="button" onClick={addScheduleRule} disabled={draft.menuTemplateScheduleRules.length >= 12} className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 disabled:opacity-40"><Plus className="h-3.5 w-3.5" />إضافة فترة</button><Button type="button" onClick={saveSchedule} disabled={updateMenuTemplateSchedule.isPending || (draft.menuTemplateScheduleEnabled && draft.menuTemplateScheduleRules.some(rule => !rule.days.length))} className="rounded-lg bg-indigo-600 px-3 py-2 text-xs hover:bg-indigo-700">{updateMenuTemplateSchedule.isPending ? "جارٍ حفظ الجدولة..." : "حفظ الجدولة"}</Button></div>
+                </div>
+              </section>
+              {draft.menuTemplate === "glass" && <section className="space-y-3 rounded-2xl border border-slate-700 bg-slate-950 p-4 text-white sm:col-span-2" data-glass-customization><div className="flex items-start gap-3"><SlidersHorizontal className="mt-0.5 h-5 w-5 text-orange-400" /><div><h3 className="text-sm font-black">تخصيص NFOOD Glass</h3><p className="mt-1 text-xs leading-5 text-slate-400">اضبط لون التوهج ووضوح البطاقات، وستظهر القيم في المعاينة والمنيو العام بعد الحفظ.</p></div></div><div className="grid gap-3 sm:grid-cols-2"><label className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs font-bold">لون التوهج<div className="mt-2 flex items-center gap-2"><input type="color" value={draft.glassGlowColor} onChange={event => setDraft({ ...draft, glassGlowColor: event.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border-0 bg-transparent" aria-label="لون توهج NFOOD Glass" /><Input value={draft.glassGlowColor} onChange={event => setDraft({ ...draft, glassGlowColor: event.target.value })} dir="ltr" className="h-9 border-white/10 bg-white/10 font-mono text-xs text-white" /></div></label><label className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs font-bold">شفافية البطاقات<div className="mt-3 flex items-center gap-3"><input type="range" min="0.05" max="0.35" step="0.01" value={draft.glassCardOpacity} onChange={event => setDraft({ ...draft, glassCardOpacity: Number(event.target.value) })} className="w-full accent-orange-500" /><span className="min-w-12 rounded-lg bg-white/10 px-2 py-1 text-center font-mono text-[11px] text-orange-300">{Math.round(draft.glassCardOpacity * 100)}%</span></div><div className="mt-1 flex justify-between text-[10px] font-normal text-slate-500"><span>أكثر شفافية</span><span>أوضح</span></div></label></div></section>}
               <label className="space-y-2 text-sm font-semibold sm:col-span-2">
                 رابط الشعار
                 <Input
@@ -9403,9 +9472,8 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
                   draft.brandName.trim().length < 2
                 }
                 onClick={() => {
-                  const { customDomain: _customDomain, ...brandingDraft } =
-                    draft;
-                  updateBranding.mutate({ restaurantId, ...brandingDraft });
+                  const { customDomain: _customDomain, menuTemplateScheduleEnabled: _scheduleEnabled, menuTemplateScheduleTimezone: _scheduleTimezone, menuTemplateScheduleFallback: _scheduleFallback, menuTemplateScheduleRules: _scheduleRules, ...brandingDraft } = draft;
+                  updateBranding.mutate({ restaurantId, ...brandingDraft, menuTemplateScheduleJson: JSON.stringify({ enabled: draft.menuTemplateScheduleEnabled, timezone: draft.menuTemplateScheduleTimezone, fallbackTemplate: draft.menuTemplateScheduleFallback, rules: draft.menuTemplateScheduleRules }), menuTemplateScheduleTimezone: draft.menuTemplateScheduleTimezone });
                 }}
                 className="w-fit rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]"
               >
@@ -9416,11 +9484,11 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
               data-menu-template-preview={draft.menuTemplate}
               className={`rounded-2xl p-5 text-white shadow-inner transition-colors ${draft.menuTemplate === "glass" ? "border border-white/15" : ""}`}
               style={{
-                background: draft.menuTemplate === "glass"
-                  ? "radial-gradient(circle at 85% 0%, rgba(249,115,22,.28), transparent 42%), linear-gradient(135deg, #0b0f17, #111c2d)"
-                  : /^#[0-9A-Fa-f]{6}$/.test(draft.brandColor)
-                    ? draft.brandColor
-                    : "#e76f3c",
+                  background: draft.menuTemplate === "glass"
+                    ? `radial-gradient(circle at 85% 0%, ${draft.glassGlowColor}55, transparent 42%), linear-gradient(135deg, #0b0f17, #111c2d)`
+                    : /^#[0-9A-Fa-f]{6}$/.test(draft.brandColor)
+                      ? draft.brandColor
+                      : "#e76f3c",
               }}
             >
               <div className="flex items-center justify-between gap-2">
@@ -9441,21 +9509,15 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        window.location.assign(
-                          publicMenuUrl(publicOrigin, brandingQuery.data.slug)
-                        );
-                      }}
-                      className="rounded-lg bg-white/15 px-2 py-1 text-[10px] font-semibold text-white hover:bg-white/25"
+                      onClick={openPublicPreview}
+                      className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 text-[10px] font-semibold text-white hover:bg-white/25"
                     >
-                      فتح المنيو
+                      <Eye className="h-3 w-3" /> فتح معاينة المنيو
                     </button>
                     <button
                       type="button"
                       onClick={() => {
-                        void navigator.clipboard?.writeText(
-                          publicMenuUrl(publicOrigin, brandingQuery.data.slug)
-                        );
+                        void navigator.clipboard?.writeText(publicPreviewUrl);
                         toast.success("تم نسخ رابط المطعم");
                       }}
                       className="rounded-lg bg-white/15 px-2 py-1 text-[10px] font-semibold text-white hover:bg-white/25"
@@ -9482,7 +9544,7 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
               <p className="mt-2 text-xs leading-5 text-white/80">
                 {draft.brandDescription || "وصف المطعم سيظهر هنا بعد الحفظ."}
               </p>
-              <div className={`mt-5 rounded-2xl p-3 ${draft.menuTemplate === "glass" ? "border border-white/15 bg-white/10 backdrop-blur-xl" : draft.menuTemplate === "bistro" ? "bg-white/15" : "bg-white/10"}`}>
+              <div className={`mt-5 rounded-2xl p-3 ${draft.menuTemplate === "glass" ? "border border-white/15 backdrop-blur-xl" : draft.menuTemplate === "bistro" ? "bg-white/15" : "bg-white/10"}`} style={draft.menuTemplate === "glass" ? { backgroundColor: `rgba(255,255,255,${draft.glassCardOpacity})` } : undefined}>
                 <div className="flex items-center justify-between gap-2 text-[10px] font-black"><span>الأقسام</span><span className="rounded-full bg-white/15 px-2 py-1">السلة · 0</span></div>
                 <div className="mt-3 grid grid-cols-2 gap-2"><div className="rounded-xl bg-white/15 p-2"><span className="block h-2 w-2/3 rounded-full bg-white/60" /><span className="mt-2 block h-2 w-1/2 rounded-full bg-white/25" /><strong className="mt-3 block text-[10px]">طبق اليوم · 32 SAR</strong></div><div className="rounded-xl bg-white/15 p-2"><span className="block h-2 w-3/4 rounded-full bg-white/60" /><span className="mt-2 block h-2 w-1/2 rounded-full bg-white/25" /><strong className="mt-3 block text-[10px]">اختيار الشيف · 28 SAR</strong></div></div>
               </div>

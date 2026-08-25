@@ -30,6 +30,27 @@ describe("public menu UX", () => {
     expect(page).toContain('aria-pressed={menuTemplate === "bistro"}');
     expect(page).toContain('aria-pressed={menuTemplate === "glass"}');
     expect(page).toContain("page.data?.restaurant.menuTemplate");
+    expect(page).toContain("page.data?.restaurant.glassGlowColor");
+    expect(page).toContain("page.data?.restaurant.glassCardOpacity");
+    expect(page).toContain("glassGlow");
+    expect(page).toContain("glassOpacity");
+  });
+
+  it("keeps manager Glass settings configurable through CSS variables", () => {
+    expect(page).toContain('"--menu-glass-glow": glassGlowColor');
+    expect(page).toContain('"--menu-glass-opacity":');
+    expect(styles).toContain("var(--menu-glass-glow)");
+    expect(styles).toContain("var(--menu-glass-opacity)");
+  });
+
+  it("opens a real menu preview in a new tab from branding settings", () => {
+    const settings = readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
+    expect(settings).toContain("window.open(publicPreviewUrl");
+    expect(settings).toContain('url.searchParams.set("preview", "1")');
+    expect(settings).toContain('url.searchParams.set("template", draft.menuTemplate)');
+    expect(settings).toContain("updateMenuTemplateSchedule");
+    expect(settings).toContain("data-menu-template-schedule");
+    expect(settings).toContain("data-glass-customization");
   });
 
   it("provides translated order type selection and mobile navigation", () => {

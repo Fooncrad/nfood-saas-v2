@@ -10,6 +10,7 @@ import { createContext } from "./context";
 import { registerMarketingHeartbeat } from "../marketing";
 import { registerReservationHeartbeat } from "../reservations";
 import { registerPrinterHealthHeartbeat } from "../printerHealth";
+import { registerMenuTemplateScheduleHeartbeat } from "../menuTemplateSchedule";
 import { getPlatformSettings, getPublicRestaurantPage, listPublicRestaurants } from "../db";
 import { serveStatic, setupVite } from "./vite";
 import { attachDisplayRealtime } from "../displayRealtime";
@@ -49,6 +50,7 @@ async function startServer() {
   registerMarketingHeartbeat(app);
   registerReservationHeartbeat(app);
   registerPrinterHealthHeartbeat(app);
+  registerMenuTemplateScheduleHeartbeat(app);
   const publicOrigin = async (req: express.Request) => {
     const settings = await getPlatformSettings();
     const configured = settings.baseDomain?.trim().replace(/\/+$/, "");

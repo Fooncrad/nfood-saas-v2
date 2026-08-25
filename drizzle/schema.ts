@@ -120,6 +120,11 @@ export const restaurants = mysqlTable("restaurants", {
   serviceFeeEnabled: boolean("serviceFeeEnabled").default(false).notNull(),
   serviceFeePercent: decimal("serviceFeePercent", { precision: 5, scale: 2 }).default("0").notNull(),
   showBranchesOnMenu: boolean("showBranchesOnMenu").default(false).notNull(),
+  menuTemplateScheduleJson: text("menuTemplateScheduleJson"),
+  menuTemplateScheduleTimezone: varchar("menuTemplateScheduleTimezone", { length: 64 }).default("Asia/Riyadh").notNull(),
+  menuTemplateScheduleCronTaskUid: varchar("menuTemplateScheduleCronTaskUid", { length: 65 }),
+  glassGlowColor: varchar("glassGlowColor", { length: 7 }).default("#F97316").notNull(),
+  glassCardOpacity: decimal("glassCardOpacity", { precision: 3, scale: 2 }).default("0.10").notNull(),
   mediaShowcaseEnabled: boolean("mediaShowcaseEnabled").default(true).notNull(),
   motionEffectsEnabled: boolean("motionEffectsEnabled").default(true).notNull(),
   integrationMode: mysqlEnum("integrationMode", ["platform", "custom"]).default("platform").notNull(),
@@ -128,7 +133,7 @@ export const restaurants = mysqlTable("restaurants", {
   orderModesJson: varchar("orderModesJson", { length: 255 }).default('["dineIn","takeaway","delivery","reservation","hotel"]').notNull(),
   reservationEventTypesJson: varchar("reservationEventTypesJson", { length: 1000 }).default('["حفل عيد ميلاد","فعالية","اجتماع","عشاء خاص"]').notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({ menuTemplateScheduleTaskIdx: index("restaurants_menu_template_schedule_task_idx").on(table.menuTemplateScheduleCronTaskUid) }));
 
 export const receiptTemplates = mysqlTable("receiptTemplates", {
   id: int("id").autoincrement().primaryKey(),

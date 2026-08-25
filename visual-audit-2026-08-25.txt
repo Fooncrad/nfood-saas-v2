@@ -5,3 +5,11 @@
 - Mobile 390px: both templates remain within the viewport without horizontal scrolling; the glass theme keeps dark surfaces and orange/purple contrast, while editorial keeps the light cards.
 - Mobile 390px: the bottom navigation remains visible and the template picker wraps without breaking the page width.
 - Next verification target: authenticated manager dashboard route and the live preview card in the branding settings panel.
+
+## جدولة القالب وتخصيص NFOOD Glass — 2026-08-25
+- تمت معاينة `/restaurant/nssercafa?template=glass&glassGlow=%2360a5fa&glassOpacity=0.20` على 1280x720 وعلى 390x844.
+- تمت معاينة `/restaurant/nssercafa?template=bistro` على 1280x720 وعلى 390x844.
+- قالب Glass ظهر بخلفية داكنة، بطاقات زجاجية، وتوهج أزرق مخصص من معامل المعاينة، مع استمرار شبكة المنيو والبطاقة العائمة للسلة والتنقل السفلي على الجوال.
+- قالب Bistro ظهر بخلفية فاتحة دافئة وهوية مختلفة بوضوح، مع بقاء عناصر البحث والأقسام والطلب متجاوبة.
+- لم يظهر تمرير أفقي أو تزاحم في أعلى شاشة الهاتف؛ الصفحة تستمر بالتمرير الطبيعي للمحتوى.
+- المعاينة الحالية للمنيو العام تستخدم بيانات Nasser Cafe الفعلية من قاعدة البيانات.
