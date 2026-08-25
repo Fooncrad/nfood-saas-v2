@@ -94,7 +94,7 @@ import { DriverDeliveryView } from "@/components/DriverDeliveryView";
 import { CompactOrdersBoard } from "@/components/CompactOrdersBoard";
 import { OperationalModuleShell } from "@/components/OperationalModuleShell";
 import { CompactModuleSummary } from "@/components/CompactModuleSummary";
-import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";
+import SubscriptionReceiptsAdminPage from "@/pages/SubscriptionReceiptsAdminPage";
 import { KitchenPrinterSettings } from "@/components/KitchenPrinterSettings";
 import { RestaurantPricingSettings } from "@/components/RestaurantPricingSettings";
 import { RestaurantIntegrationSettings } from "@/components/RestaurantIntegrationSettings";
@@ -533,7 +533,7 @@ export function ModuleView({
         <RestaurantOperationsHub restaurantId={restaurantId} branchId={branchId} />
       </OperationalModuleShell>
     );
-  if (active === "admin") return <SuperAdminRestaurantCatalog />;
+  if (active === "admin") return <SubscriptionReceiptsAdminPage />;
   if (active === "settings")
     return role === "admin" ? (
       <PlatformSettingsPanel />

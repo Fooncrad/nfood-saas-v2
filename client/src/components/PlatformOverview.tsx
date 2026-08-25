@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import type { DashboardQuickAccessItem } from "@/components/DashboardQuickAccess";
 import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -79,6 +78,8 @@ function FeatureRequestInbox() {
   return <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-900/90"><CardContent className="p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-black text-slate-950 dark:text-white">{copy.title}</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{requests.isLoading ? copy.loading : `${requests.data?.length ?? 0} ${copy.pending}`}</p></div><span className="rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-black text-orange-700 dark:bg-orange-500/15 dark:text-orange-300">{requests.data?.length ?? 0}</span></div>{!requests.isLoading && !(requests.data?.length) ? <p className="mt-4 rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">{copy.empty}</p> : <div className="mt-4 space-y-2">{(requests.data ?? []).slice(0, 6).map((request) => <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60"><div><p className="text-xs font-black text-slate-900 dark:text-white">{request.featureKey === "platform_delivery" ? copy.delivery : request.featureLabel}</p><p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">مطعم #{request.restaurantId}{request.requestedPrice ? ` · ${request.requestedPrice} ${request.currencyCode}` : ""}</p></div><div className="flex items-center gap-2"><button type="button" disabled={review.isPending} onClick={() => review.mutate({ id: request.id, status: "rejected" })} className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-[11px] font-black text-red-700 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10"><XCircle className="h-3.5 w-3.5" />{copy.reject}</button><button type="button" disabled={review.isPending} onClick={() => review.mutate({ id: request.id, status: "approved" })} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-[11px] font-black text-white transition hover:bg-emerald-700 disabled:opacity-50"><CheckCircle2 className="h-3.5 w-3.5" />{copy.approve}</button></div></div>)}</div>}</CardContent></Card>;
 }
 
+function formatPlatformMoney(value: number) { return `${Math.round(Number.isFinite(value) ? value : 0).toLocaleString("en-US", { maximumFractionDigits: 0 })} SAR`; }
+
 function dailySeries<T>(
   rows: T[],
   getDate: (row: T) => Date | string | number | null | undefined,
@@ -105,21 +106,15 @@ function dailySeries<T>(
   return values.map(({ value }) => value);
 }
 
-export function PlatformOverview({
-  onNavigate,
-  quickItems,
-}: {
-  onNavigate: (key: "admin" | DashboardQuickAccessItem["key"]) => void;
-  quickItems: DashboardQuickAccessItem[];
-}) {
+export function PlatformOverview({ onNavigate }: { onNavigate: (key: "admin") => void }) {
   const { language } = useLanguage();
   const copy = language === "ar"
-    ? { active: "المطاعم النشطة", inactive: "المطاعم غير النشطة", sales: "مبيعات الباقات اليوم", recurring: "الإيراد الشهري المتكرر", report: "تفاصيل التقرير", noHistory: "لا توجد سلسلة تاريخية كافية", error: "تعذر تحميل مؤشرات المنصة حاليًا." }
+    ? { total: "إجمالي المطاعم", active: "المطاعم النشطة", inactive: "المطاعم غير النشطة", sales: "مبيعات الباقات اليوم", recurring: "الإيراد الشهري المتكرر", report: "تفاصيل التقرير", noHistory: "لا توجد سلسلة تاريخية كافية", error: "تعذر تحميل مؤشرات المنصة حاليًا." }
     : language === "fr"
-      ? { active: "Restaurants actifs", inactive: "Restaurants inactifs", sales: "Ventes des offres aujourd’hui", recurring: "Revenu mensuel récurrent", report: "Détails du rapport", noHistory: "Historique insuffisant", error: "Impossible de charger les indicateurs de la plateforme." }
+      ? { total: "Total des restaurants", active: "Restaurants actifs", inactive: "Restaurants inactifs", sales: "Ventes des offres aujourd’hui", recurring: "Revenu mensuel récurrent", report: "Détails du rapport", noHistory: "Historique insuffisant", error: "Impossible de charger les indicateurs de la plateforme." }
       : language === "ur"
-        ? { active: "فعال ریستوران", inactive: "غیر فعال ریستوران", sales: "آج کی پیکیج فروخت", recurring: "ماہانہ بار بار آمدنی", report: "رپورٹ کی تفصیل", noHistory: "کافی تاریخی سلسلہ موجود نہیں", error: "پلیٹ فارم کے اشاریے لوڈ نہیں ہو سکے۔" }
-        : { active: "Active restaurants", inactive: "Inactive restaurants", sales: "Plan sales today", recurring: "Monthly recurring revenue", report: "Report details", noHistory: "Not enough historical data", error: "Unable to load platform metrics right now." };
+        ? { total: "کل ریستوران", active: "فعال ریستوران", inactive: "غیر فعال ریستوران", sales: "آج کی پیکیج فروخت", recurring: "ماہانہ بار بار آمدنی", report: "رپورٹ کی تفصیل", noHistory: "کافی تاریخی سلسلہ موجود نہیں", error: "پلیٹ فارم کے اشاریے لوڈ نہیں ہو سکے۔" }
+        : { total: "Total restaurants", active: "Active restaurants", inactive: "Inactive restaurants", sales: "Plan sales today", recurring: "Monthly recurring revenue", report: "Report details", noHistory: "Not enough historical data", error: "Unable to load platform metrics right now." };
   const restaurantsQuery = trpc.admin.restaurants.useQuery(undefined, {
     retry: 2,
   });
@@ -151,6 +146,11 @@ export function PlatformOverview({
       (sum, subscription) => sum + Number(subscription.monthlyPrice ?? 0),
       0
     );
+  const totalHistory = dailySeries(
+    restaurants,
+    restaurant => restaurant.createdAt,
+    () => 1
+  );
   const activeHistory = dailySeries(
     restaurants,
     restaurant => restaurant.createdAt,
@@ -173,6 +173,13 @@ export function PlatformOverview({
   );
   const cards = [
     {
+      label: copy.total,
+      value: restaurants.length,
+      icon: Store,
+      tint: "slate" as const,
+      history: totalHistory,
+    },
+    {
       label: copy.active,
       value: activeRestaurants,
       icon: Store,
@@ -188,14 +195,14 @@ export function PlatformOverview({
     },
     {
       label: copy.sales,
-      value: `${dailySubscriptionSales.toLocaleString("en-US")} SAR`,
+      value: formatPlatformMoney(dailySubscriptionSales),
       icon: CircleDollarSign,
       tint: "orange" as const,
       history: dailySalesHistory,
     },
     {
       label: copy.recurring,
-      value: `${monthlyRecurringRevenue.toLocaleString("en-US")} SAR`,
+      value: formatPlatformMoney(monthlyRecurringRevenue),
       icon: WalletCards,
       tint: "violet" as const,
       history: recurringHistory,
@@ -211,7 +218,7 @@ export function PlatformOverview({
           {copy.error}
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3 max-[1100px]:gap-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 max-[1100px]:gap-2 xl:grid-cols-5">
         {cards.map(card => {
           const Icon = card.icon;
           const tone =
