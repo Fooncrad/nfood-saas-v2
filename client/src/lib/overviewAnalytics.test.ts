@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBuckets, integer } from "@/components/OverviewAnalyticsPanel";
+import { buildBuckets, calculateGrowthPercent, comparisonSummary, integer } from "@/components/OverviewAnalyticsPanel";
 import type { Order } from "@/components/homeNavigation";
 
 const order = (overrides: Partial<Order>): Order => ({
@@ -22,6 +22,13 @@ describe("Overview analytics", () => {
     expect(integer(5000.01)).toBe("5,000");
     expect(integer(Number.NaN)).toBe("0");
     expect(integer(1200)).not.toMatch(/[٠-٩]/);
+  });
+
+  it("calculates growth against the previous period using rounded percentages", () => {
+    expect(calculateGrowthPercent(125, 100)).toBe(25);
+    expect(calculateGrowthPercent(75, 100)).toBe(-25);
+    expect(calculateGrowthPercent(25, 0)).toBeNull();
+    expect(comparisonSummary(1500, 1000, 15, 10)).toEqual({ revenueGrowth: 50, orderGrowth: 50, averageGrowth: 0 });
   });
 
   it("creates the requested number of time buckets from real orders", () => {
