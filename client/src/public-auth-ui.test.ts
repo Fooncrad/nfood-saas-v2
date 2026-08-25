@@ -31,4 +31,18 @@ describe("public authentication and social UI contracts", () => {
     expect(social).toContain("fixed left-4 top-1/2");
     expect(social).toContain("nfood-social-float");
   });
+
+  it("allows customers to create and use a password from the public menu account dialog", () => {
+    const menu = read("./pages/RestaurantPublic.tsx");
+    const router = read("../../server/routers.ts");
+    expect(menu).toContain("accountPassword");
+    expect(menu).toContain("accountPasswordConfirm");
+    expect(menu).toContain("registerCustomer.mutate({ name: accountName.trim(), email: accountEmail.trim(), password: accountPassword })");
+    expect(menu).toContain("loginCustomer.mutate({ email: accountEmail.trim(), password: accountPassword })");
+    expect(menu).toContain("showAccountPassword");
+    expect(router).toContain("registerCustomer: publicProcedure.input(z.object({ name: z.string().trim().min(2).max(160), email: z.string().trim().email().max(320), password: z.string().min(8).max(128) }))");
+    expect(router).toContain("loginCustomer: publicProcedure.input");
+    expect(router).toContain("scryptSync(input.password");
+    expect(router).not.toContain("return { success: true, name: user.name, password");
+  });
 });
