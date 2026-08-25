@@ -12,12 +12,12 @@ describe("public menu UX", () => {
     expect(page).toContain("nfood-menu-shell flex flex-col");
     expect(page).toContain("<main className=\"min-w-0 px-3 sm:px-6\">");
     expect(page).toContain("ar-SA-u-nu-latn");
-    expect(page).toContain("h-40 shrink-0");
-    expect(page).toContain("min-h-[430px]");
-    expect(page).toContain("min-h-[238px]");
+    expect(page).toContain("h-32 shrink-0");
+    expect(page).toContain("min-h-[340px]");
+    expect(page).toContain("min-h-[185px]");
     expect(page).toContain('loading="lazy"');
     expect(page).toContain('decoding="async"');
-    expect(page).toContain("h-11 w-11 rounded-xl text-white");
+    expect(page).toContain("h-9 w-9 rounded-xl text-white");
   });
 
   it("exposes three distinct menu templates with a persisted switch", () => {
@@ -69,6 +69,11 @@ describe("public menu UX", () => {
     expect(page).toContain("aria-label={copy.qrTitle}");
     expect(page).toContain("<QrCode className=\"ml-2 h-4 w-4\" />QR Menu");
     expect(page).toContain("تسجيل / دخول");
+    expect(page).not.toContain("مشاركة المنيو");
+    expect(page).not.toContain('showMenuTool("share")');
+    expect(page).not.toContain('showMenuTool("orderType")');
+    expect(page).toContain("registerCustomer");
+    expect(page).toContain("requestCustomerOtp");
     expect(page).toContain("<footer className=\"mt-14");
     expect(page).toContain("{copy.workingHours}");
     expect(page).not.toContain("<a href=\"#contact\" className=\"transition hover:text-[var(--menu-primary)]\">");
@@ -80,6 +85,7 @@ describe("public menu UX", () => {
     expect(page).toContain("<div className=\"rounded-xl bg-slate-900 p-4 text-white\"><p className=\"text-sm font-black\">{copy.qrTitle}</p></div>");
     expect(page).not.toContain("{copy.qrHelp}");
     expect(page).toContain("grid grid-cols-2 gap-2");
+    expect(page).not.toContain("shareMenuLink");
   });
 
   it("supports the four manager-selected density modes", () => {

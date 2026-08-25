@@ -282,6 +282,17 @@ export const guestOrderClaimOtps = mysqlTable("guestOrderClaimOtps", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({ claimOtpUserIdx: index("guest_order_claim_otps_user_idx").on(table.userId, table.guestPhone), claimOtpExpiryIdx: index("guest_order_claim_otps_expiry_idx").on(table.expiresAt) }));
 
+export const customerAuthOtps = mysqlTable("customerAuthOtps", {
+  id: int("id").autoincrement().primaryKey(),
+  phone: varchar("phone", { length: 40 }).notNull(),
+  name: varchar("name", { length: 160 }),
+  codeHash: varchar("codeHash", { length: 128 }).notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  consumedAt: timestamp("consumedAt"),
+  attempts: int("attempts").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({ customerAuthPhoneIdx: index("customer_auth_otps_phone_idx").on(table.phone), customerAuthExpiryIdx: index("customer_auth_otps_expiry_idx").on(table.expiresAt) }));
+
 export const menuCategories = mysqlTable("menuCategories", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull(),

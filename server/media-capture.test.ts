@@ -22,12 +22,12 @@ describe("mobile media capture and fallback menu contract", () => {
     expect(panel).toContain("عرض الوسائط التسويقية");
   });
 
-  it("offers a text-only RTL menu print flow for PDF fallback and sharing", () => {
+  it("offers a text-only RTL menu print flow for PDF fallback without public menu sharing", () => {
     const source = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"), "utf8");
     expect(source).toContain("downloadMenuPdf");
     expect(source).toContain("بدون صور");
     expect(source).toContain("اختر «حفظ كملف PDF»");
-    expect(source).toContain("shareMenuLink");
+    expect(source).not.toContain("shareMenuLink");
     expect(source).toContain("تنزيل PDF نصي");
   });
 });

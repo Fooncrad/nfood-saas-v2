@@ -1,11 +1,9 @@
 export const MENU_DISPLAY_TOOL_KEYS = [
   "search",
   "categories",
-  "share",
   "pdf",
   "templatePicker",
   "qr",
-  "orderType",
   "branchPicker",
   "workingHours",
   "contactFooter",
@@ -27,11 +25,9 @@ export const defaultMenuDisplaySettings: MenuDisplaySettings = {
   tools: {
     search: true,
     categories: true,
-    share: true,
     pdf: true,
     templatePicker: true,
     qr: true,
-    orderType: true,
     branchPicker: true,
     workingHours: true,
     contactFooter: true,
