@@ -4092,6 +4092,16 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
     { restaurantId },
     { enabled: Boolean(user), retry: false }
   );
+  const remoteBranches = trpc.platform.branches.useQuery(
+    { restaurantId },
+    { enabled: Boolean(user), retry: false }
+  );
+  const selectedTableBranchId = Number(tableBranchId) > 0 ? Number(tableBranchId) : Number(branchId ?? 0);
+  const tableSections = trpc.platform.seatingSections.useQuery(
+    { restaurantId, branchId: selectedTableBranchId },
+    { enabled: selectedTableBranchId > 0, retry: false }
+  );
+  const selectedTableBranch = (remoteBranches.data ?? []).find(branch => branch.id === selectedTableBranchId);
   const remoteOrders = trpc.platform.orders.useQuery(
     { branchId: Number(branchId ?? 0), restaurantId },
     { enabled: Boolean(user) && Boolean(branchId), retry: false }
@@ -4112,6 +4122,13 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
     },
     onError: error => toast.error(`تعذر إضافة الطاولة: ${error.message}`),
   });
+  const updateTableFee = trpc.platform.updateBranchTableFee.useMutation({
+    onSuccess: () => {
+      void utils.platform.branches.invalidate();
+      toast.success("تم حفظ الرسوم الثابتة للطاولات");
+    },
+    onError: error => toast.error(`تعذر حفظ الرسوم الثابتة: ${error.message}`),
+  });
   const updateTable = trpc.platform.updateTableStatus.useMutation({
     onSuccess: () => {
       void utils.platform.tables.invalidate();
@@ -4128,6 +4145,15 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
   });
   const tables = remoteTables.data ?? [];
   const reservations = remoteReservations.data ?? [];
+  const seatingSections = tableSections.data ?? [];
+  useEffect(() => {
+    if (branchId && !tableBranchId) setTableBranchId(String(branchId));
+  }, [branchId, tableBranchId]);
+  useEffect(() => {
+    if (selectedTableBranch?.defaultTableFee !== undefined && tableFee === "0") {
+      setTableFee(String(selectedTableBranch.defaultTableFee ?? "0"));
+    }
+  }, [selectedTableBranch?.defaultTableFee, tableFee]);
   const visibleTables = useMemo(
     () => getVisibleTables(tables, reservations, tableFilter, tableSort).filter(table => {
       const query = tableSearch.trim().toLocaleLowerCase("ar");
@@ -4144,18 +4170,21 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
         title="إدارة الطاولات"
         description="حالة الطاولات محفوظة في قاعدة البيانات مع عزل المطعم."
         action="إضافة طاولة"
-        onAction={() => setTableFormOpen(value => !value)}
+              onAction={() => {
+                if (branchId) setTableBranchId(String(branchId));
+                setTableFormOpen(value => !value);
+              }}
       />
       <SeatingSectionsPanel restaurantId={restaurantId} />
       {tableFormOpen && (
         <Card className="mb-4 rounded-2xl border-orange-100 bg-orange-50/40">
           <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[140px_1fr_130px_150px_130px_130px_auto]">
             <Input
-              value={tableBranchId}
-              onChange={event => setTableBranchId(event.target.value)}
-              inputMode="numeric"
-              placeholder="رقم الفرع"
-              className="rounded-xl bg-white"
+              value={selectedTableBranchId > 0 ? String(selectedTableBranchId) : ""}
+              readOnly
+              aria-label="الفرع المحدد تلقائيًا"
+              placeholder="الفرع المحدد"
+              className="rounded-xl bg-slate-100 text-slate-600"
             />
             <Input
               value={tableName}
@@ -4170,12 +4199,18 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
               placeholder="عدد المقاعد"
               className="rounded-xl bg-white"
             />
-            <Input
+            <select
               value={tableType}
-              onChange={event => setTableType(event.target.value)}
-              placeholder="نوع الطاولة"
-              className="rounded-xl bg-white"
-            />
+              onChange={event => {
+                const section = seatingSections.find(item => item.name === event.target.value);
+                setTableType(event.target.value);
+              }}
+              aria-label="قسم الطاولة المحفوظ"
+              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700"
+            >
+              <option value="standard">اختر القسم المحفوظ</option>
+              {seatingSections.map(section => <option key={section.id} value={section.name}>{section.name}</option>)}
+            </select>
             <Input
               value={minimumCharge}
               onChange={event => setMinimumCharge(event.target.value)}
@@ -4187,9 +4222,17 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
               value={tableFee}
               onChange={event => setTableFee(event.target.value)}
               inputMode="decimal"
-              placeholder="رسوم الطاولة"
+              placeholder="الرسوم الثابتة للطاولات"
+              aria-label="الرسوم الثابتة للطاولات"
               className="rounded-xl bg-white"
             />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={updateTableFee.isPending || selectedTableBranchId < 1 || !Number.isFinite(Number(tableFee)) || Number(tableFee) < 0}
+              onClick={() => updateTableFee.mutate({ restaurantId, branchId: selectedTableBranchId, defaultTableFee: Number(tableFee) || 0 })}
+              className="rounded-xl border-orange-200 text-orange-700"
+            >{updateTableFee.isPending ? "جارٍ حفظ الرسم..." : "حفظ الرسم الثابت"}</Button>
             <Button
               disabled={
                 createTable.isPending ||
@@ -4208,6 +4251,7 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
                   name: tableName.trim(),
                   seats: Number(tableSeats),
                   tableType: tableType.trim() || "standard",
+                  seatingSectionId: seatingSections.find(section => section.name === tableType)?.id ?? null,
                   minimumCharge: Number(minimumCharge) || 0,
                   tableFee: Number(tableFee) || 0,
                 })

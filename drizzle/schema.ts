@@ -215,6 +215,7 @@ export const branches = mysqlTable("branches", {
   status: mysqlEnum("status", ["open", "closed"]).default("open").notNull(),
   openingTime: varchar("openingTime", { length: 5 }),
   closingTime: varchar("closingTime", { length: 5 }),
+  defaultTableFee: decimal("defaultTableFee", { precision: 10, scale: 2 }).default("0").notNull(),
   operatingWindowsJson: text("operatingWindowsJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

@@ -64,7 +64,22 @@ export function getCountry(code: string) {
   return COUNTRIES.find((country) => country.code === code) ?? COUNTRIES[0];
 }
 
-export function formatMoney(value: number | string, currencyCode = "SAR", locale = "ar-SA") {
+export function parseMoneyValue(value: number | string | null | undefined) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const raw = String(value ?? "").trim().replace(/,/g, "").replace(/[^0-9.-]/g, "");
+  const unsigned = raw.replace(/(?!^)-/g, "");
+  const segments = unsigned.split(".");
+  const normalized = segments.length > 2
+    ? segments.slice(1).every(segment => /^0+$/.test(segment))
+      ? segments[0]
+      : segments.join("")
+    : unsigned;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function formatMoney(value: number | string | null | undefined, currencyCode = "SAR", locale = "ar-SA") {
   const currency = getCurrency(currencyCode);
-  return new Intl.NumberFormat(locale, { minimumFractionDigits: currency.decimals, maximumFractionDigits: currency.decimals }).format(Number(value));
+  const normalizedLocale = locale.startsWith("ar") && !locale.includes("u-nu-") ? `${locale}-u-nu-latn` : locale;
+  return new Intl.NumberFormat(normalizedLocale, { minimumFractionDigits: currency.decimals, maximumFractionDigits: currency.decimals }).format(parseMoneyValue(value));
 }

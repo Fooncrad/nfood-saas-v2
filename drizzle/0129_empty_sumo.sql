@@ -1,0 +1,1 @@
+ALTER TABLE `branches` ADD `defaultTableFee` decimal(10,2) DEFAULT '0' NOT NULL;
