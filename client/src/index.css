@@ -1203,3 +1203,90 @@ html[lang="ur"] body {
     .nfood-settings-tab-enter { animation: none; }
   }
 }
+
+/* Public menu readability and card geometry */
+@layer components {
+  .nfood-menu-theme .nfood-menu-header nav a {
+    color: var(--menu-ink) !important;
+    font-weight: 800;
+    text-shadow: 0 1px 0 color-mix(in srgb, var(--menu-page) 18%, transparent);
+  }
+  .nfood-menu-theme .nfood-menu-header nav a:hover,
+  .nfood-menu-theme .nfood-menu-header nav a:focus-visible {
+    color: var(--menu-primary) !important;
+  }
+  .nfood-menu-theme .nfood-menu-header > div > div:first-child span {
+    color: var(--menu-ink) !important;
+  }
+  .nfood-menu-theme .nfood-menu-item-card {
+    min-height: 430px;
+  }
+  .nfood-menu-theme .nfood-menu-item-image {
+    height: 10rem;
+    aspect-ratio: auto;
+  }
+  .nfood-menu-theme .nfood-menu-item-content {
+    min-height: 238px;
+  }
+  .nfood-menu-theme .nfood-menu-item-content h3 {
+    color: var(--menu-ink) !important;
+    font-weight: 900;
+  }
+  .nfood-menu-theme .nfood-menu-item-content > p {
+    color: color-mix(in srgb, var(--menu-ink) 68%, transparent) !important;
+  }
+  .nfood-menu-theme .nfood-menu-info-card {
+    min-height: 168px;
+  }
+  @media (min-width: 640px) {
+    .nfood-menu-theme .nfood-menu-item-image { height: 11rem; }
+  }
+  @media (min-width: 1024px) {
+    .nfood-menu-theme .nfood-menu-item-image { height: 12rem; }
+  }
+  @media (max-width: 639px) {
+    .nfood-menu-theme .nfood-menu-item-card { min-height: 400px; }
+    .nfood-menu-theme .nfood-menu-item-content { min-height: 222px; }
+    .nfood-menu-theme .nfood-menu-info-card { min-height: 0; }
+  }
+}
+
+/* Glass contrast corrections for explicit utility colors used by the public menu */
+@layer components {
+  .nfood-menu-template-glass #menu h2,
+  .nfood-menu-template-glass #menu .text-slate-950,
+  .nfood-menu-template-glass #menu .text-slate-900,
+  .nfood-menu-template-glass #menu .text-slate-800 {
+    color: #f8fafc !important;
+  }
+  .nfood-menu-template-glass #menu .text-slate-600,
+  .nfood-menu-template-glass #menu .text-slate-500,
+  .nfood-menu-template-glass #menu .text-slate-400 {
+    color: #b9c9dc !important;
+  }
+  .nfood-menu-template-glass .nfood-menu-info-card .bg-slate-50,
+  .nfood-menu-template-glass .nfood-menu-info-card .bg-white {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #f8fafc !important;
+  }
+  .nfood-menu-template-glass .nfood-menu-info-card .text-slate-700,
+  .nfood-menu-template-glass .nfood-menu-info-card .text-slate-600,
+  .nfood-menu-template-glass .nfood-menu-info-card .text-slate-500 {
+    color: #dbe7f5 !important;
+  }
+}
+
+@layer components {
+  .nfood-menu-template-glass .nfood-menu-hero .text-slate-950,
+  .nfood-menu-template-glass .nfood-menu-hero .text-slate-800 {
+    color: #f8fafc !important;
+  }
+  .nfood-menu-template-glass .nfood-menu-item-content strong[style] {
+    color: color-mix(in srgb, var(--menu-glass-glow) 68%, #ffffff) !important;
+    text-shadow: 0 0 14px color-mix(in srgb, var(--menu-glass-glow) 42%, transparent);
+  }
+  .nfood-menu-template-glass .nfood-menu-item-content .text-slate-700,
+  .nfood-menu-template-glass .nfood-menu-item-content .text-slate-600 {
+    color: #dbe7f5 !important;
+  }
+}

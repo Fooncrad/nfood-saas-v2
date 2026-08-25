@@ -180,7 +180,7 @@ describe("platform procedures", () => {
     if (!db) return;
     const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug }).from(restaurants).where(eq(restaurants.status, "active")).limit(1))[0];
     if (!restaurant) return;
-    const branch = (await db.select({ id: branches.id }).from(branches).where(eq(branches.restaurantId, restaurant.id)).limit(1))[0];
+    const branch = (await db.select({ id: branches.id }).from(branches).where(and(eq(branches.restaurantId, restaurant.id), eq(branches.status, "open"))).limit(1))[0];
     const menuItem = (await db.select({ id: menuItems.id, price: menuItems.price }).from(menuItems).where(eq(menuItems.restaurantId, restaurant.id)).limit(1))[0];
     if (!branch || !menuItem) return;
     const result = await appRouter.createCaller(context("user", "customer")).platform.guestCheckout({ slug: restaurant.slug, branchId: branch.id, guestName: "ضيف اختبار", guestPhone: "0500000000", channel: "takeaway", items: [{ menuItemId: menuItem.id, quantity: 2 }] });
@@ -198,7 +198,7 @@ describe("platform procedures", () => {
     if (!db) return;
     const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug, phone: restaurants.phone, reservationEnabled: restaurants.reservationEnabled }).from(restaurants).where(eq(restaurants.status, "active")).limit(1))[0];
     if (!restaurant || !restaurant.reservationEnabled) return;
-    const branch = (await db.select({ id: branches.id, openingTime: branches.openingTime, closingTime: branches.closingTime }).from(branches).where(eq(branches.restaurantId, restaurant.id)).limit(1))[0];
+    const branch = (await db.select({ id: branches.id, openingTime: branches.openingTime, closingTime: branches.closingTime }).from(branches).where(and(eq(branches.restaurantId, restaurant.id), eq(branches.status, "open"))).limit(1))[0];
     if (!branch) return;
     const publicPage = await appRouter.createCaller(context()).platform.publicRestaurantPage({ slug: restaurant.slug });
     expect(publicPage?.restaurant).toEqual(expect.objectContaining({ id: restaurant.id, reservationEnabled: true }));

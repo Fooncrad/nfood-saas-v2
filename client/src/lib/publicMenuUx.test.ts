@@ -11,7 +11,9 @@ describe("public menu UX", () => {
     expect(page).toContain("nfood-menu-shell flex flex-col");
     expect(page).toContain("<main className=\"min-w-0 px-3 sm:px-6\">");
     expect(page).toContain("ar-SA-u-nu-latn");
-    expect(page).toContain("aspect-[4/3]");
+    expect(page).toContain("h-40 shrink-0");
+    expect(page).toContain("min-h-[430px]");
+    expect(page).toContain("min-h-[238px]");
     expect(page).toContain('loading="lazy"');
     expect(page).toContain('decoding="async"');
     expect(page).toContain("h-11 w-11 rounded-xl text-white");
@@ -60,6 +62,14 @@ describe("public menu UX", () => {
     expect(page).toContain("copy.delivery");
     expect(page).toContain("fixed inset-x-3 bottom-3");
     expect(page).toContain("channel: orderType === \"dineIn\" ? \"dine_in\" : orderType");
+  });
+
+  it("keeps the header readable and exposes QR Menu while contact stays in the footer", () => {
+    expect(page).toContain("aria-label={copy.qrTitle}");
+    expect(page).toContain("<span className=\"hidden sm:inline\">QR Menu</span>");
+    expect(page).toContain("<footer className=\"mt-14");
+    expect(page).toContain("{copy.workingHours}");
+    expect(page).not.toContain("<a href=\"#contact\" className=\"transition hover:text-[var(--menu-primary)]\">");
   });
 
   it("keeps QR outside the primary menu content", () => {
