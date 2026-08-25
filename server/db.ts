@@ -647,6 +647,24 @@ export async function globalSearch(restaurantId: number, query: string, limit = 
   ];
   return { results: results.slice(0, limit), available: true as const };
 }
+export function parseRevenueMinorUnits(value: unknown, decimals = 2) {
+  const safeDecimals = Math.max(0, Math.min(3, Math.trunc(decimals)));
+  const numeric = Number(String(value ?? "0").replace(/,/g, "").trim());
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.round(numeric * 10 ** safeDecimals);
+}
+
+export function isRecognizedRevenueOrder(order: { status?: string | null; paymentStatus?: string | null }) {
+  return order.status === "completed" && order.paymentStatus === "paid";
+}
+
+export function calculateRecognizedRevenue(orders: Array<{ total?: unknown; currencyDecimals?: number | null; status?: string | null; paymentStatus?: string | null }>) {
+  return orders.filter(isRecognizedRevenueOrder).reduce((sum, order) => {
+    const decimals = Number.isInteger(order.currencyDecimals) ? Number(order.currencyDecimals) : 2;
+    return sum + parseRevenueMinorUnits(order.total, decimals) / 10 ** Math.max(0, Math.min(3, decimals));
+  }, 0);
+}
+
 export async function getRoleSummary(restaurantId: number, role?: string, userId?: number, branchId?: number) {
   const unavailable = { available: false as const, sales: 0, orders: 0, average: 0, avgFulfillmentMinutes: 0, deliveryOrders: 0, customerOrders: 0, newOrders: 0, preparing: 0, ready: 0, completed: 0, tables: 0, scope: "unavailable" as const };
   const db = await getDb();
@@ -655,14 +673,15 @@ export async function getRoleSummary(restaurantId: number, role?: string, userId
   const baseFilters = [eq(orders.restaurantId, restaurantId), ...(branchId ? [eq(orders.branchId, branchId)] : [])];
   const roleFilters = role === "customer" && userId ? [...baseFilters, eq(orders.customerId, userId)] : role === "driver" && userId ? [...baseFilters, eq(orders.driverId, userId)] : baseFilters;
   const rows = await db.select().from(orders).where(and(...roleFilters));
-  const total = rows.reduce((sum, order) => sum + Number(order.total ?? 0), 0);
-  const completedRows = rows.filter((order) => order.status === "completed" && order.createdAt && order.updatedAt);
+  const revenueRows = rows.filter(isRecognizedRevenueOrder);
+  const total = calculateRecognizedRevenue(rows);
+  const completedRows = rows.filter((order) => isRecognizedRevenueOrder(order) && order.createdAt && order.updatedAt);
   const avgFulfillmentMinutes = completedRows.length ? completedRows.reduce((sum, order) => sum + Math.max(0, new Date(order.updatedAt).getTime() - new Date(order.createdAt).getTime()) / 60000, 0) / completedRows.length : 0;
   const tableRows = branchId ? await db.select({ status: restaurantTables.status }).from(restaurantTables).where(eq(restaurantTables.branchId, branchId)) : [];
   const tables = tableRows.filter((table) => table.status === "occupied").length;
   const deliveryOrders = rows.filter((order) => order.channel === "delivery").length;
   const customerOrders = role === "customer" ? rows.length : rows.filter((order) => order.customerId != null).length;
-  return { available: true as const, sales: total, orders: rows.length, average: rows.length ? total / rows.length : 0, avgFulfillmentMinutes, deliveryOrders, customerOrders, newOrders: rows.filter((order) => order.status === "new").length, preparing: rows.filter((order) => order.status === "preparing").length, ready: rows.filter((order) => order.status === "ready").length, completed: rows.filter((order) => order.status === "completed").length, tables, scope };
+  return { available: true as const, sales: total, orders: rows.length, average: revenueRows.length ? total / revenueRows.length : 0, avgFulfillmentMinutes, deliveryOrders, customerOrders, newOrders: rows.filter((order) => order.status === "new").length, preparing: rows.filter((order) => order.status === "preparing").length, ready: rows.filter((order) => order.status === "ready").length, completed: rows.filter((order) => order.status === "completed").length, tables, scope };
 }
 
 export type MediaScope = "platform" | "restaurant" | "user";

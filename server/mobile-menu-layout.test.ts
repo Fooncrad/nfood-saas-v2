@@ -52,7 +52,8 @@ describe("mobile menu order preferences and notes", () => {
     expect(source).toContain("w-screen flex-col items-stretch");
     expect(source).toContain("overflow-x-hidden");
     expect(source).toContain("w-full min-w-0 max-w-none");
-    expect(source).toContain("backdrop-blur-[2px]");
+    expect(source).toContain("bg-transparent");
+    expect(source).toContain("max-h-[76dvh]");
   });
 
   it("keeps category motion accessible", () => {
