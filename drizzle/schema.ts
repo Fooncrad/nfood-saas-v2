@@ -132,6 +132,8 @@ export const restaurants = mysqlTable("restaurants", {
   manualPaymentMethodsJson: text("manualPaymentMethodsJson"),
   manualPaymentInstructions: varchar("manualPaymentInstructions", { length: 1000 }),
   orderModesJson: varchar("orderModesJson", { length: 255 }).default('["dineIn","takeaway","delivery","reservation","hotel"]').notNull(),
+  deliveryManagementMode: mysqlEnum("deliveryManagementMode", ["restaurant", "platform"]).default("restaurant").notNull(),
+  platformDeliveryEnabled: boolean("platformDeliveryEnabled").default(false).notNull(),
   reservationEventTypesJson: varchar("reservationEventTypesJson", { length: 1000 }).default('["حفل عيد ميلاد","فعالية","اجتماع","عشاء خاص"]').notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({ menuTemplateScheduleTaskIdx: index("restaurants_menu_template_schedule_task_idx").on(table.menuTemplateScheduleCronTaskUid) }));
@@ -208,12 +210,37 @@ export const branches = mysqlTable("branches", {
   currencyCode: varchar("currencyCode", { length: 3 }),
   currencyDecimals: int("currencyDecimals"),
   city: varchar("city", { length: 120 }),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
   status: mysqlEnum("status", ["open", "closed"]).default("open").notNull(),
   openingTime: varchar("openingTime", { length: 5 }),
   closingTime: varchar("closingTime", { length: 5 }),
   operatingWindowsJson: text("operatingWindowsJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+export const hotels = mysqlTable("hotels", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").notNull().references(() => branches.id),
+  name: varchar("name", { length: 180 }).notNull(),
+  code: varchar("code", { length: 80 }),
+  status: mysqlEnum("status", ["active", "inactive"]).default("active").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ restaurantBranchIdx: index("hotels_restaurant_branch_idx").on(table.restaurantId, table.branchId) }));
+
+export const hotelRooms = mysqlTable("hotelRooms", {
+  id: int("id").autoincrement().primaryKey(),
+  hotelId: int("hotelId").notNull().references(() => hotels.id),
+  roomNumber: varchar("roomNumber", { length: 40 }).notNull(),
+  floor: varchar("floor", { length: 40 }),
+  syncKey: varchar("syncKey", { length: 120 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  lastSyncedAt: timestamp("lastSyncedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ hotelRoomNumberUidx: uniqueIndex("hotel_rooms_hotel_room_number_uidx").on(table.hotelId, table.roomNumber), hotelActiveIdx: index("hotel_rooms_hotel_active_idx").on(table.hotelId, table.isActive) }));
 
 export const deliveryZones = mysqlTable("deliveryZones", {
   id: int("id").autoincrement().primaryKey(),
@@ -501,6 +528,8 @@ export const orders = mysqlTable("orders", {
   policyAcceptedAt: timestamp("policyAcceptedAt"),
   splitBillMode: mysqlEnum("splitBillMode", ["single", "restaurant_required", "customer_choice", "friends"]).default("single").notNull(),
   splitBillGroupId: varchar("splitBillGroupId", { length: 80 }),
+  hotelId: int("hotelId").references(() => hotels.id),
+  hotelRoomId: int("hotelRoomId").references(() => hotelRooms.id),
   hotelName: varchar("hotelName", { length: 180 }),
   hotelRoom: varchar("hotelRoom", { length: 80 }),
   hotelFloor: varchar("hotelFloor", { length: 40 }),
@@ -820,8 +849,13 @@ export const remoteWorkers = mysqlTable("remoteWorkers", {
   userId: int("userId").notNull().references(() => users.id),
   role: varchar("role", { length: 80 }).notNull(),
   isAvailable: boolean("isAvailable").default(true).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  vehicleType: varchar("vehicleType", { length: 40 }),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  lastLocationAt: timestamp("lastLocationAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({ restaurantRoleAvailabilityIdx: index("remote_workers_restaurant_role_availability_idx").on(table.restaurantId, table.role, table.isActive, table.isAvailable) }));
 
 export const remoteWorkerApplications = mysqlTable("remoteWorkerApplications", {
   id: int("id").autoincrement().primaryKey(),
@@ -973,6 +1007,22 @@ export const restaurantFeatures = mysqlTable("restaurantFeatures", {
   overrideValue: varchar("overrideValue", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+export const featureRequests = mysqlTable("featureRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  requestedByUserId: int("requestedByUserId").notNull().references(() => users.id),
+  featureKey: varchar("featureKey", { length: 120 }).notNull(),
+  featureLabel: varchar("featureLabel", { length: 180 }).notNull(),
+  requestedPrice: decimal("requestedPrice", { precision: 10, scale: 2 }),
+  currencyCode: varchar("currencyCode", { length: 3 }).default("SAR").notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "cancelled"]).default("pending").notNull(),
+  notes: text("notes"),
+  reviewedByUserId: int("reviewedByUserId").references(() => users.id),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ restaurantFeatureStatusIdx: index("feature_requests_restaurant_feature_status_idx").on(table.restaurantId, table.featureKey, table.status) }));
 export const auditLogs = mysqlTable("auditLogs", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").references(() => restaurants.id),

@@ -23,6 +23,7 @@ describe("delivery and customer preference contracts", () => {
   it("keeps each special order channel validated independently", () => {
     expect(validateGuestCheckoutDetails({ channel: "dine_in", tableName: "4" })).toContain("عدد الأشخاص");
     expect(validateGuestCheckoutDetails({ channel: "reservation", reservationDate: new Date() })).toBeNull();
-    expect(validateGuestCheckoutDetails({ channel: "hotel", hotelName: "Kingdom", hotelRoom: "N14", hotelFloor: "45" })).toBeNull();
+    expect(validateGuestCheckoutDetails({ channel: "hotel", hotelId: 10 })).toContain("الغرفة");
+    expect(validateGuestCheckoutDetails({ channel: "hotel", hotelId: 10, hotelRoomId: 14 })).toBeNull();
   });
 });

@@ -101,7 +101,7 @@ describe("public menu UX", () => {
     expect(validateCheckoutDetails({ channel: "takeaway" })).toBeNull();
     expect(validateCheckoutDetails({ channel: "delivery", deliveryAddress: "شارع رئيسي" })).toContain("الخريطة");
     expect(validateCheckoutDetails({ channel: "reservation" })).toContain("موعد");
-    expect(validateCheckoutDetails({ channel: "hotel", hotelName: "فندق" })).toContain("الغرفة");
+    expect(validateCheckoutDetails({ channel: "hotel", hotelId: 10 })).toContain("الغرفة");
     expect(validateCheckoutDetails({ channel: "delivery", deliveryAddress: "شارع رئيسي", deliveryLatitude: 24.7, deliveryLongitude: 46.7 })).toBeNull();
   });
 });

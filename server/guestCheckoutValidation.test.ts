@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { validateGuestCheckoutDetails } from "./routers";
+import { selectNearestDriver } from "./db";
 
 describe("guest checkout channel requirements", () => {
   it("requires table details for dine-in", () => {
@@ -16,12 +17,29 @@ describe("guest checkout channel requirements", () => {
     expect(validateGuestCheckoutDetails({ channel: "reservation" })).toContain("الحجز");
     expect(validateGuestCheckoutDetails({ channel: "reservation", reservationDate: new Date() })).toBeNull();
     expect(validateGuestCheckoutDetails({ channel: "hotel", hotelName: "Kingdom Hotel", hotelRoom: "N14" })).toContain("الفندق");
-    expect(validateGuestCheckoutDetails({ channel: "hotel", hotelName: "Kingdom Hotel", hotelRoom: "N14", hotelFloor: "45" })).toBeNull();
+    expect(validateGuestCheckoutDetails({ channel: "hotel", hotelId: 10 })).toContain("الغرفة");
+    expect(validateGuestCheckoutDetails({ channel: "hotel", hotelId: 10, hotelRoomId: 14 })).toBeNull();
   });
 
   it("keeps takeaway backwards compatible while accepting pickupPoint", () => {
     expect(validateGuestCheckoutDetails({ channel: "takeaway" })).toBeNull();
     expect(validateGuestCheckoutDetails({ channel: "takeaway", pickupPoint: "Main entrance" })).toBeNull();
+  });
+});
+
+describe("delivery driver selection", () => {
+  it("selects the closest available driver and ignores drivers without coordinates", () => {
+    const result = selectNearestDriver([
+      { userId: 7, latitude: "24.7136", longitude: "46.6753" },
+      { userId: 3, latitude: null, longitude: null },
+      { userId: 9, latitude: "24.9000", longitude: "46.9000" },
+    ], { latitude: 24.7137, longitude: 46.6754 });
+    expect(result?.driver.userId).toBe(7);
+    expect(result?.distanceKm).toBeLessThan(0.1);
+  });
+
+  it("returns no assignment when the restaurant has no usable origin", () => {
+    expect(selectNearestDriver([{ userId: 7, latitude: "24.7136", longitude: "46.6753" }], { latitude: null, longitude: null })).toBeNull();
   });
 });
 

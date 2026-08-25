@@ -1,8 +1,10 @@
 import {
   CircleDollarSign,
+  CheckCircle2,
   Store,
   TrendingDown,
   WalletCards,
+  XCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
@@ -66,6 +68,15 @@ function Sparkline({ values, tone, emptyLabel = "No historical series available"
       />
     </svg>
   );
+}
+
+function FeatureRequestInbox() {
+  const { language } = useLanguage();
+  const copy = language === "ar" ? { title: "طلبات المميزات المدفوعة", empty: "لا توجد طلبات بانتظار المراجعة.", pending: "قيد المراجعة", approve: "اعتماد", reject: "رفض", delivery: "إدارة التوصيل من المنصة", loading: "جارٍ…", error: "تعذر تحميل طلبات المميزات." } : { title: "Paid feature requests", empty: "No pending feature requests.", pending: "Pending review", approve: "Approve", reject: "Reject", delivery: "Platform delivery management", loading: "Loading…", error: "Unable to load feature requests." };
+  const requests = trpc.platform.adminFeatureRequests.useQuery({ status: "pending" }, { retry: 1 });
+  const review = trpc.platform.reviewFeatureRequest.useMutation({ onSuccess: () => void requests.refetch() });
+  if (requests.isError) return <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-950/30 dark:text-red-200">{copy.error}</div>;
+  return <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-900/90"><CardContent className="p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-black text-slate-950 dark:text-white">{copy.title}</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{requests.isLoading ? copy.loading : `${requests.data?.length ?? 0} ${copy.pending}`}</p></div><span className="rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-black text-orange-700 dark:bg-orange-500/15 dark:text-orange-300">{requests.data?.length ?? 0}</span></div>{!requests.isLoading && !(requests.data?.length) ? <p className="mt-4 rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">{copy.empty}</p> : <div className="mt-4 space-y-2">{(requests.data ?? []).slice(0, 6).map((request) => <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60"><div><p className="text-xs font-black text-slate-900 dark:text-white">{request.featureKey === "platform_delivery" ? copy.delivery : request.featureLabel}</p><p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">مطعم #{request.restaurantId}{request.requestedPrice ? ` · ${request.requestedPrice} ${request.currencyCode}` : ""}</p></div><div className="flex items-center gap-2"><button type="button" disabled={review.isPending} onClick={() => review.mutate({ id: request.id, status: "rejected" })} className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-[11px] font-black text-red-700 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10"><XCircle className="h-3.5 w-3.5" />{copy.reject}</button><button type="button" disabled={review.isPending} onClick={() => review.mutate({ id: request.id, status: "approved" })} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-[11px] font-black text-white transition hover:bg-emerald-700 disabled:opacity-50"><CheckCircle2 className="h-3.5 w-3.5" />{copy.approve}</button></div></div>)}</div>}</CardContent></Card>;
 }
 
 function dailySeries<T>(
@@ -248,6 +259,7 @@ export function PlatformOverview({
         })}
       </div>
       <SuperAdminRestaurantCatalog />
+      <FeatureRequestInbox />
     </div>
   );
 }
