@@ -1222,3 +1222,60 @@ export const campaignContents = mysqlTable("campaignContents", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+
+export const financialLedgerEntries = mysqlTable("financialLedgerEntries", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  branchId: int("branchId").references(() => branches.id),
+  userId: int("userId").references(() => users.id),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  section: varchar("section", { length: 80 }).notNull(),
+  entryType: mysqlEnum("entryType", ["payment", "refund", "cancellation", "deposit", "withdrawal", "adjustment"]).notNull(),
+  direction: mysqlEnum("direction", ["credit", "debit"]).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  currencyCode: varchar("currencyCode", { length: 3 }).default("SAR").notNull(),
+  status: mysqlEnum("status", ["posted", "voided"]).default("posted").notNull(),
+  referenceType: varchar("referenceType", { length: 60 }),
+  referenceId: int("referenceId"),
+  idempotencyKey: varchar("idempotencyKey", { length: 120 }),
+  note: varchar("note", { length: 500 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  scopeDateIdx: index("financial_ledger_scope_date_idx").on(table.restaurantId, table.branchId, table.createdAt),
+  referenceIdx: index("financial_ledger_reference_idx").on(table.referenceType, table.referenceId),
+  idempotencyUnique: uniqueIndex("financial_ledger_idempotency_unique").on(table.idempotencyKey),
+}));
+
+export const driverSecurityDeposits = mysqlTable("driverSecurityDeposits", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  driverUserId: int("driverUserId").notNull().references(() => users.id),
+  currencyCode: varchar("currencyCode", { length: 3 }).default("SAR").notNull(),
+  openingBalance: decimal("openingBalance", { precision: 12, scale: 2 }).default("0.00").notNull(),
+  currentBalance: decimal("currentBalance", { precision: 12, scale: 2 }).default("0.00").notNull(),
+  status: mysqlEnum("status", ["active", "closed"]).default("active").notNull(),
+  note: varchar("note", { length: 500 }),
+  createdByUserId: int("createdByUserId").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  driverRestaurantUnique: uniqueIndex("driver_security_deposits_driver_restaurant_unique").on(table.restaurantId, table.driverUserId),
+}));
+
+export const driverSecurityDepositTransactions = mysqlTable("driverSecurityDepositTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  depositAccountId: int("depositAccountId").notNull().references(() => driverSecurityDeposits.id),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  driverUserId: int("driverUserId").notNull().references(() => users.id),
+  type: mysqlEnum("type", ["deposit", "withdrawal", "hold", "release", "adjustment"]).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  balanceAfter: decimal("balanceAfter", { precision: 12, scale: 2 }).notNull(),
+  referenceType: varchar("referenceType", { length: 60 }),
+  referenceId: int("referenceId"),
+  note: varchar("note", { length: 500 }),
+  createdByUserId: int("createdByUserId").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  depositDateIdx: index("driver_deposit_transactions_date_idx").on(table.depositAccountId, table.createdAt),
+}));

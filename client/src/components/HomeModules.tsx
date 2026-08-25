@@ -10345,7 +10345,7 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
 }
 
 function RestaurantOperationsHub({ restaurantId, branchId }: { restaurantId: number; branchId?: number }) {
-  const [activeTab, setActiveTab] = useState<"tables" | "reservations" | "menu" | "hours" | "qr">("tables");
+  const [activeTab, setActiveTab] = useState<"tables" | "reservations" | "menu" | "hours" | "qr" | "finance">("tables");
   const openTableQrCustomization = () => {
     setActiveTab("qr");
     window.setTimeout(() => document.querySelector('[data-testid="qr-table-builder"]')?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
@@ -10356,6 +10356,7 @@ function RestaurantOperationsHub({ restaurantId, branchId }: { restaurantId: num
     { key: "reservations" as const, label: "الحجوزات", description: "المواعيد والانتظار والإلغاء" },
     { key: "menu" as const, label: "واجهة المنيو والقوالب", description: "القالب والمعاينة وشبكة الأصناف" },
     { key: "hours" as const, label: "الفتحات وساعات العمل", description: "أوقات الفروع وقنوات الطلب" },
+    { key: "finance" as const, label: "السجل المالي والودائع", description: "المدفوعات والمرتجعات والإلغاءات وودائع السائقين" },
   ];
   return (
     <div data-restaurant-operations-hub className="space-y-3">
@@ -10364,7 +10365,7 @@ function RestaurantOperationsHub({ restaurantId, branchId }: { restaurantId: num
           <div><p className="text-xs font-bold tracking-wide text-[#e76f3c]">تشغيل المطعم</p><h2 className="mt-1 text-lg font-black text-slate-900 dark:text-white">كل ما يرتبط بتجربة الضيف في مكان واحد</h2><p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500 dark:text-slate-400">تنقّل بين الطاولات والحجوزات وواجهة المنيو وساعات العمل. لكل تبويب حالة وحفظ مستقلان.</p></div>
           <span className="rounded-full bg-orange-50 px-3 py-1.5 text-[11px] font-bold text-[#c75325] dark:bg-orange-950/40 dark:text-orange-200">{tabs.find(tab => tab.key === activeTab)?.label}</span>
         </div>
-        <div className="mt-3 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-5" role="tablist" aria-label="مركز تشغيل المطعم">
+        <div className="mt-3 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-6" role="tablist" aria-label="مركز تشغيل المطعم">
           {tabs.map(tab => <button key={tab.key} type="button" role="tab" aria-selected={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} className={`rounded-xl border px-3 py-2.5 text-right transition-all duration-200 ${activeTab === tab.key ? "border-[#e76f3c] bg-[#e76f3c] text-white shadow-md shadow-orange-900/10" : "border-slate-200 bg-slate-50/70 text-slate-700 hover:border-orange-200 hover:bg-orange-50 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200"}`}><span className="block text-xs font-black">{tab.label}</span><span className={`mt-1 block text-[10px] leading-4 ${activeTab === tab.key ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>{tab.description}</span></button>)}
         </div>
       </section>
@@ -10374,6 +10375,7 @@ function RestaurantOperationsHub({ restaurantId, branchId }: { restaurantId: num
         {activeTab === "reservations" && <ReservationsView restaurantId={restaurantId} />}
         {activeTab === "menu" && <BrandingPanel restaurantId={restaurantId} />}
         {activeTab === "hours" && <BranchesView restaurantId={restaurantId} />}
+        {activeTab === "finance" && <FinancialLedgerView restaurantId={restaurantId} branchId={branchId} />}
       </div>
     </div>
   );
@@ -11282,4 +11284,29 @@ function RemoteWorkView({ restaurantId }: { restaurantId: number }) {
       </div>
     </div>
   );
+}
+
+
+function FinancialLedgerView({ restaurantId, branchId }: { restaurantId: number; branchId?: number }) {
+  const [entryType, setEntryType] = useState<"all" | "payment" | "refund" | "cancellation" | "deposit" | "withdrawal" | "adjustment">("all");
+  const [driverUserId, setDriverUserId] = useState("");
+  const [depositAmount, setDepositAmount] = useState("");
+  const [transactionType, setTransactionType] = useState<"deposit" | "withdrawal" | "hold" | "release" | "adjustment">("deposit");
+  const [sectionFilter, setSectionFilter] = useState("");
+  const [userFilter, setUserFilter] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const utils = trpc.useUtils();
+  const ledgerQuery = trpc.admin.financialLedger.useQuery({ restaurantId, branchId, userId: userFilter ? Number(userFilter) : undefined, section: sectionFilter.trim() || undefined, entryType: entryType === "all" ? undefined : entryType, from: fromDate ? new Date(`${fromDate}T00:00:00`) : undefined, to: toDate ? new Date(`${toDate}T23:59:59.999`) : undefined, limit: 200 }, { retry: false });
+  const createDeposit = trpc.admin.driverSecurityDeposit.useMutation({ onSuccess: () => { toast.success("تم إنشاء حساب وديعة السائق"); setDepositAmount(""); void utils.admin.financialLedger.invalidate(); }, onError: error => toast.error(error.message) });
+  const recordDeposit = trpc.admin.recordDriverSecurityDeposit.useMutation({ onSuccess: result => { toast.success(`تم تسجيل الحركة. الرصيد الحالي ${result.balanceAfter}`); setDepositAmount(""); void utils.admin.financialLedger.invalidate(); }, onError: error => toast.error(error.message) });
+  const submitDeposit = () => { const driver = Number(driverUserId); if (!Number.isInteger(driver) || driver <= 0 || !/^\d+(\.\d{1,2})?$/.test(depositAmount)) { toast.error("أدخل معرف السائق ومبلغًا صحيحًا"); return; } if (transactionType === "deposit") createDeposit.mutate({ restaurantId, driverUserId: driver, openingBalance: depositAmount, currencyCode: "SAR" }); else recordDeposit.mutate({ restaurantId, driverUserId: driver, type: transactionType, amount: depositAmount }); };
+  const rows = ledgerQuery.data ?? [];
+  return <div className="space-y-3">
+    <Card className="rounded-2xl border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"><CardHeader className="pb-2"><CardTitle className="flex items-center justify-between gap-2 text-base text-slate-900 dark:text-white"><span>السجل المالي الموحد</span><Badge variant="outline">{rows.length} حركة</Badge></CardTitle><p className="text-xs leading-5 text-slate-500 dark:text-slate-400">يشمل المدفوعات والمرتجعات والإلغاءات والودائع والتسويات مع مرجع العملية والمستخدم والفرع.</p></CardHeader><CardContent className="space-y-3">
+      <div className="grid gap-2 sm:grid-cols-4"><Input value={sectionFilter} onChange={event => setSectionFilter(event.target.value)} placeholder="القسم" aria-label="فلترة القسم" /><Input value={userFilter} onChange={event => setUserFilter(event.target.value.replace(/\\D/g, ""))} inputMode="numeric" placeholder="معرف المستخدم" aria-label="فلترة المستخدم" /><Input type="date" value={fromDate} onChange={event => setFromDate(event.target.value)} aria-label="من تاريخ" /><Input type="date" value={toDate} onChange={event => setToDate(event.target.value)} aria-label="إلى تاريخ" /></div><div className="flex flex-wrap gap-2">{(["all", "payment", "refund", "cancellation", "deposit", "withdrawal", "adjustment"] as const).map(type => <button key={type} type="button" onClick={() => setEntryType(type)} className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${entryType === type ? "border-[#e76f3c] bg-[#e76f3c] text-white" : "border-slate-200 bg-slate-50 text-slate-600 hover:border-orange-200"}`}>{type === "all" ? "الكل" : type === "payment" ? "مدفوعات" : type === "refund" ? "مرتجعات" : type === "cancellation" ? "إلغاءات" : type === "deposit" ? "ودائع" : type === "withdrawal" ? "سحوبات" : "تسويات"}</button>)}</div>
+      {ledgerQuery.isLoading ? <div className="h-24 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" /> : ledgerQuery.isError ? <div className="rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700">تعذر تحميل السجل المالي. أعد المحاولة.</div> : rows.length === 0 ? <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400">لا توجد قيود مالية مطابقة بعد.</div> : <div className="max-h-72 overflow-y-auto rounded-xl border border-slate-100 dark:border-slate-800"><div className="divide-y divide-slate-100 dark:divide-slate-800">{rows.map((row: typeof rows[number]) => <div key={row.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-xs"><div><p className="font-black text-slate-800 dark:text-slate-100">{row.section} · {row.entryType}</p><p className="text-[10px] text-slate-400">{row.referenceType ?? "بدون مرجع"} {row.referenceId ? `#${row.referenceId}` : ""} · {new Date(row.createdAt).toLocaleString("ar-SA-u-ca-gregory-nu-latn")}</p></div><span className={`font-black ${row.direction === "credit" ? "text-emerald-600" : "text-red-600"}`}>{row.direction === "credit" ? "+" : "-"}{Number(row.amount).toLocaleString("en-US", { maximumFractionDigits: 2 })} {row.currencyCode}</span></div>)}</div></div>}
+    </CardContent></Card>
+    <Card className="rounded-2xl border-amber-200 bg-amber-50/50 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/20"><CardHeader className="pb-2"><CardTitle className="text-base text-slate-900 dark:text-white">ودائع السائقين والأرصدة السابقة</CardTitle><p className="text-xs leading-5 text-slate-600 dark:text-slate-300">أنشئ رصيدًا افتتاحيًا أو سجّل إيداعًا أو سحبًا أو حجزًا مع منع الرصيد السالب.</p></CardHeader><CardContent><div className="grid gap-2 sm:grid-cols-4"><Input value={driverUserId} onChange={event => setDriverUserId(event.target.value)} inputMode="numeric" placeholder="معرف السائق" aria-label="معرف السائق" /><Input value={depositAmount} onChange={event => setDepositAmount(event.target.value)} inputMode="decimal" placeholder="المبلغ" aria-label="مبلغ الوديعة" /><select value={transactionType} onChange={event => setTransactionType(event.target.value as typeof transactionType)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold"><option value="deposit">رصيد افتتاحي / إيداع</option><option value="withdrawal">سحب</option><option value="hold">حجز</option><option value="release">تحرير حجز</option><option value="adjustment">تسوية</option></select><Button type="button" onClick={submitDeposit} disabled={createDeposit.isPending || recordDeposit.isPending} className="rounded-xl bg-[#e76f3c] text-white hover:bg-[#d85f2e]">{createDeposit.isPending || recordDeposit.isPending ? "جارٍ الحفظ..." : "حفظ الحركة"}</Button></div></CardContent></Card>
+  </div>;
 }

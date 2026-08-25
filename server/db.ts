@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
 import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { driverSecurityDeposits, driverSecurityDepositTransactions, financialLedgerEntries } from "../drizzle/schema";
 import { normalizeMenuTemplateSchedule, resolveActiveMenuTemplate } from "../shared/menuTemplateSchedule";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -735,3 +736,39 @@ export async function getTranslationJob(id: number, restaurantId: number) { cons
 export async function updateTranslationJob(id: number, restaurantId: number, changes: Partial<{ status: "queued" | "running" | "completed" | "failed" | "cancelled"; processedItems: number; successItems: number; errorItems: number; currentLabel: string | null; lastError: string | null; startedAt: Date | null; completedAt: Date | null }>) { const db = await getDb(); if (!db) throw new Error("Database is not available"); await db.update(translationJobs).set(changes).where(and(eq(translationJobs.id, id), eq(translationJobs.restaurantId, restaurantId))); return id; }
 export async function addTranslationJobError(input: { jobId: number; restaurantId: number; entityType: "category" | "item" | "addon"; entityId: number; targetLanguage: string; sourceName: string; errorMessage: string; attempts?: number }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.insert(translationJobErrors).values({ ...input, attempts: input.attempts ?? 1 }); return Number(result[0].insertId); }
 export async function listTranslationJobErrors(jobId: number, restaurantId: number) { const db = await getDb(); if (!db) return []; return db.select().from(translationJobErrors).where(and(eq(translationJobErrors.jobId, jobId), eq(translationJobErrors.restaurantId, restaurantId))).orderBy(desc(translationJobErrors.createdAt)); }
+
+
+export async function listFinancialLedgerEntries(input: { restaurantId?: number; branchId?: number; userId?: number; section?: string; entryType?: "payment" | "refund" | "cancellation" | "deposit" | "withdrawal" | "adjustment"; from?: Date; to?: Date; limit?: number }) {
+  const db = await getDb(); if (!db) return [];
+  const conditions = [input.restaurantId ? eq(financialLedgerEntries.restaurantId, input.restaurantId) : undefined, input.branchId ? eq(financialLedgerEntries.branchId, input.branchId) : undefined, input.userId ? eq(financialLedgerEntries.userId, input.userId) : undefined, input.section ? eq(financialLedgerEntries.section, input.section) : undefined, input.entryType ? eq(financialLedgerEntries.entryType, input.entryType) : undefined, input.from ? gte(financialLedgerEntries.createdAt, input.from) : undefined, input.to ? lte(financialLedgerEntries.createdAt, input.to) : undefined].filter((condition): condition is NonNullable<typeof condition> => Boolean(condition));
+  return db.select().from(financialLedgerEntries).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(financialLedgerEntries.createdAt)).limit(Math.min(Math.max(input.limit ?? 200, 1), 1000));
+}
+
+export async function createFinancialLedgerEntry(input: { restaurantId?: number | null; branchId?: number | null; userId?: number | null; createdByUserId?: number | null; section: string; entryType: "payment" | "refund" | "cancellation" | "deposit" | "withdrawal" | "adjustment"; direction: "credit" | "debit"; amount: string; currencyCode?: string; referenceType?: string | null; referenceId?: number | null; idempotencyKey?: string | null; note?: string | null }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const normalizedAmount = Number(input.amount).toFixed(2); if (!Number.isFinite(Number(input.amount)) || Number(input.amount) <= 0) throw new Error("Ledger amount must be positive");
+  if (input.idempotencyKey) { const existing = await db.select({ id: financialLedgerEntries.id }).from(financialLedgerEntries).where(eq(financialLedgerEntries.idempotencyKey, input.idempotencyKey)).limit(1); if (existing[0]) return existing[0].id; }
+  const result = await db.insert(financialLedgerEntries).values({ restaurantId: input.restaurantId ?? null, branchId: input.branchId ?? null, userId: input.userId ?? null, createdByUserId: input.createdByUserId ?? null, section: input.section.trim().slice(0, 80), entryType: input.entryType, direction: input.direction, amount: normalizedAmount, currencyCode: input.currencyCode ?? "SAR", status: "posted", referenceType: input.referenceType ?? null, referenceId: input.referenceId ?? null, idempotencyKey: input.idempotencyKey ?? null, note: input.note?.trim().slice(0, 500) ?? null });
+  return Number(result[0].insertId);
+}
+
+export async function getOrCreateDriverSecurityDeposit(input: { restaurantId: number; driverUserId: number; createdByUserId: number; openingBalance?: string; currencyCode?: string; note?: string | null }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const existing = await db.select().from(driverSecurityDeposits).where(and(eq(driverSecurityDeposits.restaurantId, input.restaurantId), eq(driverSecurityDeposits.driverUserId, input.driverUserId))).limit(1); if (existing[0]) return existing[0];
+  const opening = Number(input.openingBalance ?? "0"); if (!Number.isFinite(opening) || opening < 0) throw new Error("Opening deposit must be non-negative");
+  const result = await db.insert(driverSecurityDeposits).values({ restaurantId: input.restaurantId, driverUserId: input.driverUserId, currencyCode: input.currencyCode ?? "SAR", openingBalance: opening.toFixed(2), currentBalance: opening.toFixed(2), status: "active", note: input.note?.trim().slice(0, 500) ?? null, createdByUserId: input.createdByUserId });
+  return (await db.select().from(driverSecurityDeposits).where(eq(driverSecurityDeposits.id, Number(result[0].insertId))).limit(1))[0];
+}
+
+export async function recordDriverSecurityDepositTransaction(input: { restaurantId: number; driverUserId: number; createdByUserId: number; type: "deposit" | "withdrawal" | "hold" | "release" | "adjustment"; amount: string; referenceType?: string | null; referenceId?: number | null; note?: string | null }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const account = (await db.select().from(driverSecurityDeposits).where(and(
+    eq(driverSecurityDeposits.restaurantId, input.restaurantId),
+    eq(driverSecurityDeposits.driverUserId, input.driverUserId),
+    eq(driverSecurityDeposits.status, "active"),
+  )).limit(1))[0];
+  if (!account) throw new Error("Driver deposit account is not active");
+  const amount = Number(input.amount); if (!Number.isFinite(amount) || amount <= 0) throw new Error("Deposit transaction amount must be positive");
+  const increases = input.type === "deposit" || input.type === "release"; const nextBalance = Number(account.currentBalance) + (increases ? amount : -amount); if (nextBalance < 0) throw new Error("Driver deposit balance cannot be negative");
+  return db.transaction(async (tx) => { await tx.update(driverSecurityDeposits).set({ currentBalance: nextBalance.toFixed(2), updatedAt: new Date() }).where(eq(driverSecurityDeposits.id, account.id)); const result = await tx.insert(driverSecurityDepositTransactions).values({ depositAccountId: account.id, restaurantId: input.restaurantId, driverUserId: input.driverUserId, type: input.type, amount: amount.toFixed(2), balanceAfter: nextBalance.toFixed(2), referenceType: input.referenceType ?? null, referenceId: input.referenceId ?? null, note: input.note?.trim().slice(0, 500) ?? null, createdByUserId: input.createdByUserId }); return { id: Number(result[0].insertId), depositAccountId: account.id, balanceAfter: nextBalance.toFixed(2) }; });
+}
