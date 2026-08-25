@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { getDb, getIntegrationSecret, listRestaurantManagerUserIds } from "./db";
 import { sendPushToUser } from "./push";
-import { integrationSettings, kitchenSections, printerLogs } from "../drizzle/schema";
+import { integrationSettings, kitchenSections, notifications, printerLogs } from "../drizzle/schema";
 import { sdk } from "./_core/sdk";
 
 export async function printerHealthHeartbeatHandler(req: Request, res: Response) {
@@ -25,7 +25,7 @@ export async function printerHealthHeartbeatHandler(req: Request, res: Response)
       }
       await db.update(kitchenSections).set({ printerStatus: status, printerLastCheckedAt: new Date(), printerLastError: status === "offline" ? message : null }).where(eq(kitchenSections.id, section.id));
       await db.insert(printerLogs).values({ restaurantId: section.restaurantId, kitchenSectionId: section.id, operation: "health_check", result: status === "connected" ? "success" : "error", message });
-      if (status === "offline" && previousStatus !== "offline") { const managerIds = await listRestaurantManagerUserIds(section.restaurantId); await Promise.all(managerIds.map((userId) => sendPushToUser(userId, { title: `انقطاع الطابعة: ${section.printerName || section.name}`, body: message, url: "/", tag: `printer-offline-${section.id}` }).catch((error) => console.warn("[Printer] offline push failed", error)))); }
+      if (status === "offline" && previousStatus !== "offline") { const managerIds = await listRestaurantManagerUserIds(section.restaurantId); await Promise.all(managerIds.map(async (userId) => { await db.insert(notifications).values({ userId, type: "system", title: `انقطاع الطابعة: ${section.printerName || section.name}`, body: message }); await sendPushToUser(userId, { title: `انقطاع الطابعة: ${section.printerName || section.name}`, body: message, url: "/", tag: `printer-offline-${section.id}` }).catch((error) => console.warn("[Printer] offline push failed", error)); })); }
       checked += 1;
     }
     return res.json({ ok: true, checked, timestamp });
