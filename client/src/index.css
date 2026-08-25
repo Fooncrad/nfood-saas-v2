@@ -201,12 +201,62 @@
       radial-gradient(circle at 8% 0%, oklch(0.98 0.035 58 / 0.75), transparent 28rem),
       radial-gradient(circle at 100% 18%, oklch(0.96 0.025 250 / 0.7), transparent 32rem),
       linear-gradient(135deg, oklch(0.976 0.006 300), oklch(0.965 0.012 80));
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     line-height: 1.55;
   }
 }
 
 @layer components {
+  .nfood-menu-shell {
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  .nfood-dashboard-inset,
+  .nfood-dashboard-main {
+    min-width: 0;
+  }
+
+  @media (max-width: 767px) {
+    html, body, #root {
+      height: auto;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    body {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .nfood-menu-shell {
+      height: auto;
+      min-height: 100dvh;
+      overflow: visible;
+    }
+
+    [data-sidebar="sidebar"] {
+      max-height: none;
+    }
+
+    .nfood-dashboard-inset,
+    .nfood-dashboard-main {
+      height: auto;
+      min-height: 100dvh;
+      overflow: visible;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .nfood-menu-shell {
+      height: auto;
+      overflow: visible;
+    }
+  }
+
   [data-slot="card"] {
     border-color: oklch(0.91 0.012 75 / 0.75);
     box-shadow: 0 12px 34px -22px oklch(0.22 0.035 65 / 0.35), 0 2px 8px -5px oklch(0.22 0.035 65 / 0.18);
