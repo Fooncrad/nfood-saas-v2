@@ -279,6 +279,26 @@ class SDKServer {
     if (session.openId.startsWith("test_")) {
       const testAccount = await db.getTestAccountById(Number(session.openId.slice(5)));
       if (!testAccount) throw ForbiddenError("Test account not found");
+      const testOpenId = `test_${testAccount.id}`;
+      // Test sessions historically used a negative testAccount id. Persist a
+      // real users row so preferences, orders, and other FK-backed records
+      // can be saved safely for demo accounts as well.
+      await db.upsertUser({
+        openId: testOpenId,
+        name: testAccount.displayName,
+        email: testAccount.email,
+        loginMethod: "test",
+        role: testAccount.role === "admin" ? "admin" : "user",
+        lastSignedIn: new Date(),
+      });
+      const persistedUser = await db.getUserByOpenId(testOpenId);
+      if (persistedUser) {
+        return {
+          ...persistedUser,
+          testRole: testAccount.role,
+          restaurantId: testAccount.restaurantId ?? undefined,
+        } as AuthenticatedUser;
+      }
       return { id: -testAccount.id, openId: testAccount.email, name: testAccount.displayName, email: testAccount.email, loginMethod: "test", role: "user", testRole: testAccount.role, restaurantId: testAccount.restaurantId ?? undefined, createdAt: testAccount.createdAt, updatedAt: testAccount.createdAt, lastSignedIn: new Date() } as AuthenticatedUser;
     }
 
