@@ -300,6 +300,33 @@ export const appRouter = router({
       if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "الطلب غير موجود في حسابك" });
       return order;
     }),
+    deliveryTracking: protectedProcedure.input(z.object({ orderId: z.number().int().positive() })).query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, status: orders.status, channel: orders.channel, deliveryStatus: orders.deliveryStatus, deliveryEtaMinutes: orders.deliveryEtaMinutes, deliveryAddress: orders.deliveryAddress, deliveryLatitude: orders.deliveryLatitude, deliveryLongitude: orders.deliveryLongitude, deliveryFailureReason: orders.deliveryFailureReason, deliveryNote: orders.deliveryNote, driverId: orders.driverId, updatedAt: orders.updatedAt }).from(orders).where(and(eq(orders.id, input.orderId), eq(orders.customerId, ctx.user.id))).limit(1))[0];
+      if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "الطلب غير موجود في حسابك" });
+      if (order.channel !== "delivery") return { ...order, driver: null };
+      const driver = order.driverId ? (await db.select({ userId: remoteWorkers.userId, name: users.name, vehicleType: remoteWorkers.vehicleType, latitude: remoteWorkers.latitude, longitude: remoteWorkers.longitude, lastLocationAt: remoteWorkers.lastLocationAt, isAvailable: remoteWorkers.isAvailable, isActive: remoteWorkers.isActive }).from(remoteWorkers).innerJoin(users, eq(remoteWorkers.userId, users.id)).where(and(eq(remoteWorkers.restaurantId, order.restaurantId), eq(remoteWorkers.userId, order.driverId), eq(remoteWorkers.role, "driver"))).limit(1))[0] ?? null : null;
+      return { ...order, driver };
+    }),
+    updateDriverLocation: testRoleProcedure("driver").input(z.object({ restaurantId: z.number().int().positive(), latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180) })).mutation(async ({ ctx, input }) => {
+      assertRestaurantAccess(ctx, input.restaurantId);
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const driverUserId = ctx.user?.id;
+      if (!driverUserId) throw new TRPCError({ code: "UNAUTHORIZED", message: "جلسة السائق غير متاحة" });
+      const worker = (await db.select({ id: remoteWorkers.id }).from(remoteWorkers).where(and(eq(remoteWorkers.restaurantId, input.restaurantId), eq(remoteWorkers.userId, driverUserId), eq(remoteWorkers.role, "driver"))).limit(1))[0];
+      if (!worker) throw new TRPCError({ code: "FORBIDDEN", message: "السائق غير مرتبط بهذا المطعم" });
+      await db.update(remoteWorkers).set({ latitude: input.latitude.toFixed(7), longitude: input.longitude.toFixed(7), lastLocationAt: new Date(), isActive: true }).where(eq(remoteWorkers.id, worker.id));
+      return { success: true, latitude: input.latitude, longitude: input.longitude, updatedAt: new Date() };
+    }),
+    activeDriverLocations: testRoleProcedure("restaurant_admin", "admin").input(z.object({ restaurantId: z.number().int().positive(), branchId: z.number().int().positive().optional() })).query(async ({ ctx, input }) => {
+      assertRestaurantAccess(ctx, input.restaurantId);
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const drivers = await listAvailableRestaurantDrivers(input.restaurantId);
+      return drivers.filter((driver) => Number.isFinite(Number(driver.latitude)) && Number.isFinite(Number(driver.longitude))).map((driver) => ({ ...driver, branchId: input.branchId ?? null }));
+    }),
     reorderGuestOrder: publicProcedure.input(z.object({ slug: z.string().min(1).max(160).regex(/^[a-z0-9-]+$/), orderId: z.number().int().positive(), guestPhone: z.string().trim().min(7).max(32) })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });

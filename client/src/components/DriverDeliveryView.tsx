@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock3, MapPin, Truck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,10 @@ export function DriverDeliveryView({ restaurantId }: { restaurantId: number }) {
   const [eta, setEta] = useState("20");
   const [failureReason, setFailureReason] = useState("");
   const [note, setNote] = useState("");
+  const [locationSharing, setLocationSharing] = useState(false);
   const orders = trpc.platform.driverDeliveryOrders.useQuery({ restaurantId }, { retry: false, refetchInterval: 30000 });
+  const updateDriverLocation = trpc.platform.updateDriverLocation.useMutation({ onError: (error) => toast.error(`تعذر تحديث موقعك: ${error.message}`) });
+  useEffect(() => { if (!locationSharing) return; if (!navigator.geolocation) { toast.error("المتصفح لا يدعم مشاركة الموقع"); setLocationSharing(false); return; } const watchId = navigator.geolocation.watchPosition((position) => { updateDriverLocation.mutate({ restaurantId, latitude: position.coords.latitude, longitude: position.coords.longitude }); }, () => toast.error("اسمح بالوصول إلى الموقع لتفعيل التتبع الحي"), { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }); return () => navigator.geolocation.clearWatch(watchId); }, [locationSharing, restaurantId, updateDriverLocation]);
   const updateStatus = trpc.platform.updateDeliveryStatus.useMutation({ onSuccess: async () => { await orders.refetch(); setFailureReason(""); setNote(""); toast.success("تم تحديث حالة التوصيل"); }, onError: (error) => toast.error(error.message) });
   const deliveryOrders = orders.data ?? [];
   const selected = deliveryOrders.find((item) => item.id === selectedId);
@@ -36,7 +39,7 @@ export function DriverDeliveryView({ restaurantId }: { restaurantId: number }) {
   return <div dir="rtl" className="space-y-3">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="text-xl font-black">مركز السائق والتوصيل</h2><p className="mt-1 text-sm text-slate-500">طلباتك المعينة فقط، مع ETA وحالات الفشل والمرتجع.</p></div>
-      <Badge className="rounded-xl bg-sky-50 px-3 py-2 text-sky-700"><Truck className="ml-1 h-4 w-4" /> تحديث تلقائي</Badge>
+      <div className="flex flex-wrap items-center gap-2"><Button type="button" variant="outline" onClick={() => setLocationSharing((current) => !current)} className={`rounded-xl text-xs ${locationSharing ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}><MapPin className="ml-1 h-4 w-4" />{locationSharing ? "موقعك قيد المشاركة" : "مشاركة الموقع"}</Button><Badge className="rounded-xl bg-sky-50 px-3 py-2 text-sky-700"><Truck className="ml-1 h-4 w-4" /> تحديث تلقائي</Badge></div>
     </div>
     <CompactModuleSummary metrics={summary} />
     {orders.isError && <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">تعذر تحميل طلباتك. Request ID: driver-orders-{restaurantId}<Button variant="outline" onClick={() => void orders.refetch()} className="mr-3 rounded-lg">إعادة المحاولة</Button></div>}

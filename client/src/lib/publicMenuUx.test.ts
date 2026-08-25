@@ -4,6 +4,9 @@ import { validateCheckoutDetails } from "../pages/RestaurantPublic";
 
 const page = readFileSync(new URL("../pages/RestaurantPublic.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../index.css", import.meta.url), "utf8");
+const operations = readFileSync(new URL("../components/DeliveryOperationsPanel.tsx", import.meta.url), "utf8");
+const tracking = readFileSync(new URL("../components/CustomerDeliveryTrackingCard.tsx", import.meta.url), "utf8");
+const driverView = readFileSync(new URL("../components/DriverDeliveryView.tsx", import.meta.url), "utf8");
 
 describe("public menu UX", () => {
   it("uses a manager-controlled responsive product grid with consistent lazy-loaded media", () => {
@@ -93,6 +96,36 @@ describe("public menu UX", () => {
     expect(page).toContain('2: "grid-cols-1 sm:grid-cols-2"');
     expect(page).toContain('3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"');
     expect(page).toContain('4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"');
+  });
+
+  it("previews grid density before saving and keeps menu navigation smooth", () => {
+    const settings = readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
+    expect(settings).toContain("data-menu-grid-live-preview");
+    expect(settings).toContain("style={{ gridTemplateColumns: `repeat(${menuDisplayDraft.gridColumns}");
+    expect(settings).toContain("معاينة مباشرة للتخطيط");
+    expect(page).toContain("showFloatingSupport");
+    expect(page).toContain("selectCategoryAndScroll");
+    expect(page).toContain('scrollIntoView({ behavior: "smooth"');
+  });
+
+  it("filters synchronized hotel rooms and connects delivery tracking", () => {
+    expect(page).toContain("hotelRoomSearch");
+    expect(page).toContain("filteredHotelRooms");
+    expect(page).toContain("ابحث برقم الغرفة أو الدور");
+    expect(page).toContain("trpc.platform.deliveryCapability");
+    expect(page).toContain("showFloatingSupport && socialLinks.length > 0");
+    expect(tracking).toContain("trpc.platform.deliveryTracking.useQuery");
+    expect(tracking).toContain("refetchInterval: 5000");
+    expect(tracking).toContain("تحديث التوصيل:");
+    expect(driverView).toContain("updateDriverLocation");
+    expect(driverView).toContain("watchPosition");
+  });
+
+  it("refreshes active-driver map locations in the restaurant operations panel", () => {
+    expect(operations).toContain("trpc.platform.activeDriverLocations.useQuery");
+    expect(operations).toContain("refetchInterval: 10000");
+    expect(operations).toContain("خريطة السائقين النشطين");
+    expect(operations).toContain("AdvancedMarkerElement");
   });
 
   it("explains missing order-specific checkout data before submission", () => {
