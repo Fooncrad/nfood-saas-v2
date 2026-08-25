@@ -64,9 +64,10 @@ describe("public menu UX", () => {
     expect(page).toContain("channel: orderType === \"dineIn\" ? \"dine_in\" : orderType");
   });
 
-  it("keeps the header readable and exposes QR Menu while contact stays in the footer", () => {
+  it("keeps the header focused and exposes menu tools plus account below it", () => {
     expect(page).toContain("aria-label={copy.qrTitle}");
-    expect(page).toContain("<span className=\"hidden sm:inline\">QR Menu</span>");
+    expect(page).toContain("<QrCode className=\"ml-2 h-4 w-4\" />QR Menu");
+    expect(page).toContain("تسجيل / دخول");
     expect(page).toContain("<footer className=\"mt-14");
     expect(page).toContain("{copy.workingHours}");
     expect(page).not.toContain("<a href=\"#contact\" className=\"transition hover:text-[var(--menu-primary)]\">");

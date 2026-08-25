@@ -49,6 +49,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import { defaultMenuDisplaySettings, normalizeMenuDisplaySettings, type MenuDisplayToolKey } from "@shared/menuDisplaySettings";
 import { trpc } from "@/lib/trpc";
 import { publicMenuUrl } from "@/lib/publicMenuUrl";
 import { validateRemoteTaskDraft } from "@/lib/remoteTaskValidation";
@@ -8849,6 +8850,7 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
     serviceFeeEnabled: false,
     serviceFeePercent: 0,
     showBranchesOnMenu: false,
+    menuDisplaySettingsJson: JSON.stringify(defaultMenuDisplaySettings),
     customDomain: "",
   });
   useEffect(() => {
@@ -8905,6 +8907,7 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
         serviceFeeEnabled: brandingQuery.data.serviceFeeEnabled,
         serviceFeePercent: Number(brandingQuery.data.serviceFeePercent),
         showBranchesOnMenu: brandingQuery.data.showBranchesOnMenu,
+        menuDisplaySettingsJson: brandingQuery.data.menuDisplaySettingsJson ?? JSON.stringify(defaultMenuDisplaySettings),
         customDomain: brandingQuery.data.customDomain,
       });
   }, [brandingQuery.data]);
@@ -8950,6 +8953,9 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
   const addScheduleRule = () => setDraft(current => ({ ...current, menuTemplateScheduleRules: current.menuTemplateScheduleRules.length >= 12 ? current.menuTemplateScheduleRules : [...current.menuTemplateScheduleRules, { ...defaultMenuTemplateRule, days: [...defaultMenuTemplateRule.days] }] }));
   const removeScheduleRule = (index: number) => setDraft(current => ({ ...current, menuTemplateScheduleRules: current.menuTemplateScheduleRules.filter((_, ruleIndex) => ruleIndex !== index) }));
   const saveSchedule = () => updateMenuTemplateSchedule.mutate({ restaurantId, enabled: draft.menuTemplateScheduleEnabled, timezone: draft.menuTemplateScheduleTimezone, fallbackTemplate: draft.menuTemplateScheduleFallback, rules: draft.menuTemplateScheduleRules.filter(rule => rule.days.length) });
+  const menuToolLabels: Record<MenuDisplayToolKey, string> = { search: "البحث عن الأصناف", categories: "أقسام المنيو", share: "مشاركة المنيو", pdf: "تنزيل PDF نصي", templatePicker: "اختيار نمط المنيو", qr: "QR Menu", orderType: "نوع الطلب", branchPicker: "اختيار الفرع", workingHours: "مواعيد العمل", contactFooter: "التواصل في الفوتر", mediaShowcase: "محتوى المطعم" };
+  const menuDisplayDraft = normalizeMenuDisplaySettings(draft.menuDisplaySettingsJson);
+  const toggleMenuTool = (key: MenuDisplayToolKey) => setDraft(current => ({ ...current, menuDisplaySettingsJson: JSON.stringify({ ...menuDisplayDraft, tools: { ...menuDisplayDraft.tools, [key]: !menuDisplayDraft.tools[key] } }) }));
   return (
     <Card className="mb-6 overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
       <CardHeader>
@@ -9099,6 +9105,7 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
                 </div>
               </section>
               {draft.menuTemplate === "glass" && <section className="space-y-3 rounded-2xl border border-slate-700 bg-slate-950 p-4 text-white sm:col-span-2" data-glass-customization><div className="flex items-start gap-3"><SlidersHorizontal className="mt-0.5 h-5 w-5 text-orange-400" /><div><h3 className="text-sm font-black">تخصيص NFOOD Glass</h3><p className="mt-1 text-xs leading-5 text-slate-400">اضبط لون التوهج ووضوح البطاقات، وستظهر القيم في المعاينة والمنيو العام بعد الحفظ.</p></div></div><div className="grid gap-3 sm:grid-cols-2"><label className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs font-bold">لون التوهج<div className="mt-2 flex items-center gap-2"><input type="color" value={draft.glassGlowColor} onChange={event => setDraft({ ...draft, glassGlowColor: event.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border-0 bg-transparent" aria-label="لون توهج NFOOD Glass" /><Input value={draft.glassGlowColor} onChange={event => setDraft({ ...draft, glassGlowColor: event.target.value })} dir="ltr" className="h-9 border-white/10 bg-white/10 font-mono text-xs text-white" /></div></label><label className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs font-bold">شفافية البطاقات<div className="mt-3 flex items-center gap-3"><input type="range" min="0.05" max="0.35" step="0.01" value={draft.glassCardOpacity} onChange={event => setDraft({ ...draft, glassCardOpacity: Number(event.target.value) })} className="w-full accent-orange-500" /><span className="min-w-12 rounded-lg bg-white/10 px-2 py-1 text-center font-mono text-[11px] text-orange-300">{Math.round(draft.glassCardOpacity * 100)}%</span></div><div className="mt-1 flex justify-between text-[10px] font-normal text-slate-500"><span>أكثر شفافية</span><span>أوضح</span></div></label></div></section>}
+              <section className="space-y-3 rounded-2xl border border-orange-100 bg-orange-50/50 p-4 sm:col-span-2" data-menu-display-settings><div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-black text-slate-900">أدوات المنيو تحت الهيدر</h3><p className="mt-1 text-xs leading-5 text-slate-500">تحكم في الأدوات التي تظهر للعميل مباشرة بعد الهيدر وقبل شبكة الأصناف.</p></div><span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-orange-700">معاينة فورية بعد الحفظ</span></div><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{(Object.keys(menuToolLabels) as MenuDisplayToolKey[]).map(key => <label key={key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-white bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm"><input type="checkbox" checked={menuDisplayDraft.tools[key]} onChange={() => toggleMenuTool(key)} className="h-4 w-4 accent-orange-500" />{menuToolLabels[key]}</label>)}</div><label className="flex cursor-pointer items-center gap-2 rounded-xl border border-white bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm"><input type="checkbox" checked={menuDisplayDraft.showCustomerAccount} onChange={event => setDraft(current => ({ ...current, menuDisplaySettingsJson: JSON.stringify({ ...menuDisplayDraft, showCustomerAccount: event.target.checked }) }))} className="h-4 w-4 accent-orange-500" />إظهار التسجيل والدخول للعميل في الهيدر</label></section>
               <label className="space-y-2 text-sm font-semibold sm:col-span-2">
                 رابط الشعار
                 <Input
@@ -9471,7 +9478,7 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
                 }
                 onClick={() => {
                   const { customDomain: _customDomain, menuTemplateScheduleEnabled: _scheduleEnabled, menuTemplateScheduleTimezone: _scheduleTimezone, menuTemplateScheduleFallback: _scheduleFallback, menuTemplateScheduleRules: _scheduleRules, ...brandingDraft } = draft;
-                  updateBranding.mutate({ restaurantId, ...brandingDraft, menuTemplateScheduleJson: JSON.stringify({ enabled: draft.menuTemplateScheduleEnabled, timezone: draft.menuTemplateScheduleTimezone, fallbackTemplate: draft.menuTemplateScheduleFallback, rules: draft.menuTemplateScheduleRules }), menuTemplateScheduleTimezone: draft.menuTemplateScheduleTimezone });
+                  updateBranding.mutate({ restaurantId, ...brandingDraft, menuDisplaySettingsJson: draft.menuDisplaySettingsJson, menuTemplateScheduleJson: JSON.stringify({ enabled: draft.menuTemplateScheduleEnabled, timezone: draft.menuTemplateScheduleTimezone, fallbackTemplate: draft.menuTemplateScheduleFallback, rules: draft.menuTemplateScheduleRules }), menuTemplateScheduleTimezone: draft.menuTemplateScheduleTimezone });
                 }}
                 className="w-fit rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]"
               >
@@ -9596,7 +9603,7 @@ function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
       setNotice("اختر لغة واحدة على الأقل");
       return;
     }
-    update.mutate({ ...query.data, languagesJson: JSON.stringify(selected) });
+    update.mutate({ ...query.data, menuDisplaySettingsJson: query.data.menuDisplaySettingsJson ?? undefined, languagesJson: JSON.stringify(selected) });
   };
   const labels: Record<string, { name: string; detail: string }> = {
     ar: { name: "العربية", detail: "RTL · اللغة الأساسية" },

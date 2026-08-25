@@ -127,6 +127,7 @@ export const restaurants = mysqlTable("restaurants", {
   glassCardOpacity: decimal("glassCardOpacity", { precision: 3, scale: 2 }).default("0.10").notNull(),
   mediaShowcaseEnabled: boolean("mediaShowcaseEnabled").default(true).notNull(),
   motionEffectsEnabled: boolean("motionEffectsEnabled").default(true).notNull(),
+  menuDisplaySettingsJson: text("menuDisplaySettingsJson"),
   integrationMode: mysqlEnum("integrationMode", ["platform", "custom"]).default("platform").notNull(),
   manualPaymentMethodsJson: text("manualPaymentMethodsJson"),
   manualPaymentInstructions: varchar("manualPaymentInstructions", { length: 1000 }),
