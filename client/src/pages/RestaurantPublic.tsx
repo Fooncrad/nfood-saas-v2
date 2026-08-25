@@ -143,7 +143,7 @@ export default function RestaurantPublic() {
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [tableName, setTableName] = useState("");
-  useEffect(() => { const code = publicQr.data; if (!code) return; if (code.type === "table" && code.tableName) { setTableName(current => current || code.tableName || ""); setOrderType("dineIn"); } }, [publicQr.data]);
+  useEffect(() => { const code = publicQr.data; if (!code) return; if (code.type === "table" && code.tableName) { setTableName(current => current || code.tableName || ""); setOrderType("dineIn"); } if (code.type === "custom" && code.targetUrl && /^https:\/\//i.test(code.targetUrl) && code.targetUrl !== window.location.href) window.location.assign(code.targetUrl); }, [publicQr.data]);
   const [seatingSectionId, setSeatingSectionId] = useState("");
   const [orderChildrenCount, setOrderChildrenCount] = useState("0");
   const [reservationChildrenCount, setReservationChildrenCount] = useState("0");

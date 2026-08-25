@@ -80,7 +80,7 @@ async function startServer() {
       createContext,
     })
   );
-  app.get("/api/menu", async (req, res) => { const slug = typeof req.query.slug === "string" ? req.query.slug.trim().toLowerCase() : ""; if (!/^[a-z0-9-]{2,160}$/.test(slug)) return res.status(400).json({ error: "slug is required" }); const language = normalizeMenuLanguage(req.query.lang); const page = await getPublicRestaurantPage(slug); if (!page) return res.status(404).json({ error: "restaurant_not_found" }); return res.json({ ...page, language, direction: language === "en" || language === "fr" ? "ltr" : "rtl", categories: page.categories.map((entity) => localizeMenuEntity(entity, language)), items: page.items.map((entity) => localizeMenuEntity(entity, language)) }); });
+  app.get("/api/menu", async (req, res) => { const slug = typeof req.query.slug === "string" ? req.query.slug.trim().toLowerCase() : ""; if (!/^[a-z0-9-]{1,160}$/.test(slug)) return res.status(400).json({ error: "slug is required" }); const language = normalizeMenuLanguage(req.query.lang); const page = await getPublicRestaurantPage(slug); if (!page) return res.status(404).json({ error: "restaurant_not_found" }); return res.json({ ...page, language, direction: language === "en" || language === "fr" ? "ltr" : "rtl", categories: page.categories.map((entity) => localizeMenuEntity(entity, language)), items: page.items.map((entity) => localizeMenuEntity(entity, language)) }); });
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { branches, coupons, employees, guestOrderClaimOtps, inventoryItems, menuCategories, menuItems, orders, purchases, restaurants } from "../drizzle/schema";
+import { branches, coupons, employees, guestOrderClaimOtps, inventoryItems, menuCategories, menuItems, orders, purchases, qrCodes, restaurants } from "../drizzle/schema";
 import { getNextBranchOpeningLabel, isBranchAcceptingOrders, parseBranchOperatingWindows } from "./db";
 
 describe("NFOOD platform schema", () => {
@@ -51,6 +51,14 @@ describe("NFOOD platform schema", () => {
     expect(guestOrderClaimOtps.expiresAt).toBeDefined();
     expect(guestOrderClaimOtps.attempts).toBeDefined();
     expect(guestOrderClaimOtps.consumedAt).toBeDefined();
+  });
+
+  it("defines stable QR customization fields", () => {
+    expect(qrCodes).toBeDefined();
+    expect(qrCodes.type).toBeDefined();
+    expect(qrCodes.purpose).toBeDefined();
+    expect(qrCodes.targetUrl).toBeDefined();
+    expect(qrCodes.token).toBeDefined();
   });
 
   it("defines the order lifecycle columns used by POS and KDS", () => {
