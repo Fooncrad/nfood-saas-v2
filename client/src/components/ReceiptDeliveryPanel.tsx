@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
-export type ReceiptSummary = { orderId: number; paymentStatus: "unpaid" | "paid"; items: Array<{ name: string; quantity: number; unitPrice: number }>; pricing: { subtotal: string; discountPercent: number; discountAmount: string; taxPercent: number; taxAmount: string; total: string; couponCode?: string | null; discountSource?: "default" | "coupon_or_default" } };
+export type ReceiptSummary = { orderId: number; paymentStatus: "unpaid" | "paid" | "refunded"; items: Array<{ name: string; quantity: number; unitPrice: number }>; pricing: { subtotal: string; discountPercent: number; discountAmount: string; taxPercent: number; taxAmount: string; total: string; couponCode?: string | null; discountSource?: "default" | "coupon_or_default" } };
 type MessageLocale = "ar" | "en" | "fr";
 type MessageTemplate = { subject: string; header: string; footer: string };
 type ReceiptBranding = { headerText?: string | null; footerText?: string | null; logoUrl?: string | null; restaurantName?: string | null; messageTemplatesJson?: string | null };

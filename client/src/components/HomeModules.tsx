@@ -132,6 +132,7 @@ import {
   parsePriceToCents,
 } from "@/lib/posPricing";
 import { printReceipt as printBrandedReceipt } from "@/lib/receiptPrint";
+import { formatPaymentCents, getPaymentSplitRemainingCents, hasExactPaymentSplit, normalizePaymentSplits, type PosPaymentMethod } from "@/lib/posPaymentModel";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -2822,9 +2823,11 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   );
   const [queuedCount, setQueuedCount] = useState(0);
   const [tableName, setTableName] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<
-    "cash" | "card" | "bank_transfer" | "online" | "other"
-  >("cash");
+  const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethod>("cash");
+  const [paymentSplits, setPaymentSplits] = useState<Array<{ method: PosPaymentMethod; amount: string }>>([]);
+  const [refundPin, setRefundPin] = useState("");
+  const [refundReason, setRefundReason] = useState("");
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [customerNote, setCustomerNote] = useState("");
   const [cashierNotes, setCashierNotes] = useState("");
@@ -2833,7 +2836,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   >("thermal");
   const [lastReceipt, setLastReceipt] = useState<{
     orderId: number;
-    paymentStatus: "unpaid" | "paid";
+    paymentStatus: "unpaid" | "paid" | "refunded";
     items: Array<{ name: string; quantity: number; unitPrice: number }>;
     pricing: {
       subtotal: string;
@@ -2860,6 +2863,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       });
       toast.success(`تم حفظ الطلب #${result.orderId} وإرساله للمطبخ`);
       setCart([]);
+      setPaymentSplits([]);
     },
     onError: error => toast.error(`تعذر حفظ الطلب: ${error.message}`),
   });
@@ -2871,6 +2875,16 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       toast.success("تم تأكيد الدفع ويمكن الآن طباعة الإيصال");
     },
     onError: error => toast.error(`تعذر تأكيد الدفع: ${error.message}`),
+  });
+  const refundOrder = trpc.platform.refundOrder.useMutation({
+    onSuccess: () => {
+      setLastReceipt(current => current ? { ...current, paymentStatus: "refunded" } : current);
+      setRefundDialogOpen(false);
+      setRefundPin("");
+      setRefundReason("");
+      toast.success("تم تسجيل المرتجع في سجل التدقيق");
+    },
+    onError: error => toast.error(`تعذر تنفيذ المرتجع: ${error.message}`),
   });
   const queueKey = `nfood-offline-orders:${restaurantId ?? "none"}:${branchId ?? "none"}`;
   const readQueue = () =>
@@ -2923,7 +2937,8 @@ function PosView({ restaurantId }: { restaurantId: number }) {
               : ("delivery" as const),
       total: formatCents(totalCents),
       tableName: tableName.trim() || undefined,
-      paymentMethod,
+      paymentMethod: normalizedPaymentSplits[0]?.method ?? paymentMethod,
+      paymentSplits: normalizedPaymentSplits.length ? normalizedPaymentSplits.map(split => ({ method: split.method, amount: formatPaymentCents(split.amountCents) })) : undefined,
       couponCode: couponCode.trim() || undefined,
       notes: customerNote.trim() || undefined,
       cashierNotes: cashierNotes.trim() || undefined,
@@ -2933,6 +2948,11 @@ function PosView({ restaurantId }: { restaurantId: number }) {
         unitPrice: formatCents(parsePriceToCents(item.product.price)),
       })),
     };
+    const normalizedSplits = normalizePaymentSplits(paymentSplits);
+    if (paymentSplits.length > 0 && !hasExactPaymentSplit(totalCents, normalizedSplits)) {
+      toast.error(`المتبقي للدفع: ${money(getPaymentSplitRemainingCents(totalCents, normalizedSplits) / 100)}`);
+      return;
+    }
     if (!isOnline) {
       const queue = enqueueOfflineItem(
         localStorage,
@@ -2969,6 +2989,9 @@ function PosView({ restaurantId }: { restaurantId: number }) {
     cart.map(item => ({ price: item.product.price, quantity: item.quantity }))
   );
   const total = totalCents / 100;
+  const normalizedPaymentSplits = normalizePaymentSplits(paymentSplits);
+  const splitRemainingCents = getPaymentSplitRemainingCents(totalCents, normalizedPaymentSplits);
+  const splitIsExact = hasExactPaymentSplit(totalCents, normalizedPaymentSplits);
   const add = (product: MenuProduct) =>
     setCart(items => {
       const found = items.find(item => item.product.name === product.name);
@@ -3042,6 +3065,15 @@ function PosView({ restaurantId }: { restaurantId: number }) {
               >
                 طباعة الإيصال
               </Button>
+              {lastReceipt.paymentStatus === "paid" && (
+                <Button
+                  variant="outline"
+                  onClick={() => setRefundDialogOpen(true)}
+                  className="rounded-xl border-rose-200 text-xs text-rose-700 hover:bg-rose-50"
+                >
+                  مرتجع
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent className="space-y-4 p-5">
@@ -3088,6 +3120,44 @@ function PosView({ restaurantId }: { restaurantId: number }) {
           </CardContent>
         </Card>
       )}
+      <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+        <DialogContent className="max-w-md rounded-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تأكيد مرتجع الطلب #{lastReceipt?.orderId}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="rounded-xl bg-rose-50 p-3 text-xs leading-6 text-rose-700">
+              يتطلب المرتجع PIN مشرف POS ويتم تسجيل العملية في سجل التدقيق.
+            </p>
+            <Input
+              value={refundPin}
+              onChange={event => setRefundPin(event.target.value.replace(/\\D/g, "").slice(0, 8))}
+              inputMode="numeric"
+              type="password"
+              placeholder="PIN المشرف (4 إلى 8 أرقام)"
+              aria-label="PIN مشرف POS"
+              className="rounded-xl"
+            />
+            <Textarea
+              value={refundReason}
+              onChange={event => setRefundReason(event.target.value)}
+              placeholder="سبب المرتجع (اختياري)"
+              aria-label="سبب المرتجع"
+              className="min-h-20 rounded-xl text-xs"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setRefundDialogOpen(false)} className="rounded-xl">إلغاء</Button>
+              <Button
+                disabled={!lastReceipt || refundPin.length < 4 || refundOrder.isPending}
+                onClick={() => lastReceipt && refundOrder.mutate({ restaurantId, orderId: lastReceipt.orderId, pin: refundPin, reason: refundReason.trim() || undefined })}
+                className="rounded-xl bg-rose-600 hover:bg-rose-700"
+              >
+                {refundOrder.isPending ? "جارٍ تسجيل المرتجع..." : "تأكيد المرتجع"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       <ReceiptDeliveryPanel
         restaurantId={restaurantId}
         receipt={lastReceipt}
@@ -3223,6 +3293,56 @@ function PosView({ restaurantId }: { restaurantId: number }) {
               </select>
               <Textarea value={customerNote} onChange={event => setCustomerNote(event.target.value)} placeholder="ملاحظات العميل (اختياري)" aria-label="ملاحظات العميل" className="min-h-16 rounded-xl text-xs" />
               <Textarea value={cashierNotes} onChange={event => setCashierNotes(event.target.value)} placeholder="ملاحظات الكاشير (داخلية)" aria-label="ملاحظات الكاشير" className="min-h-16 rounded-xl text-xs" />
+            </div>
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-bold text-slate-800">الدفع المجزأ</p>
+                  <p className="mt-1 text-[10px] text-slate-500">قسّم الإجمالي على أكثر من وسيلة دفع مع تحقق مركزي.</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-8 rounded-lg text-[10px]"
+                  onClick={() => setPaymentSplits(current => current.length ? [] : [{ method: paymentMethod, amount: formatPaymentCents(totalCents) }])}
+                >
+                  {paymentSplits.length ? "إلغاء التقسيم" : "تفعيل التقسيم"}
+                </Button>
+              </div>
+              {paymentSplits.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {paymentSplits.map((split, index) => (
+                    <div key={`${split.method}-${index}`} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                      <select
+                        value={split.method}
+                        onChange={event => setPaymentSplits(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, method: event.target.value as PosPaymentMethod } : item))}
+                        aria-label={`وسيلة الدفع ${index + 1}`}
+                        className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-[10px]"
+                      >
+                        <option value="cash">نقدي</option><option value="card">بطاقة</option><option value="bank_transfer">تحويل بنكي</option><option value="online">دفع إلكتروني</option><option value="other">أخرى</option>
+                      </select>
+                      <Input
+                        value={split.amount}
+                        onChange={event => setPaymentSplits(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: event.target.value.replace(/[^0-9.]/g, "").slice(0, 12) } : item))}
+                        inputMode="decimal"
+                        placeholder="المبلغ"
+                        aria-label={`مبلغ الدفعة ${index + 1}`}
+                        className="h-9 rounded-lg bg-white text-xs"
+                      />
+                      <Button type="button" variant="outline" className="h-9 rounded-lg px-2 text-rose-600" onClick={() => setPaymentSplits(current => current.filter((_, itemIndex) => itemIndex !== index))}>×</Button>
+                    </div>
+                  ))}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[10px]">
+                    <span className={splitIsExact ? "font-bold text-emerald-700" : "font-bold text-amber-700"}>
+                      {splitIsExact ? "مكتمل" : `المتبقي: ${money(splitRemainingCents / 100)}`}
+                    </span>
+                    <div className="flex gap-2">
+                      {!splitIsExact && <Button type="button" variant="outline" className="h-7 rounded-lg px-2 text-[10px]" onClick={() => setPaymentSplits(current => [...current, { method: "cash" as PosPaymentMethod, amount: formatPaymentCents(splitRemainingCents) }].slice(0, 5))} disabled={splitRemainingCents <= 0 || paymentSplits.length >= 5}>إضافة المتبقي</Button>}
+                      <Button type="button" variant="outline" className="h-7 rounded-lg px-2 text-[10px]" onClick={() => setPaymentSplits(current => current.length ? [{ ...current[0], amount: formatPaymentCents(totalCents) }, ...current.slice(1)] : current)}>تعبئة الإجمالي</Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="min-h-[180px] space-y-3 sm:min-h-[220px]">
               {cart.length === 0 ? (

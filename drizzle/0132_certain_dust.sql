@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `posSupervisorPinHash` varchar(220);

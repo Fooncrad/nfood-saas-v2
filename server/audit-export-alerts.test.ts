@@ -74,4 +74,14 @@ describe("audit export and alerts", () => {
     expect(router).toContain("السعر قبل الخصم يجب أن يكون أعلى من السعر الحالي");
     expect(publicMenu).toContain("discountLabel");
   });
+  it("keeps restaurant manager stock toggle and inline price editor connected", () => {
+    const menu = read("client/src/components/HomeModules.tsx");
+    const router = read("server/routers.ts");
+    expect(menu).toContain("updateMenuItem.mutate({");
+    expect(menu).toContain("isAvailable: !product.available");
+    expect(menu).toContain("setEditingItemPrice(String(product.price))");
+    expect(menu).toContain("حفظ التعديل");
+    expect(router).toContain("updateMenuItem: testRoleProcedure(\"restaurant_admin\")");
+    expect(router).toContain("isAvailable: z.boolean().optional()");
+  });
 });

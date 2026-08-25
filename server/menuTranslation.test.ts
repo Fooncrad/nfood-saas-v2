@@ -11,6 +11,6 @@ describe("resolveSupportedMenuLanguage", () => {
   });
 
   it("ignores malformed language settings without returning an unsupported locale", () => {
-    expect(resolveSupportedMenuLanguage("not-json", "ur")).toBe("ar");
+    expect(resolveSupportedMenuLanguage("not-json", "xx")).toBe("ar");
   });
 });
