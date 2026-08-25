@@ -313,7 +313,7 @@ export const favoriteMenuItems = mysqlTable("favoriteMenuItems", {
 export const translationErrorLogs = mysqlTable("translationErrorLogs", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
-  entityType: mysqlEnum("entityType", ["category", "item"]).notNull(),
+  entityType: mysqlEnum("entityType", ["category", "item", "addon"]).notNull(),
   entityId: int("entityId").notNull(),
   sourceLanguage: varchar("sourceLanguage", { length: 10 }).notNull(),
   targetLanguage: varchar("targetLanguage", { length: 10 }).notNull(),
@@ -325,6 +325,51 @@ export const translationErrorLogs = mysqlTable("translationErrorLogs", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   resolvedAt: timestamp("resolvedAt"),
 });
+
+export const translationGlossaryEntries = mysqlTable("translationGlossaryEntries", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  sourceLanguage: varchar("sourceLanguage", { length: 10 }).notNull(),
+  targetLanguage: varchar("targetLanguage", { length: 10 }).notNull(),
+  sourceTerm: varchar("sourceTerm", { length: 180 }).notNull(),
+  translatedTerm: varchar("translatedTerm", { length: 180 }).notNull(),
+  termType: mysqlEnum("termType", ["brand", "dish", "ingredient", "modifier", "other"]).default("other").notNull(),
+  isProtected: boolean("isProtected").default(true).notNull(),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ glossaryUnique: uniqueIndex("translationGlossaryEntries_unique_term").on(table.restaurantId, table.sourceLanguage, table.targetLanguage, table.sourceTerm) }));
+
+export const translationJobs = mysqlTable("translationJobs", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  targetLanguage: varchar("targetLanguage", { length: 10 }).notNull(),
+  status: mysqlEnum("status", ["queued", "running", "completed", "failed", "cancelled"]).default("queued").notNull(),
+  totalItems: int("totalItems").default(0).notNull(),
+  processedItems: int("processedItems").default(0).notNull(),
+  successItems: int("successItems").default(0).notNull(),
+  errorItems: int("errorItems").default(0).notNull(),
+  currentLabel: varchar("currentLabel", { length: 220 }),
+  lastError: text("lastError"),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ jobRestaurantIndex: index("translationJobs_restaurant_status").on(table.restaurantId, table.status) }));
+
+export const translationJobErrors = mysqlTable("translationJobErrors", {
+  id: int("id").autoincrement().primaryKey(),
+  jobId: int("jobId").notNull().references(() => translationJobs.id),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  entityType: mysqlEnum("entityType", ["category", "item", "addon"]).notNull(),
+  entityId: int("entityId").notNull(),
+  targetLanguage: varchar("targetLanguage", { length: 10 }).notNull(),
+  sourceName: varchar("sourceName", { length: 180 }).notNull(),
+  errorMessage: text("errorMessage").notNull(),
+  attempts: int("attempts").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({ jobErrorIndex: index("translationJobErrors_job_restaurant").on(table.jobId, table.restaurantId) }));
 
 export const menuItemAddons = mysqlTable("menuItemAddons", {
   id: int("id").autoincrement().primaryKey(),

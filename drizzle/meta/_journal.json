@@ -834,6 +834,20 @@
       "when": 1787632365688,
       "tag": "0118_late_argent",
       "breakpoints": true
+    },
+    {
+      "idx": 119,
+      "version": "5",
+      "when": 1787633315724,
+      "tag": "0119_tricky_pet_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 120,
+      "version": "5",
+      "when": 1787633517460,
+      "tag": "0120_daffy_inhumans",
+      "breakpoints": true
     }
   ]
 }

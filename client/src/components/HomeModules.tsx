@@ -75,6 +75,8 @@ import { getMissingTranslationTasks } from "@/lib/menuBulkTranslation";
 import { detectMenuSourceLanguage } from "@/lib/translationSource";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { MenuAddonsPanel } from "@/components/MenuAddonsPanel";
+import { TranslationGlossaryPanel } from "@/components/TranslationGlossaryPanel";
+import { TranslationReviewPanel } from "@/components/TranslationReviewPanel";
 import AccountManagementPanel from "@/components/AccountManagementPanel";
 import { RestaurantTeamAccountsPanel } from "@/components/RestaurantTeamAccountsPanel";
 import { RestaurantAccessControlPanel } from "@/components/RestaurantAccessControlPanel";
@@ -1250,22 +1252,7 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
   if (menuSection === "addons")
     return (
       <div className="space-y-5">
-        <Card className="rounded-2xl border-emerald-100 bg-emerald-50/40">
-          <CardContent className="space-y-2 p-4">
-            <p className="text-sm font-black text-emerald-900">
-              قاموس ترجمة المطعم
-            </p>
-            <p className="text-xs text-emerald-800">
-              اكتب المصطلح بالشكل: العربية = English / Français
-            </p>
-            <textarea
-              value={translationGlossary}
-              onChange={event => setTranslationGlossary(event.target.value)}
-              className="min-h-16 w-full rounded-xl border border-emerald-200 bg-white p-3 text-xs outline-none"
-              placeholder="مثال: برجر = Burger / Hamburger"
-            />
-          </CardContent>
-        </Card>
+        <TranslationGlossaryPanel restaurantId={restaurantId} />
         <CatalogSwitch active={menuSection} onChange={setMenuSection} />
         <MenuAddonsPanel restaurantId={restaurantId} />
       </div>
@@ -1273,22 +1260,8 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
   return (
     <div className="space-y-6">
       <CatalogSwitch active={menuSection} onChange={setMenuSection} />
-      <Card className="rounded-2xl border-emerald-100 bg-emerald-50/40">
-        <CardContent className="space-y-2 p-4">
-          <p className="text-sm font-black text-emerald-900">
-            قاموس ترجمة المطعم
-          </p>
-          <p className="text-xs text-emerald-800">
-            اكتب المصطلح بالشكل: العربية = English / Français
-          </p>
-          <textarea
-            value={translationGlossary}
-            onChange={event => setTranslationGlossary(event.target.value)}
-            className="min-h-16 w-full rounded-xl border border-emerald-200 bg-white p-3 text-xs outline-none"
-            placeholder="مثال: برجر = Burger / Hamburger"
-          />
-        </CardContent>
-      </Card>
+      <TranslationGlossaryPanel restaurantId={restaurantId} />
+      <TranslationReviewPanel restaurantId={restaurantId} />
       <div className="flex flex-col gap-4 rounded-[26px] border-0 bg-white p-6 shadow-[0_18px_48px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="mb-2 flex items-center gap-2 text-xs font-bold text-[#e76f3c]">
@@ -1336,6 +1309,15 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
           </Button>
         </div>
       </div>
+      {bulkTranslation.total > 0 && (
+        <Card className="rounded-2xl border-cyan-200 bg-cyan-50/70">
+          <CardContent className="space-y-2 p-4">
+            <div className="flex items-center justify-between gap-3 text-xs font-black text-cyan-900"><span>{bulkTranslation.running ? "جارٍ ترجمة عناصر المنيو" : "اكتملت مهمة الترجمة"}</span><span>{bulkTranslation.completed}/{bulkTranslation.total} · {Math.round((bulkTranslation.completed / bulkTranslation.total) * 100)}%</span></div>
+            <div className="h-2 overflow-hidden rounded-full bg-cyan-100"><div className="h-full rounded-full bg-cyan-600 transition-[width] duration-300" style={{ width: `${Math.round((bulkTranslation.completed / bulkTranslation.total) * 100)}%` }} /></div>
+            <p className="text-[11px] text-cyan-800">نجاح: {bulkTranslation.success} · أخطاء تحتاج مراجعة: {bulkTranslation.errors}</p>
+          </CardContent>
+        </Card>
+      )}
       {bulkTranslationErrors.length > 0 && (
         <Card className="rounded-2xl border-amber-200 bg-amber-50">
           <CardContent className="p-4">
@@ -1958,9 +1940,9 @@ function CategoryManager({
   bulkTranslationPending,
   translateAllMissing,
 }: any) {
-  const [translationGlossary, setTranslationGlossary] = useState(
-    "برجر = Burger / Hamburger\nبطاطس مقلية = French fries / Frites"
-  );
+  const { user } = useAuth();
+  const glossaryQuery = trpc.platform.translationGlossary.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
+  const translationGlossary = useMemo(() => (glossaryQuery.data ?? []).filter((entry) => entry.isProtected).map((entry) => `${entry.sourceTerm} = ${entry.translatedTerm}`).join("\n"), [glossaryQuery.data]);
   const { language } = useLanguage();
   const [selectedCategoryLanguages, setSelectedCategoryLanguages] = useState<
     MenuLanguage[]

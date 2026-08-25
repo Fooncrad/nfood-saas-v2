@@ -1,0 +1,1 @@
+ALTER TABLE `translationErrorLogs` MODIFY COLUMN `entityType` enum('category','item','addon') NOT NULL;
