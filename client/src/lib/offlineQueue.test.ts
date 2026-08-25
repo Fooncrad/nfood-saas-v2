@@ -25,6 +25,13 @@ describe("offline POS queue", () => {
     expect(readOfflineQueue(local, "restaurant:8:branch:3")).toEqual([]);
   });
 
+  it("does not enqueue the same offline id twice", () => {
+    const local = storage();
+    enqueueOfflineItem(local, "orders", { total: "10" }, "offline-1");
+    const queue = enqueueOfflineItem(local, "orders", { total: "10" }, "offline-1");
+    expect(queue).toHaveLength(1);
+  });
+
   it("replaces the persisted queue after a successful drain", () => {
     const local = storage();
     writeOfflineQueue(local, "orders", [{ offlineId: "a", total: "10" }, { offlineId: "b", total: "20" }]);

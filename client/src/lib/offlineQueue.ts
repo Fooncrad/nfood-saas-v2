@@ -15,6 +15,7 @@ export function writeOfflineQueue<T>(storage: Pick<Storage, "setItem">, key: str
 
 export function enqueueOfflineItem<T>(storage: Pick<Storage, "getItem" | "setItem">, key: string, payload: T, offlineId: string) {
   const queue = readOfflineQueue<T>(storage, key);
+  if (queue.some((item) => item.offlineId === offlineId)) return queue;
   const next = [...queue, { ...payload, offlineId }];
   writeOfflineQueue(storage, key, next);
   return next;
