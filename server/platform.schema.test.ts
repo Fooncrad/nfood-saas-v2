@@ -53,5 +53,8 @@ describe("NFOOD platform schema", () => {
     expect(orders.paymentStatus).toBeDefined();
     expect(orders.notes).toBeDefined();
     expect(orders.cashierNotes).toBeDefined();
+    expect(orders.customerId).toBeDefined();
+    expect(orders.guestName).toBeDefined();
+    expect(orders.guestPhone).toBeDefined();
   });
 });
