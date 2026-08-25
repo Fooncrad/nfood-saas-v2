@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { branches, coupons, employees, inventoryItems, menuCategories, menuItems, orders, purchases, restaurants } from "../drizzle/schema";
-import { isBranchAcceptingOrders, parseBranchOperatingWindows } from "./db";
+import { getNextBranchOpeningLabel, isBranchAcceptingOrders, parseBranchOperatingWindows } from "./db";
 
 describe("NFOOD platform schema", () => {
   it("exposes the core restaurant operating tables", () => {
@@ -35,6 +35,7 @@ describe("NFOOD platform schema", () => {
     expect(parseBranchOperatingWindows(windows)).toHaveLength(1);
     expect(isBranchAcceptingOrders({ status: "open", operatingWindowsJson: windows }, "delivery", new Date("2026-08-25T09:00:00.000Z"))).toBe(true);
     expect(isBranchAcceptingOrders({ status: "open", operatingWindowsJson: windows }, "dine_in", new Date("2026-08-25T09:00:00.000Z"))).toBe(false);
+    expect(getNextBranchOpeningLabel({ operatingWindowsJson: windows }, "delivery", new Date("2026-08-25T10:00:00.000Z"))).toContain("الثلاثاء");
   });
 
   it("defines persisted coupon fields for tenant-scoped marketing", () => {
