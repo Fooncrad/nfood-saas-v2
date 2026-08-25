@@ -21,6 +21,22 @@ describe("advanced printer management contracts", () => {
     expect(ui).toContain("أعطال");
   });
 
+  it("exposes timing metrics and selectable report windows", () => {
+    expect(router).toContain("latencyMs");
+    expect(router).toContain("printDurationMs");
+    expect(router).toContain('["24h", "7d", "30d"]');
+    expect(ui).toContain("آخر 24 ساعة");
+    expect(ui).toContain("ms وصول");
+    expect(ui).toContain("ms طباعة");
+  });
+
+  it("exposes guided USB and Bluetooth discovery", () => {
+    expect(router).toContain("discoverPrinterDevices");
+    expect(router).toContain('z.enum(["usb", "bluetooth"])');
+    expect(ui).toContain("معالج إعداد USB وBluetooth");
+    expect(ui).toContain("اكتشاف الأجهزة تلقائياً");
+  });
+
   it("keeps Gateway probe and actual print actions explicit", () => {
     expect(router).toContain("testPrinterGateway");
     expect(router).toContain('mode: z.enum(["probe", "print"])');

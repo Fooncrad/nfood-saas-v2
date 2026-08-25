@@ -332,7 +332,7 @@ export const kitchenSections = mysqlTable("kitchenSections", {
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
   name: varchar("name", { length: 120 }).notNull(),
   printerName: varchar("printerName", { length: 160 }),
-  printerType: mysqlEnum("printerType", ["network", "usb", "browser", "none"]).default("none").notNull(),
+  printerType: mysqlEnum("printerType", ["network", "usb", "bluetooth", "browser", "none"]).default("none").notNull(),
   printerAddress: varchar("printerAddress", { length: 255 }),
   printerPort: int("printerPort"),
   printerPurpose: mysqlEnum("printerPurpose", ["kitchen", "receipt", "general"]).default("general").notNull(),
@@ -351,6 +351,8 @@ export const printerLogs = mysqlTable("printerLogs", {
   operation: mysqlEnum("operation", ["health_check", "test_print", "print"]).notNull(),
   result: mysqlEnum("result", ["success", "error"]).notNull(),
   message: varchar("message", { length: 500 }),
+  latencyMs: int("latencyMs"),
+  printDurationMs: int("printDurationMs"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
