@@ -79,16 +79,20 @@ describe("Home decomposition", () => {
       'location === "/register" || location === "/restaurant/register"'
     );
     expect(homeSource).toContain('location === "/login"');
-    expect(homeSource).toContain("lg:mr-[304px]");
-    expect(sidebarSource).toContain("w-[304px]");
+    expect(homeSource).toContain("lg:mr-[264px]");
+    expect(sidebarSource).toContain("w-[264px]");
     expect(sidebarSource).toContain("nfood-unified-sidebar");
     expect(sidebarSource).toContain(
       "nfood-sidebar-nav nfood-scroll-area min-h-0 flex-1 space-y-1 overflow-y-auto"
     );
+    expect(homeSource).toContain("nfood-dashboard-content nfood-scroll-area min-h-0 flex-1 overflow-y-auto");
+    expect(modulesSource).toContain("data-settings-hub");
+    expect(modulesSource).toContain('role="tablist" aria-label="أقسام إعدادات المطعم"');
     expect(sidebarSource).toContain("sidebarCollapsedKey");
     expect(sidebarSource).toContain("data-sidebar-collapsed");
     expect(sidebarSource).toContain("roleScope");
     expect(sidebarSource).toContain("overflow-hidden overscroll-contain");
+    expect(sidebarSource).not.toContain('onClick={() => onNavigate("settings")}');
     expect(quickAccessSource).toContain(
       'keys: ["pos", "orders", "kds", "menu"'
     );

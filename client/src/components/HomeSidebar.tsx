@@ -197,7 +197,7 @@ export function HomeSidebar({
   return (
     <aside
       data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}
-      className={`nfood-unified-sidebar fixed inset-y-0 z-20 hidden h-full overflow-hidden overscroll-contain border-slate-200 bg-[#0b1425] text-white shadow-2xl transition-[width] duration-300 ease-in-out lg:flex lg:flex-col ${sidebarCollapsed ? "w-[72px]" : "w-[304px]"} ${direction === "rtl" ? "right-0 border-l" : "left-0 border-r"}`}
+      className={`nfood-unified-sidebar fixed inset-y-0 z-20 hidden h-full overflow-hidden overscroll-contain border-slate-200 bg-[#0b1425] text-white shadow-2xl transition-[width] duration-300 ease-in-out lg:flex lg:flex-col ${sidebarCollapsed ? "w-[72px]" : "w-[264px]"} ${direction === "rtl" ? "right-0 border-l" : "left-0 border-r"}`}
     >
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3">
         <button
@@ -306,17 +306,7 @@ export function HomeSidebar({
                   </option>
                 ))}
               </select>
-              <button
-                type="button"
-                onClick={onOpenCommand}
-                className="flex h-9 w-full items-center gap-2 rounded-lg border border-white/10 bg-[#17263d] px-3 text-[13px] text-slate-300 hover:text-white"
-              >
-                <Search className="h-4 w-4" />
-                {t("search")}{" "}
-                <span className="mr-auto text-[10px] text-slate-500">
-                  Ctrl K
-                </span>
-              </button>
+              
             </div>
           </div>
         )}
@@ -356,7 +346,7 @@ export function HomeSidebar({
             return (
               <div
                 key={group.id ?? group.label}
-                className="nfood-sidebar-group rounded-xl border border-white/15 bg-[#15233a] p-1 shadow-sm"
+                className="nfood-sidebar-group rounded-xl border border-white/15 bg-[#15233a] p-0.5"
               >
                 <button
                   type="button"
@@ -405,7 +395,7 @@ export function HomeSidebar({
           })}
         </nav>
       </div>
-      <div className="nfood-sidebar-footer mt-auto shrink-0 space-y-0.5 p-1.5">
+      <div className="nfood-sidebar-footer mt-auto shrink-0 space-y-0.5 p-1">
         <div className="rounded-xl border border-white/10 bg-white/[.04] p-1.5">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold">
             <Zap className="h-4 w-4 text-[#f0ad65]" /> {t("subscriptionLabel")}
@@ -462,13 +452,7 @@ export function HomeSidebar({
             {t("notificationsEnabled")}
           </p>
         )}
-        <button
-          onClick={() => onNavigate("settings")}
-          className="flex w-full items-center gap-3 px-3 py-2 text-sm text-slate-400 hover:text-white"
-        >
-          <Settings2 className="h-4 w-4" />
-          {t("generalSettings")}
-        </button>
+        
         <button
           onClick={() => {
             window.location.href = "/support";
