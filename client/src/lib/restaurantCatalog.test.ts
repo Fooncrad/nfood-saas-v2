@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterRestaurantRows } from "./restaurantCatalog";
+import { filterRestaurantRows, formatCatalogMoney } from "./restaurantCatalog";
 
 describe("restaurant catalog filters", () => {
   const restaurants = [
@@ -22,5 +22,10 @@ describe("restaurant catalog filters", () => {
   it("combines query, status, and plan filters", () => {
     expect(filterRestaurantRows(restaurants, "nasser", "نشط", "All Features", plans).map((item) => item.id)).toEqual([1]);
     expect(filterRestaurantRows(restaurants, "nasser", "تجربة", "All Features", plans)).toEqual([]);
+  });
+
+  it("formats catalog amounts with English digits and integer rounding", () => {
+    expect(formatCatalogMoney("5000.75")).toBe("5,001");
+    expect(formatCatalogMoney(null)).toBe("0");
   });
 });

@@ -33,7 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { filterRestaurantRows } from "@/lib/restaurantCatalog";
+import { filterRestaurantRows, formatCatalogMoney } from "@/lib/restaurantCatalog";
 
 type Filter = "الكل" | "نشط" | "تجربة" | "معلّق";
 
@@ -77,6 +77,7 @@ export function SuperAdminRestaurantCatalog() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("الكل");
   const [createOpen, setCreateOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [expandedPlan, setExpandedPlan] = useState<number | null>(null);
   const [planFilter, setPlanFilter] = useState("الكل");
   const [planEditor, setPlanEditor] = useState<{
@@ -148,6 +149,7 @@ export function SuperAdminRestaurantCatalog() {
     onError: error =>
       toast.error(`تعذر إعادة تعيين كلمة المرور: ${error.message}`),
   });
+  const restaurants = restaurantsQuery.data ?? [];
   const plans = (plansQuery.data ?? []) as PlanRecord[];
   const definitions = (definitionsQuery.data ?? []) as FeatureDefinition[];
   const planOptions = useMemo(
@@ -194,14 +196,26 @@ export function SuperAdminRestaurantCatalog() {
   const visibleDefinitions = showAllFeatures
     ? definitions
     : definitions.slice(0, 8);
+  const actionsCopy = language === "ar"
+    ? { refresh: "تحديث القائمة", reset: "مسح الفلاتر", openCatalog: "فتح كتالوج الباقات" }
+    : language === "fr"
+      ? { refresh: "Actualiser la liste", reset: "Réinitialiser les filtres", openCatalog: "Ouvrir le catalogue" }
+      : language === "ur"
+        ? { refresh: "فہرست تازہ کریں", reset: "فلٹر صاف کریں", openCatalog: "کیٹلاگ کھولیں" }
+        : { refresh: "Refresh list", reset: "Reset filters", openCatalog: "Open package catalog" };
 
   return (
-    <div dir={language === "ar" || language === "ur" ? "rtl" : "ltr"} className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div data-testid="super-admin-restaurant-catalog" dir={language === "ar" || language === "ur" ? "rtl" : "ltr"} className="space-y-4 text-slate-900 dark:text-white">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white/70 px-1 py-1 dark:border-slate-800 dark:bg-slate-950/30">
         <div>
-          <p className="text-xs font-bold text-[#e76f3c]">{ui.center}</p>
-          <h2 className="mt-1 text-xl font-black text-slate-900">{ui.title}</h2>
-          <p className="mt-1 text-xs text-slate-500">{ui.subtitle}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#e76f3c]">{ui.center}</p>
+            <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              {restaurantsQuery.isLoading ? "…" : formatCatalogMoney(restaurants.length)}
+            </span>
+          </div>
+          <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-white md:text-xl">{ui.title}</h2>
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500 dark:text-slate-400">{ui.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -485,15 +499,16 @@ export function SuperAdminRestaurantCatalog() {
       {catalogOpen && (
         <div className="animate-[nfood-enter_180ms_ease-out]">
         <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
-        <CardHeader className="border-b border-slate-100 p-4">
+        <CardHeader className="border-b border-slate-100 bg-gradient-to-l from-slate-50/80 via-white to-white p-3.5 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative min-w-[240px] flex-1">
               <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
+                aria-label={ui.search}
                 value={query}
                 onChange={event => setQuery(event.target.value)}
                 placeholder={ui.search}
-                className="h-11 rounded-xl pr-9"
+                className="h-10 rounded-xl border-slate-200 bg-white/90 pr-9 text-xs shadow-none focus-visible:ring-2 focus-visible:ring-orange-200 dark:border-slate-700 dark:bg-slate-950"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -502,7 +517,7 @@ export function SuperAdminRestaurantCatalog() {
                   key={item}
                   type="button"
                   onClick={() => setFilter(item)}
-                  className={`rounded-xl px-3 py-2 text-xs font-bold transition ${filter === item ? "bg-[#e76f3c] text-white" : "bg-slate-100 text-slate-500 hover:bg-orange-50 hover:text-[#e76f3c]"}`}
+                  className={`rounded-lg px-3 py-1.5 text-[11px] font-black transition ${filter === item ? "bg-[#e76f3c] text-white shadow-sm" : "bg-slate-100/80 text-slate-500 hover:bg-orange-50 hover:text-[#e76f3c] dark:bg-slate-800 dark:text-slate-300"}`}
                 >
                   {item === "الكل" ? ui.all : item === "نشط" ? ui.active : item === "تجربة" ? ui.trial : ui.pending}
                 </button>
@@ -512,7 +527,7 @@ export function SuperAdminRestaurantCatalog() {
               aria-label={ui.plans}
               value={planFilter}
               onChange={event => setPlanFilter(event.target.value)}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none focus:border-[#e76f3c]"
+              className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-black text-slate-600 outline-none transition focus:border-[#e76f3c] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
             >
               <option value="الكل">{ui.plans}</option>
               {planOptions.slice(1).map(plan => (
@@ -521,9 +536,18 @@ export function SuperAdminRestaurantCatalog() {
                 </option>
               ))}
             </select>
-            <Button variant="outline" className="gap-2 rounded-xl">
-              <MoreHorizontal className="h-4 w-4" /> {ui.actions}
-            </Button>
+            <div className="relative">
+              <Button aria-label={ui.actions} aria-expanded={actionsOpen} onClick={() => setActionsOpen(open => !open)} variant="outline" className="h-9 gap-1.5 rounded-lg border-slate-200 px-3 text-[11px] font-black dark:border-slate-700">
+                <MoreHorizontal className="h-4 w-4" /> {ui.actions}
+              </Button>
+              {actionsOpen && (
+                <div className="absolute left-0 top-11 z-30 min-w-48 rounded-xl border border-slate-200 bg-white p-1.5 text-right shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                  <button type="button" onClick={() => { void restaurantsQuery.refetch(); setActionsOpen(false); }} className="flex w-full items-center rounded-lg px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-orange-50 hover:text-[#c75325] dark:text-slate-200 dark:hover:bg-orange-500/10">{actionsCopy.refresh}</button>
+                  <button type="button" onClick={() => { setQuery(""); setFilter("الكل"); setPlanFilter("الكل"); setActionsOpen(false); }} className="flex w-full items-center rounded-lg px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-orange-50 hover:text-[#c75325] dark:text-slate-200 dark:hover:bg-orange-500/10">{actionsCopy.reset}</button>
+                  <button type="button" onClick={() => { setCatalogOpen(true); setActionsOpen(false); }} className="flex w-full items-center rounded-lg px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-orange-50 hover:text-[#c75325] dark:text-slate-200 dark:hover:bg-orange-500/10">{actionsCopy.openCatalog}</button>
+                </div>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-3 sm:p-4">
@@ -570,52 +594,53 @@ export function SuperAdminRestaurantCatalog() {
                 return (
                   <article
                     key={restaurant.id}
-                    className="min-w-0 rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md"
+                    data-testid={`restaurant-card-${restaurant.id}`}
+                    className="group flex min-h-[200px] min-w-0 flex-col rounded-[18px] border border-slate-200/90 bg-white p-3 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-orange-300/70 hover:shadow-lg dark:border-slate-800 dark:bg-slate-950/60"
                   >
                     <div className="flex min-w-0 items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-2.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-[#e76f3c]">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#e76f3c] ring-1 ring-orange-100 transition group-hover:bg-orange-100 dark:bg-orange-500/10 dark:ring-orange-500/20">
                           <Store className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate font-bold text-slate-800">
+                          <p className="truncate text-sm font-black text-slate-900 dark:text-white">
                             {restaurant.name}
                           </p>
-                          <p className="mt-0.5 text-[11px] text-slate-400">
-                            {ui.account} #{restaurant.id} · {restaurant.branchCount ?? 0} {ui.branches}
+                          <p className="mt-0.5 text-[10px] font-semibold text-slate-400">
+                            {ui.account} <span dir="ltr">#{formatCatalogMoney(restaurant.id)}</span> · {formatCatalogMoney(restaurant.branchCount ?? 0)} {ui.branches}
                           </p>
                         </div>
                       </div>
                       <Badge
                         variant="outline"
-                        className={`shrink-0 rounded-lg text-[10px] ${statusClass}`}
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black ${statusClass} dark:border-white/10 dark:bg-opacity-20`}
                       >
                         {statusLabel}
                       </Badge>
                     </div>
 
-                    <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px]">
-                      <div className="min-w-0 rounded-lg bg-slate-50 px-2 py-1.5">
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
+                      <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/80 px-2.5 py-2 dark:border-slate-800 dark:bg-slate-900/80">
                         <p className="text-slate-400">{ui.plan}</p>
-                        <p className="mt-0.5 truncate font-bold text-slate-700">
+                        <p className="mt-0.5 truncate font-bold text-slate-800 dark:text-slate-200">
                           {restaurant.plan ?? ui.unspecified}
                         </p>
                       </div>
-                      <div className="min-w-0 rounded-lg bg-slate-50 px-2 py-1.5">
+                      <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/80 px-2.5 py-2 dark:border-slate-800 dark:bg-slate-900/80">
                         <p className="text-slate-400">{ui.publicLink}</p>
                         <a
                           href={`/menu/${encodeURIComponent(restaurant.slug ?? "")}`}
                           target="_blank"
                           rel="noreferrer"
                           dir="ltr"
-                          className="mt-0.5 block truncate font-mono font-bold text-sky-700 hover:underline"
+                          className="mt-0.5 block truncate font-mono font-bold text-sky-700 transition hover:text-sky-900 hover:underline dark:text-sky-300 dark:hover:text-sky-200"
                         >
                           /{restaurant.slug}
                         </a>
                       </div>
                     </div>
 
-                    <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1 border-t border-slate-100 pt-2">
+                    <div className="mt-auto flex min-w-0 flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3 dark:border-slate-800">
                       <Button
                         type="button"
                         size="sm"
@@ -627,7 +652,7 @@ export function SuperAdminRestaurantCatalog() {
                             plan: restaurant.plan,
                           })
                         }
-                        className="h-7 max-w-full gap-1 rounded-md px-2 text-[10px]"
+                        className="h-7 max-w-full gap-1 rounded-lg border-slate-200 px-2 text-[10px] font-bold dark:border-slate-700"
                       >
                         <Eye className="h-3.5 w-3.5 shrink-0" /> {ui.details}
                       </Button>
@@ -638,7 +663,7 @@ export function SuperAdminRestaurantCatalog() {
                         onClick={() =>
                           enterRestaurant.mutate({ id: restaurant.id })
                         }
-                        className="h-7 max-w-full gap-1 rounded-md bg-[#111c2e] px-2 text-[10px] text-white hover:bg-[#1b2a43]"
+                        className="h-7 max-w-full gap-1 rounded-lg bg-[#111c2e] px-2 text-[10px] font-bold text-white shadow-sm hover:bg-[#1b2a43]"
                       >
                         <LogIn className="h-3.5 w-3.5 shrink-0" /> {ui.login}
                       </Button>
@@ -656,7 +681,7 @@ export function SuperAdminRestaurantCatalog() {
                                 : "active",
                           })
                         }
-                        className="h-7 max-w-full gap-1 rounded-md px-2 text-[10px]"
+                        className="h-7 max-w-full gap-1 rounded-lg border-slate-200 px-2 text-[10px] font-bold dark:border-slate-700"
                       >
                         <Power className="h-3.5 w-3.5 shrink-0" />
                         {restaurant.status === "active"
@@ -684,7 +709,7 @@ export function SuperAdminRestaurantCatalog() {
                               ""
                           );
                         }}
-                        className="h-7 max-w-full gap-1 rounded-md px-2 text-[10px]"
+                        className="h-7 max-w-full gap-1 rounded-lg border-slate-200 px-2 text-[10px] font-bold dark:border-slate-700"
                       >
                         <Edit3 className="h-3.5 w-3.5 shrink-0" /> {ui.editPlan}
                       </Button>
@@ -707,7 +732,7 @@ export function SuperAdminRestaurantCatalog() {
                               "كلمة المرور يجب أن تتكون من 6 أحرف أو أرقام على الأقل"
                             );
                         }}
-                        className="h-7 max-w-full gap-1 rounded-md px-2 text-[10px]"
+                        className="h-7 max-w-full gap-1 rounded-lg border-slate-200 px-2 text-[10px] font-bold dark:border-slate-700"
                       >
                         <KeyRound className="h-3.5 w-3.5 shrink-0" /> {ui.resetPassword}
                       </Button>
@@ -723,7 +748,7 @@ export function SuperAdminRestaurantCatalog() {
                           )
                             deleteRestaurant.mutate({ id: restaurant.id });
                         }}
-                        className="h-8 max-w-full gap-1 rounded-lg px-2 text-[11px] text-red-600"
+                        className="h-7 max-w-full gap-1 rounded-lg px-2 text-[10px] font-bold text-red-600 dark:border-red-500/30 dark:text-red-300"
                       >
                         <Trash2 className="h-3.5 w-3.5 shrink-0" /> حذف
                       </Button>
@@ -733,7 +758,7 @@ export function SuperAdminRestaurantCatalog() {
                       href={`/menu/${encodeURIComponent(restaurant.slug ?? "")}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-2 inline-flex max-w-full items-center gap-1 text-[11px] font-bold text-[#e76f3c] hover:underline"
+                      className="mt-2 inline-flex max-w-full items-center gap-1 text-[10px] font-black text-[#e76f3c] hover:underline"
                     >
                       <Utensils className="h-3.5 w-3.5 shrink-0" /> فتح Menu
                       للعميل
@@ -750,23 +775,22 @@ export function SuperAdminRestaurantCatalog() {
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[1.2fr_1fr]">
-        <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
-          <CardHeader className="border-b border-slate-100 bg-gradient-to-l from-cyan-50 via-white to-white p-4">
+      <div data-testid="restaurant-governance-grid" className="grid gap-4 xl:grid-cols-[1.15fr_1fr]">
+        <Card className="overflow-hidden rounded-[22px] border-slate-200/80 bg-white/95 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+          <CardHeader className="border-b border-slate-100 bg-gradient-to-l from-cyan-50 via-white to-white p-3.5 dark:border-slate-800 dark:from-cyan-950/30 dark:via-slate-900 dark:to-slate-900">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <CardTitle className="text-base">
-                  مميزات الباقات الفعلية
-                </CardTitle>
-                <p className="mt-1 text-xs text-slate-500">
-                  هذه البيانات تُقرأ مباشرة من packagePlans وpackagePlanFeatures
-                  وfeatureDefinitions.
-                </p>
+                  <CardTitle className="text-sm font-black md:text-base">
+                    مميزات الباقات الفعلية
+                  </CardTitle>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
+                    هذه البيانات تُقرأ مباشرة من packagePlans وpackagePlanFeatures وfeatureDefinitions.
+                  </p>
               </div>
               <Badge variant="outline" className="rounded-lg">
-                {catalogLoading
-                  ? "جارٍ التحميل"
-                  : `${plans.length} باقات · ${definitions.length} ميزة`}
+                  {catalogLoading
+                    ? "جارٍ التحميل"
+                    : `${formatCatalogMoney(plans.length)} باقات · ${formatCatalogMoney(definitions.length)} ميزة`}
               </Badge>
             </div>
           </CardHeader>
@@ -818,19 +842,18 @@ export function SuperAdminRestaurantCatalog() {
                       onClick={() =>
                         setExpandedPlan(isExpanded ? null : plan.id)
                       }
-                      className="flex w-full items-center justify-between gap-3 p-4 text-right hover:bg-slate-50"
+                      className="flex w-full items-center justify-between gap-3 p-3 text-right transition hover:bg-slate-50 dark:hover:bg-slate-800/60"
                     >
                       <span className="flex min-w-0 items-center gap-3">
                         <span
                           className={`h-2.5 w-2.5 shrink-0 rounded-full ${index % 3 === 0 ? "bg-slate-400" : index % 3 === 1 ? "bg-sky-500" : "bg-violet-500"}`}
                         />
                         <span className="min-w-0">
-                          <span className="block truncate font-bold text-slate-800">
+                          <span className="block truncate text-xs font-black text-slate-800 dark:text-slate-100">
                             {plan.name}
                           </span>
                           <span className="mt-0.5 block truncate font-mono text-[10px] text-slate-400">
-                            {plan.key} · {plan.monthlyPrice} SAR/شهري ·{" "}
-                            {enabledCount} مفعّلة
+                            {plan.key} · {formatCatalogMoney(plan.monthlyPrice)} SAR/شهري · {formatCatalogMoney(enabledCount)} مفعّلة
                           </span>
                         </span>
                       </span>
@@ -846,7 +869,7 @@ export function SuperAdminRestaurantCatalog() {
                       </span>
                     </button>
                     {isExpanded && (
-                      <div className="grid gap-2 bg-slate-50/60 p-4 sm:grid-cols-2">
+                      <div className="grid gap-2 bg-slate-50/60 p-3 sm:grid-cols-2 dark:bg-slate-950/50">
                         {definitions.map(definition => {
                           const link = featureMap.get(definition.key);
                           const enabled = link?.enabled === true;
@@ -887,15 +910,14 @@ export function SuperAdminRestaurantCatalog() {
             )}
           </CardContent>
         </Card>
-        <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
-          <CardHeader className="border-b border-slate-100 bg-gradient-to-l from-emerald-50 via-white to-white p-4">
-            <CardTitle className="text-base">كتالوج المميزات المتاحة</CardTitle>
-            <p className="mt-1 text-xs text-slate-500">
-              المفاتيح الموجودة حاليًا في قاعدة البيانات، مع التبعيات والإضافات
-              وأسعارها.
+        <Card className="overflow-hidden rounded-[22px] border-slate-200/80 bg-white/95 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+          <CardHeader className="border-b border-slate-100 bg-gradient-to-l from-emerald-50 via-white to-white p-3.5 dark:border-slate-800 dark:from-emerald-950/30 dark:via-slate-900 dark:to-slate-900">
+            <CardTitle className="text-sm font-black md:text-base">كتالوج المميزات المتاحة</CardTitle>
+            <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
+              المفاتيح الموجودة حاليًا في قاعدة البيانات، مع التبعيات والإضافات وأسعارها.
             </p>
           </CardHeader>
-          <CardContent className="p-4">
+          <CardContent className="p-3.5">
             {catalogError ? (
               <p className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
                 تعذر تحميل تعريفات المميزات. Request ID: feature-definitions
@@ -911,11 +933,11 @@ export function SuperAdminRestaurantCatalog() {
                 {visibleDefinitions.map(definition => (
                   <div
                     key={definition.id}
-                    className="rounded-xl border border-slate-100 bg-slate-50/70 p-3"
+                    className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/30 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-emerald-500/30"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-slate-800">
+                        <p className="truncate text-xs font-black text-slate-800 dark:text-slate-100">
                           {definition.label}
                         </p>
                         <p className="mt-1 truncate font-mono text-[10px] text-slate-400">
@@ -924,7 +946,7 @@ export function SuperAdminRestaurantCatalog() {
                       </div>
                       <Badge variant="outline" className="shrink-0 rounded-lg">
                         {definition.isAddOn
-                          ? `إضافة ${definition.addonPrice ?? "0"} SAR`
+                          ? `إضافة ${formatCatalogMoney(definition.addonPrice)} SAR`
                           : "ضمن الباقة"}
                       </Badge>
                     </div>
@@ -942,7 +964,7 @@ export function SuperAdminRestaurantCatalog() {
                   <button
                     type="button"
                     onClick={() => setShowAllFeatures(value => !value)}
-                    className="mt-2 w-full rounded-xl border border-orange-200 px-3 py-2 text-xs font-bold text-[#c65325] transition hover:bg-orange-50"
+                        className="mt-2 w-full rounded-xl border border-orange-200 px-3 py-2 text-[11px] font-black text-[#c65325] transition hover:bg-orange-50 dark:border-orange-500/30 dark:hover:bg-orange-500/10"
                   >
                     {showAllFeatures
                       ? "عرض المميزات الأساسية فقط"
