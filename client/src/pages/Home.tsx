@@ -69,7 +69,9 @@ import { AuditSecurityAlerts } from "@/components/AuditSecurityAlerts";
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
 
 function money(value: number) { return `${value.toLocaleString("ar-SA")} ر.س`; }
-function orderAgeMinutes(value: Date | string | number) { const timestamp = value instanceof Date ? value.getTime() : new Date(value).getTime(); return Number.isFinite(timestamp) ? Math.max(0, Math.floor((Date.now() - timestamp) / 60000)) : 0; }
+function parseOrderDate(value: Date | string | number) { const timestamp = value instanceof Date ? value.getTime() : new Date(value).getTime(); return Number.isFinite(timestamp) ? new Date(timestamp) : null; }
+function formatOrderTime(value: Date | string | number) { const date = parseOrderDate(value); return date ? date.toLocaleTimeString("ar-SA-u-nu-latn", { timeZone: "Asia/Riyadh", hour: "2-digit", minute: "2-digit", hour12: false }) : "--:--"; }
+function orderAgeMinutes(value: Date | string | number) { const date = parseOrderDate(value); return date ? Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000)) : 0; }
 
 type NotificationType = "task" | "message" | "payment" | "system";
 type NotificationPreferences = Record<NotificationType, boolean> & { soundEnabled: boolean; vibrationEnabled: boolean };
@@ -271,7 +273,7 @@ export default function Home() {
   const [branch, setBranch] = useState("");
   useEffect(() => { const firstBranch = workspaceBranches.data?.[0]; setBranch((current) => current && workspaceBranches.data?.some((item) => item.name === current) ? current : firstBranch?.name ?? ""); }, [workspaceBranches.data]);
   const [query, setQuery] = useState("");
-  const orders = useMemo(() => (remoteOrders.data ?? []).map((order) => ({ id: `#${order.id}`, table: order.tableName ?? "بدون طاولة", items: order.items?.length ? order.items.map((item) => `${item.quantity} × ${item.itemName}`).join("، ") : "لا توجد بنود محفوظة", total: Number(order.total), status: order.status === "cancelled" ? "completed" : order.status, time: new Date(order.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" }), channel: order.channel === "dine_in" ? "داخل المطعم" : order.channel === "takeaway" ? "استلام" : order.channel === "reservation" ? "حجز + طلب" : order.channel === "hotel" ? "فندق" : "توصيل", ageMinutes: orderAgeMinutes(order.createdAt), kitchenSectionId: order.kitchenSectionId ?? null, reservationDate: order.reservationDate ?? null, reservationEventType: order.reservationEventType ?? null, partySize: order.partySize ?? null, childrenCount: order.childrenCount ?? null, splitBillMode: order.splitBillMode ?? null })), [remoteOrders.data]);
+  const orders = useMemo(() => (remoteOrders.data ?? []).map((order) => ({ id: `#${order.id}`, table: order.tableName ?? "بدون طاولة", items: order.items?.length ? order.items.map((item) => `${item.quantity} × ${item.itemName}`).join("، ") : "لا توجد بنود محفوظة", total: Number(order.total), status: order.status === "cancelled" ? "completed" : order.status, time: formatOrderTime(order.createdAt), channel: order.channel === "dine_in" ? "داخل المطعم" : order.channel === "takeaway" ? "استلام" : order.channel === "reservation" ? "حجز + طلب" : order.channel === "hotel" ? "فندق" : "توصيل", ageMinutes: orderAgeMinutes(order.createdAt), kitchenSectionId: order.kitchenSectionId ?? null, reservationDate: order.reservationDate ?? null, reservationEventType: order.reservationEventType ?? null, partySize: order.partySize ?? null, childrenCount: order.childrenCount ?? null, splitBillMode: order.splitBillMode ?? null })), [remoteOrders.data]);
   const visibleOrders = useMemo(() => orders.filter((order) => `${order.id} ${order.table} ${order.items}`.includes(query)), [orders, query]);
   const advanceOrder = (id: string) => {
     const current = orders.find((order) => order.id === id);

@@ -20,6 +20,14 @@ describe("manager operations monitor and KDS controls", () => {
     expect(filterAndSortKdsOrders(orders, "all", "newest").map((order) => order.id)).toEqual(["#1", "#3", "#2"]);
   });
 
+  it("uses a stable Riyadh timezone and safe 24-hour order time format", () => {
+    const home = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
+    expect(home).toContain('"Asia/Riyadh"');
+    expect(home).toContain('hour12: false');
+    expect(home).toContain('"--:--"');
+    expect(home).toContain("formatOrderTime(order.createdAt)");
+  });
+
   it("locks KDS viewport and keeps scrolling inside Kanban columns", () => {
     const kds = readFileSync(resolve(process.cwd(), "client/src/components/KdsOperationsBoard.tsx"), "utf8");
     expect(kds).toContain("h-full");
