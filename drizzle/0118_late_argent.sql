@@ -1,0 +1,1 @@
+ALTER TABLE `menuItemAddons` ADD `translationsJson` text;

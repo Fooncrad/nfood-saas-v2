@@ -10,6 +10,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { trpc } from "@/lib/trpc";
 import { dishTone, rankDishScores } from "@/lib/dishGames";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
+import { readMenuTranslation, saveMenuTranslationForSource } from "@/lib/menuTranslationCache";
 import { getCurrency } from "@shared/currencies";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
@@ -17,12 +18,13 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { toast } from "sonner";
 
 const guestStatusLabels: Record<Language, Record<string, string>> = { ar: { new: "جديد", preparing: "قيد التحضير", ready: "جاهز", completed: "مكتمل", cancelled: "ملغى" }, en: { new: "New", preparing: "Preparing", ready: "Ready", completed: "Completed", cancelled: "Cancelled" }, fr: { new: "Nouveau", preparing: "En préparation", ready: "Prêt", completed: "Terminé", cancelled: "Annulé" }, ur: { new: "نیا", preparing: "تیاری میں", ready: "تیار", completed: "مکمل", cancelled: "منسوخ" } };
-type LocalizedMenuEntity = { name: string; description?: string | null; translationsJson?: string | null; tagsJson?: string | null };
-type MenuAddon = { id: number; menuItemId: number; name: string; price: string | number; isAvailable: boolean; imageUrl?: string | null };
+type LocalizedMenuEntity = { id?: number; name: string; description?: string | null; translationsJson?: string | null; tagsJson?: string | null };
+type MenuAddon = { id: number; menuItemId: number; name: string; price: string | number; isAvailable: boolean; imageUrl?: string | null; translationsJson?: string | null };
 type QuickNoteTemplate = { id: string; text: string; updatedAt?: number };
 function parseMenuTags(raw?: string | null) { try { const parsed: unknown = JSON.parse(raw ?? "[]"); return Array.from(new Set(Array.isArray(parsed) ? parsed.filter((tag): tag is string => typeof tag === "string").map((tag) => tag.trim()).filter(Boolean) : [])).slice(0, 12); } catch { return []; } }
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
-function localizeMenuEntity<T extends LocalizedMenuEntity>(entity: T, language: string): T { if (!entity.translationsJson) return entity; try { const translations = JSON.parse(entity.translationsJson) as Array<{ language: string; name: string; description?: string; status?: string }>; const approved = (entry: { language: string; status?: string }) => !entry.status || entry.status === "approved"; const match = translations.find((entry) => entry.language === language && approved(entry)) ?? translations.find((entry) => entry.language === "ar" && approved(entry)); return match?.name ? { ...entity, name: match.name, description: match.description ?? entity.description } : entity; } catch { return entity; } }
+type RuntimeMenuTranslation = { entityType: "category" | "item" | "addon"; entityId: number; language: Language; name: string; description?: string | null };
+function localizeMenuEntity<T extends LocalizedMenuEntity>(entity: T, language: Language, entityType: "category" | "item" | "addon", runtimeTranslations?: Map<string, RuntimeMenuTranslation>): T { const approved = (entry: { language: string; status?: string }) => !entry.status || ["approved", "auto", "auto-approved"].includes(entry.status); try { const runtime = entity.id ? runtimeTranslations?.get(`${entityType}:${entity.id}:${language}`) : null; const translations = entity.translationsJson ? JSON.parse(entity.translationsJson) as Array<{ language: string; name: string; description?: string | null; status?: string }> : []; const match = runtime ?? translations.find((entry) => entry.language === language && approved(entry)) ?? (entity.id ? readMenuTranslation(entityType, entity.id, language, entity.name, entity.description) : null); if (match && "name" in match && match.name) return { ...entity, name: match.name, description: match.description ?? entity.description }; } catch { /* malformed optional translations never block menu rendering */ } return entity; }
 
 type CheckoutChannel = "dineIn" | "takeaway" | "delivery" | "reservation" | "hotel";
 export function validateCheckoutDetails(input: { channel: CheckoutChannel; tableName?: string; pickupPoint?: string; pickupPointRequired?: boolean; deliveryAddress?: string; deliveryLatitude?: number; deliveryLongitude?: number; reservationDate?: string; reservationEventType?: string; hotelName?: string; hotelRoom?: string; hotelFloor?: string }): string | null {
@@ -49,6 +51,8 @@ export default function RestaurantPublic() {
   const { user } = useAuth();
   const copy = publicCopy[language] ?? publicCopy.en;
   const page = trpc.platform.publicRestaurantPage.useQuery({ slug, lang: language }, { enabled: Boolean(slug), retry: false, placeholderData: (previous) => previous });
+  const translatedMenu = trpc.platform.translatePublicMenu.useQuery({ slug, language }, { enabled: Boolean(slug && page.data?.restaurant && language !== "ar"), retry: false });
+  const runtimeTranslations = useMemo(() => new Map((translatedMenu.data?.translations ?? []).map((entry) => [`${entry.entityType}:${entry.entityId}:${entry.language}`, entry] as const)), [translatedMenu.data?.translations]);
   const qrToken = useMemo(() => new URLSearchParams(location.split("?")[1] ?? "").get("qr")?.trim() ?? "", [location]);
   const publicQr = trpc.platform.publicQrCode.useQuery({ token: qrToken }, { enabled: qrToken.length >= 8, retry: false });
   const notifyWaiterCall = trpc.platform.notifyWaiterCall.useMutation({ onSuccess: () => toast.success(language === "ar" ? "تم إرسال طلب النادل" : language === "fr" ? "La demande a été envoyée" : language === "ur" ? "ویٹر کی درخواست بھیج دی گئی" : "Waiter request sent"), onError: error => toast.error(error.message) });
@@ -111,7 +115,7 @@ export default function RestaurantPublic() {
   const favoriteIds = useMemo(() => new Set((favoritesQuery.data ?? []).map((favorite) => favorite.menuItemId)), [favoritesQuery.data]);
   const toggleFavorite = trpc.platform.toggleFavorite.useMutation({ onSuccess: (_, variables) => { const wasSaved = favoriteIds.has(variables.menuItemId); void favoritesQuery.refetch(); toast.success(wasSaved ? "تمت إزالة الصنف من المفضلة" : "تمت إضافة الصنف إلى المفضلة", { description: "يمكنك الرجوع إليه من صفحة المفضلة لاحقًا" }); }, onError: (error) => toast.error(error.message) });
   const activeLanguages = useMemo<Language[]>(() => { try { const parsed = JSON.parse(page.data?.restaurant.languagesJson || '["ar","en","fr"]'); const supported = parsed.filter((value: unknown): value is Language => value === "ar" || value === "en" || value === "fr" || value === "ur"); return supported.length ? supported : ["ar"]; } catch { return ["ar"]; } }, [page.data?.restaurant.languagesJson]);
-  const publishedLanguages = useMemo<Language[]>(() => { const entities = [...(page.data?.categories ?? []), ...(page.data?.items ?? [])]; return activeLanguages.filter((candidate, index) => index === 0 || (entities.length > 0 && entities.every((entity) => { if (!entity.translationsJson) return false; try { const translations = JSON.parse(entity.translationsJson) as Array<{ language?: string; status?: string }>; return translations.some((entry) => entry.language === candidate && entry.status === "approved"); } catch { return false; } }))); }, [activeLanguages, page.data?.categories, page.data?.items]);
+  const publishedLanguages = activeLanguages;
   useEffect(() => { if (!publishedLanguages.includes(language)) setLanguage(publishedLanguages[0] ?? activeLanguages[0], false); }, [activeLanguages, language, publishedLanguages, setLanguage]);
   const checkout = trpc.platform.guestCheckout.useMutation({ onSuccess: () => toast.success(copy.orderReceived), onError: (error) => { const raw = error.message || ""; const known = raw.includes("الطلب غير متاح") || raw.includes("الفتحة القادمة") || raw.includes("اختر") || raw.includes("مطلوب") || raw.includes("غير متاح") || raw.includes("خارج نطاق"); toast.error(known ? raw : "تعذر إرسال الطلب حالياً. راجع بيانات الطلب وحاول مرة أخرى."); } });
   const noteTemplatesQuery = trpc.platform.myNoteTemplates.useQuery(undefined, { enabled: Boolean(user), retry: false });
@@ -166,7 +170,7 @@ export default function RestaurantPublic() {
   const [contentOrderId, setContentOrderId] = useState<number | null>(null);
   const [contentReceipt, setContentReceipt] = useState<{ fileName: string; contentType: "image/png" | "image/jpeg" | "image/webp"; base64: string } | null>(null);
   const [contentJustAddedId, setContentJustAddedId] = useState<number | null>(null);
-  const menuAddons = useMemo(() => (page.data?.addons ?? []) as MenuAddon[], [page.data?.addons]);
+  const menuAddons = useMemo(() => (page.data?.addons ?? []).map((addon) => localizeMenuEntity(addon as MenuAddon, language, "addon", runtimeTranslations)) as MenuAddon[], [page.data?.addons, language, runtimeTranslations]);
   const addonsByItem = useMemo(() => menuAddons.reduce<Record<number, MenuAddon[]>>((groups, addon) => { (groups[addon.menuItemId] ??= []).push(addon); return groups; }, {}), [menuAddons]);
   const contentCartItems = useMemo(() => (page.data?.contentListings ?? []).filter((listing) => contentCartIds.includes(listing.id)), [page.data?.contentListings, contentCartIds]);
   const contentCartTotal = useMemo(() => contentCartItems.reduce((sum, listing) => sum + Number(listing.price), 0), [contentCartItems]);
@@ -230,8 +234,9 @@ export default function RestaurantPublic() {
   const toggleUserTheme = () => { const next = !isDark; setThemeOverride(next); localStorage.setItem(`nfood-menu-dark-${slug}`, next ? "1" : "0"); toast.success(next ? "تم تفعيل الوضع الليلي" : "تم تفعيل الوضع النهاري"); };
   const brandColor = page.data?.restaurant.brandColor ?? palette.primary;
   const menuThemeStyle = { "--menu-primary": brandColor, "--menu-accent": palette.accent, "--menu-page": isDark ? palette.dark : palette.light, "--menu-surface": isDark ? "#2b2330" : "#ffffff", "--menu-ink": isDark ? "#fff8f2" : "#273044", "--menu-muted": isDark ? "#d3c5d0" : "#667085" } as CSSProperties;
-  const categories = useMemo(() => [...(page.data?.categories ?? [])].sort((a, b) => a.sortOrder - b.sortOrder).map((category) => localizeMenuEntity(category, language)), [page.data?.categories, language]);
-  const items = useMemo(() => (page.data?.items ?? []).map((item) => localizeMenuEntity(item, language)), [page.data?.items, language]);
+  useEffect(() => { const translations = translatedMenu.data?.translations ?? []; for (const entry of translations) { const source = entry.entityType === "category" ? page.data?.categories.find((item) => item.id === entry.entityId) : entry.entityType === "item" ? page.data?.items.find((item) => item.id === entry.entityId) : page.data?.addons.find((item) => item.id === entry.entityId); if (source) saveMenuTranslationForSource(entry.entityType, entry.entityId, entry.language, source.name, "description" in source ? source.description : null, entry.name, entry.description); } }, [page.data?.addons, page.data?.categories, page.data?.items, translatedMenu.data?.translations]);
+  const categories = useMemo(() => [...(page.data?.categories ?? [])].sort((a, b) => a.sortOrder - b.sortOrder).map((category) => localizeMenuEntity(category, language, "category", runtimeTranslations)), [page.data?.categories, language, runtimeTranslations]);
+  const items = useMemo(() => (page.data?.items ?? []).map((item) => localizeMenuEntity(item, language, "item", runtimeTranslations)), [page.data?.items, language, runtimeTranslations]);
   const allBranches = page.data?.branches ?? [];
   const showBranches = Boolean(page.data?.restaurant.showBranchesOnMenu) && allBranches.length > 1;
   const branches = showBranches ? allBranches : [];

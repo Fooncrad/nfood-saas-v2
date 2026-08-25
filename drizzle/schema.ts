@@ -335,6 +335,7 @@ export const menuItemAddons = mysqlTable("menuItemAddons", {
   stockQuantity: int("stockQuantity").default(0).notNull(),
   isAvailable: boolean("isAvailable").default(true).notNull(),
   imageUrl: text("imageUrl"),
+  translationsJson: text("translationsJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
