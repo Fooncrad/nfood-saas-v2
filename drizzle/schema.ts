@@ -108,6 +108,8 @@ export const restaurants = mysqlTable("restaurants", {
   tiktokUrl: varchar("tiktokUrl", { length: 500 }),
   websiteUrl: varchar("websiteUrl", { length: 500 }),
   address: varchar("address", { length: 500 }),
+  primaryLanguage: varchar("primaryLanguage", { length: 10 }).default("ar").notNull(),
+  timezone: varchar("timezone", { length: 64 }).default("Asia/Riyadh").notNull(),
   languagesJson: text("languagesJson").default('["ar","en","fr","ur"]'),
   reservationEnabled: boolean("reservationEnabled").default(true).notNull(),
   cancellationEnabled: boolean("cancellationEnabled").default(true).notNull(),

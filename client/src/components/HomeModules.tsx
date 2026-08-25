@@ -111,6 +111,7 @@ import { RestaurantDisplayMarketingPanel } from "@/components/RestaurantDisplayM
 import { RestaurantMenuInsightsPanel } from "@/components/RestaurantMenuInsightsPanel";
 import { MediaTemplateStudio } from "@/components/MediaTemplateStudio";
 import { DeliveryOperationsPanel } from "@/components/DeliveryOperationsPanel";
+import { QROperationsPanel } from "@/components/QROperationsPanel";
 import {
   RemoteTaskDialog,
   type RemoteTaskDraft,
@@ -495,8 +496,8 @@ export function ModuleView({
     );
   if (active === "qr")
     return (
-      <OperationalModuleShell title="الطاولات">
-        <TablesView restaurantId={restaurantId} branchId={branchId} />
+      <OperationalModuleShell title="QR المنيو والرموز التشغيلية">
+        <QROperationsPanel restaurantId={restaurantId} branchId={branchId} />
       </OperationalModuleShell>
     );
   if (active === "inventory")
@@ -10216,9 +10217,10 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
 }
 
 function RestaurantOperationsHub({ restaurantId, branchId }: { restaurantId: number; branchId?: number }) {
-  const [activeTab, setActiveTab] = useState<"tables" | "reservations" | "menu" | "hours">("tables");
+  const [activeTab, setActiveTab] = useState<"tables" | "reservations" | "menu" | "hours" | "qr">("tables");
   const tabs = [
     { key: "tables" as const, label: "الطاولات", description: "توزيع الطاولات وحالتها" },
+    { key: "qr" as const, label: "QR المنيو", description: "المنيو والطاولات والرموز" },
     { key: "reservations" as const, label: "الحجوزات", description: "المواعيد والانتظار والإلغاء" },
     { key: "menu" as const, label: "واجهة المنيو والقوالب", description: "القالب والمعاينة وشبكة الأصناف" },
     { key: "hours" as const, label: "الفتحات وساعات العمل", description: "أوقات الفروع وقنوات الطلب" },
@@ -10230,12 +10232,13 @@ function RestaurantOperationsHub({ restaurantId, branchId }: { restaurantId: num
           <div><p className="text-xs font-bold tracking-wide text-[#e76f3c]">تشغيل المطعم</p><h2 className="mt-1 text-lg font-black text-slate-900 dark:text-white">كل ما يرتبط بتجربة الضيف في مكان واحد</h2><p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500 dark:text-slate-400">تنقّل بين الطاولات والحجوزات وواجهة المنيو وساعات العمل. لكل تبويب حالة وحفظ مستقلان.</p></div>
           <span className="rounded-full bg-orange-50 px-3 py-1.5 text-[11px] font-bold text-[#c75325] dark:bg-orange-950/40 dark:text-orange-200">{tabs.find(tab => tab.key === activeTab)?.label}</span>
         </div>
-        <div className="mt-3 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-4" role="tablist" aria-label="مركز تشغيل المطعم">
+        <div className="mt-3 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-5" role="tablist" aria-label="مركز تشغيل المطعم">
           {tabs.map(tab => <button key={tab.key} type="button" role="tab" aria-selected={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} className={`rounded-xl border px-3 py-2.5 text-right transition-all duration-200 ${activeTab === tab.key ? "border-[#e76f3c] bg-[#e76f3c] text-white shadow-md shadow-orange-900/10" : "border-slate-200 bg-slate-50/70 text-slate-700 hover:border-orange-200 hover:bg-orange-50 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200"}`}><span className="block text-xs font-black">{tab.label}</span><span className={`mt-1 block text-[10px] leading-4 ${activeTab === tab.key ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>{tab.description}</span></button>)}
         </div>
       </section>
       <div key={activeTab} data-operations-tab={activeTab} className="nfood-settings-tab-enter space-y-3">
         {activeTab === "tables" && <TablesView restaurantId={restaurantId} branchId={branchId} />}
+        {activeTab === "qr" && <QROperationsPanel restaurantId={restaurantId} branchId={branchId} />}
         {activeTab === "reservations" && <ReservationsView restaurantId={restaurantId} />}
         {activeTab === "menu" && <BrandingPanel restaurantId={restaurantId} />}
         {activeTab === "hours" && <BranchesView restaurantId={restaurantId} />}

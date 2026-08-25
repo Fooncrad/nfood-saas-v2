@@ -4,6 +4,7 @@ import { getVisibleNavigation } from "./roleNavigation";
 
 const homeModules = readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
 const home = readFileSync(new URL("../pages/Home.tsx", import.meta.url), "utf8");
+const qrPanel = readFileSync(new URL("../components/QROperationsPanel.tsx", import.meta.url), "utf8");
 
 describe("restaurant operations hub", () => {
   it("exposes the hub to restaurant managers and places it in operations navigation", () => {
@@ -16,6 +17,9 @@ describe("restaurant operations hub", () => {
     expect(homeModules).toContain('label: "الطاولات"');
     expect(homeModules).toContain('label: "الحجوزات"');
     expect(homeModules).toContain('label: "واجهة المنيو والقوالب"');
+    expect(homeModules).toContain('key: "qr"');
+    expect(homeModules).toContain('label: "QR المنيو"');
+    expect(qrPanel).toContain('data-testid="menu-qr-auto-card"');
     expect(homeModules).toContain('label: "الفتحات وساعات العمل"');
     expect(homeModules).toContain('data-operations-tab={activeTab}');
   });

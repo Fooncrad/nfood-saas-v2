@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { QRCodeSVG } from "qrcode.react";
 import { trpc } from "@/lib/trpc";
 import { dishTone, rankDishScores } from "@/lib/dishGames";
-import { useLanguage, type Language } from "@/contexts/LanguageContext";
+import { MENU_LANGUAGE_MANUAL_STORAGE_KEY, useLanguage, type Language } from "@/contexts/LanguageContext";
 import { readMenuTranslation, saveMenuTranslationForSource } from "@/lib/menuTranslationCache";
 import { getCurrency } from "@shared/currencies";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -53,6 +53,12 @@ export default function RestaurantPublic() {
   const { user } = useAuth();
   const copy = publicCopy[language] ?? publicCopy.en;
   const page = trpc.platform.publicRestaurantPage.useQuery({ slug, lang: language }, { enabled: Boolean(slug), retry: false, placeholderData: (previous) => previous });
+  useEffect(() => {
+    const primaryLanguage = page.data?.restaurant.primaryLanguage;
+    if (!primaryLanguage || !["ar", "en", "fr", "ur"].includes(primaryLanguage)) return;
+    const hasManualLanguage = typeof window !== "undefined" && Boolean(window.localStorage.getItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY));
+    if (!hasManualLanguage && language !== primaryLanguage) setLanguage(primaryLanguage as Language, false);
+  }, [language, page.data?.restaurant.primaryLanguage, setLanguage]);
   const translatedMenu = trpc.platform.translatePublicMenu.useQuery({ slug, language }, { enabled: Boolean(slug && page.data?.restaurant && language !== "ar"), retry: false });
   const runtimeTranslations = useMemo(() => new Map((translatedMenu.data?.translations ?? []).map((entry) => [`${entry.entityType}:${entry.entityId}:${entry.language}`, entry] as const)), [translatedMenu.data?.translations]);
   const qrToken = useMemo(() => new URLSearchParams(location.split("?")[1] ?? "").get("qr")?.trim() ?? "", [location]);
