@@ -142,7 +142,7 @@ export default function Home() {
     return requested && navItems.some(item => item.key === requested) ? requested : "overview";
   });
   const localizedNavItems = useMemo(() => navItems.map((item) => ({ ...item, label: t(navTranslationKeys[item.key]) })), [language, t]);
-  const visibleNavItems = useMemo(() => { const role = user?.testRole as string | undefined; const keys = getVisibleNavigation(role, user?.role === "admin" || role === "admin"); return localizedNavItems.filter((item) => keys.includes(item.key)); }, [user?.role, user?.testRole, localizedNavItems]);
+  const visibleNavItems = useMemo(() => { const role = user?.testRole as string | undefined; const keys = getVisibleNavigation(role, user?.role === "admin" || role === "admin"); return localizedNavItems.filter((item) => keys.includes(item.key as (typeof keys)[number])); }, [user?.role, user?.testRole, localizedNavItems]);
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -301,7 +301,7 @@ export default function Home() {
   const title = localizedNavItems.find((item) => item.key === active)?.label ?? t("overview");
   const sidebarGroups = [
     { label: t("overview"), keys: ["overview", "admin"] as NavKey[] },
-    { label: t("operations"), keys: ["orders", "pos", "kds", "menu", "tables", "inventory", "team", "marketing", "reservations", "remote"] as NavKey[] },
+    { label: t("operations"), keys: ["operations", "orders", "pos", "kds", "menu", "tables", "inventory", "team", "marketing", "reservations", "remote"] as NavKey[] },
     { label: t("accountPlatform"), keys: ["settings", "branches", "security", "health"] as NavKey[] },
   ].map((group) => ({ ...group, items: group.keys.map((key) => visibleNavItems.find((item) => item.key === key)).filter((item): item is (typeof visibleNavItems)[number] => Boolean(item)) })).filter((group) => group.items.length > 0);
   const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success(t("logout")), notifyError: (message) => toast.error(message) }); };

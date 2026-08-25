@@ -1,0 +1,30 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { getVisibleNavigation } from "./roleNavigation";
+
+const homeModules = readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
+const home = readFileSync(new URL("../pages/Home.tsx", import.meta.url), "utf8");
+
+describe("restaurant operations hub", () => {
+  it("exposes the hub to restaurant managers and places it in operations navigation", () => {
+    expect(getVisibleNavigation("restaurant_admin")).toContain("operations");
+    expect(home).toContain('["operations", "orders", "pos", "kds"');
+  });
+
+  it("keeps the requested settings together as separate tabs", () => {
+    expect(homeModules).toContain('data-restaurant-operations-hub');
+    expect(homeModules).toContain('label: "الطاولات"');
+    expect(homeModules).toContain('label: "الحجوزات"');
+    expect(homeModules).toContain('label: "واجهة المنيو والقوالب"');
+    expect(homeModules).toContain('label: "الفتحات وساعات العمل"');
+    expect(homeModules).toContain('data-operations-tab={activeTab}');
+  });
+
+  it("renders each operational unit behind its own tab", () => {
+    expect(homeModules).toContain('activeTab === "tables" && <TablesView');
+    expect(homeModules).toContain('activeTab === "reservations" && <ReservationsView');
+    expect(homeModules).toContain('activeTab === "menu" && <BrandingPanel');
+    expect(homeModules).toContain('activeTab === "hours" && <BranchesView');
+  });
+});
+
