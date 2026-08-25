@@ -37,9 +37,9 @@ describe("platform procedures", () => {
     if (!restaurant) return;
     const restaurantAdmin = appRouter.createCaller(context("user", "restaurant_admin", restaurant.id));
     const branding = await restaurantAdmin.platform.branding({ restaurantId: restaurant.id });
-    expect(branding).toEqual(expect.objectContaining({ seoTitle: expect.any(String), seoDescription: expect.any(String), seoKeywords: expect.any(String), seoHashtags: expect.any(String), seoRobots: expect.any(String), googleAnalyticsMeasurementId: expect.any(String), googleTagManagerId: expect.any(String) }));
+    expect(branding).toEqual(expect.objectContaining({ seoTitle: expect.any(String), seoDescription: expect.any(String), seoKeywords: expect.any(String), seoHashtags: expect.any(String), seoRobots: expect.any(String), googleAnalyticsMeasurementId: expect.any(String), googleTagManagerId: expect.any(String), menuTemplate: expect.stringMatching(/^(editorial|bistro|glass)$/) }));
     const publicPage = await admin.platform.publicRestaurantPage({ slug: restaurant.slug, lang: "en" });
-    expect(publicPage?.restaurant).toEqual(expect.objectContaining({ seoRobots: "index,follow" }));
+    expect(publicPage?.restaurant).toEqual(expect.objectContaining({ seoRobots: "index,follow", menuTemplate: expect.stringMatching(/^(editorial|bistro|glass)$/) }));
     expect(publicPage?.restaurant).toHaveProperty("seoCanonicalUrl");
     expect(publicPage?.restaurant).toHaveProperty("googleAnalyticsMeasurementId");
   });

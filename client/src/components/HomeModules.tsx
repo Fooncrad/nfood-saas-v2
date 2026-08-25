@@ -8768,6 +8768,11 @@ const restaurantThemePresets = [
   },
   { id: "ocean-mint", name: "Ocean Mint", color: "#0f9f96", dark: "#102322" },
 ] as const;
+const restaurantMenuTemplates = [
+  { id: "editorial", name: "Editorial", description: "فاخر وواضح", swatch: "linear-gradient(135deg, #fff8f2, #f4c7a1)" },
+  { id: "bistro", name: "Bistro", description: "دافئ وحميم", swatch: "linear-gradient(135deg, #f3ebe2, #b86b45)" },
+  { id: "glass", name: "NFOOD Glass", description: "داكن وزجاجي", swatch: "linear-gradient(135deg, #0b0f17, #f97316)" },
+] as const;
 function BrandingPanel({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
   const utils = trpc.useUtils();
@@ -8792,6 +8797,7 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
       | "olive-cream"
       | "midnight-berry"
       | "ocean-mint",
+    menuTemplate: "editorial" as "editorial" | "bistro" | "glass",
     brandLogoUrl: "",
     pwaInstallMessage: "ثبّت منيو مطعمنا للوصول الأسرع",
     pwaInstallIconUrl: "",
@@ -8840,6 +8846,7 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
           | "olive-cream"
           | "midnight-berry"
           | "ocean-mint",
+        menuTemplate: brandingQuery.data.menuTemplate as "editorial" | "bistro" | "glass",
         brandLogoUrl: brandingQuery.data.brandLogoUrl,
         pwaInstallMessage: brandingQuery.data.pwaInstallMessage,
         pwaInstallIconUrl: brandingQuery.data.pwaInstallIconUrl,
@@ -9005,8 +9012,24 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
                     </button>
                   ))}
                 </div>
+                <p className="mb-2 text-sm font-semibold">القالب الافتراضي للمنيو</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {restaurantMenuTemplates.map(template => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      aria-pressed={draft.menuTemplate === template.id}
+                      onClick={() => setDraft({ ...draft, menuTemplate: template.id })}
+                      className={`rounded-xl border p-2 text-right transition ${draft.menuTemplate === template.id ? "border-orange-400 bg-orange-50 shadow-sm" : "border-slate-200 bg-slate-50 hover:border-orange-200"}`}
+                    >
+                      <span className="mb-2 block h-8 rounded-lg" style={{ background: template.swatch }} />
+                      <span className="block text-xs font-black text-slate-800">{template.name}</span>
+                      <span className="mt-0.5 block text-[10px] text-slate-500">{template.description}</span>
+                    </button>
+                  ))}
+                </div>
                 <p className="text-xs text-slate-500">
-                  سيظهر القالب والوضع المختار في صفحة المنيو العامة بعد الحفظ.
+                  سيظهر القالب والوضع المختار في صفحة المنيو العامة بعد الحفظ. يمكن للزائر معاينة نمط آخر مؤقتًا.
                 </p>
               </div>
               <label className="space-y-2 text-sm font-semibold sm:col-span-2">
@@ -9390,17 +9413,20 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
               </Button>
             </div>
             <div
-              className="rounded-2xl p-5 text-white shadow-inner"
+              data-menu-template-preview={draft.menuTemplate}
+              className={`rounded-2xl p-5 text-white shadow-inner transition-colors ${draft.menuTemplate === "glass" ? "border border-white/15" : ""}`}
               style={{
-                backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(draft.brandColor)
-                  ? draft.brandColor
-                  : "#e76f3c",
+                background: draft.menuTemplate === "glass"
+                  ? "radial-gradient(circle at 85% 0%, rgba(249,115,22,.28), transparent 42%), linear-gradient(135deg, #0b0f17, #111c2d)"
+                  : /^#[0-9A-Fa-f]{6}$/.test(draft.brandColor)
+                    ? draft.brandColor
+                    : "#e76f3c",
               }}
             >
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <p className="text-xs opacity-80">
-                    الرابط العام المخصص للمطعم
+                    معاينة حية · {draft.menuTemplate === "glass" ? "NFOOD Glass" : draft.menuTemplate === "bistro" ? "Bistro" : "Editorial"}
                   </p>
                   {brandingQuery.data?.slug && (
                     <p
@@ -9456,6 +9482,10 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
               <p className="mt-2 text-xs leading-5 text-white/80">
                 {draft.brandDescription || "وصف المطعم سيظهر هنا بعد الحفظ."}
               </p>
+              <div className={`mt-5 rounded-2xl p-3 ${draft.menuTemplate === "glass" ? "border border-white/15 bg-white/10 backdrop-blur-xl" : draft.menuTemplate === "bistro" ? "bg-white/15" : "bg-white/10"}`}>
+                <div className="flex items-center justify-between gap-2 text-[10px] font-black"><span>الأقسام</span><span className="rounded-full bg-white/15 px-2 py-1">السلة · 0</span></div>
+                <div className="mt-3 grid grid-cols-2 gap-2"><div className="rounded-xl bg-white/15 p-2"><span className="block h-2 w-2/3 rounded-full bg-white/60" /><span className="mt-2 block h-2 w-1/2 rounded-full bg-white/25" /><strong className="mt-3 block text-[10px]">طبق اليوم · 32 SAR</strong></div><div className="rounded-xl bg-white/15 p-2"><span className="block h-2 w-3/4 rounded-full bg-white/60" /><span className="mt-2 block h-2 w-1/2 rounded-full bg-white/25" /><strong className="mt-3 block text-[10px]">اختيار الشيف · 28 SAR</strong></div></div>
+              </div>
             </div>
           </div>
         )}

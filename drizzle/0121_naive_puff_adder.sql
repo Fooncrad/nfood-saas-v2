@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `menuTemplate` enum('editorial','bistro','glass') DEFAULT 'editorial' NOT NULL;

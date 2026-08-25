@@ -1015,3 +1015,172 @@ html[lang="ur"] body {
     transform: none;
   }
 }
+
+/* NFOOD Glass public menu template */
+.nfood-menu-template-glass {
+  --menu-page: #0b0f17 !important;
+  --menu-surface: #121a27 !important;
+  --menu-ink: #f8fafc !important;
+  --menu-muted: #9aa9bd !important;
+  --menu-dark: #070b12 !important;
+  background-color: #0b0f17 !important;
+  background-image:
+    radial-gradient(circle at 84% -10%, rgba(249, 115, 22, 0.22), transparent 25rem),
+    radial-gradient(circle at 0% 18%, rgba(56, 189, 248, 0.13), transparent 22rem),
+    linear-gradient(135deg, #0b0f17 0%, #0e1622 48%, #080d15 100%);
+}
+
+.nfood-menu-template-glass .nfood-menu-header {
+  background: rgba(11, 15, 23, 0.78) !important;
+  border-bottom-color: rgba(148, 163, 184, 0.16) !important;
+  box-shadow: 0 16px 42px -30px rgba(249, 115, 22, 0.7);
+  color: #f8fafc;
+}
+
+.nfood-menu-template-glass .nfood-menu-header .text-slate-800,
+.nfood-menu-template-glass .nfood-menu-header .text-slate-700,
+.nfood-menu-template-glass .nfood-menu-header .text-slate-600,
+.nfood-menu-template-glass .nfood-menu-header .text-slate-500 {
+  color: #dbe7f5 !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-header button,
+.nfood-menu-template-glass .nfood-menu-header label {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.13) !important;
+  color: #e5edf8 !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-hero,
+.nfood-menu-template-glass .nfood-menu-info-card,
+.nfood-menu-template-glass .nfood-menu-item-card,
+.nfood-menu-template-glass .nfood-template-picker {
+  border-color: rgba(148, 163, 184, 0.18) !important;
+  background: rgba(18, 26, 39, 0.68) !important;
+  box-shadow: 0 24px 65px -38px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(22px) saturate(125%);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+}
+
+.nfood-menu-template-glass .nfood-menu-hero {
+  border-radius: 1.75rem;
+  background:
+    linear-gradient(135deg, rgba(249, 115, 22, 0.12), transparent 42%),
+    rgba(18, 26, 39, 0.74) !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-hero > div:first-child > div:first-child {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(30, 41, 59, 0.3)) !important;
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+
+.nfood-menu-template-glass .nfood-menu-hero .text-slate-800,
+.nfood-menu-template-glass .nfood-menu-hero .text-slate-600,
+.nfood-menu-template-glass .nfood-menu-hero .text-slate-500,
+.nfood-menu-template-glass .nfood-menu-info-card .text-slate-500,
+.nfood-menu-template-glass .nfood-menu-info-card .text-slate-600 {
+  color: #dbe7f5 !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-category-bar {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(18, 26, 39, 0.72) !important;
+  box-shadow: 0 18px 36px -30px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.nfood-menu-template-glass .nfood-menu-category-bar button:not(.nfood-menu-primary) {
+  color: #a9bad0 !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-item-card {
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+.nfood-menu-template-glass .nfood-menu-item-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(249, 115, 22, 0.55) !important;
+  box-shadow: 0 26px 55px -32px rgba(249, 115, 22, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.nfood-menu-template-glass .nfood-menu-item-image {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(30, 41, 59, 0.55)) !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-item-image > .absolute {
+  color: #e2e8f0 !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-item-content .text-slate-800,
+.nfood-menu-template-glass .nfood-menu-item-content .text-slate-900,
+.nfood-menu-template-glass .nfood-menu-item-content .text-slate-500,
+.nfood-menu-template-glass .nfood-menu-item-content .text-slate-400 {
+  color: #e2e8f0 !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-item-content .border-slate-100,
+.nfood-menu-template-glass .nfood-menu-item-content .border-slate-200 {
+  border-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-item-content .bg-slate-50,
+.nfood-menu-template-glass .nfood-menu-item-content .bg-white,
+.nfood-menu-template-glass .nfood-menu-item-image button {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #dbe7f5 !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-item-content .bg-orange-50,
+.nfood-menu-template-glass .nfood-menu-item-content .bg-pink-50 {
+  background-color: rgba(249, 115, 22, 0.16) !important;
+  color: #fdba74 !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-drawer {
+  background: #0f1724 !important;
+  color: #f8fafc;
+}
+
+.nfood-menu-template-glass .nfood-menu-drawer .bg-slate-50,
+.nfood-menu-template-glass .nfood-menu-drawer .bg-white,
+.nfood-menu-template-glass .nfood-menu-drawer .border-slate-100,
+.nfood-menu-template-glass .nfood-menu-drawer .border-slate-200 {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+  color: #e2e8f0 !important;
+}
+
+.nfood-menu-template-glass .nfood-template-picker {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.nfood-menu-template-glass .nfood-template-picker span,
+.nfood-menu-template-glass .nfood-template-picker button:not(.nfood-menu-primary) {
+  color: #a9bad0 !important;
+}
+
+.nfood-menu-template-glass .nfood-menu-section [data-slot="card"] {
+  color: #f8fafc;
+}
+
+.nfood-menu-template-glass nav[aria-label] {
+  background: rgba(15, 23, 36, 0.88) !important;
+  border-color: rgba(148, 163, 184, 0.18) !important;
+}
+
+.nfood-menu-template-glass nav[aria-label] button {
+  color: #dbe7f5 !important;
+}
+
+.nfood-menu-template-glass footer {
+  background: #070b12 !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nfood-menu-template-glass .nfood-menu-item-card:hover {
+    transform: none;
+  }
+}

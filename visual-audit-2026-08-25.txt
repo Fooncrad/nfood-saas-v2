@@ -1,0 +1,7 @@
+# Visual audit — menu templates
+
+- Desktop 1280px: `?template=glass` renders a dark navy/orange glass surface with visible template picker, product grid, category bar, and readable controls.
+- Desktop 1280px: `?template=editorial` renders a light editorial surface with the same product grid and order controls; the template switch remains visible.
+- Mobile 390px: both templates remain within the viewport without horizontal scrolling; the glass theme keeps dark surfaces and orange/purple contrast, while editorial keeps the light cards.
+- Mobile 390px: the bottom navigation remains visible and the template picker wraps without breaking the page width.
+- Next verification target: authenticated manager dashboard route and the live preview card in the branding settings panel.

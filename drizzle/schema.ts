@@ -75,6 +75,7 @@ export const restaurants = mysqlTable("restaurants", {
   brandColor: varchar("brandColor", { length: 7 }).default("#e76f3c"),
   themeMode: mysqlEnum("themeMode", ["light", "dark", "system"]).default("light").notNull(),
   themePreset: varchar("themePreset", { length: 40 }).default("nfood-sunset").notNull(),
+  menuTemplate: mysqlEnum("menuTemplate", ["editorial", "bistro", "glass"]).default("editorial").notNull(),
   brandLogoUrl: varchar("brandLogoUrl", { length: 500 }),
   coverUrl: varchar("coverUrl", { length: 500 }),
   pwaInstallMessage: varchar("pwaInstallMessage", { length: 180 }),

@@ -17,14 +17,19 @@ describe("public menu UX", () => {
     expect(page).toContain("h-11 w-11 rounded-xl text-white");
   });
 
-  it("exposes two distinct menu templates with a persisted switch", () => {
-    expect(page).toContain('useState<"editorial" | "bistro">("editorial")');
+  it("exposes three distinct menu templates with a persisted switch", () => {
+    expect(page).toContain('type PublicMenuTemplate = "editorial" | "bistro" | "glass";');
+    expect(page).toContain('useState<PublicMenuTemplate>("editorial")');
     expect(page).toContain("nfood-menu-template-${menuTemplate}");
     expect(styles).toContain(".nfood-menu-template-editorial");
     expect(styles).toContain(".nfood-menu-template-bistro");
+    expect(styles).toContain(".nfood-menu-template-glass");
+    expect(page).toContain('requested === "glass"');
     expect(page).toContain("localStorage.setItem(`nfood-menu-template-${slug}`, template)");
     expect(page).toContain('aria-pressed={menuTemplate === "editorial"}');
     expect(page).toContain('aria-pressed={menuTemplate === "bistro"}');
+    expect(page).toContain('aria-pressed={menuTemplate === "glass"}');
+    expect(page).toContain("page.data?.restaurant.menuTemplate");
   });
 
   it("provides translated order type selection and mobile navigation", () => {
