@@ -176,5 +176,9 @@ describe("Home decomposition", () => {
     expect(homeSource).toContain('"printers", "inventory", "reservations"');
     expect(sidebarSource).toContain("aria-expanded={!isCollapsed}");
     expect(sidebarSource).toContain("activeGroupId");
+    expect(homeSource).toContain('data-testid="dashboard-center-canvas"');
+    expect(homeSource).toContain('data-testid="dashboard-center-header"');
+    expect(homeSource).toContain('data-testid="dashboard-center-workspace"');
+    expect(homeSource).toContain("max-w-[1600px]");
   });
 });
