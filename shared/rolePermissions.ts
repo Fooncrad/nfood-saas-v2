@@ -10,6 +10,8 @@ export const TEAM_PERMISSION_CATALOG = [
   { key: "reports.read", label: "عرض التقارير", group: "التقارير" },
   { key: "finance.read", label: "عرض البيانات المالية", group: "المالية" },
   { key: "team.manage", label: "إدارة الفريق والحسابات", group: "الإدارة" },
+  { key: "customers.read", label: "عرض عملاء المطعم", group: "العملاء" },
+  { key: "customers.password_reset", label: "تعيين كلمة مرور العميل", group: "العملاء" },
   { key: "settings.manage", label: "إدارة إعدادات المطعم", group: "الإدارة" },
   { key: "printers.manage", label: "إدارة الطابعات وقوالب الطباعة", group: "التشغيل" },
 ] as const;

@@ -80,6 +80,7 @@ import { TranslationGlossaryPanel } from "@/components/TranslationGlossaryPanel"
 import { TranslationReviewPanel } from "@/components/TranslationReviewPanel";
 import AccountManagementPanel from "@/components/AccountManagementPanel";
 import { RestaurantTeamAccountsPanel } from "@/components/RestaurantTeamAccountsPanel";
+import { RestaurantCustomersPanel } from "@/components/RestaurantCustomersPanel";
 import { RestaurantAccessControlPanel } from "@/components/RestaurantAccessControlPanel";
 import { MediaLibraryPanel } from "@/components/MediaLibraryPanel";
 import { ContentOrdersPanel } from "@/components/ContentOrdersPanel";
@@ -513,6 +514,7 @@ export function ModuleView({
       <div className="space-y-4">
         <TeamView restaurantId={restaurantId} />
         <RestaurantTeamAccountsPanel restaurantId={restaurantId} />
+        <RestaurantCustomersPanel restaurantId={restaurantId} />
         <RestaurantAccessControlPanel restaurantId={restaurantId} />
       </div>
     );
@@ -7936,13 +7938,6 @@ function CustomerAdminPanel() {
     },
     onError: error => toast.error(`تعذر تحديث العميل: ${error.message}`),
   });
-  const deleteCustomer = trpc.admin.deleteCustomer.useMutation({
-    onSuccess: () => {
-      void utils.admin.customers.invalidate();
-      toast.success("تم حذف العميل");
-    },
-    onError: error => toast.error(`تعذر حذف العميل: ${error.message}`),
-  });
   const rows = customers.data ?? [];
   return (
     <Card className="mt-5 rounded-2xl border-slate-200 bg-white shadow-sm">
@@ -7991,15 +7986,13 @@ function CustomerAdminPanel() {
                 updateCustomer.isPending
               }
               onClick={() => {
-                const payload = {
-                  name: customerName.trim(),
-                  ...(customerEmail.trim()
-                    ? { email: customerEmail.trim() }
-                    : {}),
-                };
                 if (editingCustomerId !== null)
-                  updateCustomer.mutate({ id: editingCustomerId, ...payload });
-                else createCustomer.mutate(payload);
+                  updateCustomer.mutate({ id: editingCustomerId, name: customerName.trim() });
+                else
+                  createCustomer.mutate({
+                    name: customerName.trim(),
+                    ...(customerEmail.trim() ? { email: customerEmail.trim() } : {}),
+                  });
                 setCustomerFormOpen(false);
                 setEditingCustomerId(null);
                 setCustomerName("");
@@ -8087,34 +8080,7 @@ function CustomerAdminPanel() {
                         >
                           تعديل
                         </button>
-                        <button
-                          onClick={() =>
-                            setPendingDeleteCustomerId(customer.id)
-                          }
-                          className="text-xs font-semibold text-red-500"
-                        >
-                          حذف
-                        </button>
-                        {pendingDeleteCustomerId === customer.id && (
-                          <span className="flex items-center gap-1 rounded-lg bg-red-50 px-2 py-1 text-[10px] text-red-700">
-                            <span>تأكيد؟</span>
-                            <button
-                              onClick={() => {
-                                deleteCustomer.mutate({ id: customer.id });
-                                setPendingDeleteCustomerId(null);
-                              }}
-                              className="font-bold underline"
-                            >
-                              نعم
-                            </button>
-                            <button
-                              onClick={() => setPendingDeleteCustomerId(null)}
-                              className="font-bold underline"
-                            >
-                              لا
-                            </button>
-                          </span>
-                        )}
+                        <span className="rounded-lg bg-slate-100 px-2 py-1 text-[10px] text-slate-500">الحذف من حساب العميل فقط</span>
                       </div>
                     </td>
                   </tr>

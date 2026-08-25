@@ -14,6 +14,10 @@ describe("registration CAPTCHA", () => {
     const match = captcha.prompt.match(/(\d+)\s*\+\s*(\d+)/);
     const correct = String(Number(match?.[1]) + Number(match?.[2]));
     expect(verifyRegistrationCaptcha(captcha.challenge, String(Number(correct) + 1))).toBe(false);
-    expect(verifyRegistrationCaptcha(`${captcha.challenge.slice(0, -1)}x`, correct)).toBe(false);
+    const decoded = Buffer.from(captcha.challenge, "base64url").toString("utf8");
+    const parts = decoded.split(":");
+    parts[3] = `${parts[3].slice(0, -1)}${parts[3].at(-1) === "0" ? "1" : "0"}`;
+    const tampered = Buffer.from(parts.join(":"), "utf8").toString("base64url");
+    expect(verifyRegistrationCaptcha(tampered, correct)).toBe(false);
   });
 });

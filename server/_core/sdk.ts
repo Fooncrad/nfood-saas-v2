@@ -278,7 +278,7 @@ class SDKServer {
 
     if (session.openId.startsWith("test_")) {
       const testAccount = await db.getTestAccountById(Number(session.openId.slice(5)));
-      if (!testAccount) throw ForbiddenError("Test account not found");
+      if (!testAccount || !testAccount.isActive) throw ForbiddenError("Test account not found or inactive");
       const testOpenId = `test_${testAccount.id}`;
       // Test sessions historically used a negative testAccount id. Persist a
       // real users row so preferences, orders, and other FK-backed records
@@ -335,6 +335,9 @@ class SDKServer {
 
     if (!user) {
       throw ForbiddenError("User not found");
+    }
+    if (user.deletedAt) {
+      throw ForbiddenError("Account is closed");
     }
 
     await db.upsertUser({

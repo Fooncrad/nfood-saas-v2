@@ -36,6 +36,7 @@ export const users = mysqlTable("users", {
   emailVerified: boolean("emailVerified").default(false).notNull(),
   emailVerificationToken: varchar("emailVerificationToken", { length: 128 }),
   emailVerificationExpiresAt: timestamp("emailVerificationExpiresAt"),
+  deletedAt: timestamp("deletedAt"),
 });
 
 export const customerProfiles = mysqlTable("customerProfiles", {

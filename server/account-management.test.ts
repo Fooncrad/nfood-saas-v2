@@ -27,9 +27,9 @@ describe("admin account management", () => {
       const account = directory.find((item) => item.id === id);
       expect(account).toEqual(expect.objectContaining({ id, email, isActive: true, role: "customer" }));
       expect(account).not.toHaveProperty("passwordHash");
-      await admin.admin.updateManagedAccount({ id, email: `updated-${email}`, displayName: "حساب معدل", role: "driver", isActive: false, password: "654321" });
+      await admin.admin.updateManagedAccount({ id, email, displayName: "حساب معدل", role: "driver", isActive: false, password: "654321" });
       const updated = (await db.select().from(testAccounts).where(eq(testAccounts.id, id)).limit(1))[0];
-      expect(updated).toEqual(expect.objectContaining({ email: `updated-${email}`, displayName: "حساب معدل", role: "driver", isActive: false }));
+      expect(updated).toEqual(expect.objectContaining({ email, displayName: "حساب معدل", role: "driver", isActive: false }));
     } finally {
       await db.delete(testAccounts).where(eq(testAccounts.id, id));
     }
