@@ -328,7 +328,21 @@ export const kitchenSections = mysqlTable("kitchenSections", {
   printerType: mysqlEnum("printerType", ["network", "usb", "browser", "none"]).default("none").notNull(),
   printerAddress: varchar("printerAddress", { length: 255 }),
   printerPort: int("printerPort"),
+  printerPurpose: mysqlEnum("printerPurpose", ["kitchen", "receipt", "general"]).default("general").notNull(),
+  printerStatus: mysqlEnum("printerStatus", ["unknown", "connected", "offline"]).default("unknown").notNull(),
+  printerLastCheckedAt: timestamp("printerLastCheckedAt"),
+  printerLastError: varchar("printerLastError", { length: 500 }),
   isEnabled: boolean("isEnabled").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const printerLogs = mysqlTable("printerLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  kitchenSectionId: int("kitchenSectionId").notNull().references(() => kitchenSections.id),
+  operation: mysqlEnum("operation", ["health_check", "test_print", "print"]).notNull(),
+  result: mysqlEnum("result", ["success", "error"]).notNull(),
+  message: varchar("message", { length: 500 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

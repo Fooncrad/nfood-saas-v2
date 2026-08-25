@@ -9,6 +9,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerMarketingHeartbeat } from "../marketing";
 import { registerReservationHeartbeat } from "../reservations";
+import { registerPrinterHealthHeartbeat } from "../printerHealth";
 import { getPlatformSettings, getPublicRestaurantPage, listPublicRestaurants } from "../db";
 import { serveStatic, setupVite } from "./vite";
 import { attachDisplayRealtime } from "../displayRealtime";
@@ -47,6 +48,7 @@ async function startServer() {
   registerOAuthRoutes(app);
   registerMarketingHeartbeat(app);
   registerReservationHeartbeat(app);
+  registerPrinterHealthHeartbeat(app);
   const publicOrigin = async (req: express.Request) => {
     const settings = await getPlatformSettings();
     const configured = settings.baseDomain?.trim().replace(/\/+$/, "");
