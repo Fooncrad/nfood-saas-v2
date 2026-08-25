@@ -21,7 +21,7 @@ import type { TranslationKey } from "@/contexts/LanguageContext";
 
 export type OrderStatus = "new" | "preparing" | "ready" | "completed";
 export type NavKey = "overview" | "admin" | "accounts" | "settings" | "operations" | "files" | "branches" | "orders" | "pos" | "printers" | "kds" | "menu" | "tables" | "qr" | "inventory" | "team" | "marketing" | "reservations" | "remote" | "security" | "health";
-export type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string; ageMinutes: number; guestName?: string | null; guestPhone?: string | null; customerNote?: string | null; cashierNotes?: string | null; deliveryNote?: string | null; kitchenSectionId?: number | null; reservationDate?: string | Date | null; reservationEventType?: string | null; partySize?: number | null; childrenCount?: number | null; splitBillMode?: string | null };
+export type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string; ageMinutes: number; createdAt?: string | Date | null; paymentMethod?: string | null; currencyCode?: string | null; itemDetails?: { itemName: string; quantity: number; categoryName?: string | null }[]; guestName?: string | null; guestPhone?: string | null; customerNote?: string | null; cashierNotes?: string | null; deliveryNote?: string | null; kitchenSectionId?: number | null; reservationDate?: string | Date | null; reservationEventType?: string | null; partySize?: number | null; childrenCount?: number | null; splitBillMode?: string | null };
 
 export const navItems: { key: NavKey; label: string; icon: LucideIcon }[] = [
   { key: "overview", label: "نظرة عامة", icon: LayoutDashboard },
