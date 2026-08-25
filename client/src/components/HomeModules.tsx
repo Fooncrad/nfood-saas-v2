@@ -16,6 +16,7 @@ import {
   Megaphone,
   MonitorPlay,
   Package,
+  Printer,
   Plus,
   QrCode,
   RefreshCw,
@@ -358,6 +359,11 @@ export function ModuleView({
       description: "أنشئ طلباً جديداً بسرعة واربطه بالفرع والطاولة.",
       icon: WalletCards,
     },
+    printers: {
+      title: "إعداد الطابعات",
+      description: "اربط أقسام المنيو بالطابعات وحدد توجيه تذاكر الطلبات.",
+      icon: Printer,
+    },
     kds: {
       title: "شاشة المطبخ KDS",
       description: "تنظيم الطلبات الواردة ومتابعة زمن التحضير لحظياً.",
@@ -495,6 +501,12 @@ export function ModuleView({
           <OrderRealtimeAlerts orders={orders} mode="pos" />
           <PosView restaurantId={restaurantId} />
         </div>
+      </OperationalModuleShell>
+    );
+  if (active === "printers")
+    return (
+      <OperationalModuleShell title="إعداد الطابعات">
+        <KitchenPrinterSettings restaurantId={restaurantId} />
       </OperationalModuleShell>
     );
   if (active === "menu") return <MenuView restaurantId={restaurantId} />;
