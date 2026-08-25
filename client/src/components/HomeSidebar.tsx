@@ -4,12 +4,15 @@ import {
   Bell,
   ChevronDown,
   LifeBuoy,
+  LayoutDashboard,
   PanelLeft,
   ReceiptText,
   Search,
   Settings2,
   ShieldCheck,
+  Store,
   Utensils,
+  Users,
   Zap,
 } from "lucide-react";
 import { autoTranslateText, useLanguage } from "@/contexts/LanguageContext";
@@ -150,6 +153,13 @@ export function HomeSidebar({
   useEffect(() => {
     onCollapsedChange?.(sidebarCollapsed);
   }, [onCollapsedChange, sidebarCollapsed]);
+  useEffect(() => {
+    const groups = isCentralAdmin ? platformGroups : sidebarGroups;
+    const activeGroup = groups.find(group => group.items.some(item => item.key === active));
+    const activeGroupId = activeGroup?.id ?? activeGroup?.label;
+    if (!activeGroupId || !collapsedGroups[activeGroupId]) return;
+    setCollapsedGroups(current => ({ ...current, [activeGroupId]: false }));
+  }, [active, isCentralAdmin, roleScope]);
   useEffect(() => {
     const onShortcut = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "b") {
@@ -346,23 +356,29 @@ export function HomeSidebar({
             return (
               <div
                 key={group.id ?? group.label}
-                className="nfood-sidebar-group rounded-xl border border-white/15 bg-[#15233a] p-0.5"
+                className={`nfood-sidebar-group rounded-xl border p-0.5 transition-[border-color,background-color,box-shadow] duration-200 ${group.items.some(item => item.key === active) ? "border-orange-300/35 bg-[#1a2a43] shadow-lg shadow-orange-950/10" : "border-white/10 bg-[#15233a]/90"}`}
               >
                 <button
                   type="button"
+                  aria-expanded={!isCollapsed}
                   onClick={() =>
                     setCollapsedGroups(current => ({
                       ...current,
                       [group.id ?? group.label]: !isCollapsed,
                     }))
                   }
-                  className="flex w-full items-center justify-between rounded-lg px-1.5 py-1.5 text-right transition-colors hover:bg-white/10"
+                  className="flex w-full items-center gap-2 rounded-lg px-1.5 py-1.5 text-right transition-colors hover:bg-white/10"
                 >
-                  <span className="nfood-sidebar-label min-w-0 truncate text-[10px] font-bold tracking-[.14em] text-slate-300">
+                  {(() => {
+                    const GroupIcon = group.id?.includes("operations") ? Utensils : group.id?.includes("growth") ? Users : group.id?.includes("settings") ? Settings2 : group.id?.includes("overview") ? LayoutDashboard : ShieldCheck;
+                    return <GroupIcon className={`h-3.5 w-3.5 shrink-0 ${group.items.some(item => item.key === active) ? "text-orange-200" : "text-slate-400"}`} />;
+                  })()}
+                  <span className={`nfood-sidebar-label min-w-0 flex-1 truncate text-[10px] font-bold tracking-[.08em] ${group.items.some(item => item.key === active) ? "text-orange-100" : "text-slate-300"}`}>
                     {group.label}
                   </span>
+                  <span className="nfood-sidebar-label rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] text-slate-400">{group.items.length}</span>
                   <ChevronDown
-                    className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 ${isCollapsed ? "-rotate-90" : ""}`}
+                    className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform duration-200 ${isCollapsed ? "-rotate-90" : ""}`}
                   />
                 </button>
                 {!isCollapsed && (

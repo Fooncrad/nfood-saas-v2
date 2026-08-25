@@ -171,5 +171,10 @@ describe("Home decomposition", () => {
     expect(homeSource).toContain("trpc.platform.ordersByRestaurant.useQuery");
     expect(sidebarSource).toContain("export function HomeSidebar(");
     expect(sidebarSource).toContain("onNavigate");
+    expect(homeSource).toContain('id: "restaurant-operations"');
+    expect(homeSource).toContain('id: "restaurant-growth"');
+    expect(homeSource).toContain('"printers", "inventory", "reservations"');
+    expect(sidebarSource).toContain("aria-expanded={!isCollapsed}");
+    expect(sidebarSource).toContain("activeGroupId");
   });
 });

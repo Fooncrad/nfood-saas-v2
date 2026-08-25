@@ -301,9 +301,10 @@ export default function Home() {
     if (!user) return showRegister ? <RegisterScreen onBack={() => setShowRegister(false)} onOAuth={() => startLogin()} /> : <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} onRegister={() => setShowRegister(true)} onForgotPassword={() => { setForgotMessage(null); requestPasswordReset.mutate({ email: testEmail }); }} forgotPending={requestPasswordReset.isPending} forgotMessage={forgotMessage} loginError={testLogin.error?.message ?? null} />;
   const title = localizedNavItems.find((item) => item.key === active)?.label ?? t("overview");
   const sidebarGroups = [
-    { label: t("overview"), keys: ["overview", "admin"] as NavKey[] },
-    { label: t("operations"), keys: ["operations", "orders", "pos", "kds", "menu", "tables", "inventory", "team", "marketing", "reservations", "remote"] as NavKey[] },
-    { label: t("accountPlatform"), keys: ["settings", "branches", "security", "health"] as NavKey[] },
+    { id: "restaurant-overview", label: t("overview"), keys: ["overview", "admin"] as NavKey[] },
+    { id: "restaurant-operations", label: t("operations"), keys: ["operations", "orders", "pos", "kds", "menu", "tables", "printers", "inventory", "reservations"] as NavKey[] },
+    { id: "restaurant-growth", label: `${t("marketing")} · ${t("team")}`, keys: ["marketing", "team", "remote"] as NavKey[] },
+    { id: "restaurant-settings", label: t("accountPlatform"), keys: ["settings", "branches", "security", "health", "files"] as NavKey[] },
   ].map((group) => ({ ...group, items: group.keys.map((key) => visibleNavItems.find((item) => item.key === key)).filter((item): item is (typeof visibleNavItems)[number] => Boolean(item)) })).filter((group) => group.items.length > 0);
   const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success(t("logout")), notifyError: (message) => toast.error(message) }); };
   const handleSwitchAccount = async () => { await executeSwitchAccountFlow({ logout, closeMenu: () => setProfileOpen(false), startLogin, redirect: () => undefined, notifyError: (message) => toast.error(message) }); };
