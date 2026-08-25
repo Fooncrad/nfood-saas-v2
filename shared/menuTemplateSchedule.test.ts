@@ -3,6 +3,7 @@ import {
   buildMenuTemplateCron,
   normalizeMenuTemplateSchedule,
   resolveActiveMenuTemplate,
+  isValidTime,
 } from "./menuTemplateSchedule";
 
 describe("menu template scheduling", () => {
@@ -46,6 +47,15 @@ describe("menu template scheduling", () => {
     expect(normalized.fallbackTemplate).toBe("editorial");
     expect(normalized.rules).toHaveLength(1);
     expect(normalized.rules[0]?.days).toEqual([0]);
+  });
+
+  it("accepts strict 24-hour HH:mm values", () => {
+    expect(isValidTime("09:00")).toBe(true);
+    expect(isValidTime("23:45")).toBe(true);
+    expect(isValidTime("24:00")).toBe(false);
+    expect(isValidTime("9:00")).toBe(false);
+    expect(isValidTime("12:60")).toBe(false);
+    expect(isValidTime("09:00 ")).toBe(false);
   });
 
   it("uses a six-field five-minute Heartbeat cron", () => {
