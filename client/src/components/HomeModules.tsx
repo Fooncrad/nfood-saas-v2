@@ -103,6 +103,7 @@ import { ReceiptCustomizationPanel } from "@/components/ReceiptCustomizationPane
 import { BrandingFeatureMatrix } from "@/components/BrandingFeatureMatrix";
 import { BrandingEditorPanel } from "@/components/BrandingEditorPanel";
 import { ReceiptDeliveryPanel } from "@/components/ReceiptDeliveryPanel";
+import { EmailTemplatesPanel } from "@/components/EmailTemplatesPanel";
 import { KitchenTicketBoard } from "@/components/KitchenTicketBoard";
 import { KdsOperationsBoard } from "@/components/KdsOperationsBoard";
 import { KitchenPerformancePanel } from "@/components/KitchenPerformancePanel";
@@ -10155,6 +10156,7 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
       <RestaurantPricingSettings restaurantId={restaurantId} />
       <RestaurantIntegrationSettings restaurantId={restaurantId} />
       <ReceiptCustomizationPanel restaurantId={restaurantId} />
+      <EmailTemplatesPanel restaurantId={restaurantId} />
       <BrandingPanel restaurantId={restaurantId} />
       <BrandingFeatureMatrix restaurantId={restaurantId} />
       <BrandingEditorPanel restaurantId={restaurantId} />

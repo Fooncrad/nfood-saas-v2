@@ -37,11 +37,12 @@ describe("public authentication and social UI contracts", () => {
     const router = read("../../server/routers.ts");
     expect(menu).toContain("accountPassword");
     expect(menu).toContain("accountPasswordConfirm");
-    expect(menu).toContain("registerCustomer.mutate({ name: accountName.trim(), email: accountEmail.trim(), password: accountPassword })");
-    expect(menu).toContain("loginCustomer.mutate({ email: accountEmail.trim(), password: accountPassword })");
+    expect(menu).toContain("registerCustomer.mutate({ name: accountName.trim(), email: accountEmail.trim(), password: accountPassword, restaurantId })");
+    expect(menu).toContain("loginCustomer.mutate({ email: accountEmail.trim(), password: accountPassword, restaurantId })");
     expect(menu).toContain("showAccountPassword");
-    expect(router).toContain("registerCustomer: publicProcedure.input(z.object({ name: z.string().trim().min(2).max(160), email: z.string().trim().email().max(320), password: z.string().min(8).max(128) }))");
+    expect(router).toContain("registerCustomer: publicProcedure.input(z.object({ name: z.string().trim().min(2).max(160), email: z.string().trim().email().max(320), password: z.string().min(8).max(128), restaurantId: z.number().int().positive().optional() }))");
     expect(router).toContain("loginCustomer: publicProcedure.input");
+    expect(router).toContain("linkCustomerRestaurant: protectedProcedure");
     expect(router).toContain("scryptSync(input.password");
     expect(router).not.toContain("return { success: true, name: user.name, password");
   });

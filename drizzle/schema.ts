@@ -41,6 +41,7 @@ export const users = mysqlTable("users", {
 export const customerProfiles = mysqlTable("customerProfiles", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().unique().references(() => users.id),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
   slug: varchar("slug", { length: 160 }).notNull().unique(),
   isPublic: boolean("isPublic").default(false).notNull(),
   displayName: varchar("displayName", { length: 160 }),
@@ -312,6 +313,30 @@ export const guestOrderClaimOtps = mysqlTable("guestOrderClaimOtps", {
   attempts: int("attempts").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({ claimOtpUserIdx: index("guest_order_claim_otps_user_idx").on(table.userId, table.guestPhone), claimOtpExpiryIdx: index("guest_order_claim_otps_expiry_idx").on(table.expiresAt) }));
+
+export const passwordResetTokens = mysqlTable("passwordResetTokens", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  tokenHash: varchar("tokenHash", { length: 128 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  consumedAt: timestamp("consumedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({ resetUserExpiryIdx: index("password_reset_tokens_user_expiry_idx").on(table.userId, table.expiresAt) }));
+
+export const emailTemplates = mysqlTable("emailTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  scope: mysqlEnum("scope", ["platform", "restaurant"]).default("restaurant").notNull(),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  eventKey: varchar("eventKey", { length: 100 }).notNull(),
+  locale: varchar("locale", { length: 10 }).default("ar").notNull(),
+  subject: varchar("subject", { length: 240 }).notNull(),
+  htmlBody: text("htmlBody").notNull(),
+  textBody: text("textBody").notNull(),
+  isEnabled: boolean("isEnabled").default(true).notNull(),
+  updatedByUserId: int("updatedByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ emailTemplateLookupIdx: index("email_templates_scope_restaurant_event_locale_idx").on(table.scope, table.restaurantId, table.eventKey, table.locale) }));
 
 export const customerAuthOtps = mysqlTable("customerAuthOtps", {
   id: int("id").autoincrement().primaryKey(),
