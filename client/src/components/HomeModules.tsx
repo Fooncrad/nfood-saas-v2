@@ -4066,7 +4066,7 @@ function SeatingSectionsPanel({ restaurantId }: { restaurantId: number }) {
   );
 }
 
-function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId?: number }) {
+function TablesView({ restaurantId, branchId, onOpenQrTables }: { restaurantId: number; branchId?: number; onOpenQrTables?: () => void }) {
   const { user } = useAuth();
   const utils = trpc.useUtils();
   const [tableFormOpen, setTableFormOpen] = useState(false);
@@ -4175,6 +4175,14 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
                 setTableFormOpen(value => !value);
               }}
       />
+      {onOpenQrTables && (
+        <Card className="mb-4 rounded-2xl border-cyan-200 bg-cyan-50/70 dark:border-cyan-900/60 dark:bg-cyan-950/20">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-3">
+            <div className="flex items-center gap-2"><QrCode className="h-4 w-4 text-cyan-700 dark:text-cyan-300" /><div><p className="text-sm font-black text-slate-900 dark:text-white">تخصيص QR للطاولات</p><p className="text-[11px] text-slate-600 dark:text-slate-400">اختر أرقام الطاولات واطبع رموزها من دون البحث داخل إعدادات المنيو.</p></div></div>
+            <Button type="button" onClick={onOpenQrTables} className="h-9 gap-2 rounded-xl bg-cyan-600 px-4 text-xs font-black text-white hover:bg-cyan-500"><QrCode className="h-3.5 w-3.5" />فتح تخصيص الطاولات</Button>
+          </CardContent>
+        </Card>
+      )}
       <SeatingSectionsPanel restaurantId={restaurantId} />
       {tableFormOpen && (
         <Card className="mb-4 rounded-2xl border-orange-100 bg-orange-50/40">
@@ -10218,9 +10226,13 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
 
 function RestaurantOperationsHub({ restaurantId, branchId }: { restaurantId: number; branchId?: number }) {
   const [activeTab, setActiveTab] = useState<"tables" | "reservations" | "menu" | "hours" | "qr">("tables");
+  const openTableQrCustomization = () => {
+    setActiveTab("qr");
+    window.setTimeout(() => document.querySelector('[data-testid="qr-table-builder"]')?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  };
   const tabs = [
     { key: "tables" as const, label: "الطاولات", description: "توزيع الطاولات وحالتها" },
-    { key: "qr" as const, label: "QR المنيو", description: "المنيو والطاولات والرموز" },
+    { key: "qr" as const, label: "QR المنيو والرموز", description: "المنيو العام والرموز التشغيلية" },
     { key: "reservations" as const, label: "الحجوزات", description: "المواعيد والانتظار والإلغاء" },
     { key: "menu" as const, label: "واجهة المنيو والقوالب", description: "القالب والمعاينة وشبكة الأصناف" },
     { key: "hours" as const, label: "الفتحات وساعات العمل", description: "أوقات الفروع وقنوات الطلب" },
@@ -10237,7 +10249,7 @@ function RestaurantOperationsHub({ restaurantId, branchId }: { restaurantId: num
         </div>
       </section>
       <div key={activeTab} data-operations-tab={activeTab} className="nfood-settings-tab-enter space-y-3">
-        {activeTab === "tables" && <TablesView restaurantId={restaurantId} branchId={branchId} />}
+        {activeTab === "tables" && <TablesView restaurantId={restaurantId} branchId={branchId} onOpenQrTables={openTableQrCustomization} />}
         {activeTab === "qr" && <QROperationsPanel restaurantId={restaurantId} branchId={branchId} />}
         {activeTab === "reservations" && <ReservationsView restaurantId={restaurantId} />}
         {activeTab === "menu" && <BrandingPanel restaurantId={restaurantId} />}

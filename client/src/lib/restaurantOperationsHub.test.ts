@@ -18,7 +18,7 @@ describe("restaurant operations hub", () => {
     expect(homeModules).toContain('label: "الحجوزات"');
     expect(homeModules).toContain('label: "واجهة المنيو والقوالب"');
     expect(homeModules).toContain('key: "qr"');
-    expect(homeModules).toContain('label: "QR المنيو"');
+    expect(homeModules).toContain('label: "QR المنيو والرموز"');
     expect(qrPanel).toContain('data-testid="menu-qr-auto-card"');
     expect(homeModules).toContain('label: "الفتحات وساعات العمل"');
     expect(homeModules).toContain('data-operations-tab={activeTab}');
