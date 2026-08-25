@@ -49,7 +49,8 @@ describe("Home decomposition", () => {
   });
 
   it("organizes central admin navigation into collapsible platform groups", () => {
-    expect(sidebarSource).toContain("const platformGroups = [");
+    expect(sidebarSource).toContain('id: "platform-overview"');
+    expect(sidebarSource).toContain('id: "platform-directory"');
     expect(sidebarSource).not.toContain('id: "platform-management"');
     expect(sidebarSource).toContain('id: "platform-settings"');
     expect(sidebarSource).toContain("collapsedGroups");
@@ -63,14 +64,14 @@ describe("Home decomposition", () => {
     expect(sidebarSource).toContain("aria");
     expect(sidebarSource).toContain("nfood-unified-sidebar");
     expect(sidebarSource).toContain("data-sidebar-collapsed");
-    expect(sidebarSource).toContain("nfood-sidebar-label");
+    expect(sidebarSource).toContain("data-sidebar-mode");
     expect(sidebarSource).toContain("const showRestaurantWorkspace = [");
     expect(sidebarSource).toContain('"restaurant_admin"');
     expect(sidebarSource).toContain('"cashier"');
     expect(sidebarSource).toContain("{showRestaurantWorkspace && (");
     expect(sidebarSource).toContain("workspaceQuery");
     expect(sidebarSource).toContain("filteredBranches");
-    expect(sidebarSource).toContain("nfood-enter_220ms");
+    expect(sidebarSource).toContain("AnimatePresence");
   });
 
   it("shows a role-aware quick access grid and a visible, compact sidebar", () => {
@@ -79,8 +80,10 @@ describe("Home decomposition", () => {
       'location === "/register" || location === "/restaurant/register"'
     );
     expect(homeSource).toContain('location === "/login"');
-    expect(homeSource).toContain("lg:mr-[264px]");
-    expect(sidebarSource).toContain("w-[264px]");
+    expect(homeSource).toContain('lg:mr-[256px]');
+    expect(homeSource).toContain('lg:mr-[80px]');
+    expect(sidebarSource).toContain("getSidebarWidth(sidebarCollapsed)");
+    expect(sidebarSource).toContain("isSidebarToggleShortcut");
     expect(sidebarSource).toContain("nfood-unified-sidebar");
     expect(sidebarSource).toContain(
       "nfood-sidebar-nav nfood-scroll-area min-h-0 flex-1 space-y-1 overflow-y-auto"
@@ -174,7 +177,7 @@ describe("Home decomposition", () => {
     expect(homeSource).toContain('id: "restaurant-operations"');
     expect(homeSource).toContain('id: "restaurant-growth"');
     expect(homeSource).toContain('"printers", "inventory", "reservations"');
-    expect(sidebarSource).toContain("aria-expanded={!isCollapsed}");
+    expect(sidebarSource).toContain("aria-expanded={!isGroupCollapsed}");
     expect(sidebarSource).toContain("activeGroupId");
     expect(homeSource).toContain('data-testid="dashboard-center-canvas"');
     expect(homeSource).toContain('data-testid="dashboard-center-header"');

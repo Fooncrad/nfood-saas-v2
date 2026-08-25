@@ -19,7 +19,9 @@ describe("dashboard density and hierarchy", () => {
   it("uses compact, readable sidebar controls", () => {
     const sidebar = source("client/src/components/HomeSidebar.tsx");
     expect(sidebar).toContain('nfood-unified-sidebar');
-    expect(sidebar).toContain('text-[13px] text-white');
+    expect(sidebar).toContain('data-sidebar-mode={sidebarCollapsed ? "collapsed" : "expanded"}');
+    expect(sidebar).toContain('backdrop-blur-2xl');
+    expect(sidebar).toContain('animate={{ width: getSidebarWidth(sidebarCollapsed) }}');
     expect(sidebar).toContain('nfood-sidebar-nav nfood-scroll-area min-h-0 flex-1 space-y-1 overflow-y-auto');
   });
 
