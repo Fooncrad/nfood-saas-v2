@@ -14,7 +14,7 @@ const profileCopy = { ar: { unavailable: "الملف العام غير متاح"
 export default function CustomerPublic() {
   const { slug = "" } = useParams<{ slug: string }>();
   const { direction, language } = useLanguage();
-  const copy = profileCopy[language];
+  const copy = profileCopy[language as keyof typeof profileCopy] ?? profileCopy.en;
   const profile = trpc.platform.publicCustomerProfile.useQuery({ slug }, { enabled: Boolean(slug), retry: false });
   const data = profile.data;
   const publicUrl = useMemo(() => window.location.href, [slug]);

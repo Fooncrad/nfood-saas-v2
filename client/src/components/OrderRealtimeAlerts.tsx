@@ -10,7 +10,7 @@ export type RealtimeOrder = { id: string; status: string; table: string; time: s
 type Props = { orders: RealtimeOrder[]; mode: "pos" | "kds" };
 
 type Copy = { syncPos: string; syncKds: string; lastUpdate: string; connected: string; activeOrders: string; newAlert: string; statusAlert: string; arrived: string; statusChanged: string; close: string; empty: string; soundOn: string; soundOff: string; status: Record<string, string> };
-const copy: Record<Language, Copy> = {
+const copy: Partial<Record<Language, Copy>> = {
   ar: { syncPos: "مزامنة نقاط البيع", syncKds: "مزامنة شاشة المطبخ", lastUpdate: "آخر تحديث", connected: "متصل", activeOrders: "طلب نشط", newAlert: "طلب جديد يحتاج المتابعة", statusAlert: "تم تحديث حالة طلب", arrived: "وصل {id} إلى النظام", statusChanged: "{id}: {status}", close: "إغلاق التنبيه", empty: "لا توجد طلبات نشطة حاليًا.", soundOn: "كتم صوت التنبيه", soundOff: "تشغيل صوت التنبيه", status: { new: "طلب جديد", preparing: "قيد التحضير", ready: "جاهز", completed: "مكتمل", cancelled: "ملغى" } },
   en: { syncPos: "POS sync", syncKds: "Kitchen display sync", lastUpdate: "Last update", connected: "Connected", activeOrders: "active orders", newAlert: "New order needs attention", statusAlert: "Order status updated", arrived: "{id} arrived in the system", statusChanged: "{id}: {status}", close: "Dismiss alert", empty: "There are no active orders right now.", soundOn: "Mute alert sound", soundOff: "Enable alert sound", status: { new: "New order", preparing: "Preparing", ready: "Ready", completed: "Completed", cancelled: "Cancelled" } },
   fr: { syncPos: "Synchronisation POS", syncKds: "Synchronisation cuisine", lastUpdate: "Dernière mise à jour", connected: "Connecté", activeOrders: "commande(s) active(s)", newAlert: "Une nouvelle commande nécessite votre attention", statusAlert: "Statut de commande mis à jour", arrived: "{id} est arrivée dans le système", statusChanged: "{id} : {status}", close: "Fermer l’alerte", empty: "Aucune commande active pour le moment.", soundOn: "Couper le son des alertes", soundOff: "Activer le son des alertes", status: { new: "Nouvelle commande", preparing: "En préparation", ready: "Prête", completed: "Terminée", cancelled: "Annulée" } },
@@ -19,7 +19,7 @@ const copy: Record<Language, Copy> = {
 
 export function OrderRealtimeAlerts({ orders, mode }: Props) {
   const { language, direction, locale } = useLanguage();
-  const text = copy[language];
+  const text = copy[language] ?? copy.en ?? copy.ar!;
   const previous = useRef<Map<string, string> | null>(null);
   const [event, setEvent] = useState<{ type: "new" | "status"; order: RealtimeOrder } | null>(null);
   const [lastSync, setLastSync] = useState(() => new Date());

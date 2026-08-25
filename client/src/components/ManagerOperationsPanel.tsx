@@ -37,7 +37,7 @@ type Copy = {
   status: Record<OrderStatus, string>;
 };
 
-const copy: Record<Language, Copy> = {
+const copy: Partial<Record<Language, Copy>> = {
   ar: { title: "مركز التشغيل", live: "مراقبة مباشرة", delayed: "طلب متأخر", active: "الطلبات النشطة", system: "حالة النظام", healthy: "الخدمات تستجيب", degraded: "تحتاج المراجعة", syncing: "جارٍ التحقق", lastSync: "آخر مزامنة", noData: "لا توجد بيانات تشغيلية بعد", orders: "إدارة الطلبات", kds: "فتح شاشة المطبخ", viewOrders: "عرض الطلبات", openKds: "فتح KDS", attention: "تحتاج متابعة", status: { new: "جديد", preparing: "قيد التحضير", ready: "جاهز", completed: "مكتمل" } },
   en: { title: "Operations center", live: "Live monitoring", delayed: "Delayed order", active: "Active orders", system: "System status", healthy: "Services responding", degraded: "Needs review", syncing: "Checking", lastSync: "Last sync", noData: "No operational data yet", orders: "Orders", kds: "Open kitchen display", viewOrders: "View orders", openKds: "Open KDS", attention: "Needs attention", status: { new: "New", preparing: "Preparing", ready: "Ready", completed: "Completed" } },
   fr: { title: "Centre des opérations", live: "Surveillance en direct", delayed: "Commande en retard", active: "commandes actives", system: "État du système", healthy: "Services disponibles", degraded: "À vérifier", syncing: "Vérification", lastSync: "Dernière synchro", noData: "Aucune donnée opérationnelle", orders: "Commandes", kds: "Écran cuisine", viewOrders: "Voir les commandes", openKds: "Ouvrir KDS", attention: "À suivre", status: { new: "Nouvelle", preparing: "En préparation", ready: "Prête", completed: "Terminée" } },
@@ -47,7 +47,7 @@ const copy: Record<Language, Copy> = {
 export function ManagerOperationsPanel({ restaurantId, orders, ordersLoading, ordersError, summaryLoading, summaryError, lastUpdatedAt, onNavigate }: Props) {
   const slaQuery = trpc.admin.kitchenSla.useQuery({ restaurantId }, { staleTime: 30_000, retry: false });
   const { language, direction, locale } = useLanguage();
-  const text = copy[language];
+  const text: Copy = copy[language] ?? copy.en!;
   const stats = useMemo(() => {
     const active = orders.filter((order) => order.status !== "completed");
     const delayed = active.filter((order) => {

@@ -1,4 +1,4 @@
-export type MenuLanguage = "ar" | "en" | "fr" | "ur";
+export type MenuLanguage = "ar" | "en" | "fr" | "ur" | "es" | "de" | "tr";
 
 export type CachedMenuTranslation = {
   language: MenuLanguage;

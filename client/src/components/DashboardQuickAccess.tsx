@@ -65,7 +65,7 @@ const copyByLanguage = {
 
 export function DashboardQuickAccess({ items, onNavigate, title, description, storageScope = "default" }: DashboardQuickAccessProps) {
   const { language } = useLanguage();
-  const copy = copyByLanguage[language];
+  const copy = copyByLanguage[language as keyof typeof copyByLanguage] ?? copyByLanguage.en;
   const resolvedTitle = title ?? copy.title;
   const resolvedDescription = description ?? copy.description;
   const [density, setDensity] = useState<"comfortable" | "compact" | "spacious">(() => { try { return (localStorage.getItem("nfood.dashboard.density") as "comfortable" | "compact" | "spacious") || "compact"; } catch { return "comfortable"; } });

@@ -34,7 +34,7 @@ function formatDate(value: Date | string | null, language: string) {
 
 export function QROperationsPanel({ restaurantId, branchId }: { restaurantId: number; branchId?: number }) {
   const { language } = useLanguage();
-  const copy = copies[language] ?? copies.en;
+  const copy = copies[language as keyof typeof copies] ?? copies.en;
   const effectiveBranchId = branchId ?? 0;
   const query = trpc.platform.qrCodes.useQuery({ restaurantId, branchId: effectiveBranchId }, { enabled: Boolean(restaurantId && effectiveBranchId), retry: false });
   const [selectedTableIds, setSelectedTableIds] = useState<number[]>([]);

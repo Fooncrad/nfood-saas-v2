@@ -580,7 +580,7 @@ html[lang="ur"] body {
 }
 
 
-@media (prefers-reduced-motion: reduce), (data-nfood-motion="off") {
+@media (prefers-reduced-motion: reduce), :root[data-nfood-motion="off"] {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
@@ -595,7 +595,7 @@ html[lang="ur"] body {
   100% { opacity: 1; transform: scale(1); }
 }
 .content-added-feedback { animation: nfood-content-added 240ms cubic-bezier(0.23, 1, 0.32, 1); }
-@media (prefers-reduced-motion: reduce), (data-nfood-motion="off") {
+@media (prefers-reduced-motion: reduce), :root[data-nfood-motion="off"] {
   .content-added-feedback { animation: none !important; }
 }
 
