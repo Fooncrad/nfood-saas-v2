@@ -141,6 +141,8 @@ export const receiptTemplates = mysqlTable("receiptTemplates", {
   escPosInternalTemplate: text("escPosInternalTemplate"),
   escPosExternalTemplate: text("escPosExternalTemplate"),
   escPosDeliveryTemplate: text("escPosDeliveryTemplate"),
+  escPosReceiptLocalesJson: text("escPosReceiptLocalesJson"),
+  escPosKitchenLocalesJson: text("escPosKitchenLocalesJson"),
   createdByUserId: int("createdByUserId").references(() => users.id),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
