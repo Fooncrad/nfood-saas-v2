@@ -22,6 +22,14 @@ export async function sendPasswordResetEmail(input: { to: string; customerName: 
   return { sent: true as const };
 }
 
+export async function sendGuestClaimOtpEmail(input: { to: string; customerName: string; code: string }) {
+  const transporter = getTransporter();
+  if (!transporter) return { sent: false, skipped: "smtp-not-configured" as const };
+  const safeName = escapeHtml(input.customerName);
+  await transporter.sendMail({ from: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER, to: input.to, subject: "رمز ربط طلباتك السابقة في NFOOD", text: `مرحباً ${input.customerName}، رمز التحقق لربط طلباتك السابقة هو ${input.code}. ينتهي خلال 10 دقائق.`, html: `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.8"><h2>رمز التحقق</h2><p>مرحباً ${safeName}،</p><p>استخدم الرمز التالي لربط طلباتك السابقة بحسابك:</p><p style="font-size:28px;font-weight:bold;letter-spacing:8px">${input.code}</p><p>ينتهي الرمز خلال 10 دقائق.</p></div>` });
+  return { sent: true as const };
+}
+
 export async function sendReservationAcceptedEmail(input: { to?: string | null; customerName: string; restaurantName: string; tableName: string; reservedFor: Date; partySize: number }) {
   if (!input.to) return { sent: false, skipped: "no-recipient" as const };
   const transporter = getTransporter();

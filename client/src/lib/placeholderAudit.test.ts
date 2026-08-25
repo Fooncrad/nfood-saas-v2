@@ -91,7 +91,8 @@ describe("UI placeholder audit", () => {
     expect(publicRestaurantSource).toContain("guestName");
     expect(publicRestaurantSource).toContain("guestPhone");
     expect(publicRestaurantSource).toContain("الدفع نقدي عند الاستلام");
-    expect(publicRestaurantSource).toContain("guest-checkout-");
+    expect(publicRestaurantSource).toContain("تعذر إرسال الطلب حالياً");
+    expect(publicRestaurantSource).not.toContain("guest-checkout-");
   });
 
   it("keeps operational menu and order lists backend-only", () => {

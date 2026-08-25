@@ -264,6 +264,17 @@ export const userPreferences = mysqlTable("userPreferences", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const guestOrderClaimOtps = mysqlTable("guestOrderClaimOtps", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  guestPhone: varchar("guestPhone", { length: 40 }).notNull(),
+  codeHash: varchar("codeHash", { length: 128 }).notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  consumedAt: timestamp("consumedAt"),
+  attempts: int("attempts").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({ claimOtpUserIdx: index("guest_order_claim_otps_user_idx").on(table.userId, table.guestPhone), claimOtpExpiryIdx: index("guest_order_claim_otps_expiry_idx").on(table.expiresAt) }));
+
 export const menuCategories = mysqlTable("menuCategories", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull(),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { branches, coupons, employees, inventoryItems, menuCategories, menuItems, orders, purchases, restaurants } from "../drizzle/schema";
+import { branches, coupons, employees, guestOrderClaimOtps, inventoryItems, menuCategories, menuItems, orders, purchases, restaurants } from "../drizzle/schema";
 import { getNextBranchOpeningLabel, isBranchAcceptingOrders, parseBranchOperatingWindows } from "./db";
 
 describe("NFOOD platform schema", () => {
@@ -43,6 +43,14 @@ describe("NFOOD platform schema", () => {
     expect(coupons.campaignId).toBeDefined();
     expect(coupons.code).toBeDefined();
     expect(coupons.discountPercent).toBeDefined();
+  });
+
+  it("defines OTP protection for guest order claims", () => {
+    expect(guestOrderClaimOtps).toBeDefined();
+    expect(guestOrderClaimOtps.codeHash).toBeDefined();
+    expect(guestOrderClaimOtps.expiresAt).toBeDefined();
+    expect(guestOrderClaimOtps.attempts).toBeDefined();
+    expect(guestOrderClaimOtps.consumedAt).toBeDefined();
   });
 
   it("defines the order lifecycle columns used by POS and KDS", () => {
