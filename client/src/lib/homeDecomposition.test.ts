@@ -25,6 +25,10 @@ const driverDeliverySource = readFileSync(
   new URL("../components/DriverDeliveryView.tsx", import.meta.url),
   "utf8"
 );
+const visualSystemSource = readFileSync(
+  new URL("../index.css", import.meta.url),
+  "utf8"
+);
 const integrationsSource = readFileSync(
   new URL("../pages/IntegrationsSettings.tsx", import.meta.url),
   "utf8"
@@ -36,6 +40,12 @@ describe("Home decomposition", () => {
     expect(homeSource).toContain("const LazyModuleView = lazy(");
     expect(homeSource).not.toContain("function ModuleView(");
     expect(homeSource.length).toBeLessThan(72000);
+  });
+
+  it("keeps global motion rules for sidebar, language, and reduced motion", () => {
+    expect(visualSystemSource).toContain("nfood-unified-sidebar");
+    expect(visualSystemSource).toContain("nfood-language-transition");
+    expect(visualSystemSource).toContain("prefers-reduced-motion: reduce");
   });
 
   it("organizes central admin navigation into collapsible platform groups", () => {
@@ -51,6 +61,9 @@ describe("Home decomposition", () => {
       "isCentralAdmin ? platformGroups : sidebarGroups"
     );
     expect(sidebarSource).toContain("aria");
+    expect(sidebarSource).toContain("nfood-unified-sidebar");
+    expect(sidebarSource).toContain("data-sidebar-collapsed");
+    expect(sidebarSource).toContain("nfood-sidebar-label");
     expect(sidebarSource).toContain("const showRestaurantWorkspace = [");
     expect(sidebarSource).toContain('"restaurant_admin"');
     expect(sidebarSource).toContain('"cashier"');

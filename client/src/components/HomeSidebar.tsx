@@ -368,7 +368,7 @@ export function HomeSidebar({
                   }
                   className="flex w-full items-center justify-between rounded-lg px-1.5 py-1.5 text-right transition-colors hover:bg-white/10"
                 >
-                  <span className="text-[10px] font-bold tracking-[.14em] text-slate-300">
+                  <span className="nfood-sidebar-label min-w-0 truncate text-[10px] font-bold tracking-[.14em] text-slate-300">
                     {group.label}
                   </span>
                   <ChevronDown
@@ -388,10 +388,10 @@ export function HomeSidebar({
                           aria-label={item.label}
                           className={`flex w-full items-center gap-2 rounded-lg px-1.5 py-1.5 text-right text-xs transition-all duration-200 ${isActive ? "bg-[#e76f3c] font-semibold text-white shadow-lg shadow-orange-950/20" : "text-slate-200 hover:bg-white/10 hover:text-white"}`}
                         >
-                          <Icon className="h-[18px] w-[18px]" />
-                          <span>{item.label}</span>
+                          <Icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200" />
+                          <span className="nfood-sidebar-label min-w-0 truncate">{item.label}</span>
                           {item.key === "orders" && (
-                            <span className="mr-auto rounded-full bg-white/15 px-2 py-0.5 text-[10px] text-white">
+                            <span className="nfood-sidebar-count mr-auto rounded-full bg-white/15 px-2 py-0.5 text-[10px] text-white">
                               {ordersLoading ? "…" : orderCount}
                             </span>
                           )}

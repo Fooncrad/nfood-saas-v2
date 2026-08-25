@@ -242,7 +242,20 @@
     animation: nfood-enter 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
   }
   @keyframes nfood-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  @media (prefers-reduced-motion: reduce) { .nfood-enter { animation: none; } [data-slot="card"] { transition: none; } }
+  @keyframes nfood-popover-in { from { opacity: 0; transform: translateY(-5px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes nfood-language-crossfade { from { opacity: .72; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .nfood-enter, .nfood-popover-in, .nfood-language-transition { animation: none !important; } [data-slot="card"] { transition: none; } }
+  .nfood-unified-sidebar { transition: width 280ms cubic-bezier(0.23, 1, 0.32, 1), transform 280ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 280ms ease; }
+  .nfood-unified-sidebar .nfood-sidebar-label, .nfood-unified-sidebar .nfood-sidebar-count { transition: opacity 180ms ease, transform 180ms ease, max-width 220ms cubic-bezier(0.23, 1, 0.32, 1); }
+  .nfood-unified-sidebar[data-sidebar-collapsed="true"] .nfood-sidebar-label { max-width: 0; opacity: 0; transform: translateX(6px); pointer-events: none; }
+  .nfood-unified-sidebar[data-sidebar-collapsed="true"] .nfood-sidebar-count { opacity: 0; transform: scale(.8); }
+  .nfood-language-switcher > summary { transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+  .nfood-language-switcher[open] > summary { transform: translateY(-1px); box-shadow: 0 10px 26px -18px oklch(0.3 0.08 55 / .55); }
+  .nfood-language-switcher[open] > div { animation: nfood-popover-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both; transform-origin: top right; }
+  html.nfood-language-transition body { animation: nfood-language-crossfade 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+  html, body, #root { transition: background-color 220ms ease, color 220ms ease; }
+  @media (prefers-reduced-motion: reduce) { .nfood-unified-sidebar, .nfood-unified-sidebar .nfood-sidebar-label, .nfood-unified-sidebar .nfood-sidebar-count, .nfood-language-switcher > summary, html, body, #root { transition: none !important; } }
+
 }
 
 /* NFOOD interaction polish */

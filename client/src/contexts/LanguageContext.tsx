@@ -9,6 +9,14 @@ export function isPublicLanguagePath(pathname: string) { return pathname.startsW
 export function languageStorageKey(pathname?: string) { const currentPath = pathname ?? (typeof window !== "undefined" ? window.location.pathname : "/"); return isPublicLanguagePath(currentPath) ? MENU_LANGUAGE_STORAGE_KEY : DASHBOARD_LANGUAGE_STORAGE_KEY; }
 export function detectVisitorLanguage(): Language { if (typeof window === "undefined") return "en"; const browser = window.navigator.language.toLowerCase().split("-")[0]; return browser === "en" || browser === "fr" || browser === "ur" || browser === "ar" ? browser : "en"; }
 
+function animateLanguageChange() {
+  if (typeof document === "undefined") return;
+  document.documentElement.classList.remove("nfood-language-transition");
+  void document.documentElement.offsetWidth;
+  document.documentElement.classList.add("nfood-language-transition");
+  window.setTimeout(() => document.documentElement.classList.remove("nfood-language-transition"), 260);
+}
+
 export const languageMeta: Record<Language, { label: string; nativeLabel: string; dir: "rtl" | "ltr"; locale: string }> = {
   ar: { label: "Arabic", nativeLabel: "العربية", dir: "rtl", locale: "ar-SA" },
   en: { label: "English", nativeLabel: "English", dir: "ltr", locale: "en-US" },
@@ -389,7 +397,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const refresh = window.setTimeout(() => scheduleLegacyUiTranslations(language), 120);
     return () => { window.clearTimeout(refresh); observer.disconnect(); };
   }, [language, meta.dir]);
-  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, setLanguage: (next, persist = true) => { setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(languageStorageKey(), next); if (isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: (key) => translations[language][key], formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language) }), [language, meta.dir, meta.locale]);
+  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, setLanguage: (next, persist = true) => { if (next !== language) animateLanguageChange(); setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(languageStorageKey(), next); if (isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: (key) => translations[language][key], formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language) }), [language, meta.dir, meta.locale]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
