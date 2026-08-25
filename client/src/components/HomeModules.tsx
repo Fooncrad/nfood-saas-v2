@@ -103,7 +103,6 @@ import { ReceiptCustomizationPanel } from "@/components/ReceiptCustomizationPane
 import { BrandingFeatureMatrix } from "@/components/BrandingFeatureMatrix";
 import { BrandingEditorPanel } from "@/components/BrandingEditorPanel";
 import { ReceiptDeliveryPanel } from "@/components/ReceiptDeliveryPanel";
-import { QROperationsPanel } from "@/components/QROperationsPanel";
 import { KitchenTicketBoard } from "@/components/KitchenTicketBoard";
 import { KdsOperationsBoard } from "@/components/KdsOperationsBoard";
 import { KitchenPerformancePanel } from "@/components/KitchenPerformancePanel";
@@ -4437,7 +4436,6 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
           )}
         </DialogContent>
       </Dialog>
-      <QROperationsPanel restaurantId={restaurantId} branchId={branchId} />
     </div>
   );
 }
