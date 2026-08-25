@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { validateCheckoutDetails } from "../pages/RestaurantPublic";
 
 const page = readFileSync(new URL("../pages/RestaurantPublic.tsx", import.meta.url), "utf8");
+const styles = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 
 describe("public menu UX", () => {
   it("uses a responsive product grid with consistent lazy-loaded media", () => {
@@ -14,6 +15,16 @@ describe("public menu UX", () => {
     expect(page).toContain('loading="lazy"');
     expect(page).toContain('decoding="async"');
     expect(page).toContain("h-11 w-11 rounded-xl text-white");
+  });
+
+  it("exposes two distinct menu templates with a persisted switch", () => {
+    expect(page).toContain('useState<"editorial" | "bistro">("editorial")');
+    expect(page).toContain("nfood-menu-template-${menuTemplate}");
+    expect(styles).toContain(".nfood-menu-template-editorial");
+    expect(styles).toContain(".nfood-menu-template-bistro");
+    expect(page).toContain("localStorage.setItem(`nfood-menu-template-${slug}`, template)");
+    expect(page).toContain('aria-pressed={menuTemplate === "editorial"}');
+    expect(page).toContain('aria-pressed={menuTemplate === "bistro"}');
   });
 
   it("provides translated order type selection and mobile navigation", () => {

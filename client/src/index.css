@@ -879,3 +879,139 @@ html[lang="ur"] body {
   .nfood-dashboard-shell > main { height: auto; min-height: 100dvh; overflow: visible; }
   .nfood-dashboard-content { overflow: visible; }
 }
+
+/* NFOOD public menu templates */
+.nfood-menu-template-editorial {
+  --template-radius: 1.25rem;
+}
+
+.nfood-menu-template-editorial .nfood-menu-header {
+  border-bottom-color: color-mix(in srgb, var(--menu-primary) 14%, transparent);
+}
+
+.nfood-menu-template-editorial .nfood-menu-hero {
+  border: 1px solid color-mix(in srgb, var(--menu-primary) 12%, transparent);
+}
+
+.nfood-menu-template-editorial .nfood-menu-item-card {
+  border-radius: 1.25rem;
+}
+
+.nfood-menu-template-bistro {
+  --menu-page: #f3ebe2 !important;
+  --menu-surface: #fffaf4 !important;
+  --menu-ink: #2d211d !important;
+  --menu-muted: #79685d !important;
+  background-image:
+    radial-gradient(circle at 8% 10%, color-mix(in srgb, var(--menu-accent) 22%, transparent), transparent 20rem),
+    linear-gradient(135deg, #f3ebe2 0%, #f8f1e9 52%, #efe3d7 100%);
+}
+
+.nfood-menu-template-bistro.nfood-menu-dark {
+  --menu-page: #1f1716 !important;
+  --menu-surface: #2b211f !important;
+  --menu-ink: #fff8ef !important;
+  --menu-muted: #d2bfb0 !important;
+  background-image:
+    radial-gradient(circle at 8% 4%, color-mix(in srgb, var(--menu-accent) 20%, transparent), transparent 22rem),
+    linear-gradient(135deg, #1f1716 0%, #261c1b 55%, #171112 100%);
+}
+
+.nfood-menu-template-bistro .nfood-menu-header {
+  background: color-mix(in srgb, var(--menu-surface) 88%, var(--menu-accent)) !important;
+  border-bottom: 2px solid color-mix(in srgb, var(--menu-primary) 28%, transparent) !important;
+  box-shadow: 0 12px 30px -22px color-mix(in srgb, var(--menu-primary) 70%, transparent);
+}
+
+.nfood-menu-template-bistro .nfood-menu-hero {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--menu-primary) 25%, transparent);
+  border-radius: 2.25rem 0.75rem 2.25rem 0.75rem;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--menu-primary) 15%, var(--menu-surface)), var(--menu-surface) 55%, color-mix(in srgb, var(--menu-accent) 12%, var(--menu-surface)));
+  box-shadow: 0 24px 50px -30px color-mix(in srgb, var(--menu-primary) 55%, transparent);
+}
+
+.nfood-menu-template-bistro .nfood-menu-hero > div:first-child > div:first-child {
+  border-radius: 1.5rem 0.5rem 1.5rem 0.5rem;
+  background: transparent;
+  border-inline-start: 4px solid var(--menu-primary);
+}
+
+.nfood-menu-template-bistro .nfood-menu-category-bar {
+  border: 1px solid color-mix(in srgb, var(--menu-primary) 20%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--menu-surface) 88%, transparent) !important;
+  box-shadow: 0 14px 28px -24px color-mix(in srgb, var(--menu-primary) 80%, transparent);
+}
+
+.nfood-menu-template-bistro .nfood-menu-item-card {
+  display: grid;
+  grid-template-columns: minmax(150px, 41%) minmax(0, 1fr);
+  border: 1px solid color-mix(in srgb, var(--menu-primary) 20%, transparent);
+  border-radius: 1.75rem 0.75rem 1.75rem 0.75rem;
+  background: color-mix(in srgb, var(--menu-surface) 94%, var(--menu-accent));
+  box-shadow: 0 18px 34px -26px color-mix(in srgb, var(--menu-primary) 75%, transparent);
+}
+
+.nfood-menu-template-bistro .nfood-menu-item-card:hover {
+  transform: translateY(-3px) rotate(-0.25deg);
+  border-color: color-mix(in srgb, var(--menu-primary) 46%, transparent);
+}
+
+.nfood-menu-template-bistro .nfood-menu-item-image {
+  min-height: 100%;
+  aspect-ratio: auto;
+  border-radius: 1.5rem 0 1.5rem 0;
+  background: color-mix(in srgb, var(--menu-primary) 14%, var(--menu-surface));
+}
+
+.nfood-menu-template-bistro .nfood-menu-item-image img {
+  filter: saturate(0.9) contrast(1.03);
+}
+
+.nfood-menu-template-bistro .nfood-menu-item-content {
+  padding: 1.1rem;
+}
+
+.nfood-menu-template-bistro .nfood-menu-info-card {
+  border: 1px solid color-mix(in srgb, var(--menu-primary) 22%, transparent) !important;
+  border-radius: 1.75rem 0.75rem 1.75rem 0.75rem;
+  background: color-mix(in srgb, var(--menu-surface) 95%, var(--menu-accent)) !important;
+}
+
+.nfood-menu-template-bistro .nfood-template-picker {
+  border-color: color-mix(in srgb, var(--menu-primary) 24%, transparent);
+  background: color-mix(in srgb, var(--menu-surface) 76%, transparent);
+}
+
+.nfood-menu-template-bistro .nfood-menu-drawer {
+  background: var(--menu-surface) !important;
+}
+
+.nfood-menu-template-bistro .nfood-menu-grid {
+  gap: 1rem;
+}
+
+@media (max-width: 767px) {
+  .nfood-menu-template-bistro .nfood-menu-item-card {
+    display: flex;
+    grid-template-columns: none;
+  }
+
+  .nfood-menu-template-bistro .nfood-menu-item-image {
+    min-height: 0;
+    aspect-ratio: 4 / 3;
+    border-radius: 1.5rem 0.75rem 0 0;
+  }
+
+  .nfood-menu-template-bistro .nfood-menu-item-content {
+    padding: 0.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nfood-menu-template-bistro .nfood-menu-item-card:hover {
+    transform: none;
+  }
+}
