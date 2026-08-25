@@ -3305,7 +3305,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
 
 export function AccessDeniedView({ feature }: { feature: string }) {
   return (
-    <Card className="rounded-2xl border-amber-200 bg-amber-50 shadow-sm">
+    <Card dir="rtl" className="rounded-2xl border-amber-200 bg-amber-50 shadow-sm">
       <CardContent className="flex min-h-[360px] flex-col items-center justify-center p-8 text-center">
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-amber-600 shadow-sm">
           <ShieldCheck className="h-8 w-8" />
@@ -3318,7 +3318,7 @@ export function AccessDeniedView({ feature }: { feature: string }) {
           مطعمك.
         </p>
         <p className="mt-2 font-mono text-[11px] text-slate-400">
-          feature: {feature}
+          رمز الوحدة: {feature}
         </p>
       </CardContent>
     </Card>

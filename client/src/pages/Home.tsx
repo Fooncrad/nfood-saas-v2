@@ -206,7 +206,9 @@ export default function Home() {
     const onForbidden = (event: Event) => {
       if (isCentralAdmin) return;
       const action = (event as CustomEvent<{ action?: string }>).detail?.action;
-      setGlobalForbiddenAction(action || "protected.action");
+      if (action === "global.search" || action === "dashboard.summary") {
+        setGlobalForbiddenAction(action);
+      }
     };
     window.addEventListener("nfood:forbidden", onForbidden);
     return () => window.removeEventListener("nfood:forbidden", onForbidden);

@@ -7,6 +7,7 @@ const dashboardSource = `${homeSource}\n${homeModulesSource}`;
 const reservationsSource = readFileSync(new URL("../pages/ReservationsView.tsx", import.meta.url), "utf8");
 const publicRestaurantSource = readFileSync(new URL("../pages/RestaurantPublic.tsx", import.meta.url), "utf8");
 const skeletonSource = readFileSync(new URL("../components/DashboardLayoutSkeleton.tsx", import.meta.url), "utf8");
+const accessDeniedSource = readFileSync(new URL("../components/AccessDeniedView.tsx", import.meta.url), "utf8");
 const roleManifests = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "customer", "driver"].map((role) => readFileSync(new URL(`../../public/manifest.${role}.webmanifest`, import.meta.url), "utf8"));
 
 describe("UI placeholder audit", () => {
@@ -14,6 +15,10 @@ describe("UI placeholder audit", () => {
     expect(homeSource).toContain("visibleNavItems.some");
     expect(homeSource).toContain("AccessDeniedView");
     expect(homeSource).toContain("globalForbiddenAction");
+    expect(homeSource).toContain('action === "global.search" || action === "dashboard.summary"');
+    expect(accessDeniedSource).toContain('dir="rtl"');
+    expect(accessDeniedSource).toContain("رمز الوحدة:");
+    expect(accessDeniedSource).not.toContain(">feature:");
   });
 
   it("keeps explicit loading, empty, error, and request-id states in the dashboard shell", () => {
