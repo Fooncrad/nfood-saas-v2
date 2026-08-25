@@ -35,6 +35,9 @@ import {
   Wifi,
   WifiOff,
   Zap,
+  ArrowDownAZ,
+  SlidersHorizontal,
+  AlertTriangle,
 } from "lucide-react";
 import Barcode from "react-barcode";
 import { Button } from "@/components/ui/button";
@@ -47,6 +50,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { publicMenuUrl } from "@/lib/publicMenuUrl";
 import { validateRemoteTaskDraft } from "@/lib/remoteTaskValidation";
+import { getVisibleTables, hasRecentAutoCancellation, type TableFilter, type TableSort } from "@/lib/tableViewModel";
 import {
   enqueueOfflineItem,
   readOfflineQueue,
@@ -4087,6 +4091,12 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
   const [tableType, setTableType] = useState("standard");
   const [minimumCharge, setMinimumCharge] = useState("0");
   const [tableFee, setTableFee] = useState("0");
+  const [tableFilter, setTableFilter] = useState<TableFilter>("all");
+  const [tableSort, setTableSort] = useState<TableSort>("name");
+  const remoteReservations = trpc.platform.reservations.useQuery(
+    { restaurantId, status: "cancelled" },
+    { enabled: Boolean(user), retry: false }
+  );
   const remoteTables = trpc.platform.tables.useQuery(
     { restaurantId },
     { enabled: Boolean(user), retry: false }
@@ -4113,6 +4123,11 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
     onError: error => toast.error(`تعذر حذف الطاولة: ${error.message}`),
   });
   const tables = remoteTables.data ?? [];
+  const reservations = remoteReservations.data ?? [];
+  const visibleTables = useMemo(
+    () => getVisibleTables(tables, reservations, tableFilter, tableSort),
+    [reservations, tableFilter, tableSort, tables]
+  );
   return (
     <div>
       <SectionHeading
@@ -4195,6 +4210,28 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
         </Card>
       )}
       <Card className="rounded-2xl border-slate-200 bg-white shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+            <SlidersHorizontal className="h-4 w-4 text-orange-500" />
+            <span>تصفية وترتيب الطاولات</span>
+            <Badge variant="secondary" className="rounded-full text-[10px]">{visibleTables.length} ظاهرة</Badge>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select aria-label="تصفية الطاولات" value={tableFilter} onChange={event => setTableFilter(event.target.value as TableFilter)} className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
+              <option value="all">كل الطاولات</option>
+              <option value="available">متاحة</option>
+              <option value="occupied">مشغولة</option>
+              <option value="reserved">محجوزة</option>
+              <option value="auto_cancelled">إلغاء تلقائي حديث</option>
+            </select>
+            <select aria-label="ترتيب الطاولات" value={tableSort} onChange={event => setTableSort(event.target.value as TableSort)} className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
+              <option value="name">حسب الاسم</option>
+              <option value="seats">الأكثر مقاعد</option>
+              <option value="minimumCharge">الأعلى حدًا أدنى</option>
+            </select>
+            <ArrowDownAZ className="hidden h-4 w-4 text-slate-400 sm:block" />
+          </div>
+        </CardHeader>
         <CardContent className="grid grid-cols-2 gap-4 p-6 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
           {remoteTables.isError ? (
             <div className="col-span-full p-6 text-sm text-red-600">
@@ -4214,12 +4251,16 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
             <div className="col-span-full p-8 text-center text-sm text-slate-400">
               لا توجد طاولات محفوظة لهذا المطعم.
             </div>
+          ) : visibleTables.length === 0 ? (
+            <div className="col-span-full p-8 text-center text-sm text-slate-400">لا توجد طاولات مطابقة للتصفية الحالية.</div>
           ) : (
-            tables.map(table => {
+            visibleTables.map(table => {
               const occupied = table.status === "occupied";
+              const recentlyAutoCancelled = hasRecentAutoCancellation(table.id, reservations);
               return (
                 <div
                   key={table.id}
+                  tabIndex={0}
                   onClick={() =>
                     updateTable.mutate({
                       restaurantId,
@@ -4227,7 +4268,7 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
                       status: occupied ? "available" : "occupied",
                     })
                   }
-                  className={`relative flex aspect-square flex-col items-center justify-center rounded-3xl border-2 transition-all ${occupied ? "border-orange-200 bg-orange-50 text-orange-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}
+                  className={`group relative flex aspect-square flex-col items-center justify-center rounded-3xl border-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 ${recentlyAutoCancelled ? "border-amber-400 bg-amber-50 text-amber-800 shadow-[0_0_0_3px_rgba(245,158,11,0.15)]" : occupied ? "border-orange-200 bg-orange-50 text-orange-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}
                 >
                   <Table2 className="mb-2 h-7 w-7" />
                   <span className="text-sm font-bold">{table.name}</span>
@@ -4240,9 +4281,20 @@ function TablesView({ restaurantId, branchId }: { restaurantId: number; branchId
                         ? "محجوزة"
                         : "متاحة"}
                   </span>
-                  {occupied && (
+                  {recentlyAutoCancelled && (
+                    <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-amber-500 px-2 py-1 text-[9px] font-bold text-white animate-pulse">
+                      <AlertTriangle className="h-3 w-3" /> أُلغي تلقائيًا مؤخرًا
+                    </span>
+                  )}
+                  {occupied && !recentlyAutoCancelled && (
                     <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-orange-500" />
                   )}
+                  <div className="pointer-events-none absolute inset-x-2 top-12 z-10 rounded-2xl border border-slate-200 bg-white/95 p-3 text-right text-[10px] text-slate-700 opacity-0 shadow-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                    <p className="font-black text-slate-900">ملخص الرسوم</p>
+                    <p className="mt-1">الإكرامية: تُطبق حسب إعدادات المطعم</p>
+                    <p>رسوم الخدمة: تُطبق حسب إعدادات المطعم</p>
+                    <p className="mt-1 font-bold text-orange-600">حد أدنى {table.minimumCharge ?? "0.00"} · رسوم طاولة {table.tableFee ?? "0.00"}</p>
+                  </div>
                   <button
                     type="button"
                     onClick={event => {
