@@ -14,10 +14,13 @@ export const MENU_DISPLAY_TOOL_KEYS = [
 
 export type MenuDisplayToolKey = (typeof MENU_DISPLAY_TOOL_KEYS)[number];
 
+export type MenuGridColumns = 1 | 2 | 3 | 4;
+
 export type MenuDisplaySettings = {
   tools: Record<MenuDisplayToolKey, boolean>;
   toolOrder: MenuDisplayToolKey[];
   showCustomerAccount: boolean;
+  gridColumns: MenuGridColumns;
 };
 
 export const defaultMenuDisplaySettings: MenuDisplaySettings = {
@@ -36,6 +39,7 @@ export const defaultMenuDisplaySettings: MenuDisplaySettings = {
   },
   toolOrder: [...MENU_DISPLAY_TOOL_KEYS],
   showCustomerAccount: true,
+  gridColumns: 4,
 };
 
 export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySettings {
@@ -46,10 +50,13 @@ export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySe
     const toolOrder = Array.isArray(parsed.toolOrder)
       ? parsed.toolOrder.filter((key): key is MenuDisplayToolKey => MENU_DISPLAY_TOOL_KEYS.includes(key as MenuDisplayToolKey))
       : defaultMenuDisplaySettings.toolOrder;
+    const requestedColumns = Number(parsed.gridColumns);
+    const gridColumns: MenuGridColumns = requestedColumns === 1 || requestedColumns === 2 || requestedColumns === 3 || requestedColumns === 4 ? requestedColumns : 4;
     return {
       tools,
       toolOrder: Array.from(new Set([...toolOrder, ...MENU_DISPLAY_TOOL_KEYS])),
       showCustomerAccount: parsed.showCustomerAccount !== false,
+      gridColumns,
     };
   } catch {
     return defaultMenuDisplaySettings;

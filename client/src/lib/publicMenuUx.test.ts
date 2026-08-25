@@ -6,8 +6,9 @@ const page = readFileSync(new URL("../pages/RestaurantPublic.tsx", import.meta.u
 const styles = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 
 describe("public menu UX", () => {
-  it("uses a responsive product grid with consistent lazy-loaded media", () => {
-    expect(page).toContain("lg:grid-cols-3 xl:grid-cols-4");
+  it("uses a manager-controlled responsive product grid with consistent lazy-loaded media", () => {
+    expect(page).toContain("menuGridClass");
+    expect(page).toContain('"grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"');
     expect(page).toContain("nfood-menu-shell flex flex-col");
     expect(page).toContain("<main className=\"min-w-0 px-3 sm:px-6\">");
     expect(page).toContain("ar-SA-u-nu-latn");
@@ -73,9 +74,19 @@ describe("public menu UX", () => {
     expect(page).not.toContain("<a href=\"#contact\" className=\"transition hover:text-[var(--menu-primary)]\">");
   });
 
-  it("keeps QR outside the primary menu content", () => {
+  it("keeps QR outside the primary menu content and removes the drawer helper copy", () => {
     const mainMenu = page.slice(page.indexOf('<div id="menu"'), page.indexOf('<section id="contact"'));
     expect(mainMenu).not.toContain("QRCodeSVG");
+    expect(page).toContain("<div className=\"rounded-xl bg-slate-900 p-4 text-white\"><p className=\"text-sm font-black\">{copy.qrTitle}</p></div>");
+    expect(page).not.toContain("{copy.qrHelp}");
+    expect(page).toContain("grid grid-cols-2 gap-2");
+  });
+
+  it("supports the four manager-selected density modes", () => {
+    expect(page).toContain('1: "grid-cols-1"');
+    expect(page).toContain('2: "grid-cols-1 sm:grid-cols-2"');
+    expect(page).toContain('3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"');
+    expect(page).toContain('4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"');
   });
 
   it("explains missing order-specific checkout data before submission", () => {
