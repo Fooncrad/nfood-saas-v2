@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { branches, coupons, employees, inventoryItems, menuCategories, menuItems, orders, purchases, restaurants } from "../drizzle/schema";
+import { isBranchAcceptingOrders, parseBranchOperatingWindows } from "./db";
 
 describe("NFOOD platform schema", () => {
   it("exposes the core restaurant operating tables", () => {
@@ -26,6 +27,14 @@ describe("NFOOD platform schema", () => {
   it("defines persisted branch operating hours", () => {
     expect(branches.openingTime).toBeDefined();
     expect(branches.closingTime).toBeDefined();
+    expect(branches.operatingWindowsJson).toBeDefined();
+  });
+
+  it("accepts orders only inside configured weekly windows", () => {
+    const windows = JSON.stringify([{ dayOfWeek: 2, startTime: "09:00", endTime: "15:00", channels: ["delivery"] }]);
+    expect(parseBranchOperatingWindows(windows)).toHaveLength(1);
+    expect(isBranchAcceptingOrders({ status: "open", operatingWindowsJson: windows }, "delivery", new Date("2026-08-25T09:00:00.000Z"))).toBe(true);
+    expect(isBranchAcceptingOrders({ status: "open", operatingWindowsJson: windows }, "dine_in", new Date("2026-08-25T09:00:00.000Z"))).toBe(false);
   });
 
   it("defines persisted coupon fields for tenant-scoped marketing", () => {
@@ -41,5 +50,7 @@ describe("NFOOD platform schema", () => {
     expect(orders.updatedAt).toBeDefined();
     expect(orders.paymentMethod).toBeDefined();
     expect(orders.paymentStatus).toBeDefined();
+    expect(orders.notes).toBeDefined();
+    expect(orders.cashierNotes).toBeDefined();
   });
 });

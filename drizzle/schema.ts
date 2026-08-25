@@ -204,6 +204,7 @@ export const branches = mysqlTable("branches", {
   status: mysqlEnum("status", ["open", "closed"]).default("open").notNull(),
   openingTime: varchar("openingTime", { length: 5 }),
   closingTime: varchar("closingTime", { length: 5 }),
+  operatingWindowsJson: text("operatingWindowsJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -446,6 +447,7 @@ export const orders = mysqlTable("orders", {
   deliveryFailureReason: varchar("deliveryFailureReason", { length: 500 }),
   deliveryNote: varchar("deliveryNote", { length: 1000 }),
   notes: text("notes"),
+  cashierNotes: text("cashierNotes"),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).default("0").notNull(),
   discountAmount: decimal("discountAmount", { precision: 10, scale: 2 }).default("0").notNull(),
   taxAmount: decimal("taxAmount", { precision: 10, scale: 2 }).default("0").notNull(),

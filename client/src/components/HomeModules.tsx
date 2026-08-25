@@ -2834,6 +2834,8 @@ function PosView({ restaurantId }: { restaurantId: number }) {
     "cash" | "card" | "bank_transfer" | "online" | "other"
   >("cash");
   const [couponCode, setCouponCode] = useState("");
+  const [customerNote, setCustomerNote] = useState("");
+  const [cashierNotes, setCashierNotes] = useState("");
   const [receiptTemplate, setReceiptTemplate] = useState<
     "thermal" | "detailed"
   >("thermal");
@@ -2922,11 +2924,17 @@ function PosView({ restaurantId }: { restaurantId: number }) {
           ? ("dine_in" as const)
           : channel === "استلام"
             ? ("takeaway" as const)
-            : ("delivery" as const),
+            : channel === "حجز"
+            ? ("reservation" as const)
+            : channel === "فندق"
+              ? ("hotel" as const)
+              : ("delivery" as const),
       total: formatCents(totalCents),
       tableName: tableName.trim() || undefined,
       paymentMethod,
       couponCode: couponCode.trim() || undefined,
+      notes: customerNote.trim() || undefined,
+      cashierNotes: cashierNotes.trim() || undefined,
       items: cart.map(item => ({
         menuItemId: item.product.id,
         quantity: item.quantity,
@@ -3129,7 +3137,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                   className="h-9 w-44 rounded-xl bg-slate-50 text-xs"
                 />
                 <div className="flex gap-2">
-                  {["داخل المطعم", "استلام", "توصيل"].map(item => (
+                  {["داخل المطعم", "استلام", "توصيل", "حجز", "فندق"].map(item => (
                     <button
                       key={item}
                       onClick={() => setChannel(item)}
@@ -3142,7 +3150,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
+          <CardContent className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3 sm:p-5">
             {remoteMenu.isLoading ? (
               <div className="col-span-full rounded-2xl bg-slate-50 p-10 text-center text-sm text-slate-500">
                 جارٍ تحميل الأصناف...
@@ -3166,7 +3174,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                 <button
                   key={product.name}
                   onClick={() => add(product)}
-                  className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 text-right transition hover:border-orange-200 hover:bg-orange-50/40"
+                  className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5 text-right transition hover:border-orange-200 hover:bg-orange-50/40 sm:rounded-2xl sm:p-4"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xl">🍽</span>
@@ -3191,7 +3199,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-5">
-            <div className="mb-4 grid gap-2 sm:grid-cols-2">
+            <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Input
                 value={tableName}
                 onChange={event => setTableName(event.target.value)}
@@ -3221,8 +3229,10 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                 <option value="online">دفع إلكتروني</option>
                 <option value="other">أخرى</option>
               </select>
+              <Textarea value={customerNote} onChange={event => setCustomerNote(event.target.value)} placeholder="ملاحظات العميل (اختياري)" aria-label="ملاحظات العميل" className="min-h-16 rounded-xl text-xs" />
+              <Textarea value={cashierNotes} onChange={event => setCashierNotes(event.target.value)} placeholder="ملاحظات الكاشير (داخلية)" aria-label="ملاحظات الكاشير" className="min-h-16 rounded-xl text-xs" />
             </div>
-            <div className="min-h-[220px] space-y-3">
+            <div className="min-h-[180px] space-y-3 sm:min-h-[220px]">
               {cart.length === 0 ? (
                 <div className="flex h-[220px] flex-col items-center justify-center text-center text-slate-400">
                   <ShoppingBag className="mb-3 h-8 w-8" />
@@ -9699,6 +9709,7 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
   const [branchCity, setBranchCity] = useState("");
   const [branchOpeningTime, setBranchOpeningTime] = useState("09:00");
   const [branchClosingTime, setBranchClosingTime] = useState("23:00");
+  const [operatingWindowsJson, setOperatingWindowsJson] = useState("");
   const [editingBranchId, setEditingBranchId] = useState<number | null>(null);
   const remoteBranches = trpc.platform.branches.useQuery(
     { restaurantId },
@@ -9830,6 +9841,7 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
                   status: "open",
                   openingTime: branchOpeningTime,
                   closingTime: branchClosingTime,
+                  operatingWindowsJson: operatingWindowsJson.trim() || undefined,
                 })
               }
               className="rounded-xl bg-[#e76f3c]"
@@ -9938,6 +9950,7 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
                       setBranchCity(branch.city ?? "");
                       setBranchOpeningTime(branch.openingTime ?? "09:00");
                       setBranchClosingTime(branch.closingTime ?? "23:00");
+                      setOperatingWindowsJson(branch.operatingWindowsJson ?? "");
                     }}
                     variant="outline"
                     size="sm"
@@ -9977,6 +9990,7 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
                           className="h-9 rounded-lg text-xs"
                         />
                       </div>
+                      <Textarea value={operatingWindowsJson} onChange={event => setOperatingWindowsJson(event.target.value)} placeholder='فتحات متعددة JSON اختياري: [{"dayOfWeek":0,"startTime":"09:00","endTime":"15:00"}]' aria-label="فتحات التشغيل الأسبوعية" className="min-h-16 rounded-lg text-[10px]" dir="ltr" />
                       <div className="flex gap-2">
                         <Button
                           size="sm"
@@ -9994,6 +10008,7 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
                               city: branchCity.trim() || undefined,
                               openingTime: branchOpeningTime,
                               closingTime: branchClosingTime,
+                              operatingWindowsJson: operatingWindowsJson.trim() || undefined,
                             });
                             setEditingBranchId(null);
                           }}
