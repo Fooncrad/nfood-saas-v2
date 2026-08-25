@@ -6,9 +6,12 @@ const appSource = readFileSync(resolve(process.cwd(), "client/src/App.tsx"), "ut
 
 describe("route code splitting", () => {
   it("lazy-loads heavy dashboard, menu, and display routes", () => {
-    expect(appSource).toContain('lazy(() => import("./pages/Home"))');
-    expect(appSource).toContain('lazy(() => import("./pages/RestaurantPublic"))');
-    expect(appSource).toContain('lazy(() => import("./pages/PublicDisplay"))');
+    expect(appSource).toContain('Home: () => import("./pages/Home")');
+    expect(appSource).toContain('RestaurantPublic: () => import("./pages/RestaurantPublic")');
+    expect(appSource).toContain('PublicDisplay: () => import("./pages/PublicDisplay")');
+    expect(appSource).toContain("lazy(routeLoaders.Home)");
+    expect(appSource).toContain("lazy(routeLoaders.RestaurantPublic)");
+    expect(appSource).toContain("lazy(routeLoaders.PublicDisplay)");
     expect(appSource).toContain("<Suspense fallback={<PageLoading />}>");
   });
 });

@@ -6,34 +6,57 @@ import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_STORAGE_KEY, LanguageProvider, languageStorageKey, useLanguage, type Language } from "./contexts/LanguageContext";
-const Home = lazy(() => import("./pages/Home"));
-const RestaurantPublic = lazy(() => import("./pages/RestaurantPublic"));
-const CustomerDisplay = lazy(() => import("./pages/CustomerDisplay"));
-const PublicDisplay = lazy(() => import("./pages/PublicDisplay"));
-const CustomerPublic = lazy(() => import("./pages/CustomerPublic"));
-const CustomerProfileSettings = lazy(() => import("./pages/CustomerProfileSettings"));
-const AccountProfileSettings = lazy(() => import("./pages/AccountProfileSettings"));
-const IntegrationsSettings = lazy(() => import("./pages/IntegrationsSettings"));
-const CustomerPortal = lazy(() => import("./pages/CustomerPortal"));
-const CustomerContentOrders = lazy(() => import("./pages/CustomerContentOrders"));
-const CustomerOrders = lazy(() => import("./pages/CustomerOrders"));
-const CustomerReservations = lazy(() => import("./pages/CustomerReservations"));
-const CustomerRewards = lazy(() => import("./pages/CustomerRewards"));
-const SupportManagement = lazy(() => import("./pages/SupportManagement"));
-const VcardCardsAdmin = lazy(() => import("./pages/VcardCardsAdmin"));
-const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
-const SubscriptionReceiptsAdminPage = lazy(() => import("./pages/SubscriptionReceiptsAdminPage"));
+const routeLoaders = {
+  Home: () => import("./pages/Home"),
+  RestaurantPublic: () => import("./pages/RestaurantPublic"),
+  CustomerDisplay: () => import("./pages/CustomerDisplay"),
+  PublicDisplay: () => import("./pages/PublicDisplay"),
+  CustomerPublic: () => import("./pages/CustomerPublic"),
+  CustomerProfileSettings: () => import("./pages/CustomerProfileSettings"),
+  AccountProfileSettings: () => import("./pages/AccountProfileSettings"),
+  IntegrationsSettings: () => import("./pages/IntegrationsSettings"),
+  CustomerPortal: () => import("./pages/CustomerPortal"),
+  CustomerContentOrders: () => import("./pages/CustomerContentOrders"),
+  CustomerOrders: () => import("./pages/CustomerOrders"),
+  CustomerReservations: () => import("./pages/CustomerReservations"),
+  CustomerRewards: () => import("./pages/CustomerRewards"),
+  SupportManagement: () => import("./pages/SupportManagement"),
+  VcardCardsAdmin: () => import("./pages/VcardCardsAdmin"),
+  FavoritesPage: () => import("./pages/FavoritesPage"),
+  SubscriptionReceiptsAdminPage: () => import("./pages/SubscriptionReceiptsAdminPage"),
+};
+const Home = lazy(routeLoaders.Home);
+const RestaurantPublic = lazy(routeLoaders.RestaurantPublic);
+const CustomerDisplay = lazy(routeLoaders.CustomerDisplay);
+const PublicDisplay = lazy(routeLoaders.PublicDisplay);
+const CustomerPublic = lazy(routeLoaders.CustomerPublic);
+const CustomerProfileSettings = lazy(routeLoaders.CustomerProfileSettings);
+const AccountProfileSettings = lazy(routeLoaders.AccountProfileSettings);
+const IntegrationsSettings = lazy(routeLoaders.IntegrationsSettings);
+const CustomerPortal = lazy(routeLoaders.CustomerPortal);
+const CustomerContentOrders = lazy(routeLoaders.CustomerContentOrders);
+const CustomerOrders = lazy(routeLoaders.CustomerOrders);
+const CustomerReservations = lazy(routeLoaders.CustomerReservations);
+const CustomerRewards = lazy(routeLoaders.CustomerRewards);
+const SupportManagement = lazy(routeLoaders.SupportManagement);
+const VcardCardsAdmin = lazy(routeLoaders.VcardCardsAdmin);
+const FavoritesPage = lazy(routeLoaders.FavoritesPage);
+const SubscriptionReceiptsAdminPage = lazy(routeLoaders.SubscriptionReceiptsAdminPage);
 const CustomerProfileSettingsRoute = () => <CustomerProfileSettings />;
 import { PricingPage, FeaturesPage, HowItWorksPage, LandingPage, LegalPage, ContactPage, SubscriptionStatusPage } from "./pages/PublicInfoPages";
 import { useAuth } from "./_core/hooks/useAuth";
 
 function PageLoading() {
-  return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground" aria-live="polite"><div className="rounded-2xl border border-border bg-card px-6 py-5 text-center shadow-sm"><div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-primary/20 border-t-primary" /><p className="mt-3 text-sm font-bold">Loading NFOOD…</p></div></main>;
+  return <div className="min-h-screen bg-background px-4 py-4 text-foreground" aria-live="polite"><div className="mx-auto max-w-7xl space-y-3 opacity-80"><div className="h-10 w-48 animate-pulse rounded-2xl bg-muted" /><div className="grid gap-3 sm:grid-cols-3"><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /></div></div></div>;
 }
 
 function AppContent() {
   const { direction, language, setLanguage } = useLanguage();
   const [location] = useLocation();
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void Promise.all([routeLoaders.Home(), routeLoaders.RestaurantPublic(), routeLoaders.CustomerPortal(), routeLoaders.CustomerOrders()]); }, 1800);
+    return () => window.clearTimeout(timer);
+  }, []);
   useEffect(() => {
     const key = languageStorageKey(location);
     const stored = window.localStorage.getItem(key) as Language | null;
