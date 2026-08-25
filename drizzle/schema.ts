@@ -696,6 +696,7 @@ export const qrCodes = mysqlTable("qrCodes", {
   orderId: int("orderId").references(() => orders.id),
   amount: decimal("amount", { precision: 10, scale: 2 }),
   targetUrl: varchar("targetUrl", { length: 500 }),
+  visualConfigJson: text("visualConfigJson"),
   status: mysqlEnum("status", ["active", "used", "disabled", "expired"]).default("active").notNull(),
   expiresAt: timestamp("expiresAt"),
   createdByUserId: int("createdByUserId").references(() => users.id),

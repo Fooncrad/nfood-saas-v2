@@ -1,0 +1,1 @@
+ALTER TABLE `qrCodes` ADD `visualConfigJson` text;
