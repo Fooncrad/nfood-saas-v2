@@ -757,6 +757,13 @@
       "when": 1787615357814,
       "tag": "0107_gray_wendell_vaughn",
       "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "5",
+      "when": 1787617714559,
+      "tag": "0108_fancy_celestials",
+      "breakpoints": true
     }
   ]
 }

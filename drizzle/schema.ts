@@ -327,6 +327,7 @@ export const kitchenSections = mysqlTable("kitchenSections", {
   printerName: varchar("printerName", { length: 160 }),
   printerType: mysqlEnum("printerType", ["network", "usb", "browser", "none"]).default("none").notNull(),
   printerAddress: varchar("printerAddress", { length: 255 }),
+  printerPort: int("printerPort"),
   isEnabled: boolean("isEnabled").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

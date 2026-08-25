@@ -1,0 +1,1 @@
+ALTER TABLE `kitchenSections` ADD `printerPort` int;
