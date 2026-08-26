@@ -20,6 +20,7 @@ const routeLoaders = {
   CustomerOrders: () => import("./pages/CustomerOrders"),
   CustomerReservations: () => import("./pages/CustomerReservations"),
   CustomerRewards: () => import("./pages/CustomerRewards"),
+  CustomerStudio: () => import("./pages/CustomerStudio"),
   SupportManagement: () => import("./pages/SupportManagement"),
   VcardCardsAdmin: () => import("./pages/VcardCardsAdmin"),
   FavoritesPage: () => import("./pages/FavoritesPage"),
@@ -38,6 +39,7 @@ const CustomerContentOrders = lazy(routeLoaders.CustomerContentOrders);
 const CustomerOrders = lazy(routeLoaders.CustomerOrders);
 const CustomerReservations = lazy(routeLoaders.CustomerReservations);
 const CustomerRewards = lazy(routeLoaders.CustomerRewards);
+const CustomerStudio = lazy(routeLoaders.CustomerStudio);
 const SupportManagement = lazy(routeLoaders.SupportManagement);
 const VcardCardsAdmin = lazy(routeLoaders.VcardCardsAdmin);
 const FavoritesPage = lazy(routeLoaders.FavoritesPage);
@@ -106,6 +108,7 @@ function Router() {
       <Route path="/customer-orders" component={CustomerOrders} />
       <Route path="/customer-reservations" component={CustomerReservations} />
       <Route path="/customer-rewards" component={CustomerRewards} />
+      <Route path="/customer-studio" component={CustomerStudio} />
       <Route path="/favorites" component={FavoritesPage} />
       <Route path="/support" component={SupportManagement} />
       <Route path="/vcard-cards" component={VcardCardsAdmin} />
