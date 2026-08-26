@@ -62,6 +62,8 @@ export const customerProfiles = mysqlTable("customerProfiles", {
   facebookUrl: varchar("facebookUrl", { length: 500 }),
   linkedinUrl: varchar("linkedinUrl", { length: 500 }),
   servicesJson: text("servicesJson"),
+  productsJson: text("productsJson"),
+  paymentMethodsJson: text("paymentMethodsJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
