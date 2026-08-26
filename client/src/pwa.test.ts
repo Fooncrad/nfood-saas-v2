@@ -20,6 +20,8 @@ describe("NFOOD PWA contract", () => {
     expect(worker).toContain('addEventListener("fetch"');
     expect(worker).toContain("nfood-data-sync");
     expect(worker).toContain("caches.match(request)");
+    expect(worker).toContain('if (request.mode === "navigate")');
+    expect(worker).toContain("Never return HTML for JS/CSS/media requests");
   });
 
   it("ships role-specific manifests with maskable icon support", () => {

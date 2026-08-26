@@ -1,4 +1,4 @@
-const CACHE_NAME = "nfood-shell-v3";
+const CACHE_NAME = "nfood-shell-v4";
 const SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -45,5 +45,10 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
-  event.respondWith(fetch(request).catch(() => caches.match(request).then((cached) => cached || caches.match("/"))));
+  event.respondWith(fetch(request).catch(() => {
+    // Only document navigations may fall back to the cached app shell.
+    // Never return HTML for JS/CSS/media requests: it causes a misleading MIME error.
+    if (request.mode === "navigate") return caches.match("/").then((cached) => cached || Response.error());
+    return caches.match(request).then((cached) => cached || Response.error());
+  }));
 });
