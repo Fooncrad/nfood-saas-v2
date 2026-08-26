@@ -17,6 +17,7 @@ const routeLoaders = {
   IntegrationsSettings: () => import("./pages/IntegrationsSettings"),
   CustomerPortal: () => import("./pages/CustomerPortal"),
   CustomerContentOrders: () => import("./pages/CustomerContentOrders"),
+  CustomerContentLibrary: () => import("./pages/CustomerContentLibrary"),
   CustomerOrders: () => import("./pages/CustomerOrders"),
   CustomerReservations: () => import("./pages/CustomerReservations"),
   CustomerRewards: () => import("./pages/CustomerRewards"),
@@ -40,6 +41,7 @@ const AccountProfileSettings = lazy(routeLoaders.AccountProfileSettings);
 const IntegrationsSettings = lazy(routeLoaders.IntegrationsSettings);
 const CustomerPortal = lazy(routeLoaders.CustomerPortal);
 const CustomerContentOrders = lazy(routeLoaders.CustomerContentOrders);
+const CustomerContentLibrary = lazy(routeLoaders.CustomerContentLibrary);
 const CustomerOrders = lazy(routeLoaders.CustomerOrders);
 const CustomerReservations = lazy(routeLoaders.CustomerReservations);
 const CustomerRewards = lazy(routeLoaders.CustomerRewards);
@@ -117,6 +119,7 @@ function Router() {
       <Route path="/integrations" component={IntegrationsSettings} />
       <Route path="/customer-portal" component={CustomerPortal} />
       <Route path="/customer-content-orders" component={CustomerContentOrders} />
+      <Route path="/customer-content-library" component={CustomerContentLibrary} />
       <Route path="/customer-orders" component={CustomerOrders} />
       <Route path="/customer-reservations" component={CustomerReservations} />
       <Route path="/customer-rewards" component={CustomerRewards} />

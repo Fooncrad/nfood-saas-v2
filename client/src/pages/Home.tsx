@@ -147,7 +147,7 @@ export default function Home() {
     return requested && navItems.some(item => item.key === requested) ? requested : "overview";
   });
   const localizedNavItems = useMemo(() => navItems.map((item) => ({ ...item, label: item.key === "trend" ? "Trend Kitchen · سوق نفود" : t(navTranslationKeys[item.key]) })), [language, t]);
-  const visibleNavItems = useMemo(() => { const role = user?.testRole as string | undefined; const keys = getVisibleNavigation(role, user?.role === "admin" || role === "admin"); return localizedNavItems.filter((item) => keys.includes(item.key as (typeof keys)[number])); }, [user?.role, user?.testRole, localizedNavItems]);
+  const visibleNavItems = useMemo(() => { const role = (user?.testRole as string | undefined) ?? (user?.role === "admin" ? "admin" : user ? "customer" : undefined); const keys = getVisibleNavigation(role, user?.role === "admin" || role === "admin"); return localizedNavItems.filter((item) => keys.includes(item.key as (typeof keys)[number])); }, [user?.role, user?.testRole, localizedNavItems]);
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -307,7 +307,7 @@ export default function Home() {
     if (location === "/register" || location === "/restaurant/register") return <RegisterScreen onBack={() => setLocation("/login")} onOAuth={() => startLogin()} />;
     if (location === "/login") return <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} onRegister={() => setLocation("/restaurant/register")} onForgotPassword={() => { setForgotMessage(null); requestPasswordReset.mutate({ email: testEmail }); }} forgotPending={requestPasswordReset.isPending} forgotMessage={forgotMessage} loginError={testLogin.error?.message ?? null} />;
     if (!user) return showRegister ? <RegisterScreen onBack={() => setShowRegister(false)} onOAuth={() => startLogin()} /> : <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} onRegister={() => setShowRegister(true)} onForgotPassword={() => { setForgotMessage(null); requestPasswordReset.mutate({ email: testEmail }); }} forgotPending={requestPasswordReset.isPending} forgotMessage={forgotMessage} loginError={testLogin.error?.message ?? null} />;
-  if ((user.testRole as string | undefined) === "customer") return <CustomerPortal />;
+  if (((user.testRole as string | undefined) ?? (user.role === "admin" ? "admin" : "customer")) === "customer") return <CustomerPortal />;
   const title = localizedNavItems.find((item) => item.key === active)?.label ?? t("overview");
   const sidebarGroups = [
     { id: "restaurant-overview", label: t("overview"), keys: ["overview", "admin"] as NavKey[] },

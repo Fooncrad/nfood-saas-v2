@@ -7,12 +7,17 @@ describe("customer-only content marketplace", () => {
   const db = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
   const studio = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerStudio.tsx"), "utf8");
   const market = readFileSync(resolve(process.cwd(), "client/src/pages/ContentMarketplace.tsx"), "utf8");
+  const portal = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerPortal.tsx"), "utf8");
+  const library = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerContentLibrary.tsx"), "utf8");
+  const profile = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerProfileSettings.tsx"), "utf8");
 
-  it("rejects restaurant content selling and restaurant buyers", () => {
+  it("keeps restaurants out of selling while allowing merchant buying", () => {
     expect(router).toContain("المطاعم تعرض نشاطها فقط ولا تملك صلاحية بيع المحتوى");
-    expect(router).toContain("بيع وشراء المحتوى محصور بحسابات العملاء فقط");
+    expect(router).toContain("الشراء متاح لهذا الحساب التجاري");
+    expect(router).toContain("allowCustomerContentPurchase");
     expect(router).not.toContain('buyerType: z.enum(["customer", "restaurant"])');
     expect(db).not.toContain('buyerType: "restaurant"');
+    expect(db).toContain("contentPurchaseEntitlements");
   });
 
   it("supports public/friends visibility and controlled food tags", () => {
@@ -22,9 +27,15 @@ describe("customer-only content marketplace", () => {
     expect(studio).toContain("أصناف الطعام والهاشتاقات");
   });
 
-  it("keeps public search tag-aware and customer purchase-only", () => {
+  it("keeps public search tag-aware with customer selling and merchant buying", () => {
     expect(market).toContain("foodTagsJson");
-    expect(market).toContain("بيع حصري للعملاء");
+    expect(market).toContain("بيع العملاء · شراء التجار");
+    expect(market).toContain("شراء للتاجر");
     expect(market).toContain('purchase.mutate({ listingId })');
+    expect(portal).toContain('href="/content-market"');
+    expect(portal).toContain('href="/customer-content-library"');
+    expect(library).toContain("تصل الملفات هنا تلقائيًا بعد إتمام الدفع التجاري");
+    expect(profile).toContain("maxEdge = field === \"avatarUrl\" ? 800 : 1800");
+    expect(profile).toContain('"image/webp"');
   });
 });

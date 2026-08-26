@@ -1227,7 +1227,7 @@ export const contentPurchaseOrders = mysqlTable("contentPurchaseOrders", {
   restaurantId: int("restaurantId").references(() => restaurants.id),
   customerUserId: int("customerUserId").references(() => users.id),
   buyerUserId: int("buyerUserId").references(() => users.id),
-  buyerType: mysqlEnum("buyerType", ["customer"]).default("customer").notNull(),
+  buyerType: mysqlEnum("buyerType", ["customer", "merchant"]).default("customer").notNull(),
   paymentSource: mysqlEnum("paymentSource", ["wallet", "manual"]).default("manual").notNull(),
   receiptMediaFileId: int("receiptMediaFileId").references(() => mediaFiles.id),
   itemsJson: text("itemsJson").notNull(),
@@ -1247,6 +1247,19 @@ export const contentPurchaseOrders = mysqlTable("contentPurchaseOrders", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+export const contentPurchaseEntitlements = mysqlTable("contentPurchaseEntitlements", {
+  id: int("id").autoincrement().primaryKey(),
+  purchaseOrderId: int("purchaseOrderId").notNull().references(() => contentPurchaseOrders.id),
+  listingId: int("listingId").notNull().references(() => contentListings.id),
+  sourceMediaFileId: int("sourceMediaFileId").notNull().references(() => mediaFiles.id),
+  buyerUserId: int("buyerUserId").notNull().references(() => users.id),
+  deliveredAt: timestamp("deliveredAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  buyerDeliveredIdx: index("content_entitlements_buyer_delivered_idx").on(table.buyerUserId, table.deliveredAt),
+  purchaseListingUnique: uniqueIndex("content_entitlements_purchase_listing_uidx").on(table.purchaseOrderId, table.listingId),
+}));
+
 export const restaurantDisplayScreens = mysqlTable("restaurantDisplayScreens", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),

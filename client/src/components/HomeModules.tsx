@@ -124,6 +124,7 @@ import {
 import CustomerProfileSettings from "@/pages/CustomerProfileSettings";
 import VcardAccountBinding from "@/pages/VcardAccountBinding";
 import ContentMarketplace from "@/pages/ContentMarketplace";
+import CustomerContentLibrary from "@/pages/CustomerContentLibrary";
 import {
   navItems,
   navTranslationKeys,
@@ -557,10 +558,13 @@ export function ModuleView({
   if (active === "trend") return <ContentMarketplace />;
   if (active === "files")
     return (
-      <MediaLibraryPanel
-        isCentralAdmin={role === "admin"}
-        restaurantId={restaurantId}
-      />
+      <div className="space-y-4">
+        <MediaLibraryPanel
+          isCentralAdmin={role === "admin"}
+          restaurantId={restaurantId}
+        />
+        {role !== "admin" && <CustomerContentLibrary />}
+      </div>
     );
   if (active === "branches")
     return (

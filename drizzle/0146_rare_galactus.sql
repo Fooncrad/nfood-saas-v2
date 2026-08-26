@@ -1,0 +1,1 @@
+ALTER TABLE `contentPurchaseOrders` MODIFY COLUMN `buyerType` enum('customer','merchant') NOT NULL DEFAULT 'customer';

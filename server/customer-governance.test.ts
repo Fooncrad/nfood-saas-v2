@@ -20,9 +20,12 @@ describe("customer governance contracts", () => {
     expect(schema).toContain('"replace_key"');
   });
 
-  it("clearly separates the content market from restaurant menus", () => {
+  it("clearly separates the content market from restaurant menus and assigns buying to merchants", () => {
     expect(market).toContain("ليس قائمة Menu");
-    expect(market).toContain("المطاعم هي الجهات المشترية");
-    expect(market).toContain("بيع حصري للعملاء");
+    expect(market).toContain("المطاعم والحسابات المصنفة كتاجر هي الجهات المشترية افتراضيًا");
+    expect(market).toContain("بيع العملاء · شراء التجار");
+    expect(router).toContain("contentPurchaseEligibility");
+    expect(router).toContain("التصفح متاح للعميل، أما شراء المحتوى فمتاح للمطاعم والحسابات التجارية فقط");
+    expect(schema).toContain('mysqlTable("contentPurchaseEntitlements"');
   });
 });

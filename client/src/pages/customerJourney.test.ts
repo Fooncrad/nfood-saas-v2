@@ -10,7 +10,8 @@ const portal = fs.readFileSync(new URL("../pages/CustomerPortal.tsx", import.met
 describe("customer journey regression", () => {
   it("routes customer sessions to an independent portal", () => {
     expect(home).toContain('import CustomerPortal from "@/pages/CustomerPortal"');
-    expect(home).toContain('user.testRole as string | undefined) === "customer"');
+    expect(home).toContain('(user?.testRole as string | undefined) ?? (user?.role === "admin" ? "admin" : user ? "customer" : undefined)');
+    expect(home).toContain('(user.testRole as string | undefined) ?? (user.role === "admin" ? "admin" : "customer")');
     expect(home).not.toContain('user.testRole === "customer" ? <OverviewAnalyticsPanel');
   });
 
