@@ -33,6 +33,7 @@ const routeLoaders = {
   VcardCardsAdmin: () => import("./pages/VcardCardsAdmin"),
   FavoritesPage: () => import("./pages/FavoritesPage"),
   SubscriptionReceiptsAdminPage: () => import("./pages/SubscriptionReceiptsAdminPage"),
+  TranslationEditorPage: () => import("./pages/TranslationEditorPage"),
 };
 const Home = lazy(routeLoaders.Home);
 const RestaurantPublic = lazy(routeLoaders.RestaurantPublic);
@@ -59,6 +60,7 @@ const SupportManagement = lazy(routeLoaders.SupportManagement);
 const VcardCardsAdmin = lazy(routeLoaders.VcardCardsAdmin);
 const FavoritesPage = lazy(routeLoaders.FavoritesPage);
 const SubscriptionReceiptsAdminPage = lazy(routeLoaders.SubscriptionReceiptsAdminPage);
+const TranslationEditorPage = lazy(routeLoaders.TranslationEditorPage);
 const CustomerProfileSettingsRoute = () => <CustomerProfileSettings />;
 import { PricingPage, FeaturesPage, HowItWorksPage, LandingPage, LegalPage, ContactPage, SubscriptionStatusPage } from "./pages/PublicInfoPages";
 import { useAuth } from "./_core/hooks/useAuth";
@@ -136,6 +138,7 @@ function Router() {
       <Route path="/favorites" component={FavoritesPage} />
       <Route path="/support" component={SupportManagement} />
       <Route path="/vcard-cards" component={VcardCardsAdmin} />
+      <Route path="/translation-editor" component={TranslationEditorPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

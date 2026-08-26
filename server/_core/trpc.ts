@@ -46,6 +46,16 @@ export const testRoleProcedure = (...roles: string[]) => protectedProcedure.use(
   }),
 );
 
+export const translationEditorProcedure = protectedProcedure.use(
+  t.middleware(async opts => {
+    const user = opts.ctx.user;
+    if (!user || (user.role !== "admin" && user.testRole !== "admin" && String(user.testRole) !== "translation_editor")) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "تحتاج إلى صلاحية محرر ترجمة" });
+    }
+    return opts.next({ ctx: { ...opts.ctx, user } });
+  }),
+);
+
 export const platformAdminProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;

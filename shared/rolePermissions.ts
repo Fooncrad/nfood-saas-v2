@@ -14,6 +14,7 @@ export const TEAM_PERMISSION_CATALOG = [
   { key: "customers.password_reset", label: "تعيين كلمة مرور العميل", group: "العملاء" },
   { key: "settings.manage", label: "إدارة إعدادات المطعم", group: "الإدارة" },
   { key: "printers.manage", label: "إدارة الطابعات وقوالب الطباعة", group: "التشغيل" },
+  { key: "translations.manage", label: "محرر ترجمة", group: "المنصة" },
 ] as const;
 
 export type TeamPermission = (typeof TEAM_PERMISSION_CATALOG)[number]["key"];
@@ -24,6 +25,7 @@ export const DEFAULT_TEAM_ROLE_PERMISSIONS: Record<string, TeamPermission[]> = {
   cashier: ["orders.read", "orders.update", "orders.cancel", "menu.read"],
   driver: ["orders.read", "orders.update"],
   customer: ["menu.read", "orders.read"],
+  translation_editor: ["translations.manage"],
 };
 
 export function roleHasDefaultPermission(role: string | undefined, permission: TeamPermission) {
