@@ -25,7 +25,7 @@ describe("customer journey regression", () => {
     expect(menu).toContain("max-h-[76dvh]");
     expect(menu).toContain("loginCustomer.mutate");
     expect(portal).toContain("CustomerRewardsWalletPanel");
-    expect(portal).toContain("تبديل الحساب");
+    expect(portal).toContain("تسجيل الخروج");
   });
 
   it("documents the return-to-cart and account-switch journey", () => {

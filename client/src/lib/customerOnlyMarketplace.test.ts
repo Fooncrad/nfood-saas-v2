@@ -10,6 +10,7 @@ describe("customer-only content marketplace", () => {
   const portal = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerPortal.tsx"), "utf8");
   const library = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerContentLibrary.tsx"), "utf8");
   const profile = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerProfileSettings.tsx"), "utf8");
+  const login = readFileSync(resolve(process.cwd(), "client/src/components/TestLoginScreen.tsx"), "utf8");
 
   it("keeps restaurants out of selling while allowing merchant buying", () => {
     expect(router).toContain("المطاعم تعرض نشاطها فقط ولا تملك صلاحية بيع المحتوى");
@@ -34,6 +35,16 @@ describe("customer-only content marketplace", () => {
     expect(market).toContain('purchase.mutate({ listingId })');
     expect(portal).toContain('href="/content-market"');
     expect(portal).toContain('href="/customer-content-library"');
+    expect(portal).toContain("سوق المحتوى والوصفات");
+    expect(portal).toContain("دخول Trend Kitchen");
+    expect(portal).not.toContain("إنشاء حساب عميل مستقل");
+    expect(market).toContain("هذه الميزة للبيع غير متوفرة لحسابك");
+    expect(market).toContain('window.location.href = "/support"');
+    expect(studio).toContain("NFOOD-STUDIO-001");
+    expect(studio).toContain("تعذر تحميل بعض بيانات الاستديو");
+    expect(login).toContain('data-testid="login-email"');
+    expect(login).toContain('data-testid="login-password"');
+    expect(login).not.toContain('data-testid="login-name"');
     expect(library).toContain("تصل الملفات هنا تلقائيًا بعد إتمام الدفع التجاري");
     expect(profile).toContain("maxEdge = field === \"avatarUrl\" ? 800 : 1800");
     expect(profile).toContain('"image/webp"');
