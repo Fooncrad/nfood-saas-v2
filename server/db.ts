@@ -2,7 +2,7 @@ import { and, count, desc, eq, gte, inArray, isNull, lte, like, ne, or, sql } fr
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, contentModerationReviews, contentFoodTags, contentListingInvites, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, contentModerationReviews, contentFoodTags, contentListingInvites, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests, trustedDevices, customerCardRequests } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { driverSecurityDeposits, driverSecurityDepositTransactions, financialLedgerEntries } from "../drizzle/schema";
 import { normalizeMenuTemplateSchedule, resolveActiveMenuTemplate } from "../shared/menuTemplateSchedule";
@@ -842,4 +842,50 @@ export async function listAdminCustomerAccounts() {
   });
   const customers = Array.from(customerMap.values());
   return { customers, summary: { total: customers.length, active: customers.filter((customer) => customer.isActive).length, inactive: customers.filter((customer) => !customer.isActive).length, listed: customers.reduce((sum, customer) => sum + customer.listedCount, 0), sold: customers.reduce((sum, customer) => sum + customer.soldCount, 0), purchased: customers.reduce((sum, customer) => sum + customer.purchasedCount, 0), walletBalance: customers.reduce((sum, customer) => sum + customer.walletBalance, 0), grossSales: customers.reduce((sum, customer) => sum + customer.grossSales, 0) } };
+}
+
+
+export async function listTrustedDevices(userId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(trustedDevices).where(userId ? eq(trustedDevices.userId, userId) : undefined).orderBy(desc(trustedDevices.lastSeenAt));
+}
+
+export async function registerTrustedDevice(input: { userId: number; fingerprintHash: string; deviceLabel: string; status?: "pending" | "active" | "revoked" | "blocked"; approvedByUserId?: number | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const existing = (await db.select({ id: trustedDevices.id, status: trustedDevices.status }).from(trustedDevices).where(and(eq(trustedDevices.userId, input.userId), eq(trustedDevices.fingerprintHash, input.fingerprintHash))).limit(1))[0];
+  const now = new Date();
+  if (existing) {
+    await db.update(trustedDevices).set({ deviceLabel: input.deviceLabel, lastSeenAt: now, status: input.status ?? existing.status, approvedByUserId: input.approvedByUserId ?? undefined, approvedAt: input.status === "active" ? now : undefined, updatedAt: now }).where(eq(trustedDevices.id, existing.id));
+    return existing.id;
+  }
+  const result = await db.insert(trustedDevices).values({ userId: input.userId, fingerprintHash: input.fingerprintHash, deviceLabel: input.deviceLabel, status: input.status ?? "pending", approvedByUserId: input.approvedByUserId ?? null, approvedAt: input.status === "active" ? now : null });
+  return Number(result[0].insertId);
+}
+
+export async function updateTrustedDevice(id: number, input: { status?: "pending" | "active" | "revoked" | "blocked"; approvedByUserId?: number | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const now = new Date();
+  await db.update(trustedDevices).set({ status: input.status, approvedByUserId: input.approvedByUserId, approvedAt: input.status === "active" ? now : undefined, revokedAt: input.status === "revoked" ? now : undefined, updatedAt: now }).where(eq(trustedDevices.id, id));
+}
+
+export async function createCustomerCardRequest(input: { requesterUserId: number; customerProfileId?: number | null; bindingId?: number | null; requestType: "print" | "replace_key" | "bind_key" | "update_key"; reason?: string | null; price?: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const result = await db.insert(customerCardRequests).values({ requesterUserId: input.requesterUserId, customerProfileId: input.customerProfileId ?? null, bindingId: input.bindingId ?? null, requestType: input.requestType, reason: input.reason ?? null, price: input.price ?? null });
+  return Number(result[0].insertId);
+}
+
+export async function listCustomerCardRequests(requesterUserId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(customerCardRequests).where(requesterUserId ? eq(customerCardRequests.requesterUserId, requesterUserId) : undefined).orderBy(desc(customerCardRequests.createdAt));
+}
+
+export async function updateCustomerCardRequest(id: number, input: { status?: "pending" | "approved" | "rejected" | "fulfilled" | "cancelled"; adminNote?: string | null; price?: string | null; resolvedByUserId?: number | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.update(customerCardRequests).set({ status: input.status, adminNote: input.adminNote, price: input.price, resolvedByUserId: input.resolvedByUserId, resolvedAt: input.status && input.status !== "pending" ? new Date() : undefined, updatedAt: new Date() }).where(eq(customerCardRequests.id, id));
 }

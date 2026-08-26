@@ -1,0 +1,28 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+describe("customer governance contracts", () => {
+  const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
+  const schema = readFileSync(resolve(process.cwd(), "drizzle/schema.ts"), "utf8");
+  const market = readFileSync(resolve(process.cwd(), "client/src/pages/ContentMarketplace.tsx"), "utf8");
+
+  it("keeps V Card purchases customer-only and exposes review procedures", () => {
+    expect(router).toContain("شراء بطاقات V Card متاح للعملاء فقط");
+    expect(router).toContain("targetRole !== \"customer\"");
+    expect(router).toContain("reviewCardRequest");
+  });
+
+  it("has one-device governance tables and customer card request lifecycle", () => {
+    expect(schema).toContain('mysqlTable("trustedDevices"');
+    expect(schema).toContain('mysqlTable("customerCardRequests"');
+    expect(schema).toContain('"pending", "active", "revoked", "blocked"');
+    expect(schema).toContain('"replace_key"');
+  });
+
+  it("clearly separates the content market from restaurant menus", () => {
+    expect(market).toContain("ليس قائمة Menu");
+    expect(market).toContain("المطاعم هي الجهات المشترية");
+    expect(market).toContain("بيع حصري للعملاء");
+  });
+});

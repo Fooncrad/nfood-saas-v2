@@ -1374,3 +1374,36 @@ export const driverSecurityDepositTransactions = mysqlTable("driverSecurityDepos
 }, (table) => ({
   depositDateIdx: index("driver_deposit_transactions_date_idx").on(table.depositAccountId, table.createdAt),
 }));
+
+
+export const trustedDevices = mysqlTable("trustedDevices", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  fingerprintHash: varchar("fingerprintHash", { length: 128 }).notNull(),
+  deviceLabel: varchar("deviceLabel", { length: 160 }).notNull(),
+  status: mysqlEnum("status", ["pending", "active", "revoked", "blocked"]).default("pending").notNull(),
+  firstSeenAt: timestamp("firstSeenAt").defaultNow().notNull(),
+  lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
+  approvedByUserId: int("approvedByUserId").references(() => users.id),
+  approvedAt: timestamp("approvedAt"),
+  revokedAt: timestamp("revokedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const customerCardRequests = mysqlTable("customerCardRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  requesterUserId: int("requesterUserId").notNull().references(() => users.id),
+  customerProfileId: int("customerProfileId").references(() => customerProfiles.id),
+  bindingId: int("bindingId").references(() => vcardCardBindings.id),
+  requestType: mysqlEnum("requestType", ["print", "replace_key", "bind_key", "update_key"]).default("print").notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "fulfilled", "cancelled"]).default("pending").notNull(),
+  reason: text("reason"),
+  adminNote: text("adminNote"),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  currency: varchar("currency", { length: 8 }).default("SAR").notNull(),
+  resolvedByUserId: int("resolvedByUserId").references(() => users.id),
+  resolvedAt: timestamp("resolvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
