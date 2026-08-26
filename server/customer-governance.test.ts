@@ -6,6 +6,7 @@ describe("customer governance contracts", () => {
   const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
   const schema = readFileSync(resolve(process.cwd(), "drizzle/schema.ts"), "utf8");
   const market = readFileSync(resolve(process.cwd(), "client/src/pages/ContentMarketplace.tsx"), "utf8");
+  const profileCenter = readFileSync(resolve(process.cwd(), "client/src/components/ProfileGovernanceCenter.tsx"), "utf8");
 
   it("keeps V Card purchases customer-only and exposes review procedures", () => {
     expect(router).toContain("شراء بطاقات V Card متاح للعملاء فقط");
@@ -34,6 +35,16 @@ describe("customer governance contracts", () => {
     expect(router).toContain("profile.governance.updated");
     expect(router).toContain("profile.key.generated");
     expect(router).toContain("profile.key.bound");
+  });
+
+  it("renders visible profile metrics, confirmation flow, and advanced filtering", () => {
+    expect(profileCenter).toContain("بطاقات مربوطة");
+    expect(profileCenter).toContain("الباقات النشطة");
+    expect(profileCenter).toContain("aria-label=\"البحث في مركز Profile\"");
+    expect(profileCenter).toContain("aria-label=\"تصفية نوع الحساب\"");
+    expect(profileCenter).toContain("confirmAction");
+    expect(profileCenter).toContain("تم ربط البطاقة بالـProfile بنجاح");
+    expect(profileCenter).toContain("animate-in");
   });
 
   it("clearly separates the content market from restaurant menus and assigns buying to merchants", () => {
