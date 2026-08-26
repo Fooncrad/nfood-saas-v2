@@ -20,6 +20,22 @@ describe("customer governance contracts", () => {
     expect(schema).toContain('"replace_key"');
   });
 
+  it("exposes profile governance, open key generation, and explicit binding metadata", () => {
+    expect(router).toContain("profileGovernance");
+    expect(router).toContain("updateProfileGovernance");
+    expect(router).toContain("profileCustomerEnabled");
+    expect(router).toContain("profileRestaurantEnabled");
+    expect(router).toContain("profilePlansJson");
+    expect(router).toContain("generateProfileKey");
+    expect(router).toContain("bindProfileKey");
+    expect(router.indexOf("generateProfileKey")).toBeLessThan(router.indexOf("bindProfileKey"));
+    expect(router).toContain("codeLast4");
+    expect(router).toContain("customerProfileId");
+    expect(router).toContain("profile.governance.updated");
+    expect(router).toContain("profile.key.generated");
+    expect(router).toContain("profile.key.bound");
+  });
+
   it("clearly separates the content market from restaurant menus and assigns buying to merchants", () => {
     expect(market).toContain("ليس قائمة Menu");
     expect(market).toContain("المطاعم والحسابات المصنفة كتاجر هي الجهات المشترية افتراضيًا");
