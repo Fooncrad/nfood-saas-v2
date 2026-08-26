@@ -1196,8 +1196,11 @@ export const contentListings = mysqlTable("contentListings", {
 
 export const contentPurchaseOrders = mysqlTable("contentPurchaseOrders", {
   id: int("id").autoincrement().primaryKey(),
-  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
   customerUserId: int("customerUserId").references(() => users.id),
+  buyerUserId: int("buyerUserId").references(() => users.id),
+  buyerType: mysqlEnum("buyerType", ["restaurant", "customer"]).default("customer").notNull(),
+  paymentSource: mysqlEnum("paymentSource", ["wallet", "manual"]).default("manual").notNull(),
   receiptMediaFileId: int("receiptMediaFileId").references(() => mediaFiles.id),
   itemsJson: text("itemsJson").notNull(),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
