@@ -364,14 +364,16 @@ export function setDatabaseUiTranslations(entries: DatabaseTranslationEntry[]) {
 
 export function autoTranslateText(source: string, language: Language): string {
   if (language === "ar" || !source.trim()) return source;
+  const pendingLabel = language === "fr" ? "Traduction en attente" : "Translation pending";
   const databaseTranslation = isUiLanguage(language) ? databaseUiTranslations[language][source] : undefined;
-  if (databaseTranslation) return databaseTranslation;
+  if (databaseTranslation && !/[\u0600-\u06FF]/.test(databaseTranslation)) return databaseTranslation;
   const dictionary = getAutoTranslationDictionary(language);
-  if (!dictionary) return source;
-  return Object.entries(dictionary)
+  if (!dictionary) return /[\u0600-\u06FF]/.test(source) ? pendingLabel : source;
+  const translated = Object.entries(dictionary)
     .filter(([from, to]) => from.trim() && to.trim() && from !== to)
     .sort(([left], [right]) => right.length - left.length)
     .reduce((text, [from, to]) => text.split(from).join(to), source);
+  return /[\u0600-\u06FF]/.test(translated) ? pendingLabel : translated;
 }
 
 export function findUntranslatedArabic(source: string, language: Language): string[] {

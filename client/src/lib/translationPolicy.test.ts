@@ -11,7 +11,7 @@ describe("central translation policy", () => {
   it("keeps the dashboard language picker limited to Arabic, English, and French", () => {
     expect(UI_LANGUAGES).toEqual(["ar", "en", "fr"]);
     expect(switcherSource).toContain("UI_LANGUAGES");
-    expect(preferencesSource).toContain('["fr", "Français"]');
+    expect(preferencesSource).toContain('fr: "Français"');
     expect(preferencesSource).not.toContain('["ur", "اردو"]');
     expect(preferencesSource).not.toContain('["es", "Español"]');
   });
@@ -25,6 +25,12 @@ describe("central translation policy", () => {
     expect(autoTranslateText("إدارة المنصة", "fr")).not.toMatch(/[\u0600-\u06FF]/);
     expect(autoTranslateText("مركز العمليات", "fr")).not.toMatch(/[\u0600-\u06FF]/);
     expect(autoTranslateText("إجمالي المبيعات من المؤشر الحالي", "fr")).not.toMatch(/[\u0600-\u06FF]/);
+  });
+
+  it("never returns an untranslated Arabic fragment for English or French", () => {
+    expect(autoTranslateText("تفضيلات الحساب", "en")).not.toMatch(/[\u0600-\u06FF]/);
+    expect(autoTranslateText("تفضيلات الحساب", "fr")).not.toMatch(/[\u0600-\u06FF]/);
+    expect(autoTranslateText("Profile جاهز", "en")).not.toMatch(/[\u0600-\u06FF]/);
   });
 
   it("shows only the compact language and currency controls in platform settings", () => {
