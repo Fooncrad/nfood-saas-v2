@@ -11,6 +11,7 @@ import { trpc } from "@/lib/trpc";
 import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";
 import { SuperAdminCustomerCatalog } from "@/components/SuperAdminCustomerCatalog";
 import { ProfileGovernanceCenter } from "@/components/ProfileGovernanceCenter";
+import { ContentPurchaseFinancePanel } from "@/components/ContentPurchaseFinancePanel";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 type SparklineProps = {
@@ -272,6 +273,7 @@ export function PlatformOverview({ onNavigate }: { onNavigate: (key: "admin") =>
         <SuperAdminCustomerCatalog />
       </div>
       <ProfileGovernanceCenter />
+      <ContentPurchaseFinancePanel />
       <FeatureRequestInbox />
     </div>
   );

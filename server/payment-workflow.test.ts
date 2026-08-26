@@ -36,6 +36,15 @@ describe("unified payment and printing workflow", () => {
     expect(routers).toContain("fundCommercePurchaseAccount");
   });
 
+  it("exposes a separate content purchase finance report", () => {
+    const financePanel = fs.readFileSync("client/src/components/ContentPurchaseFinancePanel.tsx", "utf8");
+    expect(routers).toContain("contentPurchaseFinanceSummary");
+    expect(routers).toContain('operatingFundsExcluded: true');
+    expect(financePanel).toContain("تقرير مستقل عن تشغيل المطاعم");
+    expect(financePanel).toContain("توزيع حالات الدفع");
+    expect(financePanel).toContain("قاعدة العزل");
+  });
+
   it("provides auditable manual invoice printing for content and restaurant orders", () => {
     expect(routers).toContain("markContentPurchaseInvoicePrinted");
     expect(routers).toContain("markOrderReceiptPrinted");
