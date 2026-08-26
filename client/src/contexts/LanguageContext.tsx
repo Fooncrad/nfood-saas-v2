@@ -60,12 +60,24 @@ export const legacyUiTranslations: Partial<Record<Exclude<Language, "ar">, Recor
 const legacyNodeSources = new WeakMap<Text, string>();
 let legacyTranslationInProgress = false;
 let legacyTranslationScheduled = false;
-function scheduleLegacyUiTranslations(language: Language) {
-  if (legacyTranslationScheduled || typeof window === "undefined") return;
+let legacyTranslationLanguage: Language = "en";
+const legacyTranslationRoots: Node[] = [];
+function scheduleLegacyUiTranslations(language: Language, root: Node = document) {
+  if (typeof window === "undefined") return;
+  legacyTranslationLanguage = language;
+  if (root === document) {
+    legacyTranslationRoots.length = 0;
+    legacyTranslationRoots.push(document);
+  } else if (!legacyTranslationRoots.includes(document) && !legacyTranslationRoots.includes(root)) {
+    legacyTranslationRoots.push(root);
+  }
+  if (legacyTranslationScheduled) return;
   legacyTranslationScheduled = true;
   window.requestAnimationFrame(() => {
     legacyTranslationScheduled = false;
-    applyLegacyUiTranslations(language);
+    const roots = legacyTranslationRoots.splice(0);
+    if (roots.includes(document)) applyLegacyUiTranslations(legacyTranslationLanguage, document);
+    else roots.forEach((node) => applyLegacyUiTranslations(legacyTranslationLanguage, node));
   });
 }
 
@@ -350,6 +362,18 @@ function getAutoTranslationDictionary(language: Language): Record<string, string
   return { ...genericUiTranslations[language as "en" | "fr"], ...sharedFallback, ...autoFallbackTranslations[language], ...recentFeatureTranslations[language], ...legacyUiTranslations[language], ...modernUiTranslations[language], ...coreDictionary };
 }
 
+const autoTranslationEntriesCache: Partial<Record<Exclude<Language, "ar">, Array<[string, string]>>> = {};
+function getAutoTranslationEntries(language: Language): Array<[string, string]> | null {
+  if (language === "ar") return null;
+  if (!autoTranslationEntriesCache[language]) {
+    const dictionary = getAutoTranslationDictionary(language) ?? {};
+    autoTranslationEntriesCache[language] = Object.entries(dictionary)
+      .filter(([from, to]) => from.trim() && to.trim() && from !== to)
+      .sort(([left], [right]) => right.length - left.length);
+  }
+  return autoTranslationEntriesCache[language] ?? [];
+}
+
 type DatabaseTranslationEntry = { translationKey: string; sourceText: string; targetLanguage: string; translatedText: string | null };
 const databaseUiTranslations: Record<UiLanguage, Record<string, string>> = { ar: {}, en: {}, fr: {} };
 export function setDatabaseUiTranslations(entries: DatabaseTranslationEntry[]) {
@@ -367,12 +391,9 @@ export function autoTranslateText(source: string, language: Language): string {
   const pendingLabel = language === "fr" ? "Traduction en attente" : "Translation pending";
   const databaseTranslation = isUiLanguage(language) ? databaseUiTranslations[language][source] : undefined;
   if (databaseTranslation && !/[\u0600-\u06FF]/.test(databaseTranslation)) return databaseTranslation;
-  const dictionary = getAutoTranslationDictionary(language);
-  if (!dictionary) return /[\u0600-\u06FF]/.test(source) ? pendingLabel : source;
-  const translated = Object.entries(dictionary)
-    .filter(([from, to]) => from.trim() && to.trim() && from !== to)
-    .sort(([left], [right]) => right.length - left.length)
-    .reduce((text, [from, to]) => text.split(from).join(to), source);
+  const entries = getAutoTranslationEntries(language);
+  if (!entries) return /[\u0600-\u06FF]/.test(source) ? pendingLabel : source;
+  const translated = entries.reduce((text, [from, to]) => text.split(from).join(to), source);
   return /[\u0600-\u06FF]/.test(translated) ? pendingLabel : translated;
 }
 
@@ -381,12 +402,12 @@ export function findUntranslatedArabic(source: string, language: Language): stri
   return autoTranslateText(source, language).match(/[\u0600-\u06FF]+/g) ?? [];
 }
 
-export function refreshLegacyUiTranslations(language: Language) { applyLegacyUiTranslations(language); }
+export function refreshLegacyUiTranslations(language: Language) { applyLegacyUiTranslations(language, document); }
 
-function applyLegacyUiTranslations(language: Language) {
+function applyLegacyUiTranslations(language: Language, root: Node = document) {
   if (typeof document === "undefined" || legacyTranslationInProgress) return;
   legacyTranslationInProgress = true;
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node: Node | null;
   while ((node = walker.nextNode())) {
     const textNode = node as Text;
@@ -400,7 +421,14 @@ function applyLegacyUiTranslations(language: Language) {
     if (translated !== current) textNode.nodeValue = translated;
   }
   try {
-    for (const element of Array.from(document.querySelectorAll<HTMLElement>("input, textarea, [aria-label], [title]"))) {
+    const elements = root === document
+      ? Array.from(document.querySelectorAll<HTMLElement>("input, textarea, [aria-label], [title]"))
+      : root instanceof HTMLElement
+        ? [root, ...Array.from(root.querySelectorAll<HTMLElement>("input, textarea, [aria-label], [title]"))]
+        : root instanceof DocumentFragment
+          ? Array.from(root.querySelectorAll<HTMLElement>("input, textarea, [aria-label], [title]"))
+          : [];
+    for (const element of elements) {
       for (const attribute of ["placeholder", "aria-label", "title"] as const) {
         const source = element.getAttribute(attribute);
         if (!source) continue;
@@ -431,10 +459,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.body.dataset.language = language;
     if (!isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(DASHBOARD_LANGUAGE_STORAGE_KEY, language);
     applyLegacyUiTranslations(language);
-    const observer = new MutationObserver(() => scheduleLegacyUiTranslations(language));
+    const observer = new MutationObserver((mutations) => mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => scheduleLegacyUiTranslations(language, node))));
     observer.observe(document.body, { subtree: true, childList: true });
-    const refresh = window.setTimeout(() => scheduleLegacyUiTranslations(language), 120);
-    return () => { window.clearTimeout(refresh); observer.disconnect(); };
+    return () => { observer.disconnect(); };
   }, [language, meta.dir]);
   const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, setLanguage: (next, persist = true) => { if (next !== language) animateLanguageChange(); setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(languageStorageKey(), next); if (isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: (key) => { const databaseValue = isUiLanguage(language) ? databaseUiTranslations[language][key] : undefined; return databaseValue ?? translations[language][key as TranslationKey] ?? key; }, formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language) }), [language, meta.dir, meta.locale]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

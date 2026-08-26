@@ -1290,3 +1290,62 @@ html[lang="ur"] body {
     color: #dbe7f5 !important;
   }
 }
+
+/* NFOOD clarity palette: warm orange + deep teal, with a calm light workspace. */
+:root {
+  --primary: oklch(0.39 0.09 190);
+  --primary-foreground: oklch(0.98 0.01 85);
+  --sidebar-primary: oklch(0.74 0.17 55);
+  --sidebar-primary-foreground: oklch(0.22 0.05 55);
+  --accent: oklch(0.74 0.17 55);
+  --accent-foreground: oklch(0.22 0.05 55);
+  --background: oklch(0.975 0.018 175);
+  --foreground: oklch(0.29 0.055 190);
+  --card-foreground: oklch(0.29 0.055 190);
+  --popover-foreground: oklch(0.29 0.055 190);
+  --sidebar: oklch(0.24 0.055 190);
+  --sidebar-foreground: oklch(0.95 0.015 85);
+  --sidebar-accent: oklch(0.31 0.065 190);
+  --sidebar-accent-foreground: oklch(0.98 0.01 85);
+  --sidebar-border: oklch(0.42 0.06 190);
+  --sidebar-ring: oklch(0.74 0.17 55);
+}
+.dark {
+  --primary: oklch(0.74 0.17 55);
+  --primary-foreground: oklch(0.23 0.055 190);
+  --sidebar-primary: oklch(0.74 0.17 55);
+  --sidebar-primary-foreground: oklch(0.23 0.055 190);
+  --accent: oklch(0.74 0.17 55);
+  --accent-foreground: oklch(0.23 0.055 190);
+  --background: oklch(0.16 0.035 190);
+  --foreground: oklch(0.95 0.015 85);
+  --card-foreground: oklch(0.95 0.015 85);
+  --popover-foreground: oklch(0.95 0.015 85);
+  --sidebar: oklch(0.13 0.03 190);
+  --sidebar-accent: oklch(0.23 0.05 190);
+  --sidebar-border: oklch(0.33 0.055 190);
+}
+
+@layer components {
+  .nfood-dashboard-shell {
+    background-color: #eef6f4 !important;
+    background-image: radial-gradient(circle at 92% -12%, rgba(242, 142, 52, 0.16), transparent 23rem), linear-gradient(135deg, #eef6f4 0%, #e8f1f3 100%) !important;
+    color: #1d4b52 !important;
+  }
+  .nfood-dashboard-shell > main { background: transparent !important; }
+  .nfood-dashboard-shell [data-testid="dashboard-center-header"] {
+    background-color: rgba(238, 246, 244, 0.94) !important;
+    border-color: rgba(29, 75, 82, 0.14) !important;
+  }
+  .nfood-dashboard-shell .nfood-unified-sidebar {
+    background-color: #16383e !important;
+    border-color: rgba(244, 166, 76, 0.24) !important;
+  }
+  .nfood-dashboard-shell .nfood-sidebar-group { border-color: rgba(255, 255, 255, 0.11); }
+  .nfood-dashboard-shell .nfood-sidebar-group:hover { border-color: rgba(244, 166, 76, 0.42); }
+  .nfood-dashboard-shell .nfood-mobile-drawer { background: #16383e !important; }
+  .nfood-dashboard-shell .nfood-mobile-drawer__header { background: #16383e !important; }
+  @media (max-width: 639px) {
+    .nfood-dashboard-shell [data-testid="dashboard-center-header"] { padding-inline: 0.75rem; }
+  }
+}
