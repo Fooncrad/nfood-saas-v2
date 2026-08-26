@@ -28,6 +28,13 @@ describe("customer journey regression", () => {
     expect(portal).toContain("تسجيل الخروج");
   });
 
+  it("exposes language switching and elevates content inside the customer portal", () => {
+    expect(portal).toContain("useLanguage");
+    expect(portal).toContain('aria-label="اختيار اللغة"');
+    expect(portal).toContain("صور ووصفات بين مطاعمك");
+    expect(portal).toContain("hover:-translate-y-1");
+  });
+
   it("documents the return-to-cart and account-switch journey", () => {
     expect(roadmap).toContain("الخروج من حساب الإدارة والمتابعة كعميل");
     expect(roadmap).toContain("يعود تلقائيًا إلى السلة");
