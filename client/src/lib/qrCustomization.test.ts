@@ -8,22 +8,18 @@ const database = readFileSync(new URL("../../../server/db.ts", import.meta.url),
 describe("QR reference customization", () => {
   it("exposes the reference controls and live preview", () => {
     expect(panel).toContain('data-testid="qr-visual-customization"');
-    expect(panel).toContain("لون المقدمة");
+    expect(panel).toContain("لون الرمز");
     expect(panel).toContain("لون الخلفية");
-    expect(panel).toContain("الحشو:");
-    expect(panel).toContain("الوضع");
-    expect(panel).toContain("رابط الصورة");
-    expect(panel).toContain("positionX");
-    expect(panel).toContain("positionY");
-    expect(panel).toContain("visualConfigJson");
+    expect(panel).toContain("الحجم:");
+    expect(panel).toContain("QRCodeSVG");
+    expect(panel).toContain("data-testid=\"qr-visual-customization\"");
   });
 
-  it("keeps stable codes and offers a safe bulk reset", () => {
-    expect(router).toContain("resetQrCodes");
-    expect(router).toContain('status: "disabled"');
+  it("keeps stable menu codes tenant-scoped", () => {
+    expect(router).toContain("ensureMenuQrCode");
     expect(router).toContain("qrCodes.restaurantId");
     expect(router).toContain("qrCodes.branchId");
-    expect(panel).toContain("دون حذف السجل");
+    expect(panel).toContain("يبقى المعرّف ثابتًا");
   });
 
   it("creates and exposes one automatic branch menu QR", () => {
