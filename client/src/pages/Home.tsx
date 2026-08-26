@@ -144,7 +144,7 @@ export default function Home() {
     const requested = new URLSearchParams(window.location.search).get("module") as NavKey | null;
     return requested && navItems.some(item => item.key === requested) ? requested : "overview";
   });
-  const localizedNavItems = useMemo(() => navItems.map((item) => ({ ...item, label: t(navTranslationKeys[item.key]) })), [language, t]);
+  const localizedNavItems = useMemo(() => navItems.map((item) => ({ ...item, label: item.key === "trend" ? "Trend Kitchen · سوق نفود" : t(navTranslationKeys[item.key]) })), [language, t]);
   const visibleNavItems = useMemo(() => { const role = user?.testRole as string | undefined; const keys = getVisibleNavigation(role, user?.role === "admin" || role === "admin"); return localizedNavItems.filter((item) => keys.includes(item.key as (typeof keys)[number])); }, [user?.role, user?.testRole, localizedNavItems]);
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {

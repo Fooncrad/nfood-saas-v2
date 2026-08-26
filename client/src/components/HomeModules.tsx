@@ -122,6 +122,7 @@ import {
 } from "@/components/RemoteTaskDialog";
 import CustomerProfileSettings from "@/pages/CustomerProfileSettings";
 import VcardAccountBinding from "@/pages/VcardAccountBinding";
+import ContentMarketplace from "@/pages/ContentMarketplace";
 import {
   navItems,
   navTranslationKeys,
@@ -357,6 +358,11 @@ export function ModuleView({
       description: "رفع وتنظيم صور المنيو وملفات المطعم ضمن مساحة معزولة.",
       icon: HardDrive,
     },
+    trend: {
+      title: "Trend Kitchen · سوق نفود",
+      description: "عروض المحتوى والوصفات والاتجاهات الغذائية في سوق عام موثوق.",
+      icon: Sparkles,
+    },
     branches: {
       title: "الفروع والإعدادات",
       description: "إدارة الفروع وساعات العمل وإعداداتها التشغيلية.",
@@ -547,6 +553,7 @@ export function ModuleView({
       <RestaurantSettingsHub restaurantId={restaurantId} />
     );
   if (active === "accounts") return <AccountManagementPanel />;
+  if (active === "trend") return <ContentMarketplace />;
   if (active === "files")
     return (
       <MediaLibraryPanel
