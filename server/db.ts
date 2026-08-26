@@ -808,3 +808,36 @@ export async function purchaseContentFromWallet(input: { listingId: number; buye
     return { orderId, amount: amount.toFixed(2), reward: reward.toFixed(2), buyerBalance: buyerNext.toFixed(2), ownerBalance: ownerNext.toFixed(2) };
   });
 }
+
+export async function listAdminCustomerAccounts() {
+  const db = await getDb();
+  if (!db) return { customers: [], summary: { total: 0, active: 0, inactive: 0, listed: 0, sold: 0, purchased: 0, walletBalance: 0, grossSales: 0 } };
+  const [accounts, userRows, walletRows, listings, purchaseRows, profileRows] = await Promise.all([
+    db.select({ id: testAccounts.id, email: testAccounts.email, displayName: testAccounts.displayName, phone: testAccounts.phone, isActive: testAccounts.isActive, createdAt: testAccounts.createdAt }).from(testAccounts).where(eq(testAccounts.role, "customer")).orderBy(desc(testAccounts.createdAt)),
+    db.select({ id: users.id, openId: users.openId, lastSignedIn: users.lastSignedIn }).from(users),
+    db.select({ customerId: walletAccounts.customerId, balance: walletAccounts.balance }).from(walletAccounts),
+    db.select({ ownerUserId: contentListings.ownerUserId, status: contentListings.status }).from(contentListings),
+    db.select({ buyerUserId: contentPurchaseOrders.buyerUserId, customerUserId: contentPurchaseOrders.customerUserId, total: contentPurchaseOrders.total, status: contentPurchaseOrders.status }).from(contentPurchaseOrders),
+    db.select({ userId: customerProfiles.userId, email: customerProfiles.email, displayName: customerProfiles.displayName, phone: customerProfiles.phone, createdAt: customerProfiles.createdAt }).from(customerProfiles),
+  ]);
+  const rawCustomers = [
+    ...accounts.map((account) => ({ sourceId: account.id, userId: userRows.find((candidate) => candidate.openId === `test_${account.id}`)?.id ?? null, email: account.email, displayName: account.displayName, phone: account.phone, isActive: account.isActive, createdAt: account.createdAt, lastSignedIn: userRows.find((candidate) => candidate.openId === `test_${account.id}`)?.lastSignedIn ?? null })),
+    ...profileRows.filter((profile) => !accounts.some((account) => userRows.find((candidate) => candidate.openId === `test_${account.id}`)?.id === profile.userId)).map((profile) => ({ sourceId: profile.userId, userId: profile.userId, email: profile.email ?? "بريد غير مسجل", displayName: profile.displayName ?? `عميل #${profile.userId}`, phone: profile.phone, isActive: true, createdAt: profile.createdAt, lastSignedIn: userRows.find((candidate) => candidate.id === profile.userId)?.lastSignedIn ?? null })),
+  ].map((account) => {
+    const wallet = account.userId ? walletRows.find((row) => row.customerId === account.userId) : undefined;
+    const listed = listings.filter((row) => row.ownerUserId === account.userId);
+    const soldOrders = purchaseRows.filter((row) => row.customerUserId === account.userId && row.status === "approved");
+    const purchasedOrders = purchaseRows.filter((row) => row.buyerUserId === account.userId && row.status === "approved");
+    const grossSales = soldOrders.reduce((sum, row) => sum + Number(row.total ?? 0), 0);
+    return { id: account.sourceId, userId: account.userId, email: account.email, displayName: account.displayName, phone: account.phone, isActive: account.isActive, createdAt: account.createdAt, lastSignedIn: account.lastSignedIn, walletBalance: Number(wallet?.balance ?? 0), listedCount: listed.length, soldCount: soldOrders.length, purchasedCount: purchasedOrders.length, grossSales };
+  });
+  const customerMap = new Map<string, (typeof rawCustomers)[number]>();
+  rawCustomers.forEach((customer) => {
+    const key = customer.email.includes("@") ? customer.email.trim().toLowerCase() : `user:${customer.userId ?? customer.id}`;
+    const previous = customerMap.get(key);
+    if (!previous) customerMap.set(key, customer);
+    else customerMap.set(key, { ...previous, userId: previous.userId ?? customer.userId, phone: previous.phone ?? customer.phone, isActive: previous.isActive || customer.isActive, createdAt: previous.createdAt < customer.createdAt ? previous.createdAt : customer.createdAt, lastSignedIn: previous.lastSignedIn ?? customer.lastSignedIn, walletBalance: previous.walletBalance + customer.walletBalance, listedCount: previous.listedCount + customer.listedCount, soldCount: previous.soldCount + customer.soldCount, purchasedCount: previous.purchasedCount + customer.purchasedCount, grossSales: previous.grossSales + customer.grossSales });
+  });
+  const customers = Array.from(customerMap.values());
+  return { customers, summary: { total: customers.length, active: customers.filter((customer) => customer.isActive).length, inactive: customers.filter((customer) => !customer.isActive).length, listed: customers.reduce((sum, customer) => sum + customer.listedCount, 0), sold: customers.reduce((sum, customer) => sum + customer.soldCount, 0), purchased: customers.reduce((sum, customer) => sum + customer.purchasedCount, 0), walletBalance: customers.reduce((sum, customer) => sum + customer.walletBalance, 0), grossSales: customers.reduce((sum, customer) => sum + customer.grossSales, 0) } };
+}
