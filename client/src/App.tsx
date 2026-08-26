@@ -23,6 +23,7 @@ const routeLoaders = {
   CustomerRewards: () => import("./pages/CustomerRewards"),
   CustomerStudio: () => import("./pages/CustomerStudio"),
   CustomerStudioPlans: () => import("./pages/CustomerStudioPlans"),
+  CustomerBenefits: () => import("./pages/CustomerBenefits"),
   CustomerRegister: () => import("./pages/CustomerRegister"),
   ContentMarketplace: () => import("./pages/ContentMarketplace"),
   CreatorContentStatus: () => import("./pages/CreatorContentStatus"),
@@ -48,6 +49,7 @@ const CustomerReservations = lazy(routeLoaders.CustomerReservations);
 const CustomerRewards = lazy(routeLoaders.CustomerRewards);
 const CustomerStudio = lazy(routeLoaders.CustomerStudio);
 const CustomerStudioPlans = lazy(routeLoaders.CustomerStudioPlans);
+const CustomerBenefits = lazy(routeLoaders.CustomerBenefits);
 const CustomerRegister = lazy(routeLoaders.CustomerRegister);
 const ContentMarketplace = lazy(routeLoaders.ContentMarketplace);
 const CreatorContentStatus = lazy(routeLoaders.CreatorContentStatus);
@@ -127,6 +129,7 @@ function Router() {
       <Route path="/customer-rewards" component={CustomerRewards} />
       <Route path="/customer-studio" component={CustomerStudio} />
       <Route path="/customer-studio-plans" component={CustomerStudioPlans} />
+      <Route path="/customer-benefits" component={CustomerBenefits} />
       <Route path="/favorites" component={FavoritesPage} />
       <Route path="/support" component={SupportManagement} />
       <Route path="/vcard-cards" component={VcardCardsAdmin} />
