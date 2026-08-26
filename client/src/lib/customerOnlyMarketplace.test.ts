@@ -11,6 +11,8 @@ describe("customer-only content marketplace", () => {
   const library = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerContentLibrary.tsx"), "utf8");
   const profile = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerProfileSettings.tsx"), "utf8");
   const login = readFileSync(resolve(process.cwd(), "client/src/components/TestLoginScreen.tsx"), "utf8");
+  const studioPlans = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerStudioPlans.tsx"), "utf8");
+  const app = readFileSync(resolve(process.cwd(), "client/src/App.tsx"), "utf8");
 
   it("keeps restaurants out of selling while allowing merchant buying", () => {
     expect(router).toContain("المطاعم تعرض نشاطها فقط ولا تملك صلاحية بيع المحتوى");
@@ -48,5 +50,9 @@ describe("customer-only content marketplace", () => {
     expect(library).toContain("تصل الملفات هنا تلقائيًا بعد إتمام الدفع التجاري");
     expect(profile).toContain("maxEdge = field === \"avatarUrl\" ? 800 : 1800");
     expect(profile).toContain('"image/webp"');
+    expect(studioPlans).toContain("باقات مساحة Studio");
+    expect(studioPlans).toContain("طلب الترقية والتواصل مع الدعم");
+    expect(app).toContain('path="/customer-studio-plans"');
+    expect(login).toContain("continueWithGoogle");
   });
 });
