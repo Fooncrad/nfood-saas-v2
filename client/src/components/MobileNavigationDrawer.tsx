@@ -42,8 +42,6 @@ export function MobileNavigationDrawer({
     if (!open) setExpanded(false);
   }, [open]);
 
-  if (!open) return null;
-
   const navigate = (key: NavKey) => {
     onNavigate(key);
     onClose();
@@ -51,9 +49,9 @@ export function MobileNavigationDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] lg:hidden" role="dialog" aria-modal="true" aria-label={t("openNavigation")}>
-      <button type="button" aria-label={t("closeNavigation")} className="absolute inset-0 bg-slate-950/40" onClick={onClose} />
-      <aside className={`absolute inset-y-0 ${direction === "rtl" ? "right-0" : "left-0"} nfood-mobile-drawer flex max-h-[100dvh] w-[min(84vw,300px)] flex-col overflow-y-auto overscroll-contain bg-[#111c2e] p-4 text-white shadow-2xl`}>
+    <div className={`fixed inset-0 z-[70] lg:hidden ${open ? "pointer-events-auto" : "pointer-events-none"}`} role="dialog" aria-modal="true" aria-hidden={!open} aria-label={t("openNavigation")}>
+      <button type="button" aria-label={t("closeNavigation")} className={`absolute inset-0 bg-slate-950/40 transition-opacity duration-200 motion-reduce:transition-none ${open ? "opacity-100" : "opacity-0"}`} onClick={onClose} />
+      <aside className={`absolute inset-y-0 ${direction === "rtl" ? "right-0" : "left-0"} nfood-mobile-drawer flex max-h-[100dvh] w-[min(84vw,300px)] flex-col overflow-y-auto overscroll-contain bg-[#111c2e] p-4 text-white shadow-2xl transition-transform duration-200 ease-out motion-reduce:transition-none ${open ? "translate-x-0" : direction === "rtl" ? "translate-x-full" : "-translate-x-full"}`}>
         <div className="nfood-mobile-drawer__header sticky top-0 z-10 mb-4 flex shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#111c2e] pb-3">
           <p className="text-base font-bold">{t("menu")}</p>
           <button type="button" onClick={onClose} className="rounded-xl bg-white/10 px-3 py-2 text-sm">

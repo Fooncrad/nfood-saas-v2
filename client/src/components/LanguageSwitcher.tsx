@@ -1,8 +1,8 @@
-import { Globe2, Check, ChevronDown } from "lucide-react";
+import { Globe2, Check, ChevronDown, LoaderCircle } from "lucide-react";
 import { languageMeta, UI_LANGUAGES, useLanguage, type Language } from "@/contexts/LanguageContext";
 
 export default function LanguageSwitcher({ compact = false, allowedLanguages }: { compact?: boolean; allowedLanguages?: Language[] }) {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, t, isLanguageChanging } = useLanguage();
   const languages = allowedLanguages?.filter((item) => UI_LANGUAGES.includes(item as (typeof UI_LANGUAGES)[number])).length ? allowedLanguages.filter((item) => UI_LANGUAGES.includes(item as (typeof UI_LANGUAGES)[number])) : [...UI_LANGUAGES];
   const closeMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
     setLanguage(event.currentTarget.dataset.language as Language);
@@ -10,7 +10,8 @@ export default function LanguageSwitcher({ compact = false, allowedLanguages }: 
   };
 
   return (
-    <details className="nfood-language-switcher relative z-50">
+    <div className="flex items-center gap-1.5" aria-busy={isLanguageChanging}>
+      <details className="nfood-language-switcher relative z-50">
       <summary className={`flex cursor-pointer list-none items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white/95 px-2 py-2 text-xs font-bold text-slate-700 shadow-sm backdrop-blur transition hover:border-orange-200 hover:shadow-md [&::-webkit-details-marker]:hidden ${compact ? "min-h-9 max-w-[7.5rem] sm:max-w-none sm:px-3" : "min-h-10 px-3"}`} aria-label={t("chooseLanguage")}>
         <Globe2 className="h-4 w-4 shrink-0 text-[#e76f3c]" aria-hidden="true" />
         <span className="hidden text-slate-600 sm:inline">{t("language")}</span>
@@ -26,6 +27,8 @@ export default function LanguageSwitcher({ compact = false, allowedLanguages }: 
           </button>
         ))}
       </div>
-    </details>
+      </details>
+      {isLanguageChanging && <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-orange-50 text-orange-700" role="status" aria-live="polite" aria-label={t("loading")}><LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /></span>}
+    </div>
   );
 }

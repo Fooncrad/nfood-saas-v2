@@ -6,6 +6,7 @@ import { getTranslationProgress } from "./TranslationReviewPanel";
 const reviewPanelSource = readFileSync(resolve(process.cwd(), "client/src/components/TranslationReviewPanel.tsx"), "utf8");
 const homeSource = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
 const mobileDrawerSource = readFileSync(resolve(process.cwd(), "client/src/components/MobileNavigationDrawer.tsx"), "utf8");
+const languageSwitcherSource = readFileSync(resolve(process.cwd(), "client/src/components/LanguageSwitcher.tsx"), "utf8");
 const languageSource = readFileSync(resolve(process.cwd(), "client/src/contexts/LanguageContext.tsx"), "utf8");
 const styleSource = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
 
@@ -34,6 +35,19 @@ describe("TranslationReviewPanel progress", () => {
     expect(mobileDrawerSource).toContain("visibleNavItems.slice(0, 6)");
     expect(mobileDrawerSource).toContain("nfood-mobile-drawer");
     expect(homeSource).toContain("lg:hidden left-3");
+  });
+
+  it("shows a visible language-switch loading state", () => {
+    expect(languageSource).toContain("isLanguageChanging");
+    expect(languageSwitcherSource).toContain("LoaderCircle");
+    expect(languageSwitcherSource).toContain('role="status"');
+    expect(languageSwitcherSource).toContain('aria-busy={isLanguageChanging}');
+  });
+
+  it("animates the mobile drawer without blocking reduced-motion users", () => {
+    expect(mobileDrawerSource).toContain("transition-transform duration-200");
+    expect(mobileDrawerSource).toContain("motion-reduce:transition-none");
+    expect(mobileDrawerSource).toContain("pointer-events-none");
   });
 
   it("scopes mutation translation work to added nodes and caches dictionary entries", () => {

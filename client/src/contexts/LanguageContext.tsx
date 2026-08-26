@@ -444,13 +444,14 @@ function applyLegacyUiTranslations(language: Language, root: Node = document) {
 const expandedLanguageFallback = { ...Object.fromEntries(Object.entries(arabic).map(([key, value]) => [key, english[key as keyof typeof english] || value])), dashboard: "ڈیش بورڈ" } as Record<keyof typeof arabic, string>;
 export type TranslationKey = keyof typeof arabic;
 export const translations: Record<Language, Record<TranslationKey, string>> = { ar: arabic, en: english, fr: french, ur: expandedLanguageFallback, es: expandedLanguageFallback, de: expandedLanguageFallback, tr: expandedLanguageFallback };
-type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; setLanguage: (language: Language, persist?: boolean) => void; t: (key: TranslationKey | string) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
+type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; isLanguageChanging: boolean; setLanguage: (language: Language, persist?: boolean) => void; t: (key: TranslationKey | string) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
 function readStoredLanguage(): Language { if (typeof window === "undefined") return "en"; if (isPublicLanguagePath(window.location.pathname)) { const manual = window.localStorage.getItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY); if (isUiLanguage(manual)) return manual; return detectVisitorLanguage(); } const stored = window.localStorage.getItem(DASHBOARD_LANGUAGE_STORAGE_KEY); return isUiLanguage(stored) ? stored : "en"; }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>(readStoredLanguage);
+  const [isLanguageChanging, setIsLanguageChanging] = useState(false);
   const meta = languageMeta[language];
   useEffect(() => {
     document.documentElement.lang = language;
@@ -463,7 +464,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     observer.observe(document.body, { subtree: true, childList: true });
     return () => { observer.disconnect(); };
   }, [language, meta.dir]);
-  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, setLanguage: (next, persist = true) => { if (next !== language) animateLanguageChange(); setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(languageStorageKey(), next); if (isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: (key) => { const databaseValue = isUiLanguage(language) ? databaseUiTranslations[language][key] : undefined; return databaseValue ?? translations[language][key as TranslationKey] ?? key; }, formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language) }), [language, meta.dir, meta.locale]);
+  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, isLanguageChanging, setLanguage: (next, persist = true) => { if (next !== language) { animateLanguageChange(); setIsLanguageChanging(true); if (typeof window !== "undefined") window.setTimeout(() => setIsLanguageChanging(false), 420); } setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(languageStorageKey(), next); if (isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: (key) => { const databaseValue = isUiLanguage(language) ? databaseUiTranslations[language][key] : undefined; return databaseValue ?? translations[language][key as TranslationKey] ?? key; }, formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language)   }), [language, meta.dir, meta.locale, isLanguageChanging]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
