@@ -19,13 +19,18 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain('"Nasser Cafe"');
   });
 
-  it("moves account and menu tools into the secondary row", () => {
-    expect(source).toContain("border-t border-slate-100 bg-slate-50/80");
-    expect(source).toContain("تسجيل / دخول");
+  it("replaces the primary tools row with a cover", () => {
+    expect(source).toContain("nfood-menu-cover");
+    expect(source).toContain("page.data.restaurant.coverUrl");
+    expect(source).toContain("NFOOD MENU");
+    expect(source).toContain("<h1 className=\"text-2xl font-black text-white");
+    expect(source).not.toContain("<span>أدوات المنيو</span>");
+  });
+
+  it("keeps secondary menu tools available through their existing flows", () => {
     expect(source).toContain("downloadMenuPdf");
-    expect(source).toContain("setMenuQrOpen(true)");
-    expect(source).toContain("secondaryToolsOpen");
-    expect(source).toContain("أدوات المنيو");
+    expect(source).toContain("menuQrOpen");
+    expect(source).toContain("qrMenuUrl");
   });
 
   it("does not expose the raw QR URL in the visible dialog", () => {

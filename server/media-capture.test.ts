@@ -28,6 +28,7 @@ describe("mobile media capture and fallback menu contract", () => {
     expect(source).toContain("بدون صور");
     expect(source).toContain("اختر «حفظ كملف PDF»");
     expect(source).not.toContain("shareMenuLink");
-    expect(source).toContain("تنزيل PDF نصي");
+    expect(source).toContain("downloadMenuPdf");
+    expect(source).toContain("menuQrOpen");
   });
 });

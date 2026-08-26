@@ -32,9 +32,11 @@ describe("public menu UX", () => {
     expect(styles).toContain(".nfood-menu-template-glass");
     expect(page).toContain('requested === "glass"');
     expect(page).toContain("localStorage.setItem(`nfood-menu-template-${slug}`, template)");
-    expect(page).toContain('selectMenuTemplate(menuTemplate === "editorial" ? "bistro" : menuTemplate === "bistro" ? "glass" : "editorial")');
-    expect(page).toContain('secondaryToolsOpen');
-    expect(page).toContain('أدوات المنيو');
+    expect(page).toContain("selectMenuTemplate");
+    expect(page).toContain('type PublicMenuTemplate = "editorial" | "bistro" | "glass"');
+    expect(page).toContain("menuTemplate");
+    expect(page).toContain('nfood-menu-cover');
+    expect(page).toContain('page.data.restaurant.coverUrl');
     expect(page).toContain("page.data?.restaurant.menuTemplate");
     expect(page).toContain("page.data?.restaurant.glassGlowColor");
     expect(page).toContain("page.data?.restaurant.glassCardOpacity");
@@ -68,10 +70,12 @@ describe("public menu UX", () => {
     expect(page).toContain("channel: orderType === \"dineIn\" ? \"dine_in\" : orderType");
   });
 
-  it("keeps the header focused and exposes menu tools plus account below it", () => {
-    expect(page).toContain("setMenuQrOpen(true)");
-    expect(page).toContain("<QrCode className=\"h-4 w-4 text-[var(--menu-primary)]\" />{copy.qrTitle}");
-    expect(page).toContain("تسجيل / دخول");
+  it("keeps the header focused and moves the visual identity into a cover", () => {
+    expect(page).toContain("nfood-menu-cover");
+    expect(page).toContain("page.data.restaurant.coverUrl");
+    expect(page).toContain("<RestaurantLogo src={page.data.restaurant.brandLogoUrl}");
+    expect(page).toContain("NFOOD MENU");
+    expect(page).not.toContain("<span>أدوات المنيو</span>");
     expect(page).not.toContain("مشاركة المنيو");
     expect(page).not.toContain('showMenuTool("share")');
     expect(page).not.toContain('showMenuTool("orderType")');
@@ -85,7 +89,8 @@ describe("public menu UX", () => {
   it("keeps QR outside the primary menu content and removes the drawer helper copy", () => {
     const mainMenu = page.slice(page.indexOf('<div id="menu"'), page.indexOf('<section id="contact"'));
     expect(mainMenu).not.toContain("QRCodeSVG");
-    expect(page).toContain("<div className=\"rounded-xl bg-slate-900 p-4 text-white\"><p className=\"text-sm font-black\">{copy.qrTitle}</p></div>");
+    expect(page).toContain("menuQrOpen");
+    expect(page).toContain("{copy.qrTitle}");
     expect(page).toContain("{copy.qrHelp}");
     expect(page).not.toContain('<p dir="ltr" className="break-all rounded-xl bg-slate-50');
     expect(page).toContain("grid grid-cols-2 gap-2");

@@ -1518,3 +1518,15 @@ html[lang="ur"] body {
     filter: none !important;
   }
 }
+
+
+.nfood-menu-cover {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  isolation: isolate;
+}
+
+.nfood-menu-cover img {
+  object-fit: contain;
+}
