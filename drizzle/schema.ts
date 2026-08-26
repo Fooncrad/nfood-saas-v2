@@ -45,6 +45,7 @@ export const customerProfiles = mysqlTable("customerProfiles", {
   restaurantId: int("restaurantId").references(() => restaurants.id),
   slug: varchar("slug", { length: 160 }).notNull().unique(),
   isPublic: boolean("isPublic").default(false).notNull(),
+  defaultContentVisibility: mysqlEnum("defaultContentVisibility", ["public", "friends"]).default("public").notNull(),
   displayName: varchar("displayName", { length: 160 }),
   title: varchar("title", { length: 160 }),
   bio: text("bio"),
@@ -1190,6 +1191,8 @@ export const contentListings = mysqlTable("contentListings", {
   title: varchar("title", { length: 180 }).notNull(),
   description: varchar("description", { length: 1000 }),
   contentCategory: varchar("contentCategory", { length: 40 }).default("events").notNull(),
+  visibility: mysqlEnum("visibility", ["public", "friends"]).default("public").notNull(),
+  foodTagsJson: text("foodTagsJson"),
   watermarkEnabled: boolean("watermarkEnabled").default(true).notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   currencyCode: varchar("currencyCode", { length: 8 }).default("SAR").notNull(),
@@ -1198,12 +1201,31 @@ export const contentListings = mysqlTable("contentListings", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const contentFoodTags = mysqlTable("contentFoodTags", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  slug: varchar("slug", { length: 120 }).notNull().unique(),
+  category: varchar("category", { length: 80 }).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export const contentListingInvites = mysqlTable("contentListingInvites", {
+  id: int("id").autoincrement().primaryKey(),
+  listingId: int("listingId").notNull().references(() => contentListings.id),
+  ownerUserId: int("ownerUserId").notNull().references(() => users.id),
+  invitedUserId: int("invitedUserId").notNull().references(() => users.id),
+  status: mysqlEnum("status", ["pending", "accepted", "revoked"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
 export const contentPurchaseOrders = mysqlTable("contentPurchaseOrders", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").references(() => restaurants.id),
   customerUserId: int("customerUserId").references(() => users.id),
   buyerUserId: int("buyerUserId").references(() => users.id),
-  buyerType: mysqlEnum("buyerType", ["restaurant", "customer"]).default("customer").notNull(),
+  buyerType: mysqlEnum("buyerType", ["customer"]).default("customer").notNull(),
   paymentSource: mysqlEnum("paymentSource", ["wallet", "manual"]).default("manual").notNull(),
   receiptMediaFileId: int("receiptMediaFileId").references(() => mediaFiles.id),
   itemsJson: text("itemsJson").notNull(),
