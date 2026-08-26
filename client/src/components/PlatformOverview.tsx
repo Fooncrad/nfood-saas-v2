@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";
 import { SuperAdminCustomerCatalog } from "@/components/SuperAdminCustomerCatalog";
+import { UiTranslationAdminPanel } from "@/components/UiTranslationAdminPanel";
 import { ProfileGovernanceCenter } from "@/components/ProfileGovernanceCenter";
 import { ContentPurchaseFinancePanel } from "@/components/ContentPurchaseFinancePanel";
 import { WhiteLabelWorkspacePanel } from "@/components/WhiteLabelWorkspacePanel";
@@ -276,6 +277,7 @@ export function PlatformOverview({ onNavigate }: { onNavigate: (key: "admin") =>
       <ProfileGovernanceCenter />
       <ContentPurchaseFinancePanel />
       <WhiteLabelWorkspacePanel />
+      <UiTranslationAdminPanel />
       <FeatureRequestInbox />
     </div>
   );

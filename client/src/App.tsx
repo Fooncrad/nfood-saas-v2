@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { DatabaseTranslationBridge } from "./components/DatabaseTranslationBridge";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_STORAGE_KEY, LanguageProvider, languageStorageKey, isUiLanguage, useLanguage, type Language } from "./contexts/LanguageContext";
 const routeLoaders = {
@@ -75,6 +76,8 @@ function AppContent() {
   }, []);
   useEffect(() => {
     const key = languageStorageKey(location);
+    const requested = new URLSearchParams(window.location.search).get("lang");
+    if (isUiLanguage(requested)) { setLanguage(requested); window.localStorage.setItem(key, requested); return; }
     const stored = window.localStorage.getItem(key) as Language | null;
     const valid = isUiLanguage(stored);
     const nextLanguage: Language = valid ? stored! : key === DASHBOARD_LANGUAGE_STORAGE_KEY ? "en" : language;
@@ -145,6 +148,7 @@ export default function App() {
       <ThemeProvider defaultTheme="light" switchable>
         <TooltipProvider>
           <LanguageProvider>
+            <DatabaseTranslationBridge />
             <AppContent />
           </LanguageProvider>
         </TooltipProvider>

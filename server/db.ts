@@ -2,7 +2,7 @@ import { and, count, desc, eq, gte, inArray, isNull, lte, like, ne, or, sql } fr
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, contentPurchaseEntitlements, contentModerationReviews, commerceFundingAccounts, favoriteRestaurants, contentFoodTags, contentListingInvites, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests, trustedDevices, customerCardRequests, customerBenefitFeatures, customerBenefitPlans, customerBenefitPlanFeatures, customerBenefitSubscriptions, customerBenefitRequests, whiteLabelWorkspaces } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, contentPurchaseEntitlements, contentModerationReviews, commerceFundingAccounts, favoriteRestaurants, contentFoodTags, contentListingInvites, uiTranslationEntries, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests, trustedDevices, customerCardRequests, customerBenefitFeatures, customerBenefitPlans, customerBenefitPlanFeatures, customerBenefitSubscriptions, customerBenefitRequests, whiteLabelWorkspaces } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { driverSecurityDeposits, driverSecurityDepositTransactions, financialLedgerEntries } from "../drizzle/schema";
 import { normalizeMenuTemplateSchedule, resolveActiveMenuTemplate } from "../shared/menuTemplateSchedule";
@@ -866,6 +866,60 @@ export async function bulkMoveMediaFiles(input: { ids: number[]; folderId: numbe
 export async function listRestaurantDisplayScreens(restaurantId: number) { const db = await getDb(); if (!db) return []; return db.select().from(restaurantDisplayScreens).where(eq(restaurantDisplayScreens.restaurantId, restaurantId)).orderBy(desc(restaurantDisplayScreens.updatedAt)); }
 export async function listRestaurantDisplaySlides(screenId: number, restaurantId: number) { const db = await getDb(); if (!db) return []; return db.select({ slide: restaurantDisplaySlides, menuItem: menuItems, mediaFile: mediaFiles }).from(restaurantDisplaySlides).leftJoin(menuItems, eq(restaurantDisplaySlides.menuItemId, menuItems.id)).leftJoin(mediaFiles, eq(restaurantDisplaySlides.mediaFileId, mediaFiles.id)).where(and(eq(restaurantDisplaySlides.screenId, screenId), eq(restaurantDisplaySlides.restaurantId, restaurantId))).orderBy(restaurantDisplaySlides.sortOrder); }
 export async function listCampaignContents(campaignId: number, restaurantId: number) { const db = await getDb(); if (!db) return []; return db.select({ content: campaignContents, menuItem: menuItems, mediaFile: mediaFiles }).from(campaignContents).leftJoin(menuItems, eq(campaignContents.menuItemId, menuItems.id)).leftJoin(mediaFiles, eq(campaignContents.mediaFileId, mediaFiles.id)).where(and(eq(campaignContents.campaignId, campaignId), eq(campaignContents.restaurantId, restaurantId))).orderBy(campaignContents.sortOrder); }
+
+const UI_TRANSLATION_SEEDS = [
+  ["admin.customer_center.title", "قائمة العملاء والحقوق", "Customer center"],
+  ["admin.customer_center.description", "إدارة آمنة للحسابات والمحتوى والمبيعات والمحفظة من نفس نظرة المنصة.", "Customer center"],
+  ["admin.customer_center.add", "إضافة عميل", "Customer center"],
+  ["admin.customer_center.orders", "طلبات العملاء", "Customer center"],
+  ["admin.customer_center.content_review", "مراجعة محتوى العملاء", "Customer center"],
+  ["admin.customer_center.library", "مكتبة المشتريات", "Customer center"],
+  ["marketplace.title", "سوق المحتوى والوصفات", "Customer portal"],
+  ["marketplace.description", "هذا سوق مستقل عن منيو المطاعم. اكتشف صور الأكل والوصفات المعروضة للمطاعم والحسابات المؤهلة، وراجع مشترياتك الرقمية من مكتبتك.", "Trend Kitchen"],
+  ["studio.upload", "رفع صورة جديدة", "Creator Studio"],
+  ["studio.review_pending", "قيد المراجعة", "Creator Studio"],
+] as const;
+
+async function ensureUiTranslationSeeds(db: Awaited<ReturnType<typeof getDb>>) {
+  if (!db) return;
+  const existing = await db.select({ translationKey: uiTranslationEntries.translationKey, targetLanguage: uiTranslationEntries.targetLanguage }).from(uiTranslationEntries).limit(1000);
+  const existingKeys = new Set(existing.map((entry) => `${entry.translationKey}:${entry.targetLanguage}`));
+  const values = UI_TRANSLATION_SEEDS.flatMap(([translationKey, sourceText, context]) => (["en", "fr"] as const).filter((targetLanguage) => !existingKeys.has(`${translationKey}:${targetLanguage}`)).map((targetLanguage) => ({ translationKey, sourceText, targetLanguage, context, status: "untranslated" as const })));
+  if (values.length) await db.insert(uiTranslationEntries).values(values);
+}
+
+export async function listPublishedUiTranslations(targetLanguage?: string) {
+  const db = await getDb(); if (!db) return [];
+  const conditions = [eq(uiTranslationEntries.status, "published" as const), ...(targetLanguage ? [eq(uiTranslationEntries.targetLanguage, targetLanguage)] : [])];
+  return db.select({ translationKey: uiTranslationEntries.translationKey, sourceText: uiTranslationEntries.sourceText, targetLanguage: uiTranslationEntries.targetLanguage, translatedText: uiTranslationEntries.translatedText }).from(uiTranslationEntries).where(and(...conditions)).orderBy(uiTranslationEntries.translationKey);
+}
+
+export async function listUiTranslationEntries(filters?: { targetLanguage?: string; status?: "untranslated" | "draft" | "published" | "ignored"; query?: string }) {
+  const db = await getDb(); if (!db) return [];
+  await ensureUiTranslationSeeds(db);
+  const conditions = [];
+  if (filters?.targetLanguage) conditions.push(eq(uiTranslationEntries.targetLanguage, filters.targetLanguage));
+  if (filters?.status) conditions.push(eq(uiTranslationEntries.status, filters.status));
+  if (filters?.query?.trim()) { const query = `%${filters.query.trim()}%`; conditions.push(sql`(${uiTranslationEntries.translationKey} like ${query} or ${uiTranslationEntries.sourceText} like ${query} or coalesce(${uiTranslationEntries.translatedText}, '') like ${query})`); }
+  return db.select().from(uiTranslationEntries).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(uiTranslationEntries.lastSeenAt), desc(uiTranslationEntries.updatedAt));
+}
+export async function upsertUiTranslationEntry(input: { id?: number; translationKey: string; sourceText: string; sourceLanguage?: string; targetLanguage: string; translatedText?: string | null; context?: string | null; status?: "untranslated" | "draft" | "published" | "ignored"; userId: number }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const translationKey = input.translationKey.trim(); const sourceText = input.sourceText.trim(); const targetLanguage = input.targetLanguage.trim();
+  if (!translationKey || !sourceText || !targetLanguage) throw new Error("مفتاح النص والنص المصدر واللغة الهدف مطلوبة");
+  const translatedText = input.translatedText?.trim() || null;
+  const status = input.status ?? (translatedText ? "draft" : "untranslated");
+  if (input.id) {
+    const existing = (await db.select({ id: uiTranslationEntries.id }).from(uiTranslationEntries).where(eq(uiTranslationEntries.id, input.id)).limit(1))[0];
+    if (!existing) throw new Error("سجل الترجمة غير موجود");
+    await db.update(uiTranslationEntries).set({ translationKey, sourceText, sourceLanguage: input.sourceLanguage ?? "ar", targetLanguage, translatedText, context: input.context?.trim() || null, status, updatedByUserId: input.userId, lastSeenAt: new Date() }).where(eq(uiTranslationEntries.id, input.id));
+    return input.id;
+  }
+  const existing = (await db.select({ id: uiTranslationEntries.id }).from(uiTranslationEntries).where(and(eq(uiTranslationEntries.translationKey, translationKey), eq(uiTranslationEntries.targetLanguage, targetLanguage))).limit(1))[0];
+  if (existing) { await db.update(uiTranslationEntries).set({ sourceText, translatedText, context: input.context?.trim() || null, status, updatedByUserId: input.userId, occurrenceCount: sql`${uiTranslationEntries.occurrenceCount} + 1`, lastSeenAt: new Date() }).where(eq(uiTranslationEntries.id, existing.id)); return existing.id; }
+  const result = await db.insert(uiTranslationEntries).values({ translationKey, sourceText, sourceLanguage: input.sourceLanguage ?? "ar", targetLanguage, translatedText, context: input.context?.trim() || null, status, createdByUserId: input.userId, updatedByUserId: input.userId });
+  return Number(result[0].insertId);
+}
 
 export async function listTranslationGlossary(restaurantId: number) { const db = await getDb(); if (!db) return []; return db.select().from(translationGlossaryEntries).where(eq(translationGlossaryEntries.restaurantId, restaurantId)).orderBy(desc(translationGlossaryEntries.updatedAt)); }
 export async function upsertTranslationGlossary(input: { id?: number; restaurantId: number; sourceLanguage: string; targetLanguage: string; sourceTerm: string; translatedTerm: string; termType: "brand" | "dish" | "ingredient" | "modifier" | "other"; isProtected: boolean; createdByUserId: number | null }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const sourceTerm = input.sourceTerm.trim(); const translatedTerm = input.translatedTerm.trim(); if (!sourceTerm || !translatedTerm) throw new Error("مصطلح المصدر والترجمة مطلوبان"); if (input.id) { const existing = await db.select({ id: translationGlossaryEntries.id, restaurantId: translationGlossaryEntries.restaurantId }).from(translationGlossaryEntries).where(eq(translationGlossaryEntries.id, input.id)).limit(1); if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new Error("مصطلح القاموس غير مرتبط بالمطعم"); await db.update(translationGlossaryEntries).set({ sourceLanguage: input.sourceLanguage, targetLanguage: input.targetLanguage, sourceTerm, translatedTerm, termType: input.termType, isProtected: input.isProtected }).where(and(eq(translationGlossaryEntries.id, input.id), eq(translationGlossaryEntries.restaurantId, input.restaurantId))); return input.id; } const result = await db.insert(translationGlossaryEntries).values({ restaurantId: input.restaurantId, sourceLanguage: input.sourceLanguage, targetLanguage: input.targetLanguage, sourceTerm, translatedTerm, termType: input.termType, isProtected: input.isProtected, createdByUserId: input.createdByUserId }); return Number(result[0].insertId); }

@@ -412,6 +412,26 @@ export const translationErrorLogs = mysqlTable("translationErrorLogs", {
   resolvedAt: timestamp("resolvedAt"),
 });
 
+export const uiTranslationEntries = mysqlTable("uiTranslationEntries", {
+  id: int("id").autoincrement().primaryKey(),
+  translationKey: varchar("translationKey", { length: 220 }).notNull(),
+  sourceText: text("sourceText").notNull(),
+  sourceLanguage: varchar("sourceLanguage", { length: 10 }).default("ar").notNull(),
+  targetLanguage: varchar("targetLanguage", { length: 10 }).notNull(),
+  translatedText: text("translatedText"),
+  context: varchar("context", { length: 180 }),
+  status: mysqlEnum("status", ["untranslated", "draft", "published", "ignored"]).default("untranslated").notNull(),
+  occurrenceCount: int("occurrenceCount").default(1).notNull(),
+  lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  updatedByUserId: int("updatedByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  uiTranslationUnique: uniqueIndex("ui_translation_key_target_unique").on(table.translationKey, table.targetLanguage),
+  uiTranslationStatus: index("ui_translation_status_idx").on(table.status, table.targetLanguage),
+}));
+
 export const translationGlossaryEntries = mysqlTable("translationGlossaryEntries", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),

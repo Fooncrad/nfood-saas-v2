@@ -350,8 +350,22 @@ function getAutoTranslationDictionary(language: Language): Record<string, string
   return { ...genericUiTranslations[language as "en" | "fr"], ...sharedFallback, ...autoFallbackTranslations[language], ...recentFeatureTranslations[language], ...legacyUiTranslations[language], ...modernUiTranslations[language], ...coreDictionary };
 }
 
+type DatabaseTranslationEntry = { translationKey: string; sourceText: string; targetLanguage: string; translatedText: string | null };
+const databaseUiTranslations: Record<UiLanguage, Record<string, string>> = { ar: {}, en: {}, fr: {} };
+export function setDatabaseUiTranslations(entries: DatabaseTranslationEntry[]) {
+  for (const locale of UI_LANGUAGES) databaseUiTranslations[locale] = {};
+  for (const entry of entries) {
+    if (isUiLanguage(entry.targetLanguage) && entry.translatedText?.trim()) {
+      databaseUiTranslations[entry.targetLanguage][entry.translationKey] = entry.translatedText.trim();
+      databaseUiTranslations[entry.targetLanguage][entry.sourceText] = entry.translatedText.trim();
+    }
+  }
+}
+
 export function autoTranslateText(source: string, language: Language): string {
   if (language === "ar" || !source.trim()) return source;
+  const databaseTranslation = isUiLanguage(language) ? databaseUiTranslations[language][source] : undefined;
+  if (databaseTranslation) return databaseTranslation;
   const dictionary = getAutoTranslationDictionary(language);
   if (!dictionary) return source;
   return Object.entries(dictionary)
@@ -364,6 +378,8 @@ export function findUntranslatedArabic(source: string, language: Language): stri
   if (language === "ar") return [];
   return autoTranslateText(source, language).match(/[\u0600-\u06FF]+/g) ?? [];
 }
+
+export function refreshLegacyUiTranslations(language: Language) { applyLegacyUiTranslations(language); }
 
 function applyLegacyUiTranslations(language: Language) {
   if (typeof document === "undefined" || legacyTranslationInProgress) return;
@@ -398,7 +414,7 @@ function applyLegacyUiTranslations(language: Language) {
 const expandedLanguageFallback = { ...Object.fromEntries(Object.entries(arabic).map(([key, value]) => [key, english[key as keyof typeof english] || value])), dashboard: "ڈیش بورڈ" } as Record<keyof typeof arabic, string>;
 export type TranslationKey = keyof typeof arabic;
 export const translations: Record<Language, Record<TranslationKey, string>> = { ar: arabic, en: english, fr: french, ur: expandedLanguageFallback, es: expandedLanguageFallback, de: expandedLanguageFallback, tr: expandedLanguageFallback };
-type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; setLanguage: (language: Language, persist?: boolean) => void; t: (key: TranslationKey) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
+type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; setLanguage: (language: Language, persist?: boolean) => void; t: (key: TranslationKey | string) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
 function readStoredLanguage(): Language { if (typeof window === "undefined") return "en"; if (isPublicLanguagePath(window.location.pathname)) { const manual = window.localStorage.getItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY); if (isUiLanguage(manual)) return manual; return detectVisitorLanguage(); } const stored = window.localStorage.getItem(DASHBOARD_LANGUAGE_STORAGE_KEY); return isUiLanguage(stored) ? stored : "en"; }
@@ -418,7 +434,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const refresh = window.setTimeout(() => scheduleLegacyUiTranslations(language), 120);
     return () => { window.clearTimeout(refresh); observer.disconnect(); };
   }, [language, meta.dir]);
-  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, setLanguage: (next, persist = true) => { if (next !== language) animateLanguageChange(); setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(languageStorageKey(), next); if (isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: (key) => translations[language][key], formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language) }), [language, meta.dir, meta.locale]);
+  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, setLanguage: (next, persist = true) => { if (next !== language) animateLanguageChange(); setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(languageStorageKey(), next); if (isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: (key) => { const databaseValue = isUiLanguage(language) ? databaseUiTranslations[language][key] : undefined; return databaseValue ?? translations[language][key as TranslationKey] ?? key; }, formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language) }), [language, meta.dir, meta.locale]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
