@@ -967,6 +967,13 @@
       "when": 1787706462139,
       "tag": "0137_late_dark_phoenix",
       "breakpoints": true
+    },
+    {
+      "idx": 138,
+      "version": "5",
+      "when": 1787706879032,
+      "tag": "0138_sticky_tag",
+      "breakpoints": true
     }
   ]
 }

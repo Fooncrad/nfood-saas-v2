@@ -1160,6 +1160,18 @@ export const mediaFiles = mysqlTable("mediaFiles", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const contentModerationReviews = mysqlTable("contentModerationReviews", {
+  id: int("id").autoincrement().primaryKey(),
+  mediaFileId: int("mediaFileId").notNull().unique().references(() => mediaFiles.id),
+  status: mysqlEnum("status", ["pending", "approved", "blocked"]).default("pending").notNull(),
+  reason: varchar("reason", { length: 500 }),
+  scanVersion: varchar("scanVersion", { length: 40 }).default("rules-v1").notNull(),
+  watermarkApplied: boolean("watermarkApplied").default(false).notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ moderationStatusIdx: index("content_moderation_status_idx").on(table.status, table.updatedAt) }));
+
 export const contentListings = mysqlTable("contentListings", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
