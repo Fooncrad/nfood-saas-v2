@@ -2,7 +2,7 @@ import { and, count, desc, eq, gte, inArray, isNull, lte, like, ne, or, sql } fr
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, contentPurchaseEntitlements, contentModerationReviews, contentFoodTags, contentListingInvites, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests, trustedDevices, customerCardRequests } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, contentPurchaseEntitlements, contentModerationReviews, commerceFundingAccounts, contentFoodTags, contentListingInvites, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests, trustedDevices, customerCardRequests } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { driverSecurityDeposits, driverSecurityDepositTransactions, financialLedgerEntries } from "../drizzle/schema";
 import { normalizeMenuTemplateSchedule, resolveActiveMenuTemplate } from "../shared/menuTemplateSchedule";
@@ -824,7 +824,7 @@ export async function recordDriverSecurityDepositTransaction(input: { restaurant
   return db.transaction(async (tx) => { await tx.update(driverSecurityDeposits).set({ currentBalance: nextBalance.toFixed(2), updatedAt: new Date() }).where(eq(driverSecurityDeposits.id, account.id)); const result = await tx.insert(driverSecurityDepositTransactions).values({ depositAccountId: account.id, restaurantId: input.restaurantId, driverUserId: input.driverUserId, type: input.type, amount: amount.toFixed(2), balanceAfter: nextBalance.toFixed(2), referenceType: input.referenceType ?? null, referenceId: input.referenceId ?? null, note: input.note?.trim().slice(0, 500) ?? null, createdByUserId: input.createdByUserId }); return { id: Number(result[0].insertId), depositAccountId: account.id, balanceAfter: nextBalance.toFixed(2) }; });
 }
 
-export async function purchaseContentFromWallet(input: { listingId: number; buyerUserId: number; buyerType: "customer"; restaurantId?: number | null }) {
+export async function purchaseContentFromWallet(input: { listingId: number; buyerUserId: number; buyerType: "customer" | "merchant"; restaurantId?: number | null }) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
   return db.transaction(async (tx) => {
@@ -833,15 +833,42 @@ export async function purchaseContentFromWallet(input: { listingId: number; buye
     if (row.listing.ownerUserId === input.buyerUserId) throw new Error("لا يمكن شراء المحتوى من صاحبه");
     const amount = Number(row.listing.price);
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("سعر المحتوى غير صالح");
-    const buyer = (await tx.select().from(walletAccounts).where(eq(walletAccounts.customerId, input.buyerUserId)).limit(1))[0];
-    if (!buyer || Number(buyer.balance) < amount) throw new Error("رصيد محفظتك لا يكفي لإتمام الشراء");
-    const existing = (await tx.select({ id: contentPurchaseOrders.id }).from(contentPurchaseOrders).where(and(eq(contentPurchaseOrders.buyerUserId, input.buyerUserId), eq(contentPurchaseOrders.status, "approved"))).limit(100));
-    if (existing.some((purchase) => purchase.id === input.listingId)) throw new Error("تم شراء هذا المحتوى مسبقًا");
+    const existing = await tx.select({ id: contentPurchaseOrders.id, itemsJson: contentPurchaseOrders.itemsJson }).from(contentPurchaseOrders).where(and(eq(contentPurchaseOrders.buyerUserId, input.buyerUserId), eq(contentPurchaseOrders.status, "approved"))).limit(100);
+    if (existing.some((purchase) => { try { return (JSON.parse(purchase.itemsJson) as Array<{ listingId?: number }>).some((item) => item.listingId === input.listingId); } catch { return false; } })) throw new Error("تم شراء هذا المحتوى مسبقًا");
     const now = new Date();
-    const buyerNext = Number(buyer.balance) - amount;
-    const orderResult = await tx.insert(contentPurchaseOrders).values({ restaurantId: input.restaurantId ?? null, buyerUserId: input.buyerUserId, buyerType: "customer", paymentSource: "wallet", customerUserId: input.buyerUserId, itemsJson: JSON.stringify([{ listingId: row.listing.id, title: row.listing.title, price: String(row.listing.price), currencyCode: row.listing.currencyCode }]), total: amount.toFixed(2), currencyCode: row.listing.currencyCode, status: "approved", note: "شراء محتوى Studio من المحفظة" });
+    const invoiceNumber = `NFOOD-CONTENT-${Date.now()}-${nanoid(6).toUpperCase()}`;
+    let purchaseAccountId: number | null = null;
+    let buyerBalance = 0;
+    let buyerNext = 0;
+    let buyerWalletId: number | null = null;
+    if (input.buyerType === "merchant") {
+      if (!input.restaurantId) throw new Error("يجب ربط الحساب التجاري بمطعم قبل الشراء");
+      let purchaseAccount = (await tx.select().from(commerceFundingAccounts).where(and(eq(commerceFundingAccounts.ownerUserId, input.buyerUserId), eq(commerceFundingAccounts.restaurantId, input.restaurantId), eq(commerceFundingAccounts.accountType, "merchant_purchase"), eq(commerceFundingAccounts.status, "active"))).limit(1))[0];
+      if (!purchaseAccount) {
+        const created = await tx.insert(commerceFundingAccounts).values({ ownerUserId: input.buyerUserId, restaurantId: input.restaurantId, accountType: "merchant_purchase", currencyCode: row.listing.currencyCode, availableBalance: "0.00", createdByUserId: input.buyerUserId });
+        purchaseAccount = (await tx.select().from(commerceFundingAccounts).where(eq(commerceFundingAccounts.id, Number(created[0].insertId))).limit(1))[0];
+      }
+      if (!purchaseAccount) throw new Error("تعذر إنشاء حساب مشتريات مستقل");
+      purchaseAccountId = purchaseAccount.id;
+      buyerBalance = Number(purchaseAccount.availableBalance);
+      if (buyerBalance < amount) throw new Error("حساب مشتريات المحتوى غير ممول؛ لا يمكن استخدام رصيد المطعم التشغيلي");
+      buyerNext = buyerBalance - amount;
+    } else {
+      const buyer = (await tx.select().from(walletAccounts).where(eq(walletAccounts.customerId, input.buyerUserId)).limit(1))[0];
+      if (!buyer || Number(buyer.balance) < amount) throw new Error("رصيد محفظتك لا يكفي لإتمام الشراء");
+      buyerWalletId = buyer.id;
+      buyerBalance = Number(buyer.balance);
+      buyerNext = buyerBalance - amount;
+    }
+    const orderResult = await tx.insert(contentPurchaseOrders).values({ restaurantId: input.restaurantId ?? null, buyerUserId: input.buyerUserId, buyerType: input.buyerType, paymentSource: input.buyerType === "merchant" ? "purchase_account" : "wallet", purchaseAccountId, operatingFundsExcluded: true, invoiceNumber, customerUserId: input.buyerType === "customer" ? input.buyerUserId : null, itemsJson: JSON.stringify([{ listingId: row.listing.id, title: row.listing.title, price: String(row.listing.price), currencyCode: row.listing.currencyCode }]), total: amount.toFixed(2), currencyCode: row.listing.currencyCode, status: "approved", paymentStatus: "paid", paidAt: now, note: input.buyerType === "merchant" ? "شراء محتوى من حساب مشتريات مستقل" : "شراء محتوى Studio من محفظة العميل" });
     const orderId = Number(orderResult[0].insertId);
-    await tx.update(walletAccounts).set({ balance: buyerNext.toFixed(2), updatedAt: now }).where(and(eq(walletAccounts.id, buyer.id), gte(walletAccounts.balance, amount.toFixed(2))));
+    if (input.buyerType === "merchant" && purchaseAccountId) {
+      const updated = await tx.update(commerceFundingAccounts).set({ availableBalance: buyerNext.toFixed(2), updatedAt: now }).where(and(eq(commerceFundingAccounts.id, purchaseAccountId), gte(commerceFundingAccounts.availableBalance, amount.toFixed(2))));
+      if ((updated as unknown as { affectedRows?: number }).affectedRows === 0) throw new Error("تعذر خصم حساب المشتريات المستقل؛ أعد المحاولة");
+      await tx.insert(financialLedgerEntries).values({ restaurantId: null, branchId: null, userId: input.buyerUserId, createdByUserId: input.buyerUserId, section: "content_purchase_account", entryType: "payment", direction: "debit", amount: amount.toFixed(2), currencyCode: row.listing.currencyCode, referenceType: "content_purchase", referenceId: orderId, fundingAccountId: purchaseAccountId, note: `فاتورة مستقلة ${invoiceNumber}` });
+    } else if (buyerWalletId) {
+      await tx.update(walletAccounts).set({ balance: buyerNext.toFixed(2), updatedAt: now }).where(and(eq(walletAccounts.id, buyerWalletId), gte(walletAccounts.balance, amount.toFixed(2))));
+    }
     const owner = (await tx.select().from(walletAccounts).where(eq(walletAccounts.customerId, row.listing.ownerUserId)).limit(1))[0] ?? (() => null)();
     let ownerAccount = owner;
     if (!ownerAccount) { const created = await tx.insert(walletAccounts).values({ customerId: row.listing.ownerUserId, currencyCode: row.listing.currencyCode, balance: "0.00" }); ownerAccount = (await tx.select().from(walletAccounts).where(eq(walletAccounts.id, Number(created[0].insertId))).limit(1))[0]; }
@@ -849,8 +876,26 @@ export async function purchaseContentFromWallet(input: { listingId: number; buye
     const reward = Number((amount * 0.8).toFixed(2));
     const ownerNext = Number(ownerAccount.balance) + reward;
     await tx.update(walletAccounts).set({ balance: ownerNext.toFixed(2), updatedAt: now }).where(eq(walletAccounts.id, ownerAccount.id));
-    await tx.insert(walletTransactions).values([{ walletAccountId: buyer.id, customerId: input.buyerUserId, type: "debit", amount: amount.toFixed(2), balanceAfter: buyerNext.toFixed(2), referenceType: "content_purchase", referenceId: orderId, note: "شراء محتوى Studio من المحفظة", createdAt: now }, { walletAccountId: ownerAccount.id, customerId: row.listing.ownerUserId, type: "credit", amount: reward.toFixed(2), balanceAfter: ownerNext.toFixed(2), referenceType: "content_reward", referenceId: orderId, note: "مكافأة بيع محتوى Studio بنسبة 80%", createdAt: now }]);
-    return { orderId, amount: amount.toFixed(2), reward: reward.toFixed(2), buyerBalance: buyerNext.toFixed(2), ownerBalance: ownerNext.toFixed(2) };
+    if (buyerWalletId) await tx.insert(walletTransactions).values({ walletAccountId: buyerWalletId, customerId: input.buyerUserId, type: "debit", amount: amount.toFixed(2), balanceAfter: buyerNext.toFixed(2), referenceType: "content_purchase", referenceId: orderId, note: "شراء محتوى Studio من محفظة العميل", createdAt: now });
+    await tx.insert(walletTransactions).values({ walletAccountId: ownerAccount.id, customerId: row.listing.ownerUserId, type: "credit", amount: reward.toFixed(2), balanceAfter: ownerNext.toFixed(2), referenceType: "content_reward", referenceId: orderId, note: "مكافأة بيع محتوى Studio بنسبة 80%", createdAt: now });
+    return { orderId, amount: amount.toFixed(2), reward: reward.toFixed(2), buyerBalance: buyerNext.toFixed(2), ownerBalance: ownerNext.toFixed(2), purchaseAccountId, invoiceNumber, purchaseSource: input.buyerType === "merchant" ? "independent_merchant_purchase_account" : "customer_wallet" };
+  });
+}
+
+export async function listCommerceFundingAccounts(input?: { ownerUserId?: number; restaurantId?: number }) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(commerceFundingAccounts).where(and(input?.ownerUserId ? eq(commerceFundingAccounts.ownerUserId, input.ownerUserId) : undefined, input?.restaurantId ? eq(commerceFundingAccounts.restaurantId, input.restaurantId) : undefined)).orderBy(desc(commerceFundingAccounts.updatedAt));
+}
+export async function fundCommerceFundingAccount(input: { accountId: number; amount: string; paymentMethod: "manual" | "bank_transfer" | "card" | "online"; reference?: string | null; createdByUserId: number }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const amount = Number(input.amount); if (!Number.isFinite(amount) || amount <= 0) throw new Error("مبلغ التمويل يجب أن يكون موجبًا");
+  return db.transaction(async (tx) => {
+    const account = (await tx.select().from(commerceFundingAccounts).where(and(eq(commerceFundingAccounts.id, input.accountId), eq(commerceFundingAccounts.status, "active"))).limit(1))[0];
+    if (!account) throw new Error("حساب المشتريات المستقل غير موجود أو غير نشط");
+    const nextBalance = Number(account.availableBalance) + amount; const now = new Date();
+    await tx.update(commerceFundingAccounts).set({ availableBalance: nextBalance.toFixed(2), updatedAt: now }).where(eq(commerceFundingAccounts.id, account.id));
+    const ledger = await tx.insert(financialLedgerEntries).values({ restaurantId: null, branchId: null, userId: account.ownerUserId, createdByUserId: input.createdByUserId, section: "content_purchase_account", entryType: "deposit", direction: "credit", amount: amount.toFixed(2), currencyCode: account.currencyCode, referenceType: "commerce_funding_deposit", referenceId: account.id, fundingAccountId: account.id, note: `تمويل مستقل عبر ${input.paymentMethod}${input.reference ? ` · ${input.reference}` : ""}` });
+    return { id: Number(ledger[0].insertId), accountId: account.id, balance: nextBalance.toFixed(2) };
   });
 }
 

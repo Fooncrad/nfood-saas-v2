@@ -1237,13 +1237,31 @@ export const contentListingInvites = mysqlTable("contentListingInvites", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+export const commerceFundingAccounts = mysqlTable("commerceFundingAccounts", {
+  id: int("id").autoincrement().primaryKey(),
+  ownerUserId: int("ownerUserId").notNull().references(() => users.id),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
+  accountType: mysqlEnum("accountType", ["merchant_purchase", "customer_purchase", "platform_purchase"]).default("merchant_purchase").notNull(),
+  currencyCode: varchar("currencyCode", { length: 8 }).default("SAR").notNull(),
+  availableBalance: decimal("availableBalance", { precision: 12, scale: 2 }).default("0.00").notNull(),
+  status: mysqlEnum("status", ["active", "suspended", "closed"]).default("active").notNull(),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  ownerTypeIdx: index("commerce_funding_owner_type_idx").on(table.ownerUserId, table.accountType),
+  restaurantIdx: index("commerce_funding_restaurant_idx").on(table.restaurantId),
+}));
 export const contentPurchaseOrders = mysqlTable("contentPurchaseOrders", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").references(() => restaurants.id),
   customerUserId: int("customerUserId").references(() => users.id),
   buyerUserId: int("buyerUserId").references(() => users.id),
   buyerType: mysqlEnum("buyerType", ["customer", "merchant"]).default("customer").notNull(),
-  paymentSource: mysqlEnum("paymentSource", ["wallet", "manual"]).default("manual").notNull(),
+  paymentSource: mysqlEnum("paymentSource", ["wallet", "manual", "purchase_account", "external_channel"]).default("manual").notNull(),
+  purchaseAccountId: int("purchaseAccountId").references(() => commerceFundingAccounts.id),
+  operatingFundsExcluded: boolean("operatingFundsExcluded").default(true).notNull(),
+  invoiceNumber: varchar("invoiceNumber", { length: 80 }),
   paymentMethod: mysqlEnum("paymentMethod", ["manual", "bank_transfer", "card", "online", "wallet", "other"]).default("manual").notNull(),
   paymentStatus: mysqlEnum("paymentStatus", ["unpaid", "pending", "paid", "failed", "partially_refunded", "refunded", "cancelled"]).default("unpaid").notNull(),
   refundAmount: decimal("refundAmount", { precision: 10, scale: 2 }).default("0").notNull(),
@@ -1369,12 +1387,14 @@ export const financialLedgerEntries = mysqlTable("financialLedgerEntries", {
   status: mysqlEnum("status", ["posted", "voided"]).default("posted").notNull(),
   referenceType: varchar("referenceType", { length: 60 }),
   referenceId: int("referenceId"),
+  fundingAccountId: int("fundingAccountId").references(() => commerceFundingAccounts.id),
   idempotencyKey: varchar("idempotencyKey", { length: 120 }),
   note: varchar("note", { length: 500 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   scopeDateIdx: index("financial_ledger_scope_date_idx").on(table.restaurantId, table.branchId, table.createdAt),
   referenceIdx: index("financial_ledger_reference_idx").on(table.referenceType, table.referenceId),
+  fundingAccountIdx: index("financial_ledger_funding_account_idx").on(table.fundingAccountId, table.createdAt),
   idempotencyUnique: uniqueIndex("financial_ledger_idempotency_unique").on(table.idempotencyKey),
 }));
 

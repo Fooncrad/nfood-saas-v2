@@ -1051,6 +1051,13 @@
       "when": 1787749142199,
       "tag": "0149_vengeful_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 150,
+      "version": "5",
+      "when": 1787757189566,
+      "tag": "0150_faulty_scarecrow",
+      "breakpoints": true
     }
   ]
 }

@@ -25,6 +25,17 @@ describe("unified payment and printing workflow", () => {
     expect(db).toContain("contentPurchaseEntitlements");
   });
 
+  it("isolates merchant content purchases from restaurant operating funds", () => {
+    expect(schema).toContain('export const commerceFundingAccounts = mysqlTable("commerceFundingAccounts"');
+    expect(schema).toContain('purchaseAccountId: int("purchaseAccountId")');
+    expect(schema).toContain('operatingFundsExcluded: boolean("operatingFundsExcluded")');
+    expect(schema).toContain('fundingAccountId: int("fundingAccountId")');
+    expect(db).toContain('paymentSource: input.buyerType === "merchant" ? "purchase_account" : "wallet"');
+    expect(db).toContain("لا يمكن استخدام رصيد المطعم التشغيلي");
+    expect(db).toContain('section: "content_purchase_account"');
+    expect(routers).toContain("fundCommercePurchaseAccount");
+  });
+
   it("provides auditable manual invoice printing for content and restaurant orders", () => {
     expect(routers).toContain("markContentPurchaseInvoicePrinted");
     expect(routers).toContain("markOrderReceiptPrinted");
