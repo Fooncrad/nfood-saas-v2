@@ -38,7 +38,7 @@ describe("public authentication and social UI contracts", () => {
     expect(menu).toContain("accountPassword");
     expect(menu).toContain("accountPasswordConfirm");
     expect(menu).toContain("registerCustomer.mutate({ name: accountName.trim(), email: accountEmail.trim(), password: accountPassword, restaurantId })");
-    expect(menu).toContain("loginCustomer.mutate({ email: accountEmail.trim(), password: accountPassword, restaurantId })");
+    expect(menu).toContain("getDeviceFingerprint().then((deviceFingerprintHash) => loginCustomer.mutate({ email: accountEmail.trim(), password: accountPassword, restaurantId, deviceFingerprintHash, deviceLabel: getDeviceLabel() }))");
     expect(menu).toContain("showAccountPassword");
     expect(router).toContain("registerCustomer: publicProcedure.input(z.object({ name: z.string().trim().min(2).max(160), email: z.string().trim().email().max(320), password: z.string().min(8).max(128), restaurantId: z.number().int().positive().optional() }))");
     expect(router).toContain("loginCustomer: publicProcedure.input");
