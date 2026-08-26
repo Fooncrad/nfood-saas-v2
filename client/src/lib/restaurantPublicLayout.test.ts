@@ -37,4 +37,13 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain("nfood-menu-shell flex flex-col pb-32 sm:pb-0");
     expect(source).toContain("fixed inset-x-3 bottom-3");
   });
+
+  it("supports the attached Nasser Cafe reference treatment", () => {
+    const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(css).toContain("--menu-page: #fbf7f0 !important");
+    expect(css).toContain("--menu-primary: #7c4d32 !important");
+    expect(css).toContain("--menu-accent: #d99446 !important");
+    expect(css).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
+    expect(css).toContain("object-fit: contain !important");
+  });
 });

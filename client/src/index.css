@@ -1349,3 +1349,118 @@ html[lang="ur"] body {
     .nfood-dashboard-shell [data-testid="dashboard-center-header"] { padding-inline: 0.75rem; }
   }
 }
+
+
+/* Nasser Cafe reference menu treatment: warm espresso, cream, sand and gold. */
+.nfood-menu-template-editorial:not(.nfood-menu-dark) {
+  --menu-page: #fbf7f0 !important;
+  --menu-surface: #ffffff !important;
+  --menu-ink: #32251e !important;
+  --menu-muted: #806a5d !important;
+  --menu-primary: #7c4d32 !important;
+  --menu-accent: #d99446 !important;
+  background-color: #fbf7f0 !important;
+  background-image: linear-gradient(135deg, #fbf7f0 0%, #f8f1e9 58%, #eee2d3 100%) !important;
+}
+
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header {
+  background: #1f1713 !important;
+  border-bottom-color: #7c4d32 !important;
+  box-shadow: 0 12px 30px rgba(61, 37, 23, .14);
+  color: #fff !important;
+}
+
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header .text-slate-900,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header .text-slate-800,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header .text-slate-700,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header .text-slate-600,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header .text-slate-500 {
+  color: #fff !important;
+}
+
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header button,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header label {
+  border-color: rgba(255, 255, 255, .2) !important;
+  background: rgba(255, 255, 255, .09) !important;
+  color: #fff !important;
+}
+
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-hero,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-info-card,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-card,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-template-picker {
+  border-color: #e5d7c7 !important;
+  background: #fff !important;
+  box-shadow: 0 12px 30px rgba(61, 37, 23, .08);
+}
+
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-hero {
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, #fff 0%, #fffaf4 100%) !important;
+}
+
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-category-bar {
+  border-color: #e5d7c7 !important;
+  background: rgba(255, 255, 255, .88) !important;
+  box-shadow: 0 8px 22px rgba(61, 37, 23, .07);
+}
+
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-radius: 1.1rem;
+  overflow: hidden;
+}
+
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-image {
+  aspect-ratio: 1.3 / 1;
+  min-height: 0;
+  background: #eee2d3 !important;
+}
+
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-image img {
+  object-fit: contain !important;
+  padding: .65rem;
+  filter: saturate(.96) contrast(1.02);
+}
+
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-content .text-slate-950,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-content .text-slate-900,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-content .text-slate-800 {
+  color: #32251e !important;
+}
+
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-content .text-slate-600,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-content .text-slate-500,
+.nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-content .text-slate-400 {
+  color: #806a5d !important;
+}
+
+@media (min-width: 1280px) {
+  .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1279px) {
+  .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .7rem;
+  }
+  .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-image {
+    aspect-ratio: 1.12 / 1;
+  }
+}
+
+@media (max-width: 390px) {
+  .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-grid {
+    grid-template-columns: 1fr;
+  }
+}
