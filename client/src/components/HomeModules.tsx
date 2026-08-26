@@ -45,6 +45,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -7135,16 +7136,26 @@ function AdminPwaSyncCard() {
   );
 }
 
+function OverviewMetricSkeleton({ compact = false }: { compact?: boolean }) {
+  return <Card className={`rounded-2xl border-slate-200 bg-white shadow-sm ${compact ? "min-h-24" : "min-h-28"}`} aria-label="جارٍ تحميل الإحصائية"><CardContent className="flex items-center justify-between p-4"><div className="space-y-3"><Skeleton className="h-3 w-24 rounded-full" /><Skeleton className={compact ? "h-5 w-20 rounded-full" : "h-7 w-28 rounded-full"} /></div><Skeleton className="h-10 w-10 rounded-xl" /></CardContent></Card>;
+}
+function OverviewPanelSkeleton({ rows = 3 }: { rows?: number }) {
+  return <div className="space-y-3" aria-label="جارٍ تحميل البيانات">{Array.from({ length: rows }, (_, index) => <div key={index} className="flex items-center justify-between rounded-xl border border-slate-100 p-3"><div className="space-y-2"><Skeleton className="h-3 w-32 rounded-full" /><Skeleton className="h-2.5 w-20 rounded-full" /></div><Skeleton className="h-6 w-16 rounded-full" /></div>)}</div>;
+}
 function SuperAdminView() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
   const remoteRestaurants = trpc.admin.restaurants.useQuery(undefined, {
     enabled: Boolean(user),
-    retry: 2,
+    retry: 1,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
   const remoteCustomers = trpc.admin.customers.useQuery(undefined, {
     enabled: Boolean(user),
-    retry: 2,
+    retry: 1,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
   const roleCatalog = trpc.admin.roles.useQuery(
     {},
@@ -7156,11 +7167,15 @@ function SuperAdminView() {
   });
   const saasMetrics = trpc.admin.saasMetrics.useQuery(undefined, {
     enabled: Boolean(user),
-    retry: 2,
+    retry: 1,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
   const platformSummary = trpc.admin.platformSummary.useQuery(undefined, {
     enabled: Boolean(user),
-    retry: 2,
+    retry: 1,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
   const systemHealth = trpc.admin.systemHealth.useQuery(undefined, {
     enabled: Boolean(user),
@@ -7380,7 +7395,7 @@ function SuperAdminView() {
               </button>
             </div>
           ) : saasMetrics.isLoading ? (
-            <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
+            <OverviewPanelSkeleton rows={3} />
           ) : (
             <>
               <div className="grid gap-3 sm:grid-cols-4">
@@ -7495,14 +7510,7 @@ function SuperAdminView() {
                     </td>
                   </tr>
                 ) : remoteRestaurants.isLoading ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-5 py-12 text-center text-sm text-slate-500"
-                    >
-                      جارٍ تحميل المطاعم...
-                    </td>
-                  </tr>
+                  Array.from({ length: 4 }, (_, index) => <tr key={index} aria-label="جارٍ تحميل المطعم"><td colSpan={6} className="px-5 py-4"><div className="grid grid-cols-6 items-center gap-4"><Skeleton className="h-4 w-28 rounded-full" /><Skeleton className="h-4 w-24 rounded-full" /><Skeleton className="h-4 w-12 rounded-full" /><Skeleton className="h-4 w-16 rounded-full" /><Skeleton className="h-6 w-16 rounded-full" /><Skeleton className="h-8 w-20 rounded-lg" /></div></td></tr>)
                 ) : shown.length === 0 ? (
                   <tr>
                     <td
@@ -7734,6 +7742,8 @@ function SuperAdminView() {
           ] as const
         ).map(([label, value, Icon, color]) => {
           const StatIcon = Icon as typeof Store;
+          if (platformSummary.isLoading) return <OverviewMetricSkeleton key={String(label)} />;
+          if (platformSummary.isError) return <Card key={String(label)} className="rounded-2xl border-red-100 bg-white shadow-sm"><CardContent className="flex min-h-28 flex-col justify-between p-4"><div className="flex items-center justify-between"><p className="text-xs text-slate-500">{label}</p><StatIcon className={`h-5 w-5 ${color}`} /></div><button onClick={() => void platformSummary.refetch()} className="mt-3 w-fit text-xs font-bold text-red-600 underline">تعذر التحميل · إعادة المحاولة</button></CardContent></Card>;
           return (
             <Card
               key={String(label)}
