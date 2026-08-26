@@ -1037,6 +1037,13 @@
       "when": 1787746055482,
       "tag": "0147_blushing_zeigeist",
       "breakpoints": true
+    },
+    {
+      "idx": 148,
+      "version": "5",
+      "when": 1787747796590,
+      "tag": "0148_heavy_jubilee",
+      "breakpoints": true
     }
   ]
 }

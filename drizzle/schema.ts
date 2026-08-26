@@ -64,6 +64,7 @@ export const customerProfiles = mysqlTable("customerProfiles", {
   servicesJson: text("servicesJson"),
   productsJson: text("productsJson"),
   paymentMethodsJson: text("paymentMethodsJson"),
+  qrVisualConfigJson: text("qrVisualConfigJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
