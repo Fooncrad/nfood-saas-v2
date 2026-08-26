@@ -1,8 +1,8 @@
 import { invokeLLM } from "./_core/llm";
 
-export type MenuTranslationEntry = { language: string; name: string; description?: string; status: "approved"; confidence: number };
+export type MenuTranslationEntry = { language: string; name: string; description?: string; status: "approved"; confidence: number; automatic?: boolean; sourceFingerprint?: string; updatedAt?: string };
 
-const languages = ["ar", "en", "fr", "ur", "es", "de", "tr"] as const;
+const languages = ["ar", "en", "fr"] as const;
 type SupportedLanguage = (typeof languages)[number];
 
 function parseEntries(raw?: string | null): MenuTranslationEntry[] {
@@ -40,7 +40,7 @@ export async function ensureAutomaticMenuTranslations(input: { name: string; des
     const generated = parsed && typeof parsed === "object" && Array.isArray((parsed as { translations?: unknown }).translations) ? (parsed as { translations: Array<{ language?: unknown; name?: unknown; description?: unknown }> }).translations : [];
     for (const entry of generated) {
       if (typeof entry.language !== "string" || !missing.includes(entry.language as SupportedLanguage) || typeof entry.name !== "string" || !entry.name.trim()) continue;
-      existingByLanguage.set(entry.language, { language: entry.language, name: entry.name.trim(), description: typeof entry.description === "string" && entry.description.trim() ? entry.description.trim() : undefined, status: "approved", confidence: 0.95 });
+      existingByLanguage.set(entry.language, { language: entry.language, name: entry.name.trim(), description: typeof entry.description === "string" && entry.description.trim() ? entry.description.trim() : undefined, status: "approved", confidence: 0.95, automatic: true, sourceFingerprint: `${name}\u0000${description}`, updatedAt: new Date().toISOString() });
     }
   } catch (error) {
     console.warn("[AutoTranslation] menu translation failed; preserving source and existing entries", error);

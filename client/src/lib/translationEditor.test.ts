@@ -46,6 +46,19 @@ describe("translation editor workflow", () => {
     expect(panel).toContain("previewHint");
   });
 
+  it("translates Arabic menu saves and protects non-Arabic fallback", () => {
+    const router = readFileSync("server/routers.ts", "utf8");
+    const autoService = readFileSync("server/autoMenuTranslations.ts", "utf8");
+    const publicMenu = readFileSync("client/src/pages/RestaurantPublic.tsx", "utf8");
+    const home = readFileSync("client/src/components/HomeModules.tsx", "utf8");
+    expect(router).toContain("ensureAutomaticMenuTranslations({ name: input.name");
+    expect(router).toContain("translateMenuDraft");
+    expect(autoService).toContain('const languages = ["ar", "en", "fr"]');
+    expect(home).toContain("ترجمة آلية لكل الحقول");
+    expect(publicMenu).toContain("Translation pending");
+    expect(publicMenu).toContain("Traduction en attente");
+  });
+
   it("protects dictionary procedures with the translation editor guard", () => {
     const router = readFileSync("server/routers.ts", "utf8");
     expect(router).toContain("uiTranslationEntries: translationEditorProcedure");

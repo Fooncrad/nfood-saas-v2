@@ -959,6 +959,9 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
       ),
     onError: error => toast.error(`تعذر إكمال الترجمة: ${error.message}`),
   });
+  const translateMenuDraft = trpc.platform.translateMenuDraft.useMutation({
+    onError: error => toast.error(`تعذر ترجمة الحقول: ${error.message}`),
+  });
   const approveMenuTranslation =
     trpc.platform.approveMenuTranslation.useMutation({
       onSuccess: result => {
@@ -1203,6 +1206,34 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
     selectedItemLanguages,
     localizedItemDraft
   );
+  const autoTranslateNewItem = async () => {
+    const source = localizedItemDraft.ar;
+    if (source.name.trim().length < 2) {
+      toast.error("أدخل اسم الصنف بالعربية أولًا");
+      return;
+    }
+    try {
+      const result = await translateMenuDraft.mutateAsync({
+        restaurantId,
+        name: source.name.trim(),
+        description: source.description.trim() || undefined,
+        targetLanguages: ["en", "fr"],
+      });
+      setLocalizedItemDraft(current => ({
+        ...current,
+        ...Object.fromEntries(
+          result.translations.map(translation => [translation.language, {
+            name: translation.name,
+            description: translation.description ?? "",
+          }])
+        ),
+      }) as LocalizedDraft);
+      setSelectedItemLanguages(["ar", "en", "fr"]);
+      toast.success("تمت ترجمة الاسم والوصف؛ راجع النصين قبل الحفظ");
+    } catch {
+      // onError يعرض رسالة مفهومة للمستخدم.
+    }
+  };
   const [bulkTranslation, setBulkTranslation] = useState({
     running: false,
     total: 0,
@@ -1420,7 +1451,21 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
                             مختارة قبل الحفظ.
                           </p>
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => void autoTranslateNewItem()}
+                            disabled={translateMenuDraft.isPending || localizedItemDraft.ar.name.trim().length < 2}
+                            className="gap-1 rounded-xl border-emerald-300 text-xs text-emerald-700 hover:bg-emerald-50"
+                          >
+                            <Sparkles className="h-3.5 w-3.5" />
+                            {translateMenuDraft.isPending ? "جارٍ ترجمة الحقول..." : "ترجمة آلية لكل الحقول"}
+                          </Button>
+                          {(["en", "fr"] as MenuLanguage[]).some(language => !localizedItemDraft[language].name.trim()) ? (
+                            <span className="text-[11px] font-bold text-amber-700">توجد لغات تحتاج ترجمة أو مراجعة</span>
+                          ) : null}
                           {(
                             Object.keys(menuLanguageLabels) as MenuLanguage[]
                           ).map(itemLanguage => (

@@ -9,7 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { detectMenuSourceLanguage } from "@/lib/translationSource";
 
-type LanguageCode = "ar" | "en" | "fr" | "ur";
+type LanguageCode = "ar" | "en" | "fr";
 type TranslationEntry = { language: LanguageCode; name: string; description?: string; status?: "draft" | "review" | "approved"; confidence?: number; approvedAt?: string };
 type TranslationEntity = { id: number; type: "category" | "item" | "addon"; name: string; description?: string | null; translations: TranslationEntry[] };
 type TranslationExport = { format: "nfood-translations"; version: 1; restaurantId: number; exportedAt: string; entities: Array<{ id: number; type: TranslationEntity["type"]; name: string; description?: string | null; translations: TranslationEntry[] }> };
@@ -20,7 +20,7 @@ function readTranslations(value: string | null | undefined): TranslationEntry[] 
 
 export function getTranslationProgress(entities: Array<{ translations: TranslationEntry[] }>, language: LanguageCode) { const total = entities.length; const complete = entities.filter((entity) => entity.translations.some((entry) => entry.language === language && (!entry.status || entry.status === "approved"))).length; return { total, complete, percent: total ? Math.round((complete / total) * 100) : 0 }; }
 
-const languages: Array<{ code: LanguageCode; label: string }> = [{ code: "ar", label: "العربية" }, { code: "en", label: "English" }, { code: "fr", label: "Français" }, { code: "ur", label: "اردو" }];
+const languages: Array<{ code: LanguageCode; label: string }> = [{ code: "ar", label: "العربية" }, { code: "en", label: "English" }, { code: "fr", label: "Français" }];
 
 export function TranslationReviewPanel({ restaurantId }: { restaurantId: number }) {
   const categories = trpc.platform.menuCategories.useQuery({ restaurantId }, { retry: false });

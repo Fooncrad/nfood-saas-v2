@@ -3,7 +3,7 @@ import { menuCategories, menuItems, menuItemAddons } from "../drizzle/schema";
 import { getDb } from "./db";
 import { invokeLLM } from "./_core/llm";
 
-export type MenuLanguage = "ar" | "en" | "fr" | "ur" | "es" | "de" | "tr";
+export type MenuLanguage = "ar" | "en" | "fr";
 export type MenuTranslationEntityType = "category" | "item" | "addon";
 
 type TranslationEntry = {
@@ -35,7 +35,7 @@ export type PublicMenuTranslation = {
   automatic: true;
 };
 
-const SUPPORTED_LANGUAGES: MenuLanguage[] = ["ar", "en", "fr", "ur", "es", "de", "tr"];
+const SUPPORTED_LANGUAGES: MenuLanguage[] = ["ar", "en", "fr"];
 const MAX_BATCH_SIZE = 30;
 const MAX_NAME_LENGTH = 160;
 const MAX_DESCRIPTION_LENGTH = 1000;
@@ -162,9 +162,9 @@ export function resolveSupportedMenuLanguage(raw: string | null | undefined, req
     try {
       const parsed: unknown = JSON.parse(raw ?? "[]");
       const values = Array.isArray(parsed) ? parsed.filter((value): value is MenuLanguage => typeof value === "string" && SUPPORTED_LANGUAGES.includes(value as MenuLanguage)) : [];
-      return values.length ? values : ["ar", "en", "fr", "ur"] as MenuLanguage[];
+      return values.length ? values : ["ar", "en", "fr"] as MenuLanguage[];
     } catch {
-      return ["ar", "en", "fr", "ur"] as MenuLanguage[];
+      return ["ar", "en", "fr"] as MenuLanguage[];
     }
   })();
   return requested && supported.includes(requested as MenuLanguage) ? requested as MenuLanguage : supported[0] ?? "ar";
