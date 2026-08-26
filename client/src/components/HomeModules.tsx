@@ -114,6 +114,7 @@ import { RestaurantMenuInsightsPanel } from "@/components/RestaurantMenuInsights
 import { MediaTemplateStudio } from "@/components/MediaTemplateStudio";
 import { DeliveryOperationsPanel } from "@/components/DeliveryOperationsPanel";
 import { ReservationSchedulePanel } from "@/components/ReservationSchedulePanel";
+import { ReservationPolicyPanel } from "@/components/ReservationPolicyPanel";
 import { QROperationsPanel } from "@/components/QROperationsPanel";
 import {
   RemoteTaskDialog,
@@ -9345,38 +9346,6 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
                   className="mt-1 rounded-xl"
                 />
               </label>
-              <label className="flex items-center gap-3 text-sm font-semibold sm:col-span-2">
-                <input
-                  type="checkbox"
-                  checked={draft.reservationEnabled}
-                  onChange={event =>
-                    setDraft({
-                      ...draft,
-                      reservationEnabled: event.target.checked,
-                    })
-                  }
-                  className="h-4 w-4 accent-orange-500"
-                />{" "}
-                استقبال الحجوزات العامة
-              </label>
-              <div className="grid gap-3 rounded-2xl border border-orange-100 bg-orange-50/60 p-4 sm:col-span-2 sm:grid-cols-2">
-                <label className="flex items-center gap-3 text-sm font-semibold">
-                  <input type="checkbox" checked={draft.tipsEnabled} onChange={event => setDraft({ ...draft, tipsEnabled: event.target.checked })} className="h-4 w-4 accent-orange-500" />
-                  <span>تفعيل الإكرامية</span>
-                </label>
-                <label className="space-y-2 text-sm font-semibold">
-                  نسبة الإكرامية
-                  <Input type="number" min={0} max={100} step="0.01" value={draft.tipPercent} onChange={event => setDraft({ ...draft, tipPercent: Number(event.target.value) })} className="rounded-xl bg-white" />
-                </label>
-                <label className="flex items-center gap-3 text-sm font-semibold">
-                  <input type="checkbox" checked={draft.serviceFeeEnabled} onChange={event => setDraft({ ...draft, serviceFeeEnabled: event.target.checked })} className="h-4 w-4 accent-orange-500" />
-                  <span>تفعيل رسوم الخدمة</span>
-                </label>
-                <label className="space-y-2 text-sm font-semibold">
-                  نسبة رسوم الخدمة
-                  <Input type="number" min={0} max={100} step="0.01" value={draft.serviceFeePercent} onChange={event => setDraft({ ...draft, serviceFeePercent: Number(event.target.value) })} className="rounded-xl bg-white" />
-                </label>
-              </div>
               <label className="space-y-2 text-sm font-semibold">
                 مهلة عدم الحضور بالدقائق
                 <Input
@@ -10334,7 +10303,7 @@ function RestaurantOperationsHub({ restaurantId, branchId, defaultTab = "tables"
       <div key={activeTab} data-operations-tab={activeTab} className="nfood-settings-tab-enter space-y-3">
         {activeTab === "tables" && <TablesView restaurantId={restaurantId} branchId={branchId} onOpenQrTables={openTableQrCustomization} />}
         {activeTab === "qr" && <QROperationsPanel restaurantId={restaurantId} branchId={branchId} />}
-        {activeTab === "reservations" && <div className="space-y-4"><ReservationsView restaurantId={restaurantId} /><ReservationSchedulePanel restaurantId={restaurantId} branchId={branchId} /><DeliveryOperationsPanel restaurantId={restaurantId} branchId={branchId} /></div>}
+        {activeTab === "reservations" && <div className="space-y-4"><ReservationsView restaurantId={restaurantId} /><ReservationPolicyPanel restaurantId={restaurantId} /><ReservationSchedulePanel restaurantId={restaurantId} branchId={branchId} /><DeliveryOperationsPanel restaurantId={restaurantId} branchId={branchId} /></div>}
         {activeTab === "menu" && <BrandingPanel restaurantId={restaurantId} />}
         {activeTab === "finance" && <FinancialLedgerView restaurantId={restaurantId} branchId={branchId} />}
       </div>
