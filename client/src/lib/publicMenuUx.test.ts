@@ -15,7 +15,7 @@ describe("public menu UX", () => {
     expect(page).toContain("nfood-menu-shell flex flex-col");
     expect(page).toContain("<main className=\"min-w-0 px-3 sm:px-6\">");
     expect(page).toContain("ar-SA-u-nu-latn");
-    expect(page).toContain("h-32 shrink-0");
+    expect(page).toContain("aspect-[4/3] shrink-0");
     expect(page).toContain("min-h-[340px]");
     expect(page).toContain("min-h-[185px]");
     expect(page).toContain('loading="lazy"');
@@ -69,8 +69,8 @@ describe("public menu UX", () => {
   });
 
   it("keeps the header focused and exposes menu tools plus account below it", () => {
-    expect(page).toContain("aria-label={copy.qrTitle}");
-    expect(page).toContain("<QrCode className=\"ml-2 h-4 w-4\" />QR Menu");
+    expect(page).toContain("setMenuQrOpen(true)");
+    expect(page).toContain("<QrCode className=\"h-4 w-4 text-[var(--menu-primary)]\" />{copy.qrTitle}");
     expect(page).toContain("تسجيل / دخول");
     expect(page).not.toContain("مشاركة المنيو");
     expect(page).not.toContain('showMenuTool("share")');
@@ -86,7 +86,8 @@ describe("public menu UX", () => {
     const mainMenu = page.slice(page.indexOf('<div id="menu"'), page.indexOf('<section id="contact"'));
     expect(mainMenu).not.toContain("QRCodeSVG");
     expect(page).toContain("<div className=\"rounded-xl bg-slate-900 p-4 text-white\"><p className=\"text-sm font-black\">{copy.qrTitle}</p></div>");
-    expect(page).not.toContain("{copy.qrHelp}");
+    expect(page).toContain("{copy.qrHelp}");
+    expect(page).not.toContain('<p dir="ltr" className="break-all rounded-xl bg-slate-50');
     expect(page).toContain("grid grid-cols-2 gap-2");
     expect(page).not.toContain("shareMenuLink");
   });
