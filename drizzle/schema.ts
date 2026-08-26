@@ -1157,6 +1157,10 @@ export const mediaFiles = mysqlTable("mediaFiles", {
   category: mysqlEnum("category", ["image", "menu", "logo", "document", "other"]).default("other").notNull(),
   isDeleted: boolean("isDeleted").default(false).notNull(),
   uploadedByUserId: int("uploadedByUserId").notNull().references(() => users.id),
+  virusScanStatus: mysqlEnum("virusScanStatus", ["pending", "clean", "infected", "unavailable"]).default("pending").notNull(),
+  virusScanName: varchar("virusScanName", { length: 160 }),
+  virusScanVersion: varchar("virusScanVersion", { length: 160 }),
+  virusScannedAt: timestamp("virusScannedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

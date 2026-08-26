@@ -26,5 +26,9 @@ describe("content review experience", () => {
     expect(db).toContain("content_reward");
     expect(router).toContain("NODE_ENV !== \"production\"");
     expect(router).toContain("hasValidImageSignature");
+    expect(router).toContain("scanBufferWithClamAV");
+    expect(router).toContain("لم يتم تخزينها");
+    expect(router).toContain("virusScanStatus: \"clean\"");
+    expect(router.indexOf("scanBufferWithClamAV(buffer)")).toBeLessThan(router.indexOf("storagePut(`media/"));
   });
 });
