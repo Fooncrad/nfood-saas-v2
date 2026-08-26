@@ -23,6 +23,8 @@ const routeLoaders = {
   CustomerStudio: () => import("./pages/CustomerStudio"),
   CustomerRegister: () => import("./pages/CustomerRegister"),
   ContentMarketplace: () => import("./pages/ContentMarketplace"),
+  CreatorContentStatus: () => import("./pages/CreatorContentStatus"),
+  PlatformContentModeration: () => import("./pages/PlatformContentModeration"),
   SupportManagement: () => import("./pages/SupportManagement"),
   VcardCardsAdmin: () => import("./pages/VcardCardsAdmin"),
   FavoritesPage: () => import("./pages/FavoritesPage"),
@@ -44,6 +46,8 @@ const CustomerRewards = lazy(routeLoaders.CustomerRewards);
 const CustomerStudio = lazy(routeLoaders.CustomerStudio);
 const CustomerRegister = lazy(routeLoaders.CustomerRegister);
 const ContentMarketplace = lazy(routeLoaders.ContentMarketplace);
+const CreatorContentStatus = lazy(routeLoaders.CreatorContentStatus);
+const PlatformContentModeration = lazy(routeLoaders.PlatformContentModeration);
 const SupportManagement = lazy(routeLoaders.SupportManagement);
 const VcardCardsAdmin = lazy(routeLoaders.VcardCardsAdmin);
 const FavoritesPage = lazy(routeLoaders.FavoritesPage);
@@ -89,6 +93,8 @@ function Router() {
       <Route path="/register" component={Home} />
       <Route path="/customer-register" component={CustomerRegister} />
       <Route path="/content-market" component={ContentMarketplace} />
+      <Route path="/creator-content" component={CreatorContentStatus} />
+      <Route path="/admin/content-moderation" component={PlatformContentModeration} />
       <Route path="/restaurant/register" component={Home} />
       <Route path="/pricing" component={PricingPage} />
       <Route path="/features" component={FeaturesPage} />
