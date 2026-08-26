@@ -59,6 +59,7 @@ import { navItems, navTranslationKeys, type NavKey, type Order, type OrderStatus
 import { getOrderStatusPalette } from "@/lib/statusPalette";
 import { detectMenuSourceLanguage } from "@/lib/translationSource";
 import CustomerProfileSettings from "@/pages/CustomerProfileSettings";
+import CustomerPortal from "@/pages/CustomerPortal";
 import VcardAccountBinding from "@/pages/VcardAccountBinding";
 import { DeliveryOperationsPanel } from "@/components/DeliveryOperationsPanel";
 import { AccountPreferencesPanel } from "@/components/AccountPreferencesPanel";
@@ -304,6 +305,7 @@ export default function Home() {
     if (location === "/register" || location === "/restaurant/register") return <RegisterScreen onBack={() => setLocation("/login")} onOAuth={() => startLogin()} />;
     if (location === "/login") return <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} onRegister={() => setLocation("/restaurant/register")} onForgotPassword={() => { setForgotMessage(null); requestPasswordReset.mutate({ email: testEmail }); }} forgotPending={requestPasswordReset.isPending} forgotMessage={forgotMessage} loginError={testLogin.error?.message ?? null} />;
     if (!user) return showRegister ? <RegisterScreen onBack={() => setShowRegister(false)} onOAuth={() => startLogin()} /> : <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} rememberMe={rememberMe} setRememberMe={setRememberMe} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} onRegister={() => setShowRegister(true)} onForgotPassword={() => { setForgotMessage(null); requestPasswordReset.mutate({ email: testEmail }); }} forgotPending={requestPasswordReset.isPending} forgotMessage={forgotMessage} loginError={testLogin.error?.message ?? null} />;
+  if ((user.testRole as string | undefined) === "customer") return <CustomerPortal />;
   const title = localizedNavItems.find((item) => item.key === active)?.label ?? t("overview");
   const sidebarGroups = [
     { id: "restaurant-overview", label: t("overview"), keys: ["overview", "admin"] as NavKey[] },
