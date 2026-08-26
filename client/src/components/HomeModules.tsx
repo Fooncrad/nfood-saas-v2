@@ -2887,6 +2887,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
     },
     onError: error => toast.error(`تعذر تأكيد الدفع: ${error.message}`),
   });
+  const markOrderReceiptPrinted = trpc.platform.markOrderReceiptPrinted.useMutation({ onError: error => toast.error(`تعذر تسجيل الطباعة: ${error.message}`) });
   const refundOrder = trpc.platform.refundOrder.useMutation({
     onSuccess: () => {
       setLastReceipt(current => current ? { ...current, paymentStatus: "refunded" } : current);
@@ -3022,6 +3023,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       footerText: receiptBrandingQuery.data?.footerText,
       logoUrl: receiptBrandingQuery.data?.logoUrl,
     });
+    markOrderReceiptPrinted.mutate({ restaurantId, orderId: lastReceipt.orderId });
   };
   return (
     <div>
