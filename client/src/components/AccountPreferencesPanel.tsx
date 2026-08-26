@@ -23,10 +23,6 @@ const languageOptions = [
   ["ar", "العربية"],
   ["en", "English"],
   ["fr", "Français"],
-  ["ur", "اردو"],
-  ["es", "Español"],
-  ["de", "Deutsch"],
-  ["tr", "Türkçe"],
 ] as const;
 
 const themeModeOptions = [

@@ -8,7 +8,10 @@ export const MENU_LANGUAGE_STORAGE_KEY = "nfood-menu-language";
 export const MENU_LANGUAGE_MANUAL_STORAGE_KEY = "nfood-menu-language-manual";
 export function isPublicLanguagePath(pathname: string) { return pathname.startsWith("/menu/") || pathname.startsWith("/restaurant/"); }
 export function languageStorageKey(pathname?: string) { const currentPath = pathname ?? (typeof window !== "undefined" ? window.location.pathname : "/"); return isPublicLanguagePath(currentPath) ? MENU_LANGUAGE_STORAGE_KEY : DASHBOARD_LANGUAGE_STORAGE_KEY; }
-export function detectVisitorLanguage(): Language { if (typeof window === "undefined") return "en"; const browser = window.navigator.language.toLowerCase().split("-")[0]; return browser === "en" || browser === "fr" || browser === "ur" || browser === "ar" ? browser : "en"; }
+export const UI_LANGUAGES = ["ar", "en", "fr"] as const;
+export type UiLanguage = (typeof UI_LANGUAGES)[number];
+export function isUiLanguage(value: unknown): value is UiLanguage { return UI_LANGUAGES.includes(value as UiLanguage); }
+export function detectVisitorLanguage(): Language { if (typeof window === "undefined") return "en"; const browser = window.navigator.language.toLowerCase().split("-")[0]; return isUiLanguage(browser) ? browser : "en"; }
 
 function animateLanguageChange() {
   if (typeof document === "undefined") return;
@@ -313,6 +316,15 @@ const autoFallbackTranslations: Partial<Record<Exclude<Language, "ar">, Record<s
   }
 };
 
+const genericUiTranslations: Record<"en" | "fr", Record<string, string>> = {
+  en: {
+    "الحقوق": "Rights", "والحقوق": "and rights", "العملاء": "Customers", "الطلبات": "Orders", "طلبات": "Orders", "المشتريات": "Purchases", "المحتوى": "Content", "محتوى": "Content", "الشحن": "Shipping", "المكتبة": "Library", "الرصيد": "Balance", "المحفوظ": "Saved", "إضافة": "Add", "عميل": "Customer", "مطعم": "Restaurant", "المطاعم": "Restaurants", "شراء": "Purchase", "الموافقة": "Approval", "للموافقة": "For approval", "المبيعات": "Sales", "البيع": "Selling", "العروض": "Offers", "الفواتير": "Invoices", "الموافقة عليها": "Pending approval", "طلبات الشحن": "Shipping requests", "طلبات البطاقات": "Card requests", "مراجعة المحتوى": "Content review", "مراجعة": "Review", "نشط": "Active", "نشطة": "Active", "غير نشط": "Inactive", "الكل": "All", "بحث": "Search", "حفظ": "Save", "إلغاء": "Cancel", "إعدادات": "Settings", "التفاصيل": "Details", "الدخول": "Open", "تسجيل الدخول": "Sign in", "تسجيل الخروج": "Sign out", "الاسم": "Name", "البريد الإلكتروني": "Email", "رقم الجوال": "Phone number", "الحالة": "Status", "الإجمالي": "Total", "اليوم": "Today", "الشهر": "Month", "المحفظة": "Wallet", "المكافآت": "Rewards", "التفعيل": "Activation", "المفاتيح": "Keys", "البطاقات": "Cards", "النظرة العامة": "Overview", "الإدارة": "Management", "المنصة": "Platform", "الرصيد المحفوظ": "Saved balance", "البيانات": "Data", "العمل": "Work", "أخرى": "Other", "مركز العملاء": "Customer center", "قائمة العملاء والحقوق": "Customers and rights", "إدارة آمنة للحسابات والمحتوى والمبيعات والمحفظة من نفس نظرة المنصة.": "Securely manage accounts, content, sales, and wallets from the same platform view.", "دخول مؤقت مراقب": "Monitored temporary access", "إجمالي العملاء": "Total customers", "النشطون": "Active", "المحتوى المعروض": "Listed content", "رصيد المحافظ": "Wallet balance", "إضافة عميل": "Add customer", "إنشاء حساب عميل من النموذج المنفصل": "Create a customer account from the dedicated form", "طلبات العملاء": "Customer orders", "عرض وتتبع الطلبات المرتبطة بالحسابات": "View and track account-linked orders", "مشتريات للموافقة": "Purchases for approval", "مراجعة طلبات المحتوى والفواتير": "Review content requests and invoices", "الشحن وNFC": "Shipping and NFC", "طلبات البطاقة، الشحن، وتفعيل المفاتيح": "Card requests, shipping, and key activation", "مكتبة المشتريات": "Purchase library", "الملفات التي تُسلّم رقميًا بعد الدفع": "Files delivered digitally after payment", "مراجعة محتوى العملاء": "Review customer content", "الاعتماد، الرفض، والفحص قبل النشر": "Approval, rejection, and pre-publication review", "ابحث باسم العميل أو البريد أو الجوال": "Search by customer name, email, or phone", "لا توجد حسابات عملاء مطابقة.": "No matching customer accounts.", "Profile جاهز": "Profile ready", "Profile غير منشور": "Profile unpublished", "لا توجد جلسة": "No session", "كلمة المرور": "Password", "تعذر تحميل قائمة العملاء.": "Unable to load the customer list."
+  },
+  fr: {
+    "الحقوق": "Droits", "والحقوق": "et droits", "العملاء": "Clients", "الطلبات": "Commandes", "طلبات": "Commandes", "المشتريات": "Achats", "المحتوى": "Contenu", "محتوى": "Contenu", "الشحن": "Expédition", "المكتبة": "Bibliothèque", "الرصيد": "Solde", "المحفوظ": "Enregistré", "إضافة": "Ajouter", "عميل": "Client", "مطعم": "Restaurant", "المطاعم": "Restaurants", "شراء": "Acheter", "الموافقة": "Approbation", "للموافقة": "À approuver", "المبيعات": "Ventes", "البيع": "Vente", "العروض": "Offres", "الفواتير": "Factures", "الموافقة عليها": "En attente d’approbation", "طلبات الشحن": "Demandes d’expédition", "طلبات البطاقات": "Demandes de cartes", "مراجعة المحتوى": "Révision du contenu", "مراجعة": "Réviser", "نشط": "Actif", "نشطة": "Actif", "غير نشط": "Inactif", "الكل": "Tout", "بحث": "Rechercher", "حفظ": "Enregistrer", "إلغاء": "Annuler", "إعدادات": "Paramètres", "التفاصيل": "Détails", "الدخول": "Ouvrir", "تسجيل الدخول": "Se connecter", "تسجيل الخروج": "Se déconnecter", "الاسم": "Nom", "البريد الإلكتروني": "E-mail", "رقم الجوال": "Téléphone", "الحالة": "Statut", "الإجمالي": "Total", "اليوم": "Aujourd’hui", "الشهر": "Mois", "المحفظة": "Portefeuille", "المكافآت": "Récompenses", "التفعيل": "Activation", "المفاتيح": "Clés", "البطاقات": "Cartes", "النظرة العامة": "Vue d’ensemble", "الإدارة": "Gestion", "المنصة": "Plateforme", "الرصيد المحفوظ": "Solde enregistré", "البيانات": "Données", "العمل": "Travail", "أخرى": "Autre", "مركز العملاء": "Centre clients", "قائمة العملاء والحقوق": "Clients et droits", "إدارة آمنة للحسابات والمحتوى والمبيعات والمحفظة من نفس نظرة المنصة.": "Gérez en sécurité les comptes, le contenu, les ventes et les portefeuilles depuis la même vue de la plateforme.", "دخول مؤقت مراقب": "Accès temporaire surveillé", "إجمالي العملاء": "Total clients", "النشطون": "Actifs", "المحتوى المعروض": "Contenu publié", "رصيد المحافظ": "Solde des portefeuilles", "إضافة عميل": "Ajouter un client", "إنشاء حساب عميل من النموذج المنفصل": "Créer un compte client depuis le formulaire dédié", "طلبات العملاء": "Commandes clients", "عرض وتتبع الطلبات المرتبطة بالحسابات": "Voir et suivre les commandes liées aux comptes", "مشتريات للموافقة": "Achats à approuver", "مراجعة طلبات المحتوى والفواتير": "Réviser les demandes de contenu et les factures", "الشحن وNFC": "Expédition et NFC", "طلبات البطاقة، الشحن، وتفعيل المفاتيح": "Demandes de cartes, expédition et activation des clés", "مكتبة المشتريات": "Bibliothèque d’achats", "الملفات التي تُسلّم رقميًا بعد الدفع": "Fichiers livrés numériquement après paiement", "مراجعة محتوى العملاء": "Réviser le contenu client", "الاعتماد، الرفض، والفحص قبل النشر": "Approbation, rejet et contrôle avant publication", "ابحث باسم العميل أو البريد أو الجوال": "Rechercher par nom, e-mail ou téléphone", "لا توجد حسابات عملاء مطابقة.": "Aucun compte client correspondant.", "Profile جاهز": "Profil prêt", "Profile غير منشور": "Profil non publié", "لا توجد جلسة": "Aucune session", "كلمة المرور": "Mot de passe", "تعذر تحميل قائمة العملاء.": "Impossible de charger la liste des clients."
+  }
+};
+
 const recentFeatureTranslations: Record<Language, Record<string, string>> = {
   ar: {},
   en: {
@@ -331,8 +343,11 @@ const coreAutoTranslations: Record<"en" | "fr", Record<string, string>> = {
 
 function getAutoTranslationDictionary(language: Language): Record<string, string> | null {
   if (language === "ar") return null;
-  const coreDictionary = language === "ur" ? {} : coreAutoTranslations[language as "en" | "fr"] ?? {};
-  return { ...autoFallbackTranslations[language], ...recentFeatureTranslations[language], ...legacyUiTranslations[language], ...modernUiTranslations[language], ...coreDictionary };
+  const sharedFallback = language === "fr"
+    ? { ...autoFallbackTranslations.en, ...recentFeatureTranslations.en, ...legacyUiTranslations.en, ...modernUiTranslations.en }
+    : {};
+  const coreDictionary = coreAutoTranslations[language as "en" | "fr"] ?? {};
+  return { ...genericUiTranslations[language as "en" | "fr"], ...sharedFallback, ...autoFallbackTranslations[language], ...recentFeatureTranslations[language], ...legacyUiTranslations[language], ...modernUiTranslations[language], ...coreDictionary };
 }
 
 export function autoTranslateText(source: string, language: Language): string {
@@ -346,7 +361,7 @@ export function autoTranslateText(source: string, language: Language): string {
 }
 
 export function findUntranslatedArabic(source: string, language: Language): string[] {
-  if (language === "ar" || language === "ur") return [];
+  if (language === "ar") return [];
   return autoTranslateText(source, language).match(/[\u0600-\u06FF]+/g) ?? [];
 }
 
@@ -359,7 +374,8 @@ function applyLegacyUiTranslations(language: Language) {
     const textNode = node as Text;
     const current = textNode.nodeValue ?? "";
     const cached = legacyNodeSources.get(textNode);
-    if (!cached || (current !== cached && current !== autoTranslateText(cached, language))) legacyNodeSources.set(textNode, current);
+    const knownStates = cached ? [cached, ...(["en", "fr"] as const).map((target) => autoTranslateText(cached, target))] : [];
+    if (!cached || (!knownStates.includes(current) && !(/[\u0600-\u06FF]/.test(current) && knownStates.some((state) => current.includes(state))))) legacyNodeSources.set(textNode, current);
     const source = legacyNodeSources.get(textNode) ?? current;
     if (!source.trim()) continue;
     const translated = autoTranslateText(source, language);
@@ -379,16 +395,13 @@ function applyLegacyUiTranslations(language: Language) {
   }
 }
 
-const urdu: Record<keyof typeof arabic, string> = Object.fromEntries(
-  Object.entries(arabic).map(([key, arabicText]) => [key, getAutoTranslationDictionary("ur")?.[arabicText] ?? english[key as keyof typeof english]])
-) as Record<keyof typeof arabic, string>;
-const expandedLanguageFallback = Object.fromEntries(Object.entries(arabic).map(([key, value]) => [key, english[key as keyof typeof english] || value])) as Record<keyof typeof arabic, string>;
+const expandedLanguageFallback = { ...Object.fromEntries(Object.entries(arabic).map(([key, value]) => [key, english[key as keyof typeof english] || value])), dashboard: "ڈیش بورڈ" } as Record<keyof typeof arabic, string>;
 export type TranslationKey = keyof typeof arabic;
-export const translations: Record<Language, Record<TranslationKey, string>> = { ar: arabic, en: english, fr: french, ur: urdu, es: expandedLanguageFallback, de: expandedLanguageFallback, tr: expandedLanguageFallback };
+export const translations: Record<Language, Record<TranslationKey, string>> = { ar: arabic, en: english, fr: french, ur: expandedLanguageFallback, es: expandedLanguageFallback, de: expandedLanguageFallback, tr: expandedLanguageFallback };
 type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; setLanguage: (language: Language, persist?: boolean) => void; t: (key: TranslationKey) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
-function readStoredLanguage(): Language { if (typeof window === "undefined") return "en"; if (isPublicLanguagePath(window.location.pathname)) { const manual = window.localStorage.getItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY); if (isEnterpriseLanguage(manual)) return manual; return detectVisitorLanguage(); } const stored = window.localStorage.getItem(DASHBOARD_LANGUAGE_STORAGE_KEY); return isEnterpriseLanguage(stored) ? stored : "en"; }
+function readStoredLanguage(): Language { if (typeof window === "undefined") return "en"; if (isPublicLanguagePath(window.location.pathname)) { const manual = window.localStorage.getItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY); if (isUiLanguage(manual)) return manual; return detectVisitorLanguage(); } const stored = window.localStorage.getItem(DASHBOARD_LANGUAGE_STORAGE_KEY); return isUiLanguage(stored) ? stored : "en"; }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>(readStoredLanguage);

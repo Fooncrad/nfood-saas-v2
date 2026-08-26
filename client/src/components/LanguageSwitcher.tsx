@@ -1,9 +1,9 @@
 import { Globe2, Check, ChevronDown } from "lucide-react";
-import { languageMeta, useLanguage, type Language } from "@/contexts/LanguageContext";
+import { languageMeta, UI_LANGUAGES, useLanguage, type Language } from "@/contexts/LanguageContext";
 
 export default function LanguageSwitcher({ compact = false, allowedLanguages }: { compact?: boolean; allowedLanguages?: Language[] }) {
   const { language, setLanguage, t } = useLanguage();
-  const languages = allowedLanguages?.length ? allowedLanguages : (Object.keys(languageMeta) as Language[]);
+  const languages = allowedLanguages?.filter((item) => UI_LANGUAGES.includes(item as (typeof UI_LANGUAGES)[number])).length ? allowedLanguages.filter((item) => UI_LANGUAGES.includes(item as (typeof UI_LANGUAGES)[number])) : [...UI_LANGUAGES];
   const closeMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
     setLanguage(event.currentTarget.dataset.language as Language);
     event.currentTarget.closest("details")?.removeAttribute("open");
