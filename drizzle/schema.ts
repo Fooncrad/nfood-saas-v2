@@ -599,6 +599,26 @@ export const orders = mysqlTable("orders", {
   restaurantClientRequestUidx: uniqueIndex("orders_restaurant_client_request_uidx").on(table.restaurantId, table.clientRequestId),
 }));
 
+export const deliveryMessages = mysqlTable("deliveryMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull().references(() => orders.id),
+  senderUserId: int("senderUserId").notNull().references(() => users.id),
+  senderRole: mysqlEnum("senderRole", ["customer", "driver", "restaurant", "admin"]).notNull(),
+  body: varchar("body", { length: 1000 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  readAt: timestamp("readAt"),
+}, (table) => ({ deliveryMessageOrderIdx: index("delivery_messages_order_created_idx").on(table.orderId, table.createdAt) }));
+
+export const deliveryLocationAccess = mysqlTable("deliveryLocationAccess", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull().references(() => orders.id),
+  driverUserId: int("driverUserId").notNull().references(() => users.id),
+  grantedByUserId: int("grantedByUserId").references(() => users.id),
+  expiresAt: timestamp("expiresAt").notNull(),
+  revokedAt: timestamp("revokedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({ deliveryLocationOrderIdx: index("delivery_location_order_driver_idx").on(table.orderId, table.driverUserId, table.expiresAt) }));
+
 export const orderItems = mysqlTable("orderItems", {
   id: int("id").autoincrement().primaryKey(),
   orderId: int("orderId").notNull(),
