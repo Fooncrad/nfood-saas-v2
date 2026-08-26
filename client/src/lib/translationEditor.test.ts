@@ -24,6 +24,28 @@ describe("translation editor workflow", () => {
     expect(panel).toContain("translation-csv-upload");
   });
 
+  it("supports bulk publishing and auditable before-after history", () => {
+    const router = readFileSync("server/routers.ts", "utf8");
+    const schema = readFileSync("drizzle/schema.ts", "utf8");
+    const panel = readFileSync("client/src/components/UiTranslationAdminPanel.tsx", "utf8");
+    expect(router).toContain("publishUiTranslationsBulk");
+    expect(router).toContain("uiTranslationHistory");
+    expect(schema).toContain("uiTranslationHistory");
+    expect(schema).toContain("translatedTextBefore");
+    expect(schema).toContain("translatedTextAfter");
+    expect(panel).toContain("bulkPublish");
+    expect(panel).toContain("before");
+    expect(panel).toContain("after");
+  });
+
+  it("shows CSV preview and requires explicit confirmation before import", () => {
+    const panel = readFileSync("client/src/components/UiTranslationAdminPanel.tsx", "utf8");
+    expect(panel).toContain("csvPreview");
+    expect(panel).toContain("confirmImport");
+    expect(panel).toContain("setCsvPreview");
+    expect(panel).toContain("previewHint");
+  });
+
   it("protects dictionary procedures with the translation editor guard", () => {
     const router = readFileSync("server/routers.ts", "utf8");
     expect(router).toContain("uiTranslationEntries: translationEditorProcedure");

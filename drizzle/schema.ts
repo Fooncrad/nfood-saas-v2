@@ -1581,3 +1581,21 @@ export const whiteLabelWorkspaces = mysqlTable("whiteLabelWorkspaces", {
   ownerStatusIdx: index("white_label_workspace_owner_status_idx").on(table.ownerUserId, table.status),
   domainIdx: index("white_label_workspace_domain_idx").on(table.customDomain),
 }));
+
+export const uiTranslationHistory = mysqlTable("uiTranslationHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  entryId: int("entryId").notNull().references(() => uiTranslationEntries.id),
+  translationKey: varchar("translationKey", { length: 220 }).notNull(),
+  sourceTextBefore: text("sourceTextBefore"),
+  sourceTextAfter: text("sourceTextAfter"),
+  translatedTextBefore: text("translatedTextBefore"),
+  translatedTextAfter: text("translatedTextAfter"),
+  statusBefore: varchar("statusBefore", { length: 20 }),
+  statusAfter: varchar("statusAfter", { length: 20 }),
+  action: mysqlEnum("action", ["manual_edit", "auto_draft", "bulk_publish", "csv_import"]).notNull(),
+  changedByUserId: int("changedByUserId").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  uiTranslationHistoryEntry: index("ui_translation_history_entry_idx").on(table.entryId, table.createdAt),
+  uiTranslationHistoryAction: index("ui_translation_history_action_idx").on(table.action, table.createdAt),
+}));
