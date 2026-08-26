@@ -23,7 +23,7 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain("nfood-menu-cover");
     expect(source).toContain("page.data.restaurant.coverUrl");
     expect(source).toContain("NFOOD MENU");
-    expect(source).toContain("<h1 className=\"text-2xl font-black text-white");
+    expect(source).toContain("<h1 className=\"text-3xl font-black text-white");
     expect(source).not.toContain("<span>أدوات المنيو</span>");
   });
 

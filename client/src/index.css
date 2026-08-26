@@ -1364,25 +1364,41 @@ html[lang="ur"] body {
 }
 
 .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header {
-  background: #1f1713 !important;
-  border-bottom-color: #7c4d32 !important;
-  box-shadow: 0 12px 30px rgba(61, 37, 23, .14);
-  color: #fff !important;
+  background: #fff !important;
+  border-bottom-color: #e5d7c7 !important;
+  box-shadow: 0 8px 24px rgba(61, 37, 23, .08);
+  color: #32251e !important;
 }
-
 .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header .text-slate-900,
 .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header .text-slate-800,
 .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header .text-slate-700,
 .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header .text-slate-600,
 .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header .text-slate-500 {
-  color: #fff !important;
+  color: #32251e !important;
 }
-
 .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header button,
 .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-header label {
-  border-color: rgba(255, 255, 255, .2) !important;
-  background: rgba(255, 255, 255, .09) !important;
-  color: #fff !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  color: #806a5d !important;
+}
+/* The reference header stays light even when the menu body uses night mode. */
+.nfood-menu-template-editorial .nfood-menu-header {
+  background: #fff !important;
+  border-bottom-color: #e5d7c7 !important;
+  color: #32251e !important;
+}
+.nfood-menu-template-editorial .nfood-menu-header .text-slate-900,
+.nfood-menu-template-editorial .nfood-menu-header .text-slate-800,
+.nfood-menu-template-editorial .nfood-menu-header .text-slate-700,
+.nfood-menu-template-editorial .nfood-menu-header .text-slate-600,
+.nfood-menu-template-editorial .nfood-menu-header .text-slate-500 {
+  color: #32251e !important;
+}
+.nfood-menu-template-editorial .nfood-menu-header > div > div > button {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #806a5d !important;
 }
 
 .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-hero,
@@ -1530,3 +1546,66 @@ html[lang="ur"] body {
 .nfood-menu-cover img {
   object-fit: contain;
 }
+
+/* Shared reference header: keep the navigation surface light across menu templates. */
+.nfood-menu-shell .nfood-menu-header {
+  background: #fff !important;
+  border-bottom-color: #e5d7c7 !important;
+  color: #32251e !important;
+}
+.nfood-menu-shell .nfood-menu-header .text-slate-900,
+.nfood-menu-shell .nfood-menu-header .text-slate-800,
+.nfood-menu-shell .nfood-menu-header .text-slate-700,
+.nfood-menu-shell .nfood-menu-header .text-slate-600,
+.nfood-menu-shell .nfood-menu-header .text-slate-500 {
+  color: #32251e !important;
+}
+.nfood-menu-shell .nfood-menu-header > div > div > button {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #806a5d !important;
+}
+
+/* Reference category rail: keep the active filter legible over the cream canvas. */
+.nfood-menu-shell .nfood-menu-category-bar {
+  scrollbar-width: thin;
+  scrollbar-color: #d99446 transparent;
+}
+.nfood-menu-shell .nfood-menu-category-bar::-webkit-scrollbar {
+  height: 5px;
+}
+.nfood-menu-shell .nfood-menu-category-bar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #d99446;
+}
+
+@media (max-width: 640px) {
+  .nfood-menu-shell .nfood-menu-header > div {
+    padding-inline: .75rem;
+  }
+  .nfood-menu-shell .nfood-menu-cover {
+    border-radius: 0 0 1.5rem 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nfood-menu-shell .nfood-menu-header button,
+  .nfood-menu-shell .nfood-menu-category-bar button {
+    transition: none !important;
+  }
+}
+
+/* Ensure the editorial header remains readable when a saved dark preference is active. */
+.nfood-menu-template-editorial.nfood-menu-dark .nfood-menu-header {
+  background: #fff !important;
+  color: #32251e !important;
+}
+.nfood-menu-template-editorial.nfood-menu-dark .nfood-menu-header .text-slate-900,
+.nfood-menu-template-editorial.nfood-menu-dark .nfood-menu-header .text-slate-800,
+.nfood-menu-template-editorial.nfood-menu-dark .nfood-menu-header .text-slate-700,
+.nfood-menu-template-editorial.nfood-menu-dark .nfood-menu-header .text-slate-600,
+.nfood-menu-template-editorial.nfood-menu-dark .nfood-menu-header .text-slate-500 {
+  color: #32251e !important;
+}
+
+

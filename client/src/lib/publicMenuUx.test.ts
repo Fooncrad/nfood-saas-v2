@@ -83,6 +83,12 @@ describe("public menu UX", () => {
     expect(page).toContain("requestCustomerOtp");
     expect(page).toContain("<footer className=\"mt-14");
     expect(page).toContain("{copy.workingHours}");
+    expect(page).toContain("min-h-[19rem]");
+    expect(page).toContain("LanguageSwitcher compact minimal");
+    expect(page).toContain("nfood-menu-category-bar sticky top-16");
+    expect(page).toContain("category.imageUrl");
+    expect(page).toContain("page.data.restaurant.tiktokUrl");
+    expect(styles).toContain("background: #fff !important");
     expect(page).not.toContain("<a href=\"#contact\" className=\"transition hover:text-[var(--menu-primary)]\">");
   });
 
