@@ -1,0 +1,1 @@
+ALTER TABLE `whiteLabelWorkspaces` MODIFY COLUMN `enabledModulesJson` text NOT NULL;

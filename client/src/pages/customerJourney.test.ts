@@ -35,6 +35,20 @@ describe("customer journey regression", () => {
     expect(portal).toContain("hover:-translate-y-1");
   });
 
+  it("adds restaurant favorites and action-first restaurant cards", () => {
+    expect(portal).toContain("favoriteRestaurants.useQuery");
+    expect(portal).toContain("toggleFavoriteRestaurant.mutate");
+    expect(portal).toContain("مطاعمي المفضلة");
+    expect(portal).toContain("اطلب الآن");
+    expect(portal).toContain("الجوال:");
+  });
+
+  it("keeps content visible by default with a local hide/show control", () => {
+    expect(portal).toContain('nfood.customer.contentVisible');
+    expect(portal).toContain("إخفاء المحتوى");
+    expect(portal).toContain("إظهار المحتوى");
+  });
+
   it("documents the return-to-cart and account-switch journey", () => {
     expect(roadmap).toContain("الخروج من حساب الإدارة والمتابعة كعميل");
     expect(roadmap).toContain("يعود تلقائيًا إلى السلة");

@@ -2,7 +2,7 @@ import { and, count, desc, eq, gte, inArray, isNull, lte, like, ne, or, sql } fr
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, contentPurchaseEntitlements, contentModerationReviews, commerceFundingAccounts, contentFoodTags, contentListingInvites, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests, trustedDevices, customerCardRequests } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, contentPurchaseEntitlements, contentModerationReviews, commerceFundingAccounts, favoriteRestaurants, contentFoodTags, contentListingInvites, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests, trustedDevices, customerCardRequests, customerBenefitFeatures, customerBenefitPlans, customerBenefitPlanFeatures, customerBenefitSubscriptions, customerBenefitRequests, whiteLabelWorkspaces } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { driverSecurityDeposits, driverSecurityDepositTransactions, financialLedgerEntries } from "../drizzle/schema";
 import { normalizeMenuTemplateSchedule, resolveActiveMenuTemplate } from "../shared/menuTemplateSchedule";
@@ -197,6 +197,8 @@ export async function updateCustomerReservation(input: { id: number; customerId:
 
 export async function claimGuestOrders(customerId: number, guestPhone: string) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const phone = guestPhone.trim(); if (phone.length < 7) throw new Error("رقم الجوال غير صالح"); const result = await db.update(orders).set({ customerId, updatedAt: new Date() }).where(and(isNull(orders.customerId), eq(orders.guestPhone, phone))); return { linkedCount: Number(result[0].affectedRows ?? 0) }; }
 export async function listCustomerOrders(customerId: number, limit = 100) { const db = await getDb(); if (!db) return []; const safeLimit = Math.min(Math.max(limit, 1), 100); const rows = await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, status: orders.status, paymentStatus: orders.paymentStatus, channel: orders.channel, total: orders.total, currencyCode: orders.currencyCode, notes: orders.notes, reservationDate: orders.reservationDate, reservationEventType: orders.reservationEventType, createdAt: orders.createdAt, updatedAt: orders.updatedAt, restaurantName: restaurants.name, restaurantSlug: restaurants.slug, brandColor: restaurants.brandColor }).from(orders).leftJoin(restaurants, eq(orders.restaurantId, restaurants.id)).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt)).limit(safeLimit); if (!rows.length) return []; const itemRows = await db.select({ orderId: orderItems.orderId, menuItemId: orderItems.menuItemId, quantity: orderItems.quantity, name: menuItems.name }).from(orderItems).innerJoin(menuItems, eq(orderItems.menuItemId, menuItems.id)).where(inArray(orderItems.orderId, rows.map((row) => row.id))); const itemsByOrder = new Map<number, typeof itemRows>(); for (const item of itemRows) { const current = itemsByOrder.get(item.orderId) ?? []; current.push(item); itemsByOrder.set(item.orderId, current); } return rows.map((row) => ({ ...row, items: itemsByOrder.get(row.id) ?? [] })); }
+export async function listFavoriteRestaurants(userId: number) { const db = await getDb(); if (!db) return []; return db.select({ id: favoriteRestaurants.id, restaurantId: favoriteRestaurants.restaurantId, name: restaurants.name, brandName: restaurants.brandName, brandColor: restaurants.brandColor, brandLogoUrl: restaurants.brandLogoUrl, city: restaurants.city, address: restaurants.address, phone: restaurants.phone, reservationEnabled: restaurants.reservationEnabled, createdAt: favoriteRestaurants.createdAt }).from(favoriteRestaurants).innerJoin(restaurants, eq(favoriteRestaurants.restaurantId, restaurants.id)).where(and(eq(favoriteRestaurants.userId, userId), ne(restaurants.status, "suspended"))).orderBy(desc(favoriteRestaurants.createdAt)); }
+export async function toggleFavoriteRestaurant(input: { userId: number; restaurantId: number }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and(eq(restaurants.id, input.restaurantId), ne(restaurants.status, "suspended"))).limit(1))[0]; if (!restaurant) throw new Error("المطعم غير متاح حاليًا"); const existing = (await db.select({ id: favoriteRestaurants.id }).from(favoriteRestaurants).where(and(eq(favoriteRestaurants.userId, input.userId), eq(favoriteRestaurants.restaurantId, input.restaurantId))).limit(1))[0]; if (existing) { await db.delete(favoriteRestaurants).where(eq(favoriteRestaurants.id, existing.id)); return { favorite: false }; } await db.insert(favoriteRestaurants).values(input); return { favorite: true }; }
 export async function listAllFavoriteMenuItems(userId: number) { const db = await getDb(); if (!db) return []; return db.select({ id: favoriteMenuItems.id, menuItemId: favoriteMenuItems.menuItemId, restaurantId: favoriteMenuItems.restaurantId, itemName: menuItems.name, description: menuItems.description, price: menuItems.price, compareAtPrice: menuItems.compareAtPrice, imageUrl: menuItems.imageUrl, restaurantName: restaurants.name, restaurantSlug: restaurants.slug, isAvailable: menuItems.isAvailable, createdAt: favoriteMenuItems.createdAt }).from(favoriteMenuItems).innerJoin(menuItems, eq(favoriteMenuItems.menuItemId, menuItems.id)).innerJoin(restaurants, eq(favoriteMenuItems.restaurantId, restaurants.id)).where(and(eq(favoriteMenuItems.userId, userId), eq(restaurants.status, "active"))).orderBy(desc(favoriteMenuItems.createdAt)); }
 export async function listCustomerLoyaltyAccounts(customerId: number) { const db = await getDb(); if (!db) return []; return db.select({ id: loyaltyAccounts.id, restaurantId: loyaltyAccounts.restaurantId, pointsBalance: loyaltyAccounts.pointsBalance, tier: loyaltyAccounts.tier, restaurantName: restaurants.name, restaurantSlug: restaurants.slug, brandLogoUrl: restaurants.brandLogoUrl, brandColor: restaurants.brandColor }).from(loyaltyAccounts).innerJoin(restaurants, eq(loyaltyAccounts.restaurantId, restaurants.id)).where(and(eq(loyaltyAccounts.customerId, customerId), eq(restaurants.status, "active"))).orderBy(desc(loyaltyAccounts.updatedAt)); }
 export async function toggleFavoriteMenuItem(input: { userId: number; restaurantId: number; menuItemId: number }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const existing = (await db.select({ id: favoriteMenuItems.id }).from(favoriteMenuItems).where(and(eq(favoriteMenuItems.userId, input.userId), eq(favoriteMenuItems.restaurantId, input.restaurantId), eq(favoriteMenuItems.menuItemId, input.menuItemId))).limit(1))[0]; if (existing) { await db.delete(favoriteMenuItems).where(eq(favoriteMenuItems.id, existing.id)); return { favorite: false }; } await db.insert(favoriteMenuItems).values(input); return { favorite: true }; }
@@ -208,6 +210,92 @@ export async function provisionDeliveryDemoAccounts(restaurantId: number) { cons
 export async function listFeatureRequests(restaurantId?: number) { const db = await getDb(); if (!db) return []; return db.select().from(featureRequests).where(restaurantId ? eq(featureRequests.restaurantId, restaurantId) : undefined).orderBy(desc(featureRequests.createdAt)); }
 export async function createFeatureRequest(input: { restaurantId: number; requestedByUserId: number; featureKey: string; featureLabel: string; requestedPrice?: string | null; currencyCode?: string; notes?: string | null }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const existing = (await db.select({ id: featureRequests.id, status: featureRequests.status }).from(featureRequests).where(and(eq(featureRequests.restaurantId, input.restaurantId), eq(featureRequests.featureKey, input.featureKey), eq(featureRequests.status, "pending"))).limit(1))[0]; if (existing) return existing.id; const result = await db.insert(featureRequests).values({ restaurantId: input.restaurantId, requestedByUserId: input.requestedByUserId, featureKey: input.featureKey, featureLabel: input.featureLabel, requestedPrice: input.requestedPrice ?? null, currencyCode: input.currencyCode ?? "SAR", notes: input.notes ?? null }); return Number(result[0].insertId); }
 export async function reviewFeatureRequest(input: { id: number; status: "approved" | "rejected"; reviewedByUserId: number }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const request = (await db.select().from(featureRequests).where(eq(featureRequests.id, input.id)).limit(1))[0]; if (!request) return null; await db.update(featureRequests).set({ status: input.status, reviewedByUserId: input.reviewedByUserId, reviewedAt: new Date(), updatedAt: new Date() }).where(eq(featureRequests.id, input.id)); if (request.featureKey === "platform_delivery" && input.status === "approved") await db.update(restaurants).set({ deliveryManagementMode: "platform", platformDeliveryEnabled: true }).where(eq(restaurants.id, request.restaurantId)); return { ...request, status: input.status }; }
+export const CUSTOMER_BENEFIT_SEED = [
+  ["market-buyer", "شراء محتوى Trend Kitchen", "الوصول إلى المحتوى الرقمي المؤهل للشراء"], ["studio-upload", "استوديو رفع الصور", "رفع صور الطعام من كاميرا Studio"], ["watermark-preview", "معاينة بعلامة مائية", "معاينة آمنة قبل النشر أو الشراء"], ["wallet", "محفظة المحتوى", "عرض الرصيد وحركات المكافآت"], ["instant-library", "مكتبة التسليم الفوري", "استلام المشتريات الرقمية فور الدفع"], ["reward-alerts", "تنبيهات المكافآت", "إشعار عند شراء المطاعم لمحتواك"], ["qr-custom", "تخصيص QR", "ألوان وحجم وهامش QR الخاص بك"], ["nfc-card", "بطاقة NFC / V Card", "ربط بطاقة عامة بملفك"], ["public-profile", "ملف عام متقدم", "عرض نبذة ومنتجاتك الغذائية"], ["private-profile", "ملف خاص بالدعوات", "مشاركة الملف مع أصدقاء محددين"], ["profile-products", "منتجات الملف", "إضافة صور ووصفات وخدمات"], ["profile-payments", "طرق الدفع في الملف", "عرض طرق الدفع التي تختارها"], ["restaurant-favorites", "مفضلة المطاعم", "حفظ المطاعم والأصناف المفضلة"], ["order-history", "سجل الطلبات", "متابعة الطلبات السابقة"], ["reservation-history", "سجل الحجوزات", "إدارة الحجوزات والزيارات"], ["loyalty-points", "نقاط الولاء", "تجميع نقاط المطاعم المرتبطة"], ["reward-levels", "مستويات المكافآت", "متابعة المستوى لكل مطعم"], ["safe-chat", "مراسلة آمنة", "التواصل داخل التطبيق دون كشف الأرقام"], ["order-live", "تتبع الطلب", "متابعة حالة الطلب لحظيًا"], ["driver-chat", "محادثة السائق", "التواصل المقيد بخصوص التوصيل"], ["support-priority", "دعم أولوية", "معالجة أسرع لطلبات الدعم"], ["studio-camera", "كاميرا Studio المباشرة", "التقاط الصورة من داخل المنصة"], ["ai-food-check", "فحص الطعام بالذكاء الاصطناعي", "تحقق أولي من كون الصورة طعامًا أو شرابًا"], ["metadata-check", "تحقق بيانات الالتقاط", "فحص التاريخ والجهاز والموقع عند التوفر"], ["content-status", "حالة المحتوى", "قيد المراجعة أو مقبول أو مرفوض مع السبب"], ["content-tags", "هاشتاقات الطعام", "تصنيف المحتوى حسب نوع الطعام"], ["content-search", "محرك بحث المحتوى", "العثور على محتوى حسب النوع والوسم"], ["content-sales", "تقرير مبيعات المحتوى", "متابعة ما تم عرضه وبيعه"], ["watermarked-share", "مشاركة المعاينة", "مشاركة رابط آمن للمعاينة فقط"], ["referrals", "ترشيح المطاعم", "إنشاء روابط ترشيح ومتابعة مكافآتها"], ["privacy-center", "مركز الخصوصية", "إدارة الموافقات والإشعارات"], ["device-security", "حماية الجهاز", "إدارة الجهاز الموثوق للحساب"], ["login-recovery", "استعادة كلمة المرور", "طلب رابط استعادة عبر البريد"], ["google-login", "تسجيل Google", "دخول أسرع ومزامنة البريد"], ["digital-receipts", "فواتير رقمية", "عرض فواتير المشتريات والطلبات"], ["offline-library", "وصول المكتبة المحفوظ", "عرض بيانات المكتبة عند ضعف الاتصال"], ["advanced-insights", "إحصائيات متقدمة", "ملخص التفاعل والمبيعات والمكافآت"], ["early-trends", "أولوية الاتجاهات", "اكتشاف تصنيفات Trend الجديدة مبكرًا"], ["creator-badge", "شارة صانع محتوى", "تمييز الحساب المؤهل في الاستديو"], ["export-report", "تصدير التقرير", "تجهيز تقرير المكافآت والمبيعات"],
+] as const;
+
+const CUSTOMER_BENEFIT_PLANS = [
+  { key: "customer-start", name: "الأساسي", description: "للحسابات الجديدة والطلبات اليومية", monthlyPrice: "0.00", yearlyPrice: "0.00", featureCount: 12 },
+  { key: "customer-plus", name: "Plus", description: "لعملاء Trend وصناع المحتوى النشطين", monthlyPrice: "29.00", yearlyPrice: "290.00", featureCount: 27 },
+  { key: "customer-pro", name: "Pro", description: "للوصول الكامل إلى منظومة العميل", monthlyPrice: "59.00", yearlyPrice: "590.00", featureCount: CUSTOMER_BENEFIT_SEED.length },
+] as const;
+
+async function ensureCustomerBenefitCatalog() {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  for (const [key, label, description] of CUSTOMER_BENEFIT_SEED) {
+    await db.insert(customerBenefitFeatures).values({ key, label, description, category: "customer", isActive: true, isAddOn: true }).onDuplicateKeyUpdate({ set: { label, description, isActive: true, updatedAt: new Date() } });
+  }
+  for (const plan of CUSTOMER_BENEFIT_PLANS) {
+    await db.insert(customerBenefitPlans).values({ key: plan.key, name: plan.name, description: plan.description, monthlyPrice: plan.monthlyPrice, yearlyPrice: plan.yearlyPrice, isActive: true }).onDuplicateKeyUpdate({ set: { name: plan.name, description: plan.description, monthlyPrice: plan.monthlyPrice, yearlyPrice: plan.yearlyPrice, isActive: true, updatedAt: new Date() } });
+  }
+  const featureRows = await db.select().from(customerBenefitFeatures);
+  const planRows = await db.select().from(customerBenefitPlans);
+  for (const plan of CUSTOMER_BENEFIT_PLANS) {
+    const planRow = planRows.find((row) => row.key === plan.key);
+    if (!planRow) continue;
+    for (const feature of featureRows.slice(0, plan.featureCount)) {
+      await db.insert(customerBenefitPlanFeatures).values({ planId: planRow.id, featureId: feature.id, enabled: true }).onDuplicateKeyUpdate({ set: { enabled: true } });
+    }
+  }
+  return { featureRows, planRows };
+}
+
+export async function listCustomerBenefits(userId: number) {
+  const db = await getDb();
+  if (!db) return { features: [], plans: [], activePlan: null, requests: [] };
+  const { featureRows, planRows } = await ensureCustomerBenefitCatalog();
+  const [subscriptions, links, requests] = await Promise.all([
+    db.select().from(customerBenefitSubscriptions).where(and(eq(customerBenefitSubscriptions.userId, userId), eq(customerBenefitSubscriptions.status, "active"))).orderBy(desc(customerBenefitSubscriptions.updatedAt)).limit(1),
+    db.select({ planId: customerBenefitPlanFeatures.planId, featureId: customerBenefitPlanFeatures.featureId, enabled: customerBenefitPlanFeatures.enabled }).from(customerBenefitPlanFeatures),
+    db.select({ id: customerBenefitRequests.id, featureId: customerBenefitRequests.featureId, status: customerBenefitRequests.status, requestedPrice: customerBenefitRequests.requestedPrice, currencyCode: customerBenefitRequests.currencyCode, notes: customerBenefitRequests.notes, createdAt: customerBenefitRequests.createdAt, updatedAt: customerBenefitRequests.updatedAt }).from(customerBenefitRequests).where(eq(customerBenefitRequests.userId, userId)).orderBy(desc(customerBenefitRequests.createdAt)),
+  ]);
+  const activePlanId = subscriptions[0]?.planId ?? planRows.find((plan) => plan.key === "customer-start")?.id ?? null;
+  const activePlanRow = planRows.find((plan) => plan.id === activePlanId) ?? null;
+  const grantedIds = new Set(links.filter((link) => link.planId === activePlanId && link.enabled).map((link) => link.featureId));
+  const approvedIds = new Set(requests.filter((request) => request.status === "approved").map((request) => request.featureId));
+  return {
+    features: featureRows.map((feature) => ({ ...feature, enabled: grantedIds.has(feature.id) || approvedIds.has(feature.id), requested: requests.some((request) => request.featureId === feature.id && request.status === "pending") })),
+    plans: planRows.map((plan) => ({ ...plan, featureCount: links.filter((link) => link.planId === plan.id && link.enabled).length })),
+    activePlan: activePlanRow,
+    requests,
+  };
+}
+
+export async function setCustomerBenefitPlan(userId: number, planKey: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await ensureCustomerBenefitCatalog();
+  const plan = (await db.select().from(customerBenefitPlans).where(and(eq(customerBenefitPlans.key, planKey), eq(customerBenefitPlans.isActive, true))).limit(1))[0];
+  if (!plan) throw new Error("باقة العميل غير متاحة");
+  return db.transaction(async (tx) => {
+    await tx.update(customerBenefitSubscriptions).set({ status: "cancelled", updatedAt: new Date() }).where(and(eq(customerBenefitSubscriptions.userId, userId), eq(customerBenefitSubscriptions.status, "active")));
+    const inserted = await tx.insert(customerBenefitSubscriptions).values({ userId, planId: plan.id, status: "active", startsAt: new Date() });
+    return { id: Number(inserted[0].insertId), plan };
+  });
+}
+
+export async function createCustomerBenefitRequest(input: { userId: number; featureKey: string; notes?: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await ensureCustomerBenefitCatalog();
+  const feature = (await db.select().from(customerBenefitFeatures).where(and(eq(customerBenefitFeatures.key, input.featureKey), eq(customerBenefitFeatures.isActive, true))).limit(1))[0];
+  if (!feature) throw new Error("ميزة العميل غير موجودة");
+  const existing = (await db.select({ id: customerBenefitRequests.id, status: customerBenefitRequests.status }).from(customerBenefitRequests).where(and(eq(customerBenefitRequests.userId, input.userId), eq(customerBenefitRequests.featureId, feature.id), eq(customerBenefitRequests.status, "pending"))).limit(1))[0];
+  if (existing) return { ...existing, duplicate: true };
+  const result = await db.insert(customerBenefitRequests).values({ userId: input.userId, featureId: feature.id, requestedPrice: feature.addonPrice ?? null, currencyCode: "SAR", notes: input.notes ?? null, status: "pending" });
+  return { id: Number(result[0].insertId), status: "pending" as const, duplicate: false };
+}
+
+export async function reviewCustomerBenefitRequest(input: { id: number; status: "approved" | "rejected"; reviewedByUserId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const request = (await db.select().from(customerBenefitRequests).where(eq(customerBenefitRequests.id, input.id)).limit(1))[0];
+  if (!request) return null;
+  await db.update(customerBenefitRequests).set({ status: input.status, reviewedByUserId: input.reviewedByUserId, reviewedAt: new Date(), updatedAt: new Date() }).where(eq(customerBenefitRequests.id, input.id));
+  return { ...request, status: input.status };
+}
+
 export async function calculateDeliveryQuote(input: { restaurantId: number; branchId: number; latitude: number; longitude: number; subtotal: number }) { const zones = await listDeliveryZones(input.restaurantId, input.branchId); const matches = zones.map((zone) => { let polygon: Array<{ latitude: number; longitude: number }> = []; try { polygon = zone.polygonJson ? JSON.parse(zone.polygonJson) : []; } catch { polygon = []; } const insidePolygon = polygon.length >= 3 ? pointInPolygon(input.latitude, input.longitude, polygon) : false; const distanceKm = haversineDistanceKm(input.latitude, input.longitude, Number(zone.centerLatitude), Number(zone.centerLongitude)); return { zone, distanceKm, insidePolygon }; }).filter(({ zone, distanceKm, insidePolygon }) => zone.isActive && (insidePolygon || (!zone.polygonJson && distanceKm <= Number(zone.radiusKm))) && input.subtotal >= Number(zone.minimumOrder)).sort((a, b) => Number(a.zone.deliveryFee) - Number(b.zone.deliveryFee)); const match = matches[0]; return match ? { available: true as const, fee: Number(match.zone.deliveryFee), minimumOrder: Number(match.zone.minimumOrder), zoneId: match.zone.id, zoneName: match.zone.name, distanceKm: Number(match.distanceKm.toFixed(2)) } : { available: false as const, fee: 0, minimumOrder: 0, zoneId: null, zoneName: null, distanceKm: null }; }
 
 export async function listSupportTickets(restaurantId?: number) { const db = await getDb(); if (!db) return []; return db.select().from(supportTickets).where(restaurantId ? eq(supportTickets.restaurantId, restaurantId) : undefined).orderBy(desc(supportTickets.createdAt)); }
@@ -886,6 +974,53 @@ export async function listCommerceFundingAccounts(input?: { ownerUserId?: number
   const db = await getDb(); if (!db) return [];
   return db.select().from(commerceFundingAccounts).where(and(input?.ownerUserId ? eq(commerceFundingAccounts.ownerUserId, input.ownerUserId) : undefined, input?.restaurantId ? eq(commerceFundingAccounts.restaurantId, input.restaurantId) : undefined)).orderBy(desc(commerceFundingAccounts.updatedAt));
 }
+export async function getOrCreateMerchantCommerceFundingAccount(input: { userId: number; restaurantId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  let account = (await db.select().from(commerceFundingAccounts).where(and(eq(commerceFundingAccounts.restaurantId, input.restaurantId), eq(commerceFundingAccounts.accountType, "merchant_purchase"))).orderBy(desc(commerceFundingAccounts.updatedAt)).limit(1))[0];
+  if (!account) {
+    const result = await db.insert(commerceFundingAccounts).values({ ownerUserId: input.userId, restaurantId: input.restaurantId, accountType: "merchant_purchase", currencyCode: "SAR", availableBalance: "0.00", status: "active", createdByUserId: input.userId });
+    account = (await db.select().from(commerceFundingAccounts).where(eq(commerceFundingAccounts.id, Number(result[0].insertId))).limit(1))[0];
+  }
+  if (!account) throw new Error("تعذر تجهيز حساب مشتريات المحتوى");
+  const ledger = await db.select({ id: financialLedgerEntries.id, entryType: financialLedgerEntries.entryType, direction: financialLedgerEntries.direction, amount: financialLedgerEntries.amount, currencyCode: financialLedgerEntries.currencyCode, note: financialLedgerEntries.note, createdAt: financialLedgerEntries.createdAt }).from(financialLedgerEntries).where(eq(financialLedgerEntries.fundingAccountId, account.id)).orderBy(desc(financialLedgerEntries.createdAt)).limit(20);
+  return { account, ledger };
+}
+
+export async function listWhiteLabelWorkspaces() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(whiteLabelWorkspaces).orderBy(desc(whiteLabelWorkspaces.updatedAt));
+}
+
+export async function createWhiteLabelWorkspace(input: { ownerUserId: number; name: string; slug: string; logoUrl?: string | null; primaryColor?: string; accentColor?: string; customDomain?: string | null; defaultLocale?: string; enabledModules?: string[]; status?: "draft" | "active" | "suspended" }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const name = input.name.trim();
+  const slug = input.slug.trim().toLowerCase();
+  if (name.length < 2 || name.length > 160) throw new Error("اسم مساحة White Label غير صالح");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error("المعرّف يجب أن يستخدم أحرفًا لاتينية وأرقامًا وشرطات فقط");
+  const color = (value: string | undefined, fallback: string) => /^#[0-9a-f]{6}$/i.test(value ?? "") ? value! : fallback;
+  const result = await db.insert(whiteLabelWorkspaces).values({ ownerUserId: input.ownerUserId, name, slug, logoUrl: input.logoUrl?.trim() || null, primaryColor: color(input.primaryColor, "#E76F3C"), accentColor: color(input.accentColor, "#172033"), customDomain: input.customDomain?.trim().toLowerCase() || null, defaultLocale: ["ar", "en", "fr", "ur"].includes(input.defaultLocale ?? "ar") ? input.defaultLocale ?? "ar" : "ar", enabledModulesJson: JSON.stringify(Array.from(new Set((input.enabledModules ?? []).map((module) => module.trim()).filter(Boolean))).slice(0, 40)), status: input.status ?? "draft" });
+  return Number(result[0].insertId);
+}
+
+export async function updateWhiteLabelWorkspace(id: number, input: { name?: string; logoUrl?: string | null; primaryColor?: string; accentColor?: string; customDomain?: string | null; defaultLocale?: string; enabledModules?: string[]; status?: "draft" | "active" | "suspended" }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const values: Partial<typeof whiteLabelWorkspaces.$inferInsert> = { updatedAt: new Date() };
+  if (input.name !== undefined) values.name = input.name.trim().slice(0, 160);
+  if (input.logoUrl !== undefined) values.logoUrl = input.logoUrl?.trim() || null;
+  if (input.primaryColor !== undefined && /^#[0-9a-f]{6}$/i.test(input.primaryColor)) values.primaryColor = input.primaryColor;
+  if (input.accentColor !== undefined && /^#[0-9a-f]{6}$/i.test(input.accentColor)) values.accentColor = input.accentColor;
+  if (input.customDomain !== undefined) values.customDomain = input.customDomain?.trim().toLowerCase() || null;
+  if (input.defaultLocale !== undefined && ["ar", "en", "fr", "ur"].includes(input.defaultLocale)) values.defaultLocale = input.defaultLocale;
+  if (input.enabledModules !== undefined) values.enabledModulesJson = JSON.stringify(Array.from(new Set(input.enabledModules.map((module) => module.trim()).filter(Boolean))).slice(0, 40));
+  if (input.status !== undefined) values.status = input.status;
+  await db.update(whiteLabelWorkspaces).set(values).where(eq(whiteLabelWorkspaces.id, id));
+  return id;
+}
+
 export async function fundCommerceFundingAccount(input: { accountId: number; amount: string; paymentMethod: "manual" | "bank_transfer" | "card" | "online"; reference?: string | null; createdByUserId: number }) {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
   const amount = Number(input.amount); if (!Number.isFinite(amount) || amount <= 0) throw new Error("مبلغ التمويل يجب أن يكون موجبًا");

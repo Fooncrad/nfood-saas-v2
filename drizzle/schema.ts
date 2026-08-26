@@ -1,4 +1,4 @@
-import { int, index, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, uniqueIndex } from "drizzle-orm/mysql-core";
+import { foreignKey, int, index, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, uniqueIndex } from "drizzle-orm/mysql-core";
 
 export const platformSettings = mysqlTable("platformSettings", {
   id: int("id").autoincrement().primaryKey(),
@@ -388,6 +388,13 @@ export const favoriteMenuItems = mysqlTable("favoriteMenuItems", {
   menuItemId: int("menuItemId").notNull().references(() => menuItems.id),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({ favoriteUnique: uniqueIndex("favoriteMenuItems_user_restaurant_item").on(table.userId, table.restaurantId, table.menuItemId) }));
+
+export const favoriteRestaurants = mysqlTable("favoriteRestaurants", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({ favoriteUnique: uniqueIndex("favoriteRestaurants_user_restaurant").on(table.userId, table.restaurantId) }));
 
 export const translationErrorLogs = mysqlTable("translationErrorLogs", {
   id: int("id").autoincrement().primaryKey(),
@@ -1085,6 +1092,77 @@ export const featureRequests = mysqlTable("featureRequests", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({ restaurantFeatureStatusIdx: index("feature_requests_restaurant_feature_status_idx").on(table.restaurantId, table.featureKey, table.status) }));
+export const customerBenefitFeatures = mysqlTable("customerBenefitFeatures", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 120 }).notNull().unique(),
+  label: varchar("label", { length: 160 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 80 }).default("customer").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  isAddOn: boolean("isAddOn").default(false).notNull(),
+  addonPrice: decimal("addonPrice", { precision: 10, scale: 2 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const customerBenefitPlans = mysqlTable("customerBenefitPlans", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 80 }).notNull().unique(),
+  name: varchar("name", { length: 120 }).notNull(),
+  description: text("description"),
+  monthlyPrice: decimal("monthlyPrice", { precision: 10, scale: 2 }).default("0").notNull(),
+  yearlyPrice: decimal("yearlyPrice", { precision: 10, scale: 2 }).default("0").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const customerBenefitPlanFeatures = mysqlTable("customerBenefitPlanFeatures", {
+  id: int("id").autoincrement().primaryKey(),
+  planId: int("planId").notNull(),
+  featureId: int("featureId").notNull(),
+  enabled: boolean("enabled").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  planFeatureUnique: uniqueIndex("customer_benefit_plan_feature_unique").on(table.planId, table.featureId),
+  planForeignKey: foreignKey({ name: "cbpf_plan_fk", columns: [table.planId], foreignColumns: [customerBenefitPlans.id] }),
+  featureForeignKey: foreignKey({ name: "cbpf_feature_fk", columns: [table.featureId], foreignColumns: [customerBenefitFeatures.id] }),
+}));
+
+export const customerBenefitSubscriptions = mysqlTable("customerBenefitSubscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  planId: int("planId").notNull(),
+  status: mysqlEnum("status", ["active", "pending", "cancelled", "expired"]).default("active").notNull(),
+  startsAt: timestamp("startsAt").defaultNow().notNull(),
+  endsAt: timestamp("endsAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  customerSubscriptionIdx: index("customer_benefit_subscription_user_status_idx").on(table.userId, table.status),
+  userForeignKey: foreignKey({ name: "cbs_user_fk", columns: [table.userId], foreignColumns: [users.id] }),
+  planForeignKey: foreignKey({ name: "cbs_plan_fk", columns: [table.planId], foreignColumns: [customerBenefitPlans.id] }),
+}));
+
+export const customerBenefitRequests = mysqlTable("customerBenefitRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  featureId: int("featureId").notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "cancelled"]).default("pending").notNull(),
+  requestedPrice: decimal("requestedPrice", { precision: 10, scale: 2 }),
+  currencyCode: varchar("currencyCode", { length: 3 }).default("SAR").notNull(),
+  notes: text("notes"),
+  reviewedByUserId: int("reviewedByUserId"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  customerFeatureStatusIdx: index("customer_benefit_request_user_feature_status_idx").on(table.userId, table.featureId, table.status),
+  userForeignKey: foreignKey({ name: "cbr_user_fk", columns: [table.userId], foreignColumns: [users.id] }),
+  featureForeignKey: foreignKey({ name: "cbr_feature_fk", columns: [table.featureId], foreignColumns: [customerBenefitFeatures.id] }),
+  reviewerForeignKey: foreignKey({ name: "cbr_reviewer_fk", columns: [table.reviewedByUserId], foreignColumns: [users.id] }),
+}));
+
 export const auditLogs = mysqlTable("auditLogs", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").references(() => restaurants.id),
@@ -1463,3 +1541,23 @@ export const customerCardRequests = mysqlTable("customerCardRequests", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+export const whiteLabelWorkspaces = mysqlTable("whiteLabelWorkspaces", {
+  id: int("id").autoincrement().primaryKey(),
+  ownerUserId: int("ownerUserId").notNull().references(() => users.id),
+  name: varchar("name", { length: 160 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull(),
+  logoUrl: varchar("logoUrl", { length: 500 }),
+  primaryColor: varchar("primaryColor", { length: 16 }).default("#E76F3C").notNull(),
+  accentColor: varchar("accentColor", { length: 16 }).default("#172033").notNull(),
+  customDomain: varchar("customDomain", { length: 255 }),
+  defaultLocale: varchar("defaultLocale", { length: 10 }).default("ar").notNull(),
+  enabledModulesJson: text("enabledModulesJson").notNull(),
+  status: mysqlEnum("status", ["draft", "active", "suspended"]).default("draft").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  slugUnique: uniqueIndex("white_label_workspace_slug_uq").on(table.slug),
+  ownerStatusIdx: index("white_label_workspace_owner_status_idx").on(table.ownerUserId, table.status),
+  domainIdx: index("white_label_workspace_domain_idx").on(table.customDomain),
+}));

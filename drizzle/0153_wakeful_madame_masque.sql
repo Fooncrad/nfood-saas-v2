@@ -1,0 +1,2 @@
+-- No-op migration note.
+-- The customer benefit foreign keys are created with MySQL-safe short names in 0152_handy_rocket_racer.sql.

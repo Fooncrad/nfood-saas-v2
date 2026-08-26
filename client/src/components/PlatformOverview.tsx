@@ -12,6 +12,7 @@ import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCa
 import { SuperAdminCustomerCatalog } from "@/components/SuperAdminCustomerCatalog";
 import { ProfileGovernanceCenter } from "@/components/ProfileGovernanceCenter";
 import { ContentPurchaseFinancePanel } from "@/components/ContentPurchaseFinancePanel";
+import { WhiteLabelWorkspacePanel } from "@/components/WhiteLabelWorkspacePanel";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 type SparklineProps = {
@@ -274,6 +275,7 @@ export function PlatformOverview({ onNavigate }: { onNavigate: (key: "admin") =>
       </div>
       <ProfileGovernanceCenter />
       <ContentPurchaseFinancePanel />
+      <WhiteLabelWorkspacePanel />
       <FeatureRequestInbox />
     </div>
   );
