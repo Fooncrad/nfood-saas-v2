@@ -32,9 +32,9 @@ describe("public menu UX", () => {
     expect(styles).toContain(".nfood-menu-template-glass");
     expect(page).toContain('requested === "glass"');
     expect(page).toContain("localStorage.setItem(`nfood-menu-template-${slug}`, template)");
-    expect(page).toContain('aria-pressed={menuTemplate === "editorial"}');
-    expect(page).toContain('aria-pressed={menuTemplate === "bistro"}');
-    expect(page).toContain('aria-pressed={menuTemplate === "glass"}');
+    expect(page).toContain('selectMenuTemplate(menuTemplate === "editorial" ? "bistro" : menuTemplate === "bistro" ? "glass" : "editorial")');
+    expect(page).toContain('secondaryToolsOpen');
+    expect(page).toContain('أدوات المنيو');
     expect(page).toContain("page.data?.restaurant.menuTemplate");
     expect(page).toContain("page.data?.restaurant.glassGlowColor");
     expect(page).toContain("page.data?.restaurant.glassCardOpacity");

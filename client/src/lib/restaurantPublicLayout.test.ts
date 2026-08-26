@@ -15,6 +15,8 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain("nfood-menu-header sticky top-0");
     expect(source).toContain("{restaurantName}");
     expect(source).toContain("إخفاء اسم المطعم");
+    expect(source).toContain('rawRestaurantBrand.toLowerCase() === "nssercafa"');
+    expect(source).toContain('"Nasser Cafe"');
   });
 
   it("moves account and menu tools into the secondary row", () => {
@@ -22,10 +24,17 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain("تسجيل / دخول");
     expect(source).toContain("downloadMenuPdf");
     expect(source).toContain("setMenuQrOpen(true)");
+    expect(source).toContain("secondaryToolsOpen");
+    expect(source).toContain("أدوات المنيو");
   });
 
   it("does not expose the raw QR URL in the visible dialog", () => {
     expect(source).not.toContain('<p dir="ltr" className="break-all rounded-xl bg-slate-50');
     expect(source).toContain("NFOOD · {restaurantName}");
+  });
+
+  it("protects menu cards from the fixed mobile navigation", () => {
+    expect(source).toContain("nfood-menu-shell flex flex-col pb-32 sm:pb-0");
+    expect(source).toContain("fixed inset-x-3 bottom-3");
   });
 });
