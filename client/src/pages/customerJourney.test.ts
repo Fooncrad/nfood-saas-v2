@@ -4,6 +4,8 @@ import fs from "node:fs";
 const home = fs.readFileSync(new URL("./Home.tsx", import.meta.url), "utf8");
 const login = fs.readFileSync(new URL("../components/TestLoginScreen.tsx", import.meta.url), "utf8");
 const roadmap = fs.readFileSync(new URL("../../../docs/customer-journey-roadmap.md", import.meta.url), "utf8");
+const menu = fs.readFileSync(new URL("../pages/RestaurantPublic.tsx", import.meta.url), "utf8");
+const portal = fs.readFileSync(new URL("../pages/CustomerPortal.tsx", import.meta.url), "utf8");
 
 describe("customer journey regression", () => {
   it("routes customer sessions to an independent portal", () => {
@@ -16,6 +18,13 @@ describe("customer journey regression", () => {
     expect(login).toContain("Forgot password?");
     expect(login).toContain("إرسال رابط الاستعادة");
     expect(login).toContain("onForgotPassword");
+  });
+
+  it("keeps the menu auth sheet compact and the portal customer-specific", () => {
+    expect(menu).toContain("max-h-[76dvh]");
+    expect(menu).toContain("loginCustomer.mutate");
+    expect(portal).toContain("CustomerRewardsWalletPanel");
+    expect(portal).toContain("تبديل الحساب");
   });
 
   it("documents the return-to-cart and account-switch journey", () => {
