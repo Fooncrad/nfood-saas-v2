@@ -28,7 +28,6 @@ export const navItems: { key: NavKey; label: string; icon: LucideIcon }[] = [
   { key: "files", label: "مكتبة الملفات", icon: HardDrive },
   { key: "admin", label: "Super Admin", icon: ShieldCheck },
   { key: "settings", label: "الإعدادات العامة", icon: Settings2 },
-  { key: "operations", label: "مركز تشغيل المطعم", icon: Clock3 },
   { key: "branches", label: "الفروع والإعدادات", icon: Store },
   { key: "orders", label: "الطلبات", icon: ShoppingBag },
   { key: "pos", label: "نقطة البيع POS", icon: WalletCards },

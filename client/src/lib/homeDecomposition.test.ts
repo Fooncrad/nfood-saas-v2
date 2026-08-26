@@ -161,7 +161,7 @@ describe("Home decomposition", () => {
       "<CompactModuleSummary metrics={summary}"
     );
     expect(modulesSource).toContain('title="المخزون والمشتريات"');
-    expect(modulesSource).toContain('title="الحجوزات وقائمة الانتظار"');
+    expect(modulesSource).toContain('title="الحجوزات والأوقات"');
     expect(modulesSource).toContain('title="الفروع والإعدادات"');
     expect(modulesSource).toContain('title="نقطة البيع POS"');
     expect(modulesSource).toContain("title={station === \"bar\"");

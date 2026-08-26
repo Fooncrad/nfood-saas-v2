@@ -113,6 +113,7 @@ import { RestaurantDisplayMarketingPanel } from "@/components/RestaurantDisplayM
 import { RestaurantMenuInsightsPanel } from "@/components/RestaurantMenuInsightsPanel";
 import { MediaTemplateStudio } from "@/components/MediaTemplateStudio";
 import { DeliveryOperationsPanel } from "@/components/DeliveryOperationsPanel";
+import { ReservationSchedulePanel } from "@/components/ReservationSchedulePanel";
 import { QROperationsPanel } from "@/components/QROperationsPanel";
 import {
   RemoteTaskDialog,
@@ -527,8 +528,8 @@ export function ModuleView({
     );
   if (active === "reservations")
     return (
-      <OperationalModuleShell title="الحجوزات وقائمة الانتظار">
-        <ReservationsView restaurantId={restaurantId} />
+      <OperationalModuleShell title="الحجوزات والأوقات">
+        <RestaurantOperationsHub restaurantId={restaurantId} branchId={branchId} defaultTab="reservations" />
       </OperationalModuleShell>
     );
   if (active === "operations")
@@ -557,12 +558,6 @@ export function ModuleView({
       <OperationalModuleShell title="الفروع والإعدادات">
         <div className="space-y-5">
           <BranchesView restaurantId={restaurantId} />
-          <div className="border-t border-slate-200 pt-5">
-            <DeliveryOperationsPanel
-              restaurantId={restaurantId}
-              branchId={branchId}
-            />
-          </div>
         </div>
       </OperationalModuleShell>
     );
@@ -10312,8 +10307,8 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
   );
 }
 
-function RestaurantOperationsHub({ restaurantId, branchId }: { restaurantId: number; branchId?: number }) {
-  const [activeTab, setActiveTab] = useState<"tables" | "reservations" | "menu" | "hours" | "qr" | "finance">("tables");
+function RestaurantOperationsHub({ restaurantId, branchId, defaultTab = "tables" }: { restaurantId: number; branchId?: number; defaultTab?: "tables" | "reservations" | "menu" | "qr" | "finance" }) {
+  const [activeTab, setActiveTab] = useState<"tables" | "reservations" | "menu" | "qr" | "finance">(defaultTab);
   const openTableQrCustomization = () => {
     setActiveTab("qr");
     window.setTimeout(() => document.querySelector('[data-testid="qr-table-builder"]')?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
@@ -10323,7 +10318,6 @@ function RestaurantOperationsHub({ restaurantId, branchId }: { restaurantId: num
     { key: "qr" as const, label: "QR المنيو والرموز", description: "المنيو العام والرموز التشغيلية" },
     { key: "reservations" as const, label: "الحجوزات", description: "المواعيد والانتظار والإلغاء" },
     { key: "menu" as const, label: "واجهة المنيو والقوالب", description: "القالب والمعاينة وشبكة الأصناف" },
-    { key: "hours" as const, label: "الفتحات وساعات العمل", description: "أوقات الفروع وقنوات الطلب" },
     { key: "finance" as const, label: "السجل المالي والودائع", description: "المدفوعات والمرتجعات والإلغاءات وودائع السائقين" },
   ];
   return (
@@ -10340,9 +10334,8 @@ function RestaurantOperationsHub({ restaurantId, branchId }: { restaurantId: num
       <div key={activeTab} data-operations-tab={activeTab} className="nfood-settings-tab-enter space-y-3">
         {activeTab === "tables" && <TablesView restaurantId={restaurantId} branchId={branchId} onOpenQrTables={openTableQrCustomization} />}
         {activeTab === "qr" && <QROperationsPanel restaurantId={restaurantId} branchId={branchId} />}
-        {activeTab === "reservations" && <ReservationsView restaurantId={restaurantId} />}
+        {activeTab === "reservations" && <div className="space-y-4"><ReservationsView restaurantId={restaurantId} /><ReservationSchedulePanel restaurantId={restaurantId} branchId={branchId} /><DeliveryOperationsPanel restaurantId={restaurantId} branchId={branchId} /></div>}
         {activeTab === "menu" && <BrandingPanel restaurantId={restaurantId} />}
-        {activeTab === "hours" && <BranchesView restaurantId={restaurantId} />}
         {activeTab === "finance" && <FinancialLedgerView restaurantId={restaurantId} branchId={branchId} />}
       </div>
     </div>

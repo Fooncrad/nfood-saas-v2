@@ -8,8 +8,9 @@ const qrPanel = readFileSync(new URL("../components/QROperationsPanel.tsx", impo
 
 describe("restaurant operations hub", () => {
   it("exposes the hub to restaurant managers and places it in operations navigation", () => {
-    expect(getVisibleNavigation("restaurant_admin")).toContain("operations");
-    expect(home).toContain('["operations", "orders", "pos", "kds"');
+    expect(getVisibleNavigation("restaurant_admin")).toContain("reservations");
+    expect(getVisibleNavigation("restaurant_admin")).not.toContain("operations");
+    expect(home).toContain('"reservations"');
   });
 
   it("keeps the requested settings together as separate tabs", () => {
@@ -20,7 +21,8 @@ describe("restaurant operations hub", () => {
     expect(homeModules).toContain('key: "qr"');
     expect(homeModules).toContain('label: "QR المنيو والرموز"');
     expect(qrPanel).toContain('data-testid="menu-qr-auto-card"');
-    expect(homeModules).toContain('label: "الفتحات وساعات العمل"');
+    expect(homeModules).toContain('title="الحجوزات والأوقات"');
+    expect(homeModules).toContain("<ReservationSchedulePanel");
     expect(homeModules).toContain('data-operations-tab={activeTab}');
   });
 
@@ -41,9 +43,9 @@ describe("restaurant operations hub", () => {
 
   it("renders each operational unit behind its own tab", () => {
     expect(homeModules).toContain('activeTab === "tables" && <TablesView');
-    expect(homeModules).toContain('activeTab === "reservations" && <ReservationsView');
+    expect(homeModules).toContain('activeTab === "reservations" && <div className="space-y-4"><ReservationsView');
     expect(homeModules).toContain('activeTab === "menu" && <BrandingPanel');
-    expect(homeModules).toContain('activeTab === "hours" && <BranchesView');
+    expect(homeModules).not.toContain('activeTab === "hours" && <BranchesView');
   });
 });
 
