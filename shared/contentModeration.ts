@@ -22,6 +22,16 @@ export function classifyFoodContent(fileName: string): FoodContentCategory {
   return categorySignals.find(([, signal]) => signal.test(fileName))?.[0] ?? "other_food";
 }
 
+export function validateMarketplaceCapture(input: { captureMethod?: string; capturedAt?: Date | null; maxAgeMs?: number; deviceModel?: string | null }) {
+  if (input.captureMethod !== "camera") return { valid: false, reason: "يجب التقاط الصورة مباشرة من كاميرا Studio" };
+  if (!input.capturedAt || Number.isNaN(input.capturedAt.getTime())) return { valid: false, reason: "تعذر التحقق من وقت التقاط الصورة" };
+  const age = Date.now() - input.capturedAt.getTime();
+  const maxAgeMs = input.maxAgeMs ?? 24 * 60 * 60 * 1000;
+  if (age < -5 * 60 * 1000 || age > maxAgeMs) return { valid: false, reason: "لا تُقبل الصور القديمة؛ التقط صورة جديدة من كاميرا Studio" };
+  if (!input.deviceModel?.trim()) return { valid: false, reason: "بيانات الجهاز غير متاحة للتحقق" };
+  return { valid: true as const, reason: null };
+}
+
 export function moderateCustomerContent(input: {
   fileName: string;
   contentType: string;

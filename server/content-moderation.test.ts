@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { moderateCustomerContent } from "../shared/contentModeration";
+import { moderateCustomerContent, validateMarketplaceCapture } from "../shared/contentModeration";
 
 describe("customer studio moderation", () => {
   it("approves a food image, enables watermarking, and classifies it", () => {
@@ -9,6 +9,12 @@ describe("customer studio moderation", () => {
       watermarkApplied: true,
       category: "burger",
     });
+  });
+
+  it("requires a recent camera capture with device metadata for the marketplace", () => {
+    expect(validateMarketplaceCapture({ captureMethod: "file", capturedAt: new Date(), deviceModel: "Phone" }).valid).toBe(false);
+    expect(validateMarketplaceCapture({ captureMethod: "camera", capturedAt: new Date(Date.now() - 25 * 60 * 60 * 1000), deviceModel: "Phone" }).valid).toBe(false);
+    expect(validateMarketplaceCapture({ captureMethod: "camera", capturedAt: new Date(), deviceModel: "Phone" }).valid).toBe(true);
   });
 
   it("blocks videos, unsupported files, oversized uploads, and unsafe signals", () => {
