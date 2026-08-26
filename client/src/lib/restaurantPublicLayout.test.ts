@@ -7,7 +7,7 @@ const source = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantP
 describe("RestaurantPublic menu layout", () => {
   it("shows complete dish images without object-cover cropping", () => {
     expect(source).toContain("nfood-menu-item-image relative aspect-[4/3]");
-    expect(source).toContain('loading="lazy" decoding="async" className="h-full w-full object-contain');
+    expect(source).toContain('loading="lazy" decoding="async" className="nfood-menu-item-photo h-full w-full object-contain');
   });
 
   it("keeps restaurant identity in the sticky header and lets it collapse", () => {
@@ -36,6 +36,21 @@ describe("RestaurantPublic menu layout", () => {
   it("protects menu cards from the fixed mobile navigation", () => {
     expect(source).toContain("nfood-menu-shell flex flex-col pb-32 sm:pb-0");
     expect(source).toContain("fixed inset-x-3 bottom-3");
+  });
+
+  it("exposes a category filter control above the menu on mobile", () => {
+    expect(source).toContain("categoryFilterOpen");
+    expect(source).toContain("تصفية حسب الفئة");
+    expect(source).toContain("aria-expanded={categoryFilterOpen}");
+    expect(source).toContain('categoryFilterOpen ? "flex" : "hidden"');
+  });
+
+  it("supports smooth hover only where a pointer is available", () => {
+    const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(source).toContain("nfood-menu-card-hover");
+    expect(css).toContain("@media (hover: hover) and (pointer: fine)");
+    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(css).toContain("min-height: 11rem");
   });
 
   it("supports the attached Nasser Cafe reference treatment", () => {
