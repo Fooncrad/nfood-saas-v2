@@ -974,6 +974,13 @@
       "when": 1787706879032,
       "tag": "0138_sticky_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 139,
+      "version": "5",
+      "when": 1787713115253,
+      "tag": "0139_futuristic_triathlon",
+      "breakpoints": true
     }
   ]
 }

@@ -1174,7 +1174,7 @@ export const contentModerationReviews = mysqlTable("contentModerationReviews", {
 
 export const contentListings = mysqlTable("contentListings", {
   id: int("id").autoincrement().primaryKey(),
-  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  restaurantId: int("restaurantId").references(() => restaurants.id),
   mediaFileId: int("mediaFileId").notNull().references(() => mediaFiles.id),
   ownerUserId: int("ownerUserId").notNull().references(() => users.id),
   title: varchar("title", { length: 180 }).notNull(),

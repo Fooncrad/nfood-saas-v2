@@ -1,0 +1,1 @@
+ALTER TABLE `contentListings` MODIFY COLUMN `restaurantId` int;

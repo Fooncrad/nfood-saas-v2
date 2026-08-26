@@ -24,10 +24,11 @@ describe("customer account experience", () => {
     expect(notices).toContain("المكافآت");
   });
 
-  it("previews uploaded images and videos with a watermark", () => {
-    expect(studio).toContain("previewType");
-    expect(studio).toContain("<video src={previewUrl}");
+  it("publishes public food images without a restaurant selector", () => {
+    expect(studio).toContain('accept="image/jpeg,image/png,image/webp"');
+    expect(studio).not.toContain("اختر المطعم");
+    expect(studio).toContain("يوجد مطاعم نشطة");
     expect(studio).toContain("NFOOD · معاينة محمية");
-    expect(studio).toContain("يفحص قبل النشر");
+    expect(studio).toContain("سعر الصورة: 5.00 SAR");
   });
 });
