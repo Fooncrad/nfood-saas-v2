@@ -24,5 +24,7 @@ describe("content review experience", () => {
     expect(platform).toContain("رفض بسبب");
     expect(db).toContain("paymentSource: \"wallet\"");
     expect(db).toContain("content_reward");
+    expect(router).toContain("NODE_ENV !== \"production\"");
+    expect(router).toContain("hasValidImageSignature");
   });
 });
