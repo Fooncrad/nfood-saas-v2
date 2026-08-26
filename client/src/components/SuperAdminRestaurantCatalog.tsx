@@ -3,14 +3,12 @@ import {
   Check,
   ChevronDown,
   Copy,
-  Edit3,
   ExternalLink,
   Eye,
   KeyRound,
   LogIn,
   MoreHorizontal,
   Plus,
-  Power,
   Search,
   Store,
   Trash2,
@@ -121,13 +119,6 @@ export function SuperAdminRestaurantCatalog() {
       window.location.assign("/");
     },
     onError: error => toast.error(`تعذر الدخول إلى المطعم: ${error.message}`),
-  });
-  const deleteRestaurant = trpc.admin.deleteRestaurant.useMutation({
-    onSuccess: () => {
-      void utils.admin.restaurants.invalidate();
-      toast.success("تم حذف المطعم بأمان");
-    },
-    onError: error => toast.error(`تعذر حذف المطعم: ${error.message}`),
   });
   const createRestaurant = trpc.admin.createRestaurant.useMutation({
     onSuccess: data => {
@@ -641,6 +632,15 @@ export function SuperAdminRestaurantCatalog() {
                     </div>
 
                     <div className="mt-auto flex min-w-0 flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3 dark:border-slate-800">
+                      <a
+                        href={`/menu/${encodeURIComponent(restaurant.slug ?? "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-7 max-w-full items-center gap-1 rounded-lg bg-[#e76f3c] px-2 text-[10px] font-black text-white shadow-sm transition hover:bg-[#d85f2e]"
+                      >
+                        <Utensils className="h-3.5 w-3.5 shrink-0" /> فتح Menu
+                        <ExternalLink className="h-3 w-3 shrink-0" />
+                      </a>
                       <Button
                         type="button"
                         size="sm"
@@ -671,52 +671,6 @@ export function SuperAdminRestaurantCatalog() {
                         type="button"
                         size="sm"
                         variant="outline"
-                        disabled={updateRestaurant.isPending}
-                        onClick={() =>
-                          updateRestaurant.mutate({
-                            id: restaurant.id,
-                            status:
-                              restaurant.status === "active"
-                                ? "trial"
-                                : "active",
-                          })
-                        }
-                        className="h-7 max-w-full gap-1 rounded-lg border-slate-200 px-2 text-[10px] font-bold dark:border-slate-700"
-                      >
-                        <Power className="h-3.5 w-3.5 shrink-0" />
-                        {restaurant.status === "active"
-                          ? ui.pause
-                          : ui.activate}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          const matchingPlan = planOptionsForEditor.find(
-                            plan =>
-                              plan.key === restaurant.plan ||
-                              plan.name === restaurant.plan
-                          );
-                          setPlanEditor({
-                            id: restaurant.id,
-                            name: restaurant.name,
-                            currentPlan: restaurant.plan ?? "",
-                          });
-                          setPlanDraft(
-                            matchingPlan?.key ??
-                              planOptionsForEditor[0]?.key ??
-                              ""
-                          );
-                        }}
-                        className="h-7 max-w-full gap-1 rounded-lg border-slate-200 px-2 text-[10px] font-bold dark:border-slate-700"
-                      >
-                        <Edit3 className="h-3.5 w-3.5 shrink-0" /> {ui.editPlan}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
                         disabled={resetPassword.isPending}
                         onClick={() => {
                           const password = window.prompt(
@@ -740,30 +694,16 @@ export function SuperAdminRestaurantCatalog() {
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "سيتم حذف المطعم بأمان مع الحفاظ على السجل؟"
-                            )
-                          )
-                            deleteRestaurant.mutate({ id: restaurant.id });
-                        }}
-                        className="h-7 max-w-full gap-1 rounded-lg px-2 text-[10px] font-bold text-red-600 dark:border-red-500/30 dark:text-red-300"
+                        disabled
+                        aria-disabled="true"
+                        data-testid={`restaurant-delete-disabled-${restaurant.id}`}
+                        title="حذف المطعم معطل للحماية من الحذف العرضي"
+                        className="h-7 max-w-full cursor-not-allowed gap-1 rounded-lg border-slate-200 px-2 text-[10px] font-bold text-slate-400 opacity-70 dark:border-slate-700 dark:text-slate-500"
                       >
-                        <Trash2 className="h-3.5 w-3.5 shrink-0" /> حذف
+                        <Trash2 className="h-3.5 w-3.5 shrink-0" /> الحذف معطل
                       </Button>
                     </div>
 
-                    <a
-                      href={`/menu/${encodeURIComponent(restaurant.slug ?? "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 inline-flex max-w-full items-center gap-1 text-[10px] font-black text-[#e76f3c] hover:underline"
-                    >
-                      <Utensils className="h-3.5 w-3.5 shrink-0" /> فتح Menu
-                      للعميل
-                      <ExternalLink className="h-3 w-3 shrink-0" />
-                    </a>
                     <span className="sr-only">الترتيب {index + 1}</span>
                   </article>
                 );
