@@ -21,6 +21,7 @@ const routeLoaders = {
   CustomerReservations: () => import("./pages/CustomerReservations"),
   CustomerRewards: () => import("./pages/CustomerRewards"),
   CustomerStudio: () => import("./pages/CustomerStudio"),
+  CustomerRegister: () => import("./pages/CustomerRegister"),
   SupportManagement: () => import("./pages/SupportManagement"),
   VcardCardsAdmin: () => import("./pages/VcardCardsAdmin"),
   FavoritesPage: () => import("./pages/FavoritesPage"),
@@ -40,6 +41,7 @@ const CustomerOrders = lazy(routeLoaders.CustomerOrders);
 const CustomerReservations = lazy(routeLoaders.CustomerReservations);
 const CustomerRewards = lazy(routeLoaders.CustomerRewards);
 const CustomerStudio = lazy(routeLoaders.CustomerStudio);
+const CustomerRegister = lazy(routeLoaders.CustomerRegister);
 const SupportManagement = lazy(routeLoaders.SupportManagement);
 const VcardCardsAdmin = lazy(routeLoaders.VcardCardsAdmin);
 const FavoritesPage = lazy(routeLoaders.FavoritesPage);
@@ -83,6 +85,7 @@ function Router() {
       <Route path="/restaurant/account" component={RootRoute} />
       <Route path="/login" component={Home} />
       <Route path="/register" component={Home} />
+      <Route path="/customer-register" component={CustomerRegister} />
       <Route path="/restaurant/register" component={Home} />
       <Route path="/pricing" component={PricingPage} />
       <Route path="/features" component={FeaturesPage} />
