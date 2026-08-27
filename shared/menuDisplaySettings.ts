@@ -13,12 +13,15 @@ export const MENU_DISPLAY_TOOL_KEYS = [
 export type MenuDisplayToolKey = (typeof MENU_DISPLAY_TOOL_KEYS)[number];
 
 export type MenuGridColumns = 1 | 2 | 3 | 4;
+export type MenuImageRatio = "square" | "portrait" | "landscape";
 
 export type MenuDisplaySettings = {
   tools: Record<MenuDisplayToolKey, boolean>;
   toolOrder: MenuDisplayToolKey[];
   showCustomerAccount: boolean;
   gridColumns: MenuGridColumns;
+  imageRatio: MenuImageRatio;
+  oneLineItemName: boolean;
 };
 
 export const defaultMenuDisplaySettings: MenuDisplaySettings = {
@@ -36,6 +39,8 @@ export const defaultMenuDisplaySettings: MenuDisplaySettings = {
   toolOrder: [...MENU_DISPLAY_TOOL_KEYS],
   showCustomerAccount: true,
   gridColumns: 4,
+  imageRatio: "square",
+  oneLineItemName: false,
 };
 
 export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySettings {
@@ -48,11 +53,14 @@ export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySe
       : defaultMenuDisplaySettings.toolOrder;
     const requestedColumns = Number(parsed.gridColumns);
     const gridColumns: MenuGridColumns = requestedColumns === 1 || requestedColumns === 2 || requestedColumns === 3 || requestedColumns === 4 ? requestedColumns : 4;
+    const imageRatio = parsed.imageRatio === "portrait" || parsed.imageRatio === "landscape" || parsed.imageRatio === "square" ? parsed.imageRatio : "square";
     return {
       tools,
       toolOrder: Array.from(new Set([...toolOrder, ...MENU_DISPLAY_TOOL_KEYS])),
       showCustomerAccount: parsed.showCustomerAccount !== false,
       gridColumns,
+      imageRatio,
+      oneLineItemName: parsed.oneLineItemName === true,
     };
   } catch {
     return defaultMenuDisplaySettings;
