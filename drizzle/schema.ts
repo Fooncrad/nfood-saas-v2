@@ -80,6 +80,10 @@ export const restaurants = mysqlTable("restaurants", {
   plan: varchar("plan", { length: 64 }).default("Growth").notNull(),
   brandName: varchar("brandName", { length: 160 }),
   brandColor: varchar("brandColor", { length: 7 }).default("#e76f3c"),
+  brandAccentColor: varchar("brandAccentColor", { length: 7 }).default("#f59e0b").notNull(),
+  brandTextColor: varchar("brandTextColor", { length: 7 }).default("#172033").notNull(),
+  brandFontFamily: varchar("brandFontFamily", { length: 120 }).default("IBM Plex Sans Arabic").notNull(),
+  brandHeadingFontFamily: varchar("brandHeadingFontFamily", { length: 120 }).default("IBM Plex Sans Arabic").notNull(),
   themeMode: mysqlEnum("themeMode", ["light", "dark", "system"]).default("light").notNull(),
   themePreset: varchar("themePreset", { length: 40 }).default("nfood-sunset").notNull(),
   menuTemplate: mysqlEnum("menuTemplate", ["editorial", "bistro", "glass"]).default("editorial").notNull(),
@@ -1580,6 +1584,19 @@ export const whiteLabelWorkspaces = mysqlTable("whiteLabelWorkspaces", {
   slugUnique: uniqueIndex("white_label_workspace_slug_uq").on(table.slug),
   ownerStatusIdx: index("white_label_workspace_owner_status_idx").on(table.ownerUserId, table.status),
   domainIdx: index("white_label_workspace_domain_idx").on(table.customDomain),
+}));
+
+export const restaurantMenuLayoutTemplates = mysqlTable("restaurantMenuLayoutTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  name: varchar("name", { length: 120 }).notNull(),
+  settingsJson: text("settingsJson").notNull(),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  restaurantUpdatedIdx: index("restaurant_menu_layout_templates_restaurant_updated_idx").on(table.restaurantId, table.updatedAt),
+  restaurantNameIdx: index("restaurant_menu_layout_templates_restaurant_name_idx").on(table.restaurantId, table.name),
 }));
 
 export const uiTranslationHistory = mysqlTable("uiTranslationHistory", {

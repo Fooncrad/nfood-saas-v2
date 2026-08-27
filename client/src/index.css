@@ -2059,3 +2059,15 @@ html[lang="ur"] body {
     aspect-ratio: 1 / 1 !important;
   }
 }
+
+/* Restaurant brand typography is scoped to the public menu shell. */
+.nfood-menu-theme {
+  font-family: var(--menu-font-family, "IBM Plex Sans Arabic"), sans-serif;
+}
+.nfood-menu-theme h1,
+.nfood-menu-theme h2,
+.nfood-menu-theme h3,
+.nfood-menu-theme h4,
+.nfood-menu-theme .nfood-menu-heading {
+  font-family: var(--menu-heading-font-family, var(--menu-font-family, "IBM Plex Sans Arabic")), sans-serif;
+}

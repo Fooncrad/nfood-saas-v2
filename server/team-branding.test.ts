@@ -27,6 +27,26 @@ describe("team and branding controls", () => {
     expect(modules).not.toContain('<BrandingEditorPanel restaurantId={restaurantId} />');
   });
 
+  it("exposes brand colors, fonts, saved layout templates, and live preview", () => {
+    const schema = read("drizzle/schema.ts");
+    const db = read("server/db.ts");
+    const router = read("server/routers.ts");
+    const modules = read("client/src/components/HomeModules.tsx");
+    const publicMenu = read("client/src/pages/RestaurantPublic.tsx");
+    expect(schema).toContain('brandAccentColor: varchar("brandAccentColor"');
+    expect(schema).toContain('brandFontFamily: varchar("brandFontFamily"');
+    expect(schema).toContain('restaurantMenuLayoutTemplates = mysqlTable');
+    expect(db).toContain("listRestaurantMenuLayoutTemplates");
+    expect(router).toContain("createMenuLayoutTemplate:");
+    expect(router).toContain("deleteMenuLayoutTemplate:");
+    expect(modules).toContain("data-brand-identity-customization");
+    expect(modules).toContain("قوالب تخطيطات محفوظة");
+    expect(modules).toContain("data-menu-layout-live-preview");
+    expect(modules).toContain("تم تطبيق القالب على المعاينة والمسودة");
+    expect(publicMenu).toContain("--menu-font-family");
+    expect(publicMenu).toContain("brandAccentColor");
+  });
+
   it("keeps detailed permissions and audit procedures protected", () => {
     const permissions = read("shared/rolePermissions.ts");
     const router = read("server/routers.ts");
