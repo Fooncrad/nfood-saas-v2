@@ -10,6 +10,8 @@ describe("restaurant menu account and operational role entry points", () => {
     expect(source).toContain('navigate("/customer-portal")');
     expect(source).toContain('if (!user) { toast.info("سجّل الدخول أولًا لإتمام الطلب"); startLogin(); return; }');
     expect(source).toContain('selfOrderEnabled');
+    expect(source).toContain('setSelectedMenuItem(item); }} aria-label={`عرض تفاصيل ${item.name}`}');
+    expect(source).not.toContain('updateCart(item.id, 1); }} aria-label={`إضافة ${item.name} إلى السلة`}');
   });
 
   it("exposes dedicated driver and waiter modules backed by the team workflow", () => {
