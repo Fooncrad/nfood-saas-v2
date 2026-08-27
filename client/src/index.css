@@ -2607,3 +2607,22 @@ html[lang="ur"] body {
     padding: .4rem .15rem .05rem !important;
   }
 }
+
+/* Defensive RTL fix: Radix's centered dialog defaults must never leave the product sheet half off-screen. */
+@media (max-width: 639px) {
+  [data-slot="dialog-content"].nfood-product-detail-dialog {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100dvw !important;
+    min-width: 100dvw !important;
+    max-width: 100dvw !important;
+    margin: 0 !important;
+    transform: none !important;
+    translate: none !important;
+    justify-self: stretch !important;
+  }
+}

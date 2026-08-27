@@ -283,6 +283,9 @@ describe("Cardless menu experiment", () => {
     expect(css).toContain("translate: none !important;");
     expect(css).toContain("object-fit: contain !important;");
     expect(css).toContain("object-position: center !important;");
+    expect(css).toContain('[data-slot="dialog-content"].nfood-product-detail-dialog');
+    expect(css).toContain("min-width: 100dvw !important;");
+    expect(css).toContain("inset: auto 0 0 0 !important;");
     expect(source).toContain('className="nfood-product-detail-image h-[clamp(180px,30vh,260px)]');
   });
 });
