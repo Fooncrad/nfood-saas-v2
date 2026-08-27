@@ -111,6 +111,17 @@ describe("RestaurantPublic menu layout", () => {
     expect(css).not.toContain("min-height: 14rem");
   });
 
+  it("keeps the revised desktop cards readable and horizontally distributed", () => {
+    const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(css).toContain("grid-template-columns: repeat(6, minmax(0, 1fr)) !important");
+    expect(css).toContain("grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) !important");
+    expect(css).toContain(".nfood-menu-shell .nfood-menu-item-content h3 {");
+    expect(css).toContain("display: -webkit-box !important");
+    expect(css).toContain("object-fit: cover !important");
+    expect(css).toContain(".nfood-menu-shell .nfood-menu-category-bar");
+    expect(css).toContain("scrollbar-width: thin");
+  });
+
   it("supports the attached Nasser Cafe reference treatment", () => {
     const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
     expect(css).toContain("--menu-page: #fbf7f0 !important");

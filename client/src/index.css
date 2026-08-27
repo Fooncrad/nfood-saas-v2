@@ -1888,111 +1888,20 @@ html[lang="ur"] body {
   }
 }
 
-/* Compact menu card density: match the supplied reference without changing menu behavior. */
+/* Final editorial card treatment: readable density without changing the horizontal menu behavior. */
 .nfood-menu-shell .category-results {
-  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
-  gap: .75rem !important;
-  align-items: start !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 1rem !important;
+  align-items: stretch !important;
 }
-.nfood-menu-shell .nfood-menu-item-card {
-  min-width: 0 !important;
-  border-radius: .9rem !important;
-}
-.nfood-menu-shell .nfood-menu-item-content {
-  padding: .55rem !important;
-}
-.nfood-menu-shell .nfood-menu-item-content h3 {
-  font-size: .72rem !important;
-  line-height: 1.15rem !important;
-}
-.nfood-menu-shell .nfood-menu-item-content p {
-  font-size: .62rem !important;
-  line-height: .95rem !important;
-}
-.nfood-menu-shell .nfood-menu-item-content strong {
-  font-size: .72rem !important;
-}
-.nfood-menu-shell .nfood-menu-item-content .nfood-menu-cart-row {
-  margin-top: .35rem !important;
-  padding-top: .35rem !important;
-}
-@media (min-width: 768px) and (max-width: 1279px) {
-  .nfood-menu-shell .category-results {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  }
-}
-@media (max-width: 767px) {
-  .nfood-menu-shell .category-results {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: .65rem !important;
-  }
-  .nfood-menu-shell .nfood-menu-item-image {
-    width: 40% !important;
-  }
-  .nfood-menu-shell .nfood-menu-item-content {
-    padding: .5rem !important;
-  }
-}
-
-/* Compact-card overflow protection for narrow mobile columns. */
-.nfood-menu-shell .nfood-menu-item-card,
-.nfood-menu-shell .nfood-menu-item-content,
-.nfood-menu-shell .nfood-menu-item-content > div {
-  max-width: 100%;
-  overflow: visible;
-}
-.nfood-menu-shell .nfood-menu-item-content > div:first-child {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: .35rem;
-}
-.nfood-menu-shell .nfood-menu-item-content > div:first-child h3 {
-  min-width: 0;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-}
-.nfood-menu-shell .nfood-menu-item-content > div:first-child > div {
-  min-width: 0;
-  max-width: 100%;
-  overflow: visible;
-}
-.nfood-menu-shell .nfood-menu-item-content > div:first-child strong {
-  display: block;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  white-space: normal !important;
-  text-align: end;
-  line-height: 1rem;
-}
-@media (max-width: 767px) {
-  .nfood-menu-shell .nfood-menu-item-image > button,
-  .nfood-menu-shell .nfood-menu-item-image > span {
-    display: none !important;
-  }
-  .nfood-menu-shell .nfood-menu-item-content > div:last-child {
-    width: 100%;
-    min-width: 0;
-    gap: .15rem !important;
-  }
-  .nfood-menu-shell .nfood-menu-item-content > div:last-child > div:first-child {
-    min-width: 0;
-    gap: .2rem !important;
-  }
-  .nfood-menu-shell .nfood-menu-item-content > div:last-child button {
-    height: 1.75rem !important;
-    width: 1.75rem !important;
-    flex: 0 0 auto;
-  }
-}
-
-/* Reference card: equal image and information halves. */
 .nfood-menu-shell .nfood-menu-item-card {
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) !important;
+  min-width: 0 !important;
+  min-height: 11rem !important;
   align-items: stretch !important;
   overflow: hidden !important;
+  border-radius: 1rem !important;
 }
 .nfood-menu-shell .nfood-menu-item-image {
   grid-column: 2 !important;
@@ -2003,11 +1912,13 @@ html[lang="ur"] body {
   aspect-ratio: 1 / 1 !important;
   height: auto !important;
   align-self: stretch !important;
+  overflow: hidden !important;
 }
 .nfood-menu-shell .nfood-menu-item-image img {
   width: 100% !important;
   height: 100% !important;
-  object-fit: contain !important;
+  object-fit: cover !important;
+  object-position: center !important;
 }
 .nfood-menu-shell .nfood-menu-item-content {
   grid-column: 1 !important;
@@ -2017,46 +1928,113 @@ html[lang="ur"] body {
   display: flex !important;
   flex-direction: column !important;
   justify-content: flex-start !important;
-  gap: .2rem !important;
+  gap: .4rem !important;
   overflow: hidden !important;
+  padding: .8rem !important;
+}
+.nfood-menu-shell .nfood-menu-item-content > div:first-child {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  min-width: 0 !important;
+  gap: .5rem !important;
 }
 .nfood-menu-shell .nfood-menu-item-content h3 {
-  display: none !important;
+  display: -webkit-box !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  overflow-wrap: anywhere !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  font-size: .82rem !important;
+  line-height: 1.25rem !important;
+  text-overflow: ellipsis !important;
 }
 .nfood-menu-shell .nfood-menu-item-content strong {
-  order: 1 !important;
-  width: 100% !important;
-  font-size: clamp(.64rem, 2.2vw, .82rem) !important;
-  line-height: 1.1rem !important;
+  display: block !important;
+  max-width: 100% !important;
+  font-size: .78rem !important;
+  line-height: 1.15rem !important;
   white-space: normal !important;
   overflow-wrap: anywhere !important;
-  text-align: start !important;
+  text-align: end !important;
 }
 .nfood-menu-shell .nfood-menu-item-content p {
-  order: 2 !important;
   min-width: 0 !important;
   margin: 0 !important;
   display: -webkit-box !important;
   -webkit-box-orient: vertical !important;
   -webkit-line-clamp: 2 !important;
   overflow: hidden !important;
-  line-height: 1rem !important;
+  font-size: .7rem !important;
+  line-height: 1.15rem !important;
 }
 .nfood-menu-shell .nfood-menu-item-content .nfood-menu-cart-row {
-  order: 3 !important;
   margin-top: auto !important;
   width: 100% !important;
   min-width: 0 !important;
   overflow: visible !important;
+  padding-top: .45rem !important;
+  border-top: 1px solid rgb(226 232 240 / .8) !important;
+}
+.nfood-menu-shell .nfood-menu-item-content > div:last-child {
+  min-width: 0 !important;
+  width: 100% !important;
+  gap: .35rem !important;
+}
+.nfood-menu-shell .nfood-menu-category-bar {
+  gap: .65rem !important;
+  padding: .65rem 1rem !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--menu-primary) transparent;
+}
+.nfood-menu-shell .nfood-menu-category-bar > button {
+  flex: 0 0 auto !important;
+  min-height: 2.75rem !important;
+  padding-inline: .85rem !important;
+  white-space: nowrap !important;
+}
+@media (min-width: 768px) and (max-width: 1279px) {
+  .nfood-menu-shell .category-results {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: .85rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-card {
+    min-height: 10rem !important;
+  }
 }
 @media (max-width: 767px) {
+  .nfood-menu-shell .category-results {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: .65rem !important;
+  }
   .nfood-menu-shell .nfood-menu-item-card {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
     min-height: 8.5rem !important;
   }
-  .nfood-menu-shell .nfood-menu-item-image {
-    width: 100% !important;
-    aspect-ratio: 1 / 1 !important;
+  .nfood-menu-shell .nfood-menu-item-content {
+    padding: .6rem !important;
+    gap: .25rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-content h3 {
+    font-size: .72rem !important;
+    line-height: 1.05rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-content p {
+    font-size: .62rem !important;
+    line-height: .95rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-content strong {
+    font-size: .68rem !important;
+    line-height: 1rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-content .nfood-menu-cart-row {
+    padding-top: .3rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-content > div:last-child button {
+    height: 1.75rem !important;
+    width: 1.75rem !important;
+    flex: 0 0 auto !important;
   }
 }
 
@@ -2158,4 +2136,14 @@ html[lang="ur"] body {
   .nfood-product-detail-dialog .nfood-product-detail-image {
     min-height: 360px;
   }
+}
+
+/* Keep the no-image fallback calm so product metadata remains the visual priority. */
+.nfood-menu-shell .nfood-menu-item-image > div.flex.aspect-square {
+  background: linear-gradient(135deg, rgb(255 247 237), rgb(255 255 255) 52%, rgb(253 242 248));
+}
+.nfood-menu-shell .nfood-menu-item-image > div.flex.aspect-square > svg {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  opacity: .58;
 }
