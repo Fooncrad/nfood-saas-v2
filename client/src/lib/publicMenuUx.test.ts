@@ -15,9 +15,9 @@ describe("public menu UX", () => {
     expect(page).toContain("nfood-menu-shell flex flex-col");
     expect(page).toContain("<main className=\"min-w-0 px-3 sm:px-6\">");
     expect(page).toContain("ar-SA-u-nu-latn");
-    expect(page).toContain("aspect-[4/3] shrink-0");
-    expect(page).toContain("min-h-[340px]");
+    expect(page).toContain("w-[40%] min-w-[8.75rem] shrink-0");
     expect(page).toContain("min-h-[185px]");
+    expect(page).toContain("setSelectedMenuItem(item)");
     expect(page).toContain('loading="lazy"');
     expect(page).toContain('decoding="async"');
     expect(page).toContain("h-9 w-9 rounded-xl text-white");
@@ -53,6 +53,8 @@ describe("public menu UX", () => {
 
   it("opens a real menu preview in a new tab from branding settings", () => {
     const settings = readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
+    expect(settings).toContain("1000×900 بكسل");
+    expect(settings).toContain("image.naturalWidth > 1000 || image.naturalHeight > 900");
     expect(settings).toContain("window.open(publicPreviewUrl");
     expect(settings).toContain('url.searchParams.set("preview", "1")');
     expect(settings).toContain('url.searchParams.set("template", draft.menuTemplate)');

@@ -6,8 +6,18 @@ const source = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantP
 
 describe("RestaurantPublic menu layout", () => {
   it("shows complete dish images without object-cover cropping", () => {
-    expect(source).toContain("nfood-menu-item-image relative aspect-[4/3]");
+    expect(source).toContain("nfood-menu-item-image relative w-[40%] min-w-[8.75rem]");
+    expect(source).toContain('role="button" tabIndex={0} aria-label={`عرض تفاصيل ${item.name}`}');
+    expect(source).toContain("setSelectedMenuItem(item)");
+    expect(source).toContain("object-contain");
     expect(source).toContain('loading="lazy" decoding="async" className="nfood-menu-item-photo h-full w-full object-contain');
+  });
+
+  it("opens full item details from the dish image and supports adding from the dialog", () => {
+    expect(source).toContain('open={selectedMenuItem !== null}');
+    expect(source).toContain("الوصف الكامل");
+    expect(source).toContain("selectedMenuItem.description || copy.defaultDescription");
+    expect(source).toContain("updateCart(selectedMenuItem.id, 1)");
   });
 
   it("keeps restaurant identity in the sticky header and lets it collapse", () => {

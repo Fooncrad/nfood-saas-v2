@@ -1122,11 +1122,29 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
     );
   };
   const handleMenuImage = (file: File) => {
-    void uploadPreparedImage(
-      file,
-      url => setNewImageUrl(url),
-      "تم تجهيز صورة الصنف ورفعها بنجاح"
-    );
+    if (!file.type.startsWith("image/")) {
+      toast.error("اختر ملف صورة صالحًا للصنف");
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      if (image.naturalWidth > 1000 || image.naturalHeight > 900) {
+        toast.error(`أبعاد صورة الصنف يجب ألا تتجاوز 1000×900 بكسل. الصورة الحالية ${image.naturalWidth}×${image.naturalHeight} بكسل.`);
+        return;
+      }
+      void uploadPreparedImage(
+        file,
+        url => setNewImageUrl(url),
+        "تم تجهيز صورة الصنف ورفعها بنجاح"
+      );
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      toast.error("تعذر قراءة أبعاد الصورة. اختر صورة PNG أو JPG أو WEBP صالحة.");
+    };
+    image.src = objectUrl;
   };
   const updateCategoryImage = (categoryId: number, file: File) => {
     void uploadPreparedImage(
@@ -1623,7 +1641,7 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
                       {imageUploading ? "جارٍ رفع الصورة..." : "رفع صورة الصنف"}
                     </span>
                     <span className="mt-1 text-xs text-slate-400">
-                      PNG أو JPG أو WEBP · حتى 8MB
+                      PNG أو JPG أو WEBP · حتى 8MB · الحد الأقصى 1000×900 بكسل
                     </span>
                   </label>
                 </div>
