@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { publicMenuUrl } from "@/lib/publicMenuUrl";
 import { toast } from "sonner";
+import { normalizeOptionalUrl } from "@shared/optionalUrl";
 
 const presets = [
   { key: "nfood-sunset", label: "Sunset", color: "#e76f3c" },
@@ -80,7 +81,7 @@ export function BrandingEditorPanel({ restaurantId }: { restaurantId: number }) 
 
   const save = () => update.mutate({
     restaurantId, brandName: name.trim() || query.data.brandName, brandColor: color, themeMode: mode, themePreset: preset, menuTemplate,
-    brandLogoUrl: query.data.brandLogoUrl, pwaInstallMessage: query.data.pwaInstallMessage, pwaInstallIconUrl: query.data.pwaInstallIconUrl,
+    brandLogoUrl: normalizeOptionalUrl(query.data.brandLogoUrl), pwaInstallMessage: query.data.pwaInstallMessage, pwaInstallIconUrl: normalizeOptionalUrl(query.data.pwaInstallIconUrl),
     brandDescription: query.data.brandDescription, homepageContent: query.data.homepageContent, termsOfService: query.data.termsOfService,
     privacyPolicy: query.data.privacyPolicy, refundPolicy: query.data.refundPolicy, phone: query.data.phone, whatsapp: query.data.whatsapp,
     instagramUrl: query.data.instagramUrl, facebookUrl: query.data.facebookUrl, tiktokUrl: query.data.tiktokUrl, websiteUrl: query.data.websiteUrl,
