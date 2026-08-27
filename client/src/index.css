@@ -2292,3 +2292,76 @@ html[lang="ur"] body {
     padding-bottom: .55rem !important;
   }
 }
+
+
+/* Final product-card clarity pass: protect currency text and separate the image badges. */
+.nfood-menu-shell .nfood-menu-item-image > button[aria-label*="المفضلة"] {
+  top: .25rem !important;
+  left: .5rem !important;
+  z-index: 30 !important;
+}
+.nfood-menu-shell .nfood-menu-item-image > span {
+  top: .45rem !important;
+  right: .5rem !important;
+  z-index: 30 !important;
+  border: 1px solid rgb(16 185 129 / .25) !important;
+  background: rgb(236 253 245 / .97) !important;
+  color: #047857 !important;
+  line-height: 1rem !important;
+  white-space: nowrap !important;
+}
+.nfood-menu-shell .nfood-menu-price-block {
+  min-width: max-content !important;
+  max-width: none !important;
+  flex-shrink: 0 !important;
+  margin-inline-start: -.25rem !important;
+  align-items: flex-start !important;
+}
+.nfood-menu-shell .nfood-menu-price-current,
+.nfood-menu-shell .nfood-menu-price-compare,
+.nfood-menu-shell .nfood-menu-discount {
+  display: inline-block !important;
+  max-width: none !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: keep-all !important;
+  text-align: start !important;
+}
+.nfood-menu-shell .nfood-menu-discount {
+  color: #dc2626 !important;
+}
+@media (min-width: 768px) {
+  .nfood-menu-shell .nfood-menu-price-block {
+    transform: translateX(-.2rem);
+  }
+}
+
+/* Mobile product details: full-width bottom sheet with a deliberately scrollable body. */
+@media (max-width: 639px) {
+  .nfood-product-detail-dialog {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    height: min(92dvh, 780px) !important;
+    max-height: 92dvh !important;
+    overflow: hidden !important;
+  }
+  .nfood-product-detail-dialog .nfood-product-detail-panel {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  .nfood-product-detail-dialog .nfood-product-detail-panel > div:nth-child(2) {
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nfood-product-detail-dialog .nfood-product-detail-panel > div:last-child {
+    flex: 0 0 auto !important;
+  }
+}

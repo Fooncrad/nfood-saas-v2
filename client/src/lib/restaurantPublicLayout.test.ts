@@ -18,7 +18,7 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain('open={selectedMenuItem !== null}');
     expect(source).toContain("nfood-product-detail-dialog");
     expect(source).toContain("nfood-product-detail-panel");
-    expect(source).toContain("h-[clamp(220px,42vh,320px)]");
+    expect(source).toContain("h-[clamp(180px,30vh,260px)");
     expect(source).toContain("الوصف الكامل");
     expect(source).toContain("selectedMenuItem.description || copy.defaultDescription");
     expect(source).toContain("detailCalories");
@@ -165,10 +165,34 @@ describe("Product card detail flow refinement", () => {
     expect(source).not.toContain("detailCopy.share");
   });
 
+  it("limits each category to five items before expanding", () => {
+    expect(source).toContain("group.items.length : 5");
+    expect(source).toContain("group.items.length > 5");
+    expect(source).toContain("عرض المزيد");
+  });
+
+  it("keeps the price, currency, discount, and availability readable", () => {
+    const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(source).toContain("nfood-menu-price-block");
+    expect(source).toContain("nfood-menu-price-current");
+    expect(source).toContain("text-rose-600");
+    expect(source).toContain("top-0.5 z-20");
+    expect(source).toContain("top-1.5 z-20");
+    expect(css).toContain("word-break: keep-all !important");
+    expect(css).toContain("color: #dc2626 !important");
+  });
+
   it("places the short description in the second card row", () => {
     const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
     expect(css).toContain(".nfood-menu-shell .nfood-menu-card-summary");
     expect(css).toContain("grid-column: 1 / -1 !important");
     expect(css).toContain("grid-row: 2 !important");
+  });
+
+  it("forces the mobile product details body to scroll inside a full-height sheet", () => {
+    const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(css).toContain("height: min(92dvh, 780px) !important");
+    expect(css).toContain(".nfood-product-detail-panel > div:nth-child(2)");
+    expect(css).toContain("-webkit-overflow-scrolling: touch");
   });
 });
