@@ -20,9 +20,12 @@ describe("public menu UX", () => {
     expect(page).toContain("setSelectedMenuItem(item)");
     expect(page).toContain('loading="lazy"');
     expect(page).toContain('decoding="async"');
-    expect(page).toContain("h-9 w-9 rounded-xl text-white");
+    expect(page).toContain("h-9 w-9 rounded-xl shadow-md");
     expect(page).toContain("line-clamp-2");
     expect(page).toContain("object-cover");
+    expect(page).toContain('"--menu-card-text":');
+    expect(page).toContain('"--menu-cart-button":');
+    expect(styles).toContain("var(--menu-page)");
     expect(styles).toContain("padding-inline: 1rem !important");
     expect(styles).toContain("min-height: 0 !important");
   });
@@ -65,6 +68,10 @@ describe("public menu UX", () => {
     expect(settings).toContain("updateMenuTemplateSchedule");
     expect(settings).toContain("data-menu-template-schedule");
     expect(settings).toContain("data-glass-customization");
+    expect(settings).toContain("إعادة ضبط الافتراضي");
+    expect(settings).toContain("menuBackgroundColor");
+    expect(settings).toContain("cartButtonStyle");
+    expect(settings).toContain("نصوص البطاقات");
   });
 
   it("provides translated order type selection and mobile navigation", () => {
