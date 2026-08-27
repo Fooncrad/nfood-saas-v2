@@ -1487,8 +1487,14 @@ html[lang="ur"] body {
 
 
 /* Editorial list cards follow the attached compact item_thumbs reference. */
-.nfood-menu-template-editorial .category-results {
+.nfood-menu-section {
   grid-template-columns: minmax(0, 1fr) !important;
+}
+.nfood-menu-section > .nfood-menu-info-card {
+  display: none !important;
+}
+.nfood-menu-section .category-results {
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)) !important;
 }
 
 /* Menu image clarity and low-cost card interaction. */
