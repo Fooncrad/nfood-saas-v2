@@ -86,6 +86,7 @@ describe("public menu UX", () => {
     expect(page).toContain("copy.takeaway");
     expect(page).toContain("copy.delivery");
     expect(page).toContain("fixed inset-x-3 bottom-3");
+    expect(page).toContain("onClick={() => setReservationOpen(true)}");
     expect(page).toContain("channel: orderType === \"dineIn\" ? \"dine_in\" : orderType");
   });
 
@@ -112,14 +113,26 @@ describe("public menu UX", () => {
   });
 
   it("keeps QR outside the primary menu content and removes the drawer helper copy", () => {
-    const mainMenu = page.slice(page.indexOf('<div id="menu"'), page.indexOf('<section id="contact"'));
+    const mainMenu = page.slice(page.indexOf('<div id="menu"'), page.indexOf('<section id="reservation"'));
     expect(mainMenu).not.toContain("QRCodeSVG");
     expect(page).toContain("menuQrOpen");
     expect(page).toContain("{copy.qrTitle}");
     expect(page).toContain("{copy.qrHelp}");
+    expect(page).toContain('size={72}');
     expect(page).not.toContain('<p dir="ltr" className="break-all rounded-xl bg-slate-50');
     expect(page).toContain("grid grid-cols-2 gap-2");
     expect(page).not.toContain("shareMenuLink");
+  });
+
+  it("keeps desktop menu visible beside a compact drawer and simplifies reservation access", () => {
+    expect(page).toContain("nfood-menu-drawer-open");
+    expect(page).toContain("const callWaiter");
+    expect(page).toContain('aria-label="نداء النادل"');
+    expect(page).toContain('className={reservationOpen ?');
+    expect(page).toContain("showReservationPolicy");
+    expect(page).not.toContain('<section id="contact"');
+    expect(page).not.toContain('aria-label={copy.cart} onClick={() => setCartOpen(true)}');
+    expect(styles).toContain("padding-inline-end: min(78vw, 300px) !important");
   });
 
   it("supports the four manager-selected density modes", () => {

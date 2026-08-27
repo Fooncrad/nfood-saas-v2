@@ -2071,3 +2071,35 @@ html[lang="ur"] body {
 .nfood-menu-theme .nfood-menu-heading {
   font-family: var(--menu-heading-font-family, var(--menu-font-family, "IBM Plex Sans Arabic")), sans-serif;
 }
+
+/* Desktop drawer layout: reserve space for the menu rail instead of covering the public menu. */
+@media (min-width: 768px) {
+  .nfood-menu-shell.nfood-menu-drawer-open {
+    padding-inline-end: min(78vw, 300px) !important;
+  }
+
+  .nfood-menu-shell.nfood-menu-drawer-open .nfood-menu-drawer {
+    width: min(78vw, 300px) !important;
+    max-width: 300px !important;
+  }
+}
+
+.nfood-menu-drawer > div:first-child {
+  flex-shrink: 0;
+}
+
+.nfood-menu-drawer > div:last-child {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d99446 transparent;
+}
+
+.nfood-menu-drawer > div:last-child::-webkit-scrollbar {
+  width: 5px;
+}
+
+.nfood-menu-drawer > div:last-child::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #d99446;
+}
