@@ -12,7 +12,7 @@ describe("public menu UX", () => {
   it("uses a manager-controlled responsive product grid with consistent lazy-loaded media", () => {
     expect(page).toContain("menuGridClass");
     expect(page).toContain('"grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"');
-    expect(page).toContain("nfood-menu-shell flex flex-col");
+    expect(page).toContain("nfood-menu-shell ${menuItemLayout === \"cardless\" ? \"nfood-menu-cardless\" : \"nfood-menu-cards\"} flex flex-col");
     expect(page).toContain("<main className=\"min-w-0 px-3 sm:px-6\">");
     expect(page).toContain("ar-SA-u-nu-latn");
     expect(page).toContain("aspect-square w-full min-w-0 cursor-pointer");

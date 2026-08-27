@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const source = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"), "utf8");
+const homeModulesSource = readFileSync(resolve(process.cwd(), "client/src/components/HomeModules.tsx"), "utf8");
 const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
 const dbSource = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
 
@@ -76,7 +77,7 @@ describe("RestaurantPublic menu layout", () => {
   });
 
   it("protects menu cards from the fixed mobile navigation", () => {
-    expect(source).toContain("nfood-menu-shell flex flex-col pb-32 sm:pb-0");
+    expect(source).toContain("nfood-menu-shell ${menuItemLayout === \"cardless\" ? \"nfood-menu-cardless\" : \"nfood-menu-cards\"} flex flex-col pb-32 sm:pb-0");
     expect(source).toContain("fixed inset-x-3 bottom-3");
   });
 
@@ -246,11 +247,12 @@ describe("Mobile product title visibility", () => {
 
 
 describe("Cardless menu experiment", () => {
-  it("removes card chrome while preserving the product content and interaction", () => {
-    expect(css).toContain(".nfood-menu-shell .nfood-menu-item-card {");
+  it("removes card chrome only for the selected cardless layout", () => {
+    expect(css).toContain(".nfood-menu-shell.nfood-menu-cardless .nfood-menu-item-card {");
     expect(css).toContain("background: transparent !important;");
     expect(css).toContain("border: 0 !important;");
     expect(css).toContain("box-shadow: none !important;");
+    expect(source).toContain('menuItemLayout === "cardless" ? "nfood-menu-cardless" : "nfood-menu-cards"');
     expect(source).toContain("item.name");
     expect(source).toContain("nfood-menu-price-current");
     expect(source).toContain("nfood-menu-price-compare");
@@ -258,11 +260,29 @@ describe("Cardless menu experiment", () => {
     expect(source).toContain("setSelectedMenuItem(item)");
   });
 
-  it("keeps the image, price, discount, add button, and detail click target in the cardless layout", () => {
+  it("keeps the image, price, discount, add button, and detail click target in both layouts", () => {
     expect(source).toContain("nfood-menu-item-image");
     expect(source).toContain("nfood-menu-discount");
     expect(source).toContain("nfood-menu-cart-row");
     expect(source).toContain("aria-label={`عرض تفاصيل ${item.name}`}");
-    expect(css).toContain(".nfood-menu-shell .nfood-menu-item-image");
+    expect(css).toContain(".nfood-menu-shell.nfood-menu-cardless .nfood-menu-item-image");
+  });
+
+  it("exposes cards and cardless as selectable saved menu layouts", () => {
+    expect(source).toContain("data-menu-item-layout={menuItemLayout}");
+    expect(homeModulesSource).toContain("data-menu-item-layout-controls");
+    expect(homeModulesSource).toContain('setMenuItemLayout("cards")');
+    expect(homeModulesSource).toContain('setMenuItemLayout("cardless")');
+    expect(homeModulesSource).toContain('menuDisplayDraft.itemLayout === "cards"');
+    expect(homeModulesSource).toContain('menuDisplayDraft.itemLayout === "cardless"');
+  });
+
+  it("pins the mobile detail sheet to the viewport and contains the primary image", () => {
+    expect(css).toContain("inset-inline: 0 !important;");
+    expect(css).toContain("width: 100dvw !important;");
+    expect(css).toContain("translate: none !important;");
+    expect(css).toContain("object-fit: contain !important;");
+    expect(css).toContain("object-position: center !important;");
+    expect(source).toContain('className="nfood-product-detail-image h-[clamp(180px,30vh,260px)]');
   });
 });

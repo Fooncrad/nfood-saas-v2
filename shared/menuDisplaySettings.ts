@@ -15,6 +15,7 @@ export type MenuDisplayToolKey = (typeof MENU_DISPLAY_TOOL_KEYS)[number];
 export type MenuGridColumns = 1 | 2 | 3 | 4;
 export type MenuImageRatio = "square" | "portrait" | "landscape";
 export type MenuButtonStyle = "filled" | "outline" | "soft";
+export type MenuItemLayout = "cards" | "cardless";
 
 export type MenuDisplaySettings = {
   tools: Record<MenuDisplayToolKey, boolean>;
@@ -27,6 +28,7 @@ export type MenuDisplaySettings = {
   cardTextColor: string;
   cartButtonColor: string;
   cartButtonStyle: MenuButtonStyle;
+  itemLayout: MenuItemLayout;
 };
 
 export const defaultMenuDisplaySettings: MenuDisplaySettings = {
@@ -50,6 +52,7 @@ export const defaultMenuDisplaySettings: MenuDisplaySettings = {
   cardTextColor: "#172235",
   cartButtonColor: "#e76f3c",
   cartButtonStyle: "filled",
+  itemLayout: "cardless",
 };
 
 export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySettings {
@@ -65,6 +68,7 @@ export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySe
     const imageRatio = parsed.imageRatio === "portrait" || parsed.imageRatio === "landscape" || parsed.imageRatio === "square" ? parsed.imageRatio : "square";
     const isHex = (value: unknown): value is string => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
     const cartButtonStyle = parsed.cartButtonStyle === "outline" || parsed.cartButtonStyle === "soft" || parsed.cartButtonStyle === "filled" ? parsed.cartButtonStyle : "filled";
+    const itemLayout: MenuItemLayout = parsed.itemLayout === "cards" || parsed.itemLayout === "cardless" ? parsed.itemLayout : "cardless";
     return {
       tools,
       toolOrder: Array.from(new Set([...toolOrder, ...MENU_DISPLAY_TOOL_KEYS])),
@@ -76,6 +80,7 @@ export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySe
       cardTextColor: isHex(parsed.cardTextColor) ? parsed.cardTextColor : defaultMenuDisplaySettings.cardTextColor,
       cartButtonColor: isHex(parsed.cartButtonColor) ? parsed.cartButtonColor : defaultMenuDisplaySettings.cartButtonColor,
       cartButtonStyle,
+      itemLayout,
     };
   } catch {
     return defaultMenuDisplaySettings;

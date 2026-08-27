@@ -2134,7 +2134,12 @@ html[lang="ur"] body {
 
 @media (min-width: 640px) {
   .nfood-product-detail-dialog .nfood-product-detail-image {
+    display: block;
+    width: 100%;
+    max-width: 100%;
     min-height: 360px;
+    object-fit: contain;
+    object-position: center;
   }
 }
 
@@ -2342,9 +2347,26 @@ html[lang="ur"] body {
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
+    inset-inline: 0 !important;
+    inset-block-end: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100dvw !important;
+    max-width: none !important;
+    margin: 0 !important;
     height: min(92dvh, 780px) !important;
     max-height: 92dvh !important;
+    transform: none !important;
+    translate: none !important;
+    animation: none !important;
     overflow: hidden !important;
+  }
+  .nfood-product-detail-dialog .nfood-product-detail-image {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
   }
   .nfood-product-detail-dialog .nfood-product-detail-panel {
     display: flex !important;
@@ -2545,7 +2567,7 @@ html[lang="ur"] body {
 
 
 /* Cardless menu experiment: preserve the editorial grid while removing the enclosing card chrome. */
-.nfood-menu-shell .nfood-menu-item-card {
+.nfood-menu-shell.nfood-menu-cardless .nfood-menu-item-card {
   background: transparent !important;
   border: 0 !important;
   border-color: transparent !important;
@@ -2554,34 +2576,34 @@ html[lang="ur"] body {
   gap: 0 !important;
   transform: none !important;
 }
-.nfood-menu-shell .nfood-menu-item-card:hover,
-.nfood-menu-shell .nfood-menu-item-card:focus-visible {
+.nfood-menu-shell.nfood-menu-cardless .nfood-menu-item-card:hover,
+.nfood-menu-shell.nfood-menu-cardless .nfood-menu-item-card:focus-visible {
   box-shadow: none !important;
   transform: none !important;
 }
-.nfood-menu-shell .nfood-menu-item-image {
+.nfood-menu-shell.nfood-menu-cardless .nfood-menu-item-image {
   border-radius: 1.15rem !important;
   box-shadow: 0 8px 22px rgb(15 23 42 / .08) !important;
 }
-.nfood-menu-shell .nfood-menu-item-content {
+.nfood-menu-shell.nfood-menu-cardless .nfood-menu-item-content {
   background: transparent !important;
   padding: .55rem .25rem .15rem !important;
 }
-.nfood-menu-shell .nfood-menu-card-summary {
+.nfood-menu-shell.nfood-menu-cardless .nfood-menu-card-summary {
   border-top: 0 !important;
   padding: .45rem .25rem .1rem !important;
 }
-.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-image {
+.nfood-menu-shell.nfood-menu-cardless.nfood-menu-dark .nfood-menu-item-image {
   box-shadow: 0 8px 22px rgb(0 0 0 / .22) !important;
 }
 @media (max-width: 767px) {
-  .nfood-menu-shell .nfood-menu-item-image {
+  .nfood-menu-shell.nfood-menu-cardless .nfood-menu-item-image {
     border-radius: .9rem !important;
   }
-  .nfood-menu-shell .nfood-menu-item-content {
+  .nfood-menu-shell.nfood-menu-cardless .nfood-menu-item-content {
     padding: .45rem .15rem .1rem !important;
   }
-  .nfood-menu-shell .nfood-menu-card-summary {
+  .nfood-menu-shell.nfood-menu-cardless .nfood-menu-card-summary {
     padding: .4rem .15rem .05rem !important;
   }
 }
