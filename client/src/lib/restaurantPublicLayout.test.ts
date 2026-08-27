@@ -91,6 +91,11 @@ describe("RestaurantPublic menu layout", () => {
     const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
     expect(css).toContain(".nfood-product-detail-dialog");
     expect(css).toContain("bottom: 0 !important");
+    expect(css).toContain("right: 0 !important");
+    expect(css).toContain("left: 0 !important");
+    expect(css).toContain("width: 100dvw !important");
+    expect(css).toContain("transform: none !important");
+    expect(css).toContain("overflow-wrap: anywhere");
     expect(css).toContain("max-height: 92dvh !important");
     expect(source).toContain("sm:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]");
     expect(source).toContain("overflow-y-auto p-4 sm:p-7");
