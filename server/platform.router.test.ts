@@ -20,7 +20,7 @@ describe("platform procedures", () => {
   it("keeps QR procedures separated between public scans and restaurant administration", async () => {
     const publicCaller = appRouter.createCaller(context("user"));
     await expect(publicCaller.platform.publicQrCode({ token: "missing-qr-token" })).resolves.toBeNull();
-    await expect(publicCaller.platform.notifyWaiterCall({ token: "missing-qr-token" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(publicCaller.platform.notifyWaiterCall({ slug: "missing-restaurant", branchId: 1, tableName: "1", reason: "الطلب" })).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(appRouter.createCaller(context("admin")).platform.qrCodes({ restaurantId: 1, branchId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(appRouter.createCaller(context("user", "customer", 1)).platform.qrCodes({ restaurantId: 1, branchId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });

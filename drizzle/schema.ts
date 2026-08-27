@@ -148,6 +148,9 @@ export const restaurants = mysqlTable("restaurants", {
   deliveryManagementMode: mysqlEnum("deliveryManagementMode", ["restaurant", "platform"]).default("restaurant").notNull(),
   platformDeliveryEnabled: boolean("platformDeliveryEnabled").default(false).notNull(),
   reservationEventTypesJson: varchar("reservationEventTypesJson", { length: 1000 }).default('["حفل عيد ميلاد","فعالية","اجتماع","عشاء خاص"]').notNull(),
+  waiterCallEnabled: boolean("waiterCallEnabled").default(true).notNull(),
+  waiterCallCooldownMinutes: int("waiterCallCooldownMinutes").default(10).notNull(),
+  reservationHelpText: text("reservationHelpText"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({ menuTemplateScheduleTaskIdx: index("restaurants_menu_template_schedule_task_idx").on(table.menuTemplateScheduleCronTaskUid) }));
 
@@ -299,6 +302,20 @@ export const reservationSlots = mysqlTable("reservationSlots", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+export const reservationBlackoutDates = mysqlTable("reservationBlackoutDates", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").notNull().references(() => branches.id),
+  blackoutDate: varchar("blackoutDate", { length: 10 }).notNull(),
+  reason: varchar("reason", { length: 500 }).notNull(),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  branchDateUnique: uniqueIndex("reservation_blackout_branch_date_unique").on(table.branchId, table.blackoutDate),
+  restaurantDateIdx: index("reservation_blackout_restaurant_date_idx").on(table.restaurantId, table.blackoutDate),
+}));
 
 export const userPreferences = mysqlTable("userPreferences", {
   id: int("id").autoincrement().primaryKey(),
@@ -784,6 +801,24 @@ export const waiterTableAssignments = mysqlTable("waiterTableAssignments", {
 }, (table) => ({
   waiterTableUnique: uniqueIndex("waiter_table_assignments_unique").on(table.waiterUserId, table.tableId),
   branchWaiterIdx: index("waiter_table_assignments_branch_waiter_idx").on(table.branchId, table.waiterUserId),
+}));
+
+export const waiterCalls = mysqlTable("waiterCalls", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").notNull().references(() => branches.id),
+  tableId: int("tableId").notNull().references(() => restaurantTables.id),
+  waiterUserId: int("waiterUserId").notNull().references(() => users.id),
+  reason: varchar("reason", { length: 80 }).notNull(),
+  status: mysqlEnum("status", ["active", "acknowledged", "closed", "expired"]).default("active").notNull(),
+  customerName: varchar("customerName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  acknowledgedAt: timestamp("acknowledgedAt"),
+  closedAt: timestamp("closedAt"),
+}, (table) => ({
+  tableStatusIdx: index("waiter_calls_table_status_idx").on(table.tableId, table.status),
+  waiterStatusIdx: index("waiter_calls_waiter_status_idx").on(table.waiterUserId, table.status),
+  branchCreatedIdx: index("waiter_calls_branch_created_idx").on(table.branchId, table.createdAt),
 }));
 
 export const qrCodes = mysqlTable("qrCodes", {
