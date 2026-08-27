@@ -285,7 +285,17 @@ describe("Cardless menu experiment", () => {
     expect(css).toContain("object-position: center !important;");
     expect(css).toContain('[data-slot="dialog-content"].nfood-product-detail-dialog');
     expect(css).toContain("min-width: 100dvw !important;");
-    expect(css).toContain("inset: auto 0 0 0 !important;");
+    expect(css).toContain("top: 0 !important;");
+    expect(css).toContain("bottom: 0 !important;");
     expect(source).toContain('className="nfood-product-detail-image h-[clamp(180px,30vh,260px)]');
+  });
+
+  it("opens the product drawer from the side that matches the locale direction", () => {
+    expect(source).toContain('direction === "rtl" ? "nfood-product-detail-from-right" : "nfood-product-detail-from-left"');
+    expect(source).toContain('data-detail-drawer-side={direction === "rtl" ? "right" : "left"}');
+    expect(css).toContain("transform: translateX(100%) !important;");
+    expect(css).toContain("transform: translateX(-100%) !important;");
+    expect(css).toContain('[data-state="open"]');
+    expect(css).toContain("width: min(100dvw, 44rem) !important;");
   });
 });
