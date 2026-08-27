@@ -56,6 +56,11 @@ describe("TranslationReviewPanel progress", () => {
     expect(languageSource).toContain("applyLegacyUiTranslations(legacyTranslationLanguage, node)");
   });
 
+  it("does not translate non-visual style or script nodes", () => {
+    expect(languageSource).toContain('closest("style, script, template, noscript")');
+    expect(languageSource).toContain("isNonVisualTranslationNode(textNode)");
+  });
+
   it("uses the orange and deep teal clarity palette for dashboard surfaces", () => {
     expect(styleSource).toContain("--primary: oklch(0.39 0.09 190)");
     expect(styleSource).toContain(".nfood-dashboard-shell .nfood-unified-sidebar");

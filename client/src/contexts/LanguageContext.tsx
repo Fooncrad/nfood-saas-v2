@@ -416,13 +416,19 @@ export function findUntranslatedArabic(source: string, language: Language): stri
 
 export function refreshLegacyUiTranslations(language: Language) { applyLegacyUiTranslations(language, document); }
 
+function isNonVisualTranslationNode(node: Node | null) {
+  const element = node instanceof Element ? node : node?.parentElement;
+  return Boolean(element?.closest("style, script, template, noscript"));
+}
+
 function applyLegacyUiTranslations(language: Language, root: Node = document) {
-  if (typeof document === "undefined" || legacyTranslationInProgress) return;
+  if (typeof document === "undefined" || legacyTranslationInProgress || isNonVisualTranslationNode(root)) return;
   legacyTranslationInProgress = true;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node: Node | null;
   while ((node = walker.nextNode())) {
     const textNode = node as Text;
+    if (isNonVisualTranslationNode(textNode)) continue;
     const current = textNode.nodeValue ?? "";
     const cached = legacyNodeSources.get(textNode);
     const knownStates = cached ? [cached, ...(["en", "fr"] as const).map((target) => autoTranslateText(cached, target))] : [];
