@@ -309,10 +309,16 @@ describe("platform procedures", () => {
     const roles = ["restaurant_admin", "waiter", "kitchen", "cashier", "customer", "driver"] as const;
     for (const testRole of roles) {
       const caller = appRouter.createCaller(context("user", testRole));
-      await expect(caller.platform.branches({ restaurantId: 1 })).resolves.toBeDefined();
-      await expect(caller.platform.menuItems({ restaurantId: 1 })).resolves.toBeDefined();
-      if (testRole === "restaurant_admin") await expect(caller.platform.ordersByRestaurant({ restaurantId: 2 })).resolves.toBeDefined();
-      else await expect(caller.platform.ordersByRestaurant({ restaurantId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+      if (testRole === "driver") {
+        await expect(caller.platform.branches({ restaurantId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(caller.platform.menuItems({ restaurantId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(caller.platform.ordersByRestaurant({ restaurantId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+      } else {
+        await expect(caller.platform.branches({ restaurantId: 1 })).resolves.toBeDefined();
+        await expect(caller.platform.menuItems({ restaurantId: 1 })).resolves.toBeDefined();
+        if (testRole === "restaurant_admin") await expect(caller.platform.ordersByRestaurant({ restaurantId: 2 })).resolves.toBeDefined();
+        else await expect(caller.platform.ordersByRestaurant({ restaurantId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+      }
     }
   });
 
@@ -346,10 +352,9 @@ describe("platform procedures", () => {
 
   it("uses account-scoped summaries for customer and driver roles", async () => {
     const customerSummary = await appRouter.createCaller(context("user", "customer")).platform.roleSummary({ restaurantId: 1 });
-    const driverSummary = await appRouter.createCaller(context("user", "driver")).platform.roleSummary({ restaurantId: 1 });
+    await expect(appRouter.createCaller(context("user", "driver")).platform.roleSummary({ restaurantId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(customerSummary.scope).toBe("customer");
-    expect(driverSummary.scope).toBe("driver");
-    for (const summary of [customerSummary, driverSummary]) {
+    for (const summary of [customerSummary]) {
       expect(typeof summary.avgFulfillmentMinutes).toBe("number");
       expect(typeof summary.deliveryOrders).toBe("number");
       expect(typeof summary.customerOrders).toBe("number");

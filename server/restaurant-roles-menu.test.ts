@@ -24,5 +24,15 @@ describe("restaurant menu account and operational role entry points", () => {
     expect(modules).toContain("DeliveryOperationsPanel");
     expect(modules).toContain('TablesView restaurantId={restaurantId} branchId={branchId}');
     expect(readFileSync(resolve(process.cwd(), "client/src/components/BrandingEditorPanel.tsx"), "utf8")).toContain("الطلب الذاتي للطاولات");
+    const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
+    expect(router).toContain("function assertNotDriver");
+    expect(router).toContain("لوحة السائق تعرض الطلبات التشغيلية فقط");
+    expect(router).toContain("العميل لم يرد");
+    expect(router).toContain("رفض طلب توصيل");
+    expect(router).toContain("waiterTables:");
+    expect(router).toContain("replaceWaiterTableAssignments:");
+    const db = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
+    expect(db).toContain("nasser-driver-test-${restaurantId}-${index}");
+    expect(db).toContain("for (let index = 1; index <= 5; index += 1)");
   });
 });

@@ -270,7 +270,7 @@ export function HomeSidebar({
         initial={false}
         animate={{ width: getSidebarWidth(sidebarCollapsed) }}
         transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.8 }}
-        className={`nfood-unified-sidebar fixed inset-y-0 z-20 hidden h-full overflow-hidden overscroll-contain border-white/10 bg-[#091321]/95 text-white shadow-[0_24px_80px_rgba(3,10,20,.42)] backdrop-blur-2xl lg:flex lg:flex-col ${direction === "rtl" ? "end-0 border-s" : "start-0 border-e"}`}
+        className={`nfood-unified-sidebar fixed inset-y-0 z-20 hidden h-full overflow-hidden overscroll-contain border-white/10 bg-[#091321]/95 text-white shadow-[0_24px_80px_rgba(3,10,20,.42)] backdrop-blur-2xl lg:flex lg:flex-col end-0 border-s`}
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(249,115,22,.12),transparent_36%),linear-gradient(180deg,rgba(23,43,68,.28),transparent_48%)]" />
         <header className={`relative flex h-[68px] shrink-0 items-center gap-2 border-b border-white/[.08] px-3 ${sidebarCollapsed ? "justify-center" : "justify-between"}`}>

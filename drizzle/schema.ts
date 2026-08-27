@@ -773,6 +773,19 @@ export const restaurantTables = mysqlTable("restaurantTables", {
   tableFee: decimal("tableFee", { precision: 10, scale: 2 }).default("0").notNull(),
 });
 
+export const waiterTableAssignments = mysqlTable("waiterTableAssignments", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").notNull().references(() => branches.id),
+  waiterUserId: int("waiterUserId").notNull().references(() => users.id),
+  tableId: int("tableId").notNull().references(() => restaurantTables.id),
+  assignedByUserId: int("assignedByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  waiterTableUnique: uniqueIndex("waiter_table_assignments_unique").on(table.waiterUserId, table.tableId),
+  branchWaiterIdx: index("waiter_table_assignments_branch_waiter_idx").on(table.branchId, table.waiterUserId),
+}));
+
 export const qrCodes = mysqlTable("qrCodes", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
