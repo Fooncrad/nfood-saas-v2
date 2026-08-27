@@ -1887,3 +1887,49 @@ html[lang="ur"] body {
     padding-inline: 1rem !important;
   }
 }
+
+/* Compact menu card density: match the supplied reference without changing menu behavior. */
+.nfood-menu-shell .category-results {
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: .75rem !important;
+  align-items: start !important;
+}
+.nfood-menu-shell .nfood-menu-item-card {
+  min-width: 0 !important;
+  border-radius: .9rem !important;
+}
+.nfood-menu-shell .nfood-menu-item-content {
+  padding: .55rem !important;
+}
+.nfood-menu-shell .nfood-menu-item-content h3 {
+  font-size: .72rem !important;
+  line-height: 1.15rem !important;
+}
+.nfood-menu-shell .nfood-menu-item-content p {
+  font-size: .62rem !important;
+  line-height: .95rem !important;
+}
+.nfood-menu-shell .nfood-menu-item-content strong {
+  font-size: .72rem !important;
+}
+.nfood-menu-shell .nfood-menu-item-content .nfood-menu-cart-row {
+  margin-top: .35rem !important;
+  padding-top: .35rem !important;
+}
+@media (min-width: 768px) and (max-width: 1279px) {
+  .nfood-menu-shell .category-results {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+}
+@media (max-width: 767px) {
+  .nfood-menu-shell .category-results {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: .65rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-image {
+    width: 40% !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-content {
+    padding: .5rem !important;
+  }
+}
