@@ -21,6 +21,10 @@ describe("public menu UX", () => {
     expect(page).toContain('loading="lazy"');
     expect(page).toContain('decoding="async"');
     expect(page).toContain("h-9 w-9 rounded-xl shadow-md");
+    expect(page).toContain("const quickAddToCart =");
+    expect(page).toContain("setCartOpen(true)");
+    expect(page).toContain("openCartItemDetails");
+    expect(page).toContain("إضافة ${item.name} إلى السلة");
     expect(page).toContain("line-clamp-2");
     expect(page).toContain("object-cover");
     expect(page).toContain('"--menu-card-text":');
