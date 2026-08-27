@@ -378,6 +378,7 @@ export const menuItems = mysqlTable("menuItems", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   compareAtPrice: decimal("compareAtPrice", { precision: 10, scale: 2 }),
   imageUrl: text("imageUrl"),
+  additionalImagesJson: text("additionalImagesJson"),
   translationsJson: text("translationsJson"),
   tagsJson: text("tagsJson"),
   isAvailable: boolean("isAvailable").default(true).notNull(),

@@ -7,8 +7,8 @@ const dbSource = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
 
 describe("RestaurantPublic menu layout", () => {
   it("shows complete dish images without object-cover cropping", () => {
-    expect(source).toContain("nfood-menu-item-image relative aspect-square w-[41%] min-w-0");
-    expect(source).toContain('role="button" tabIndex={0} aria-label={`عرض تفاصيل ${item.name}`}');
+    expect(source).toContain("nfood-menu-item-image relative col-start-1 row-start-1 aspect-square w-full min-w-0");
+    expect(source).toContain('tabIndex={0} aria-label={`عرض تفاصيل ${item.name}`} className="nfood-menu-item-card');
     expect(source).toContain("setSelectedMenuItem(item)");
     expect(source).toContain("object-contain");
     expect(source).toContain('loading="lazy" decoding="async" className="nfood-menu-item-photo aspect-square h-full w-full object-cover');
@@ -138,5 +138,37 @@ describe("RestaurantPublic menu layout", () => {
     expect(css).toContain("grid-template-columns: repeat(2, minmax(0, 1fr)) !important");
     expect(css).toContain("min-height: 8.25rem !important");
     expect(css).toContain("width: 41% !important");
+  });
+});
+
+
+describe("Product card detail flow refinement", () => {
+  it("opens product details from the whole card and keeps the plus action in the same flow", () => {
+    expect(source).toContain("onClick={() => setSelectedMenuItem(item)}");
+    expect(source).toContain("tabIndex={0} aria-label={`عرض تفاصيل ${item.name}`}");
+    expect(source).toContain('aria-label={`عرض تفاصيل ${item.name}`}><Plus');
+    expect(source).toContain("nfood-menu-card-summary");
+    expect(source).toContain("compareAtPrice");
+  });
+
+  it("renders optional product gallery images without fabricating them", () => {
+    expect(source).toContain("additionalImagesJson");
+    expect(source).toContain("detailData.additionalImages?.length");
+    expect(source).toContain("slice(0, 4)");
+    expect(source).toContain("صور إضافية");
+    expect(dbSource).toContain("additionalImagesJson: menuItems.additionalImagesJson");
+  });
+
+  it("removes the generic share action from product details", () => {
+    expect(source).not.toContain("Share2");
+    expect(source).not.toContain("shareMenuItem");
+    expect(source).not.toContain("detailCopy.share");
+  });
+
+  it("places the short description in the second card row", () => {
+    const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(css).toContain(".nfood-menu-shell .nfood-menu-card-summary");
+    expect(css).toContain("grid-column: 1 / -1 !important");
+    expect(css).toContain("grid-row: 2 !important");
   });
 });

@@ -2259,3 +2259,36 @@ html[lang="ur"] body {
     transform: none;
   }
 }
+
+
+/* Product card refinement: keep the editorial image/content row compact and place the short description under both columns. */
+.nfood-menu-shell .nfood-menu-item-card {
+  grid-template-rows: minmax(0, auto) auto !important;
+}
+.nfood-menu-shell .nfood-menu-card-summary {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  border-top: 1px solid rgb(226 232 240 / .8) !important;
+  padding: .55rem .8rem .7rem !important;
+  color: rgb(71 85 105) !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  overflow: hidden !important;
+  overflow-wrap: anywhere !important;
+  font-size: .7rem !important;
+  line-height: 1.15rem !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-card-summary {
+  border-color: rgb(244 166 76 / .2) !important;
+  color: #c7d5d1 !important;
+}
+@media (max-width: 640px) {
+  .nfood-menu-shell .nfood-menu-card-summary {
+    padding-inline: .65rem !important;
+    padding-top: .45rem !important;
+    padding-bottom: .55rem !important;
+  }
+}
