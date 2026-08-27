@@ -1,10 +1,11 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { DatabaseTranslationBridge } from "./components/DatabaseTranslationBridge";
+import NfoodsLoadingScreen from "./components/NfoodsLoadingScreen";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_STORAGE_KEY, LanguageProvider, languageStorageKey, isUiLanguage, useLanguage, type Language } from "./contexts/LanguageContext";
 const routeLoaders = {
@@ -69,13 +70,28 @@ function PageLoading() {
   return <div className="min-h-screen bg-background px-4 py-4 text-foreground" aria-live="polite"><div className="mx-auto max-w-7xl space-y-3 opacity-80"><div className="h-10 w-48 animate-pulse rounded-2xl bg-muted" /><div className="grid gap-3 sm:grid-cols-3"><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /></div></div></div>;
 }
 
+const NFOODS_LOADER_SESSION_KEY = "nfood-global-loader-seen";
+
 function AppContent() {
   const { direction, language, setLanguage } = useLanguage();
   const [location] = useLocation();
+  const previousLocation = useRef(location);
+  const [loaderKey, setLoaderKey] = useState(0);
+  const [showGlobalLoader, setShowGlobalLoader] = useState(() => typeof window === "undefined" || !window.sessionStorage.getItem(NFOODS_LOADER_SESSION_KEY));
+  const completeGlobalLoader = useCallback(() => {
+    window.sessionStorage.setItem(NFOODS_LOADER_SESSION_KEY, "1");
+    setShowGlobalLoader(false);
+  }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => { void Promise.all([routeLoaders.Home(), routeLoaders.RestaurantPublic(), routeLoaders.CustomerPortal(), routeLoaders.CustomerOrders()]); }, 1800);
     return () => window.clearTimeout(timer);
   }, []);
+  useEffect(() => {
+    if (previousLocation.current === location) return;
+    previousLocation.current = location;
+    setLoaderKey((current) => current + 1);
+    setShowGlobalLoader(true);
+  }, [location]);
   useEffect(() => {
     const key = languageStorageKey(location);
     const requested = new URLSearchParams(window.location.search).get("lang");
@@ -86,7 +102,7 @@ function AppContent() {
     if (nextLanguage !== language) setLanguage(nextLanguage);
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
   }, [location]);
-  return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<PageLoading />}><Router /></Suspense></div>;
+  return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<PageLoading />}><Router /></Suspense>{showGlobalLoader && <NfoodsLoadingScreen key={loaderKey} onComplete={completeGlobalLoader} />}</div>;
 }
 
 function RootRoute() { const { user, loading } = useAuth(); if (loading) return <PageLoading />; return user ? <Home /> : <LandingPage />; }
