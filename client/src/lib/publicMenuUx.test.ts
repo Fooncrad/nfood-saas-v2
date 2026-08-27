@@ -15,8 +15,8 @@ describe("public menu UX", () => {
     expect(page).toContain("nfood-menu-shell flex flex-col");
     expect(page).toContain("<main className=\"min-w-0 px-3 sm:px-6\">");
     expect(page).toContain("ar-SA-u-nu-latn");
-    expect(page).toContain("w-[40%] min-w-[8.75rem] shrink-0");
-    expect(page).toContain("min-h-[185px]");
+    expect(page).toContain("w-[28%] min-w-[7.25rem] max-w-[10rem] shrink-0");
+    expect(page).toContain("min-h-[7.5rem]");
     expect(page).toContain("setSelectedMenuItem(item)");
     expect(page).toContain('loading="lazy"');
     expect(page).toContain('decoding="async"');

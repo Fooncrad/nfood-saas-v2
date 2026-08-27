@@ -1508,18 +1508,18 @@ html[lang="ur"] body {
 
 @media (max-width: 767px) {
   .nfood-menu-item-image {
-    min-height: 11rem;
-    aspect-ratio: 1.15 / 1 !important;
+    min-height: 0;
+    aspect-ratio: 1.46 / 1 !important;
   }
   .nfood-menu-item-photo {
-    padding: .45rem !important;
+    padding: .35rem !important;
   }
 }
 
 @media (max-width: 390px) {
   .nfood-menu-item-image {
-    min-height: 14rem;
-    aspect-ratio: 1.22 / 1 !important;
+    min-height: 0;
+    aspect-ratio: 1.46 / 1 !important;
   }
 }
 

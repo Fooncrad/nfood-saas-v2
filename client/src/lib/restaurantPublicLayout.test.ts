@@ -6,7 +6,7 @@ const source = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantP
 
 describe("RestaurantPublic menu layout", () => {
   it("shows complete dish images without object-cover cropping", () => {
-    expect(source).toContain("nfood-menu-item-image relative w-[40%] min-w-[8.75rem]");
+    expect(source).toContain("nfood-menu-item-image relative w-[28%] min-w-[7.25rem] max-w-[10rem]");
     expect(source).toContain('role="button" tabIndex={0} aria-label={`عرض تفاصيل ${item.name}`}');
     expect(source).toContain("setSelectedMenuItem(item)");
     expect(source).toContain("object-contain");
@@ -66,7 +66,8 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain("nfood-menu-card-hover");
     expect(css).toContain("@media (hover: hover) and (pointer: fine)");
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
-    expect(css).toContain("min-height: 11rem");
+    expect(css).toContain("aspect-ratio: 1.46 / 1 !important");
+    expect(css).not.toContain("min-height: 14rem");
   });
 
   it("supports the attached Nasser Cafe reference treatment", () => {
