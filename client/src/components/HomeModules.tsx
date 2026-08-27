@@ -10182,31 +10182,51 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
       />
       {branchFormOpen && (
         <Card className="mb-6 rounded-2xl border-orange-100 bg-orange-50/40">
-          <CardContent className="grid gap-3 p-4 sm:grid-cols-[1fr_1fr_150px_150px_auto]">
-            <Input
-              value={branchName}
-              onChange={event => setBranchName(event.target.value)}
-              placeholder="اسم الفرع"
-              className="rounded-xl bg-white"
-            />
-            <Input
-              value={branchCity}
-              onChange={event => setBranchCity(event.target.value)}
-              placeholder="المدينة"
-              className="rounded-xl bg-white"
-            />
-            <Input
-              value={branchOpeningTime}
-              onChange={event => setBranchOpeningTime(event.target.value)}
-              placeholder="يفتح HH:MM"
-              className="rounded-xl bg-white"
-            />
-            <Input
-              value={branchClosingTime}
-              onChange={event => setBranchClosingTime(event.target.value)}
-              placeholder="يغلق HH:MM"
-              className="rounded-xl bg-white"
-            />
+          <CardContent className="grid gap-3 p-4 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1.1fr)_110px_110px_auto] sm:items-end">
+            <label className="min-w-0 text-[11px] font-bold text-slate-600">
+              اسم الفرع
+              <Input
+                value={branchName}
+                onChange={event => setBranchName(event.target.value)}
+                placeholder="مثال: فرع العليا"
+                aria-label="اسم الفرع"
+                className="mt-1 h-9 w-full rounded-xl bg-white text-sm"
+              />
+              <span className="mt-1 block truncate text-[10px] font-normal text-slate-400">الاسم الذي سيظهر للعملاء</span>
+            </label>
+            <label className="min-w-0 text-[11px] font-bold text-slate-600">
+              المدينة أو الموقع
+              <Input
+                value={branchCity}
+                onChange={event => setBranchCity(event.target.value)}
+                placeholder="مثال: الرياض"
+                aria-label="مدينة الفرع"
+                className="mt-1 h-9 w-full rounded-xl bg-white text-sm"
+              />
+              <span className="mt-1 block truncate text-[10px] font-normal text-slate-400">المدينة أو الحي المختصر</span>
+            </label>
+            <label className="min-w-0 text-[11px] font-bold text-slate-600">
+              يفتح
+              <Input
+                type="time"
+                value={branchOpeningTime}
+                onChange={event => setBranchOpeningTime(event.target.value)}
+                aria-label="وقت افتتاح الفرع"
+                className="mt-1 h-9 w-full rounded-xl bg-white px-2 text-sm"
+              />
+              <span className="mt-1 block truncate text-[10px] font-normal text-slate-400">وقت بدء الدوام</span>
+            </label>
+            <label className="min-w-0 text-[11px] font-bold text-slate-600">
+              يغلق
+              <Input
+                type="time"
+                value={branchClosingTime}
+                onChange={event => setBranchClosingTime(event.target.value)}
+                aria-label="وقت إغلاق الفرع"
+                className="mt-1 h-9 w-full rounded-xl bg-white px-2 text-sm"
+              />
+              <span className="mt-1 block truncate text-[10px] font-normal text-slate-400">وقت نهاية الدوام</span>
+            </label>
             <div className="col-span-full rounded-xl border border-slate-100 bg-slate-50 p-3"><div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-slate-700">فتحات التشغيل حسب اليوم والقناة</span><Button type="button" variant="outline" size="sm" onClick={() => setOperatingWindows((current) => [...current, { dayOfWeek: 0, startTime: branchOpeningTime, endTime: branchClosingTime, channel: "all" }])} className="h-7 rounded-lg text-[10px]">+ إضافة فترة</Button></div>{operatingWindows.length === 0 ? <p className="text-[10px] text-slate-400">استخدم ساعات الفرع العامة أو أضف فترة مستقلة للاستلام والتوصيل وPOS.</p> : operatingWindows.map((window, index) => <div key={`${index}-${window.dayOfWeek}`} className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-5"><select value={window.dayOfWeek} onChange={(event) => setOperatingWindows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, dayOfWeek: Number(event.target.value) } : item))} className="h-8 rounded-lg border bg-white text-[10px]" aria-label="اليوم"><option value={0}>الأحد</option><option value={1}>الإثنين</option><option value={2}>الثلاثاء</option><option value={3}>الأربعاء</option><option value={4}>الخميس</option><option value={5}>الجمعة</option><option value={6}>السبت</option></select><Input type="time" value={window.startTime} onChange={(event) => setOperatingWindows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, startTime: event.target.value } : item))} className="h-8 text-[10px]" aria-label="بداية الفترة" /><Input type="time" value={window.endTime} onChange={(event) => setOperatingWindows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, endTime: event.target.value } : item))} className="h-8 text-[10px]" aria-label="نهاية الفترة" /><select value={window.channel} onChange={(event) => setOperatingWindows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, channel: event.target.value as typeof item.channel } : item))} className="h-8 rounded-lg border bg-white text-[10px]" aria-label="قناة الطلب"><option value="all">كل القنوات</option><option value="takeaway">الاستلام</option><option value="delivery">التوصيل</option><option value="pos">نقاط البيع</option></select><Button type="button" variant="ghost" size="sm" onClick={() => setOperatingWindows((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="h-8 text-[10px] text-red-500">حذف</Button></div>)}</div>
             <Button
               disabled={
