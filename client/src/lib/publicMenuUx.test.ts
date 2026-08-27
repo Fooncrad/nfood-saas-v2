@@ -72,6 +72,10 @@ describe("public menu UX", () => {
     expect(settings).toContain("menuBackgroundColor");
     expect(settings).toContain("cartButtonStyle");
     expect(settings).toContain("نصوص البطاقات");
+    expect(settings).toContain('data-menu-layouts');
+    expect(settings).toContain('data-menu-template-controls');
+    expect(settings).toContain('data-legacy-menu-template-controls');
+    expect(settings).toContain('className="hidden" data-legacy-menu-template-controls');
   });
 
   it("provides translated order type selection and mobile navigation", () => {
