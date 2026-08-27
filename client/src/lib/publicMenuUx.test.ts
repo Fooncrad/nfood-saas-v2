@@ -15,12 +15,16 @@ describe("public menu UX", () => {
     expect(page).toContain("nfood-menu-shell flex flex-col");
     expect(page).toContain("<main className=\"min-w-0 px-3 sm:px-6\">");
     expect(page).toContain("ar-SA-u-nu-latn");
-    expect(page).toContain("w-[28%] min-w-[7.25rem] max-w-[10rem] shrink-0");
-    expect(page).toContain("min-h-[7.5rem]");
+    expect(page).toContain("aspect-square w-[41%] min-w-0 shrink-0");
+    expect(page).toContain("h-auto min-h-0 flex-row items-stretch");
     expect(page).toContain("setSelectedMenuItem(item)");
     expect(page).toContain('loading="lazy"');
     expect(page).toContain('decoding="async"');
     expect(page).toContain("h-9 w-9 rounded-xl text-white");
+    expect(page).toContain("line-clamp-2");
+    expect(page).toContain("object-cover");
+    expect(styles).toContain("padding-inline: 1rem !important");
+    expect(styles).toContain("min-height: 0 !important");
   });
 
   it("exposes three distinct menu templates with a persisted switch", () => {

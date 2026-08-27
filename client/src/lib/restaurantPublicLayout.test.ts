@@ -6,11 +6,11 @@ const source = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantP
 
 describe("RestaurantPublic menu layout", () => {
   it("shows complete dish images without object-cover cropping", () => {
-    expect(source).toContain("nfood-menu-item-image relative w-[28%] min-w-[7.25rem] max-w-[10rem]");
+    expect(source).toContain("nfood-menu-item-image relative aspect-square w-[41%] min-w-0");
     expect(source).toContain('role="button" tabIndex={0} aria-label={`عرض تفاصيل ${item.name}`}');
     expect(source).toContain("setSelectedMenuItem(item)");
     expect(source).toContain("object-contain");
-    expect(source).toContain('loading="lazy" decoding="async" className="nfood-menu-item-photo h-full w-full object-contain');
+    expect(source).toContain('loading="lazy" decoding="async" className="nfood-menu-item-photo aspect-square h-full w-full object-cover');
   });
 
   it("opens full item details from the dish image and supports adding from the dialog", () => {
@@ -80,7 +80,9 @@ describe("RestaurantPublic menu layout", () => {
     expect(css).toContain("flex-direction: row");
     expect(css).not.toContain(".nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-card {\n  display: flex;\n  flex-direction: column;");
     expect(css).toContain("grid-template-columns: minmax(0, 1fr) !important");
-    expect(css).toContain("object-fit: contain !important");
+    expect(css).toContain("object-fit: cover !important");
+    expect(css).toContain("min-height: 0 !important");
+    expect(css).toContain("padding-inline: 1rem !important");
     expect(css).toContain("grid-template-columns: repeat(2, minmax(0, 1fr)) !important");
     expect(css).toContain("min-height: 8.25rem !important");
     expect(css).toContain("width: 41% !important");
