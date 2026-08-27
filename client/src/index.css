@@ -1986,3 +1986,76 @@ html[lang="ur"] body {
     flex: 0 0 auto;
   }
 }
+
+/* Reference card: equal image and information halves. */
+.nfood-menu-shell .nfood-menu-item-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+}
+.nfood-menu-shell .nfood-menu-item-image {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  aspect-ratio: 1 / 1 !important;
+  height: auto !important;
+  align-self: stretch !important;
+}
+.nfood-menu-shell .nfood-menu-item-image img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+.nfood-menu-shell .nfood-menu-item-content {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  gap: .2rem !important;
+  overflow: hidden !important;
+}
+.nfood-menu-shell .nfood-menu-item-content h3 {
+  display: none !important;
+}
+.nfood-menu-shell .nfood-menu-item-content strong {
+  order: 1 !important;
+  width: 100% !important;
+  font-size: clamp(.64rem, 2.2vw, .82rem) !important;
+  line-height: 1.1rem !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  text-align: start !important;
+}
+.nfood-menu-shell .nfood-menu-item-content p {
+  order: 2 !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  overflow: hidden !important;
+  line-height: 1rem !important;
+}
+.nfood-menu-shell .nfood-menu-item-content .nfood-menu-cart-row {
+  order: 3 !important;
+  margin-top: auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+@media (max-width: 767px) {
+  .nfood-menu-shell .nfood-menu-item-card {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    min-height: 8.5rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-image {
+    width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+  }
+}
