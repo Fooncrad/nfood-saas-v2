@@ -1199,3 +1199,53 @@ export async function updateCustomerCardRequest(id: number, input: { status?: "p
   if (!db) throw new Error("Database is not available");
   await db.update(customerCardRequests).set({ status: input.status, adminNote: input.adminNote, price: input.price, resolvedByUserId: input.resolvedByUserId, resolvedAt: input.status && input.status !== "pending" ? new Date() : undefined, updatedAt: new Date() }).where(eq(customerCardRequests.id, id));
 }
+
+
+export async function provisionNasserTestCatalog(restaurantId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const categories = await db.select({ id: menuCategories.id, name: menuCategories.name }).from(menuCategories).where(eq(menuCategories.restaurantId, restaurantId));
+  const imageByCategory = (name: string) => {
+    if (/قهوة|ساخنة|فطور/.test(name)) return "/manus-storage/nasser-test-coffee_5c37e7a4.jpg";
+    if (/حلويات|آيس كريم/.test(name)) return "/manus-storage/nasser-test-dessert_e51857b9.jpg";
+    if (/بيتزا/.test(name)) return "/manus-storage/nasser-test-pizza_6cc1f31f.jpg";
+    if (/سلطات|ورق عنب|مقبلات|عصائر|مشروبات باردة/.test(name)) return "/manus-storage/nasser-test-salad_74a069b2.jpg";
+    return "/manus-storage/nasser-test-burger_881b5d4f.jpg";
+  };
+  let created = 0;
+  let updated = 0;
+  for (const category of categories) {
+    for (let index = 1; index <= 10; index += 1) {
+      const name = `${category.name} اختبار ${String(index).padStart(2, "0")}`;
+      const existing = (await db.select({ id: menuItems.id }).from(menuItems).where(and(eq(menuItems.restaurantId, restaurantId), eq(menuItems.categoryId, category.id), eq(menuItems.name, name))).limit(1))[0];
+      const imageUrl = imageByCategory(category.name);
+      const price = (18 + (index * 3) + (Number(category.id) % 7)).toFixed(2);
+      const compareAtPrice = (Number(price) + 8).toFixed(2);
+      const translationsJson = JSON.stringify({ en: { name: `${category.name} Test ${String(index).padStart(2, "0")}`, description: "Test menu item for NFOOD delivery and menu layout testing." }, fr: { name: `${category.name} Test ${String(index).padStart(2, "0")}`, description: "Article de test pour vérifier le menu et la livraison NFOOD." } });
+      const values = { restaurantId, categoryId: category.id, name, description: `صنف اختبار رقم ${index} من قسم ${category.name} لاختبار الصورة والسعر والسلة والتفاصيل.`, price, compareAtPrice, imageUrl, translationsJson, tagsJson: JSON.stringify(["بيانات اختبار", "NFOOD"]), isAvailable: true, prepTimeMinutes: 10 + (index % 6), calories: 250 + (index * 35) };
+      if (existing) {
+        await db.update(menuItems).set(values).where(eq(menuItems.id, existing.id));
+        updated += 1;
+      } else {
+        await db.insert(menuItems).values(values);
+        created += 1;
+      }
+    }
+  }
+  return { restaurantId, categoryCount: categories.length, created, updated, total: categories.length * 10 };
+}
+
+export async function provisionNasserDeliveryTestData(restaurantId: number) {
+  const accounts = await provisionDeliveryDemoAccounts(restaurantId);
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const driver = accounts.find((account) => account.role === "driver");
+  if (!driver) throw new Error("تعذر تجهيز حساب السائق التجريبي");
+  const branchLatitude = "24.7136000";
+  const branchLongitude = "46.6753000";
+  await db.update(branches).set({ latitude: branchLatitude, longitude: branchLongitude, city: "الرياض" }).where(eq(branches.restaurantId, restaurantId));
+  const latitude = "24.8200000";
+  const longitude = "46.7000000";
+  await db.update(remoteWorkers).set({ latitude, longitude, lastLocationAt: new Date(), isActive: true, isAvailable: true, vehicleType: "سيارة اختبار" }).where(and(eq(remoteWorkers.restaurantId, restaurantId), eq(remoteWorkers.userId, driver.userId), eq(remoteWorkers.role, "driver")));
+  return { restaurantId, driver, branch: { latitude: branchLatitude, longitude: branchLongitude, reference: "برج المملكة" }, location: { latitude, longitude, reference: "ضمن نطاق الاختبار 10–20 كم من برج المملكة" } };
+}
