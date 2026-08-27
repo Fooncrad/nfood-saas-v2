@@ -2365,3 +2365,49 @@ html[lang="ur"] body {
     flex: 0 0 auto !important;
   }
 }
+
+
+/* Product title visibility fix: reserve a real column for the dish name. */
+.nfood-menu-shell .nfood-menu-item-content > div:first-child {
+  grid-template-columns: minmax(0, 1fr) minmax(4.4rem, max-content) !important;
+  align-items: start !important;
+  min-height: 2.4rem !important;
+}
+.nfood-menu-shell .nfood-menu-item-title {
+  display: -webkit-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 2.1rem !important;
+  max-width: 100% !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  overflow: hidden !important;
+  color: #0f172a !important;
+  font-size: .82rem !important;
+  font-weight: 900 !important;
+  line-height: 1.2rem !important;
+  text-align: start !important;
+  overflow-wrap: anywhere !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-title {
+  color: #fff8ed !important;
+}
+.nfood-menu-shell .nfood-menu-price-block {
+  position: relative !important;
+  z-index: 2 !important;
+  justify-self: start !important;
+  margin-inline-start: 0 !important;
+}
+@media (max-width: 767px) {
+  .nfood-menu-shell .nfood-menu-item-content > div:first-child {
+    grid-template-columns: minmax(0, 1fr) minmax(3.9rem, max-content) !important;
+    gap: .35rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-title {
+    min-height: 1.95rem !important;
+    font-size: .72rem !important;
+    line-height: 1rem !important;
+  }
+}

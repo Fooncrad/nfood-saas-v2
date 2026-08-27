@@ -149,6 +149,7 @@ describe("Product card detail flow refinement", () => {
     expect(source).toContain('aria-label={`عرض تفاصيل ${item.name}`}><Plus');
     expect(source).toContain("nfood-menu-card-summary");
     expect(source).toContain("compareAtPrice");
+    expect(source).toContain("nfood-menu-item-title");
   });
 
   it("renders optional product gallery images without fabricating them", () => {
