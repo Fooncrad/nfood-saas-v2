@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import {
   Activity,
   CheckCircle2,
+  ClipboardList,
   ChefHat,
   ChevronDown,
   CircleDollarSign,
@@ -414,6 +415,16 @@ export function ModuleView({
       description: "إدارة الفريق والأدوار وسجل الحضور.",
       icon: Users,
     },
+    drivers: {
+      title: "السائقون والتوصيل",
+      description: "إضافة السائقين ومتابعة جاهزيتهم وربطهم بالتوصيل.",
+      icon: Truck,
+    },
+    waiters: {
+      title: "الـ Waiter والطاولات",
+      description: "إضافة النادل وتمكينه من استقبال طلبات الطاولات.",
+      icon: ClipboardList,
+    },
     marketing: {
       title: "التسويق والحملات",
       description: "العروض والكوبونات والحملات في مكان واحد.",
@@ -526,6 +537,20 @@ export function ModuleView({
         <RestaurantCustomersPanel restaurantId={restaurantId} />
         <RestaurantAccessControlPanel restaurantId={restaurantId} />
       </div>
+    );
+  if (active === "drivers")
+    return (
+      <OperationalModuleShell title="السائقون والتوصيل">
+        <TeamView restaurantId={restaurantId} focusRole="driver" />
+        <DeliveryOperationsPanel restaurantId={restaurantId} branchId={branchId} />
+      </OperationalModuleShell>
+    );
+  if (active === "waiters")
+    return (
+      <OperationalModuleShell title="الـ Waiter والطاولات">
+        <TeamView restaurantId={restaurantId} focusRole="waiter" />
+        <TablesView restaurantId={restaurantId} branchId={branchId} />
+      </OperationalModuleShell>
     );
   if (active === "marketing")
     return (
@@ -5210,7 +5235,7 @@ function InventoryView({ restaurantId }: { restaurantId: number }) {
   );
 }
 
-function TeamView({ restaurantId }: { restaurantId: number }) {
+function TeamView({ restaurantId, focusRole }: { restaurantId: number; focusRole?: "driver" | "waiter" }) {
   const { user } = useAuth();
   const [pendingDeleteEmployeeId, setPendingDeleteEmployeeId] = useState<
     number | null
@@ -5218,9 +5243,9 @@ function TeamView({ restaurantId }: { restaurantId: number }) {
   const utils = trpc.useUtils();
   const [employeeFormOpen, setEmployeeFormOpen] = useState(false);
   const [employeeName, setEmployeeName] = useState("");
-  const [employeeRole, setEmployeeRole] = useState<
+    const [employeeRole, setEmployeeRole] = useState<
     "waiter" | "kitchen" | "cashier" | "driver" | "manager" | "host"
-  >("waiter");
+  >(focusRole ?? "waiter");
   const [employeeBranchId, setEmployeeBranchId] = useState("");
   const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(
     null
@@ -5263,14 +5288,17 @@ function TeamView({ restaurantId }: { restaurantId: number }) {
     onSuccess: () => toast.success("تم تسجيل حضور اليوم"),
     onError: error => toast.error(`تعذر تسجيل الحضور: ${error.message}`),
   });
-  const staff = remoteEmployees.data ?? [];
+  const staff = (remoteEmployees.data ?? []).filter(member => !focusRole || member.role === focusRole);
   const todayAttendance = attendanceQuery.data ?? [];
+  const teamTitle = focusRole === "driver" ? "السائقون والتوصيل" : focusRole === "waiter" ? "الـ Waiter وطلبات الطاولات" : "الموظفون والحضور";
+  const teamDescription = focusRole === "driver" ? "أضف السائقين وحدد الفرع والدور التشغيلي قبل إسناد طلبات التوصيل." : focusRole === "waiter" ? "أضف النادل ليتلقى طلبات الطاولات وينفذها من شاشة التشغيل." : "بيانات الموظفين محفوظة في قاعدة البيانات مع عزل المطعم.";
+  const addLabel = focusRole === "driver" ? "إضافة سائق" : focusRole === "waiter" ? "إضافة Waiter" : "إضافة موظف";
   return (
     <div>
       <SectionHeading
-        title="الموظفون والحضور"
-        description="بيانات الموظفين محفوظة في قاعدة البيانات مع عزل المطعم."
-        action="إضافة موظف"
+        title={teamTitle}
+        description={teamDescription}
+        action={addLabel}
         onAction={() => {
           if (employeeLimit.data && !employeeLimit.data.canCreate) {
             toast.error(
@@ -5297,12 +5325,12 @@ function TeamView({ restaurantId }: { restaurantId: number }) {
               }
               className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm"
             >
-              <option value="waiter">نادل</option>
-              <option value="kitchen">مطبخ</option>
-              <option value="cashier">كاشير</option>
+              <option value="waiter">نادل / Waiter</option>
+              {!focusRole && <option value="kitchen">مطبخ</option>}
+              {!focusRole && <option value="cashier">كاشير</option>}
               <option value="driver">سائق</option>
-              <option value="manager">مدير</option>
-              <option value="host">استقبال</option>
+              {!focusRole && <option value="manager">مدير</option>}
+              {!focusRole && <option value="host">استقبال</option>}
             </select>
             <Input
               value={employeeBranchId}
