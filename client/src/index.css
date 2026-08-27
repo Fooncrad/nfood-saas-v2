@@ -2103,3 +2103,35 @@ html[lang="ur"] body {
   border-radius: 999px;
   background: #d99446;
 }
+
+/* Product details: compact premium panel with a mobile bottom-sheet treatment. */
+.nfood-product-detail-panel {
+  overscroll-behavior: contain;
+}
+
+.nfood-product-detail-image {
+  background: #fff;
+}
+
+@media (max-width: 639px) {
+  .nfood-product-detail-dialog {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 92dvh !important;
+    border-radius: 1.5rem 1.5rem 0 0 !important;
+  }
+
+  .nfood-product-detail-dialog .nfood-product-detail-panel {
+    max-height: 92dvh;
+  }
+}
+
+@media (min-width: 640px) {
+  .nfood-product-detail-dialog .nfood-product-detail-image {
+    min-height: 360px;
+  }
+}

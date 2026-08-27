@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const source = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"), "utf8");
+const dbSource = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
 
 describe("RestaurantPublic menu layout", () => {
   it("shows complete dish images without object-cover cropping", () => {
@@ -13,11 +14,36 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain('loading="lazy" decoding="async" className="nfood-menu-item-photo aspect-square h-full w-full object-cover');
   });
 
-  it("opens full item details from the dish image and supports adding from the dialog", () => {
+  it("opens a compact product-detail panel with the required hierarchy and add action", () => {
     expect(source).toContain('open={selectedMenuItem !== null}');
+    expect(source).toContain("nfood-product-detail-dialog");
+    expect(source).toContain("nfood-product-detail-panel");
+    expect(source).toContain("h-[clamp(220px,42vh,320px)]");
     expect(source).toContain("الوصف الكامل");
     expect(source).toContain("selectedMenuItem.description || copy.defaultDescription");
-    expect(source).toContain("updateCart(selectedMenuItem.id, 1)");
+    expect(source).toContain("detailCalories");
+    expect(source).toContain("detailData.ingredients");
+    expect(source).toContain("detailAddons");
+    expect(source).toContain("detailSizeOptions");
+    expect(source).toContain("detailQuantity");
+    expect(source).toContain("detailTotalPrice");
+    expect(source).toContain("setCart((current) => ({ ...current");
+    expect(source).toContain('className="min-h-12 flex-1 rounded-xl');
+  });
+
+  it("passes stored calories into the public menu without fabricating optional sections", () => {
+    expect(dbSource).toContain("calories: menuItems.calories");
+    expect(source).toContain("hasBaseCalories");
+    expect(source).toContain("hasDetailCalories");
+  });
+
+  it("uses only available product data and keeps optional sections hidden when absent", () => {
+    expect(source).toContain("parseProductDetailData");
+    expect(source).toContain("if (language !== \"ar\")");
+    expect(source).toContain("detailData.ingredients?.length ?");
+    expect(source).toContain("detailSizeOptions.length > 0 &&");
+    expect(source).toContain("detailAddons.length > 0 &&");
+    expect(source).toContain("detailData.reviews?.length ?");
   });
 
   it("keeps restaurant identity in the sticky header and lets it collapse", () => {
@@ -59,6 +85,16 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain("aria-expanded={categoryFilterOpen}");
     expect(source).toContain("nfood-menu-category-bar");
     expect(source).toContain("overflow-x-auto");
+  });
+
+  it("styles the product detail panel for mobile bottom-sheet and desktop two-column layouts", () => {
+    const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(css).toContain(".nfood-product-detail-dialog");
+    expect(css).toContain("bottom: 0 !important");
+    expect(css).toContain("max-height: 92dvh !important");
+    expect(source).toContain("sm:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]");
+    expect(source).toContain("overflow-y-auto p-4 sm:p-7");
+    expect(source).toContain("shrink-0 border-t border-slate-100");
   });
 
   it("supports smooth hover only where a pointer is available", () => {
