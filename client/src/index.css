@@ -2500,3 +2500,45 @@ html[lang="ur"] body {
     line-height: 1.05rem !important;
   }
 }
+
+
+/* Final mobile title guarantee: defeat the legacy first-child grid rule that collapsed the dish title to 0px. */
+.nfood-menu-shell .nfood-menu-item-card .nfood-menu-item-content > .nfood-menu-item-heading {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  grid-template-columns: none !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  gap: .4rem !important;
+}
+.nfood-menu-shell .nfood-menu-item-card .nfood-menu-item-content > .nfood-menu-item-heading > .nfood-menu-item-title {
+  display: block !important;
+  flex: 0 1 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 1.3rem !important;
+  max-height: 2.6rem !important;
+  overflow: hidden !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #0f172a !important;
+  font-size: .82rem !important;
+  font-weight: 900 !important;
+  line-height: 1.3rem !important;
+  text-align: start !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-card .nfood-menu-item-content > .nfood-menu-item-heading > .nfood-menu-item-title {
+  color: #fff8ed !important;
+}
+@media (max-width: 767px) {
+  .nfood-menu-shell .nfood-menu-item-card .nfood-menu-item-content > .nfood-menu-item-heading > .nfood-menu-item-title {
+    min-height: 1.15rem !important;
+    max-height: 2.3rem !important;
+    font-size: .74rem !important;
+    line-height: 1.05rem !important;
+  }
+}

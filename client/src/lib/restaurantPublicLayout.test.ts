@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const source = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"), "utf8");
+const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
 const dbSource = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
 
 describe("RestaurantPublic menu layout", () => {
@@ -229,5 +230,16 @@ describe("Mobile menu navigation actions", () => {
     expect(source).toContain("setCartOpen(true)");
     expect(source).toContain("<ShoppingBag className=\"h-4 w-4\"");
     expect(source).not.toContain("<CalendarDays className=\"h-4 w-4\" style={{ color: brandColor }} />{copy.reservation}</button></nav>");
+  });
+});
+
+
+describe("Mobile product title visibility", () => {
+  it("defeats the legacy grid title collapse with a full-width flex heading", () => {
+    expect(css).toContain(".nfood-menu-shell .nfood-menu-item-card .nfood-menu-item-content > .nfood-menu-item-heading");
+    expect(css).toContain("display: flex !important;");
+    expect(css).toContain("grid-template-columns: none !important;");
+    expect(css).toContain(".nfood-menu-shell .nfood-menu-item-card .nfood-menu-item-content > .nfood-menu-item-heading > .nfood-menu-item-title");
+    expect(css).toContain("width: 100% !important;");
   });
 });
