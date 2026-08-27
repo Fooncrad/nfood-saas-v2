@@ -81,5 +81,8 @@ describe("RestaurantPublic menu layout", () => {
     expect(css).not.toContain(".nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-card {\n  display: flex;\n  flex-direction: column;");
     expect(css).toContain("grid-template-columns: minmax(0, 1fr) !important");
     expect(css).toContain("object-fit: contain !important");
+    expect(css).toContain("grid-template-columns: repeat(2, minmax(0, 1fr)) !important");
+    expect(css).toContain("min-height: 8.25rem !important");
+    expect(css).toContain("width: 41% !important");
   });
 });

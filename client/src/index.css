@@ -1744,6 +1744,35 @@ html[lang="ur"] body {
   .nfood-menu-shell main {
     padding-top: 0 !important;
   }
+
+  /* Two compact columns on phones: keep the card horizontal without starving its content. */
+  .nfood-menu-section .category-results {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: .75rem !important;
+  }
+  .nfood-menu-section .nfood-menu-item-card {
+    min-height: 8.25rem !important;
+    height: auto !important;
+    align-items: stretch !important;
+  }
+  .nfood-menu-section .nfood-menu-item-image {
+    width: 41% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  .nfood-menu-section .nfood-menu-item-content {
+    padding: .65rem !important;
+  }
+  .nfood-menu-section .nfood-menu-item-content > div:last-child {
+    flex-wrap: wrap !important;
+    gap: .25rem !important;
+  }
+  .nfood-menu-section .nfood-menu-item-content > div:last-child > span {
+    display: none !important;
+  }
+  .nfood-menu-section .nfood-menu-item-content > div:last-child > div:nth-child(2) {
+    display: none !important;
+  }
 }
 
 /* Night mode contrast for explicit light utility colors inside the menu body. */
