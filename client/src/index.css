@@ -894,6 +894,10 @@ html[lang="ur"] body {
 }
 
 .nfood-menu-template-editorial .nfood-menu-item-card {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-height: 0;
   border-radius: 1.25rem;
 }
 
@@ -1423,14 +1427,14 @@ html[lang="ur"] body {
 
 .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-card {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   min-height: 0;
   border-radius: 1.1rem;
   overflow: hidden;
 }
-
 .nfood-menu-template-editorial:not(.nfood-menu-dark) .nfood-menu-item-image {
-  aspect-ratio: 1.3 / 1;
+  aspect-ratio: 1.46 / 1;
   min-height: 0;
   background: #eee2d3 !important;
 }
