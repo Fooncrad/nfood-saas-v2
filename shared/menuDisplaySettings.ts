@@ -16,6 +16,26 @@ export type MenuGridColumns = 1 | 2 | 3 | 4;
 export type MenuImageRatio = "square" | "portrait" | "landscape";
 export type MenuButtonStyle = "filled" | "outline" | "soft";
 export type MenuItemLayout = "cards" | "cardless";
+export type MenuDetailDirection = "auto" | "right" | "left";
+export type MenuDetailPosition = "side" | "bottom" | "top";
+export type MenuDetailWidth = "compact" | "wide" | "full";
+export type MenuDetailBackground = "solid" | "glass" | "soft";
+export type MenuDetailImageFit = "contain" | "cover";
+
+export type MenuDetailWindowSettings = {
+  direction: MenuDetailDirection;
+  position: MenuDetailPosition;
+  width: MenuDetailWidth;
+  height: "auto" | "full";
+  background: MenuDetailBackground;
+  overlayOpacity: 20 | 40 | 60 | 80;
+  imageFit: MenuDetailImageFit;
+  showCloseButton: boolean;
+  closeOnOutside: boolean;
+  closeOnEscape: boolean;
+  showQuantityControls: boolean;
+  showAddToCart: boolean;
+};
 
 export type MenuDisplaySettings = {
   tools: Record<MenuDisplayToolKey, boolean>;
@@ -29,6 +49,7 @@ export type MenuDisplaySettings = {
   cartButtonColor: string;
   cartButtonStyle: MenuButtonStyle;
   itemLayout: MenuItemLayout;
+  detailWindow: MenuDetailWindowSettings;
 };
 
 export const defaultMenuDisplaySettings: MenuDisplaySettings = {
@@ -53,6 +74,20 @@ export const defaultMenuDisplaySettings: MenuDisplaySettings = {
   cartButtonColor: "#e76f3c",
   cartButtonStyle: "filled",
   itemLayout: "cardless",
+  detailWindow: {
+    direction: "auto",
+    position: "side",
+    width: "wide",
+    height: "full",
+    background: "solid",
+    overlayOpacity: 60,
+    imageFit: "contain",
+    showCloseButton: true,
+    closeOnOutside: true,
+    closeOnEscape: true,
+    showQuantityControls: true,
+    showAddToCart: true,
+  },
 };
 
 export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySettings {
@@ -69,6 +104,22 @@ export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySe
     const isHex = (value: unknown): value is string => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
     const cartButtonStyle = parsed.cartButtonStyle === "outline" || parsed.cartButtonStyle === "soft" || parsed.cartButtonStyle === "filled" ? parsed.cartButtonStyle : "filled";
     const itemLayout: MenuItemLayout = parsed.itemLayout === "cards" || parsed.itemLayout === "cardless" ? parsed.itemLayout : "cardless";
+    const rawDetailWindow = parsed.detailWindow && typeof parsed.detailWindow === "object" ? parsed.detailWindow as Partial<MenuDetailWindowSettings> : {};
+    const overlayOpacity = Number(rawDetailWindow.overlayOpacity);
+    const detailWindow: MenuDetailWindowSettings = {
+      direction: rawDetailWindow.direction === "right" || rawDetailWindow.direction === "left" || rawDetailWindow.direction === "auto" ? rawDetailWindow.direction : "auto",
+      position: rawDetailWindow.position === "bottom" || rawDetailWindow.position === "top" || rawDetailWindow.position === "side" ? rawDetailWindow.position : "side",
+      width: rawDetailWindow.width === "compact" || rawDetailWindow.width === "full" || rawDetailWindow.width === "wide" ? rawDetailWindow.width : "wide",
+      height: rawDetailWindow.height === "auto" ? "auto" : "full",
+      background: rawDetailWindow.background === "glass" || rawDetailWindow.background === "soft" || rawDetailWindow.background === "solid" ? rawDetailWindow.background : "solid",
+      overlayOpacity: overlayOpacity === 20 || overlayOpacity === 40 || overlayOpacity === 60 || overlayOpacity === 80 ? overlayOpacity : 60,
+      imageFit: rawDetailWindow.imageFit === "cover" ? "cover" : "contain",
+      showCloseButton: rawDetailWindow.showCloseButton !== false,
+      closeOnOutside: rawDetailWindow.closeOnOutside !== false,
+      closeOnEscape: rawDetailWindow.closeOnEscape !== false,
+      showQuantityControls: rawDetailWindow.showQuantityControls !== false,
+      showAddToCart: rawDetailWindow.showAddToCart !== false,
+    };
     return {
       tools,
       toolOrder: Array.from(new Set([...toolOrder, ...MENU_DISPLAY_TOOL_KEYS])),
@@ -81,6 +132,7 @@ export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySe
       cartButtonColor: isHex(parsed.cartButtonColor) ? parsed.cartButtonColor : defaultMenuDisplaySettings.cartButtonColor,
       cartButtonStyle,
       itemLayout,
+      detailWindow,
     };
   } catch {
     return defaultMenuDisplaySettings;

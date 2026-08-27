@@ -287,12 +287,23 @@ describe("Cardless menu experiment", () => {
     expect(css).toContain("min-width: 100dvw !important;");
     expect(css).toContain("top: 0 !important;");
     expect(css).toContain("bottom: 0 !important;");
-    expect(source).toContain('className="nfood-product-detail-image h-[clamp(180px,30vh,260px)]');
+    expect(source).toContain('nfood-product-detail-image h-[clamp(180px,30vh,260px)]');
+  });
+
+  it("exposes independent advanced detail-window controls and persistence", () => {
+    expect(homeModulesSource).toContain("data-menu-detail-window-controls");
+    expect(homeModulesSource).toContain("persistMenuDisplaySettings");
+    expect(homeModulesSource).toContain('updateDetailWindowSetting("direction"');
+    expect(homeModulesSource).toContain('updateDetailWindowSetting("position"');
+    expect(homeModulesSource).toContain('updateDetailWindowSetting("width"');
+    expect(source).toContain("data-detail-position={detailWindow.position}");
+    expect(source).toContain("data-detail-background={detailWindow.background}");
+    expect(source).toContain("onEscapeKeyDown");
   });
 
   it("opens the product drawer from the side that matches the locale direction", () => {
-    expect(source).toContain('direction === "rtl" ? "nfood-product-detail-from-right" : "nfood-product-detail-from-left"');
-    expect(source).toContain('data-detail-drawer-side={direction === "rtl" ? "right" : "left"}');
+    expect(source).toContain('detailDirection === "right" ? "nfood-product-detail-from-right" : "nfood-product-detail-from-left"');
+    expect(source).toContain('data-detail-drawer-side={detailDirection}');
     expect(css).toContain("transform: translateX(100%) !important;");
     expect(css).toContain("transform: translateX(-100%) !important;");
     expect(css).toContain('[data-state="open"]');

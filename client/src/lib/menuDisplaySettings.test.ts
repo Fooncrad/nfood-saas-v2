@@ -8,6 +8,19 @@ describe("menu customization settings", () => {
     expect(defaultMenuDisplaySettings.itemLayout).toBe("cardless");
   });
 
+  it("provides advanced product-detail window defaults and normalizes unsafe values", () => {
+    expect(defaultMenuDisplaySettings.detailWindow.direction).toBe("auto");
+    expect(defaultMenuDisplaySettings.detailWindow.position).toBe("side");
+    expect(defaultMenuDisplaySettings.detailWindow.width).toBe("wide");
+    const normalized = normalizeMenuDisplaySettings(JSON.stringify({ detailWindow: { direction: "invalid", position: "bottom", width: "full", overlayOpacity: 80, imageFit: "cover", closeOnEscape: false } }));
+    expect(normalized.detailWindow.direction).toBe("auto");
+    expect(normalized.detailWindow.position).toBe("bottom");
+    expect(normalized.detailWindow.width).toBe("full");
+    expect(normalized.detailWindow.overlayOpacity).toBe(80);
+    expect(normalized.detailWindow.imageFit).toBe("cover");
+    expect(normalized.detailWindow.closeOnEscape).toBe(false);
+  });
+
   it("normalizes new settings without breaking legacy menu JSON", () => {
     const legacy = normalizeMenuDisplaySettings(JSON.stringify({ gridColumns: 3 }));
     expect(legacy.gridColumns).toBe(3);
