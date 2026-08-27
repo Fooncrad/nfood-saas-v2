@@ -1609,3 +1609,186 @@ html[lang="ur"] body {
 }
 
 
+
+
+/* Coordinated night palette for the public menu. The reference header remains light; the menu body changes as one surface. */
+.nfood-menu-shell.nfood-menu-dark {
+  --menu-page: #102b31 !important;
+  --menu-surface: #16383e !important;
+  --menu-ink: #fff8ed !important;
+  --menu-muted: #c7d5d1 !important;
+  --menu-primary: #f4a64c !important;
+  --menu-accent: #f6c77b !important;
+  background-color: #102b31 !important;
+  background-image: linear-gradient(145deg, #102b31 0%, #16383e 58%, #1e4549 100%) !important;
+}
+.nfood-menu-shell.nfood-menu-dark main,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-section {
+  color: #fff8ed;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-hero {
+  background: linear-gradient(135deg, rgba(22, 56, 62, .96), rgba(16, 43, 49, .92)) !important;
+  border-color: rgba(244, 166, 76, .28) !important;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, .18) !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-hero .text-slate-900,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-hero .text-slate-800,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-hero .text-slate-700,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-hero .text-slate-600,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-hero .text-slate-500,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-content .text-slate-950,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-content .text-slate-900,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-content .text-slate-800 {
+  color: #fff8ed !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-category-bar {
+  background: rgba(22, 56, 62, .96) !important;
+  border-color: rgba(244, 166, 76, .28) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .2) !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-card,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-info-card,
+.nfood-menu-shell.nfood-menu-dark .nfood-template-picker {
+  background: #16383e !important;
+  border-color: rgba(244, 166, 76, .22) !important;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, .2) !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-image {
+  background: #244c50 !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-content .text-slate-600,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-content .text-slate-500,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-content .text-slate-400,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-info-card .text-slate-700,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-info-card .text-slate-600,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-info-card .text-slate-500 {
+  color: #c7d5d1 !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-info-card .bg-slate-50,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-info-card .bg-white {
+  background: rgba(255, 255, 255, .08) !important;
+  color: #fff8ed !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-category-bar::-webkit-scrollbar-thumb {
+  background: #f4a64c;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-category-bar {
+  scrollbar-color: #f4a64c transparent;
+}
+@media (max-width: 640px) {
+  .nfood-menu-shell.nfood-menu-dark .nfood-menu-hero {
+    border-radius: 0 0 1.25rem 1.25rem;
+  }
+}
+
+/* Keep the Tailwind parser from interpreting an incomplete custom property. */
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-hero select {
+  color-scheme: dark;
+}
+
+/* The menu heading now sits directly above the category rail. */
+.nfood-menu-shell .nfood-menu-hero {
+  margin-bottom: .35rem;
+}
+.nfood-menu-shell .nfood-menu-category-bar {
+  margin-top: 0 !important;
+}
+
+/* The saved night preference changes menu surfaces, not the reference header. */
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header {
+  background: #fff !important;
+  color: #32251e !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header .text-slate-900,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header .text-slate-800,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header .text-slate-700,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header .text-slate-600,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header .text-slate-500 {
+  color: #32251e !important;
+}
+
+/* Prevent the utility panel from visually competing with the menu list in night mode. */
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-section .nfood-menu-info-card {
+  background: #16383e !important;
+}
+
+/* Respect reduced motion while preserving the horizontal category rail. */
+@media (prefers-reduced-motion: reduce) {
+  .nfood-menu-shell.nfood-menu-dark .nfood-menu-category-bar {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Keep the category rail visually attached to the heading after the copy removal. */
+.nfood-menu-shell .nfood-menu-category-bar + * {
+  scroll-margin-top: 5rem;
+}
+
+/* Stable mobile spacing for the first menu items. */
+@media (max-width: 640px) {
+  .nfood-menu-shell main {
+    padding-top: 0 !important;
+  }
+}
+
+/* Night mode contrast for explicit light utility colors inside the menu body. */
+.nfood-menu-shell.nfood-menu-dark .text-slate-950,
+.nfood-menu-shell.nfood-menu-dark .text-slate-900,
+.nfood-menu-shell.nfood-menu-dark .text-slate-800,
+.nfood-menu-shell.nfood-menu-dark .text-slate-700 {
+  color: #fff8ed !important;
+}
+.nfood-menu-shell.nfood-menu-dark .text-slate-600,
+.nfood-menu-shell.nfood-menu-dark .text-slate-500,
+.nfood-menu-shell.nfood-menu-dark .text-slate-400 {
+  color: #c7d5d1 !important;
+}
+
+/* Maintain the horizontal moving category rail in both themes. */
+.nfood-menu-category-bar {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-behavior: smooth;
+}
+.nfood-menu-category-bar > div,
+.nfood-menu-category-bar > nav {
+  min-width: max-content;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nfood-menu-category-bar {
+    scroll-behavior: auto;
+  }
+}
+
+/* Final stable surface tokens; values are complete to avoid invalid custom-property parsing. */
+.nfood-menu-shell.nfood-menu-dark {
+  --menu-border: rgba(244, 166, 76, .24);
+  --menu-shadow: rgba(0, 0, 0, .2);
+}
+.nfood-menu-shell:not(.nfood-menu-dark) {
+  --menu-border: #e5d7c7;
+  --menu-shadow: rgba(61, 37, 23, .08);
+}
+
+/* Keep category controls legible when their inherited utility classes are light-themed. */
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-category-bar button {
+  color: #fff8ed;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-category-bar button[aria-current="true"],
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-category-bar button[data-active="true"] {
+  color: #102b31;
+  background: #f4a64c;
+}
+
+/* Night-mode search and select controls use the same teal surface. */
+.nfood-menu-shell.nfood-menu-dark input,
+.nfood-menu-shell.nfood-menu-dark select {
+  background-color: #1f474b !important;
+  border-color: rgba(244, 166, 76, .28) !important;
+  color: #fff8ed !important;
+}
+.nfood-menu-shell.nfood-menu-dark input::placeholder {
+  color: #b8cbc5 !important;
+}
+
+/* End of public menu night-mode alignment. */

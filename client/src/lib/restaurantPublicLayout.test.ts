@@ -47,7 +47,8 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain("categoryFilterOpen");
     expect(source).toContain("تصفية حسب الفئة");
     expect(source).toContain("aria-expanded={categoryFilterOpen}");
-    expect(source).toContain('categoryFilterOpen ? "flex" : "hidden"');
+    expect(source).toContain("nfood-menu-category-bar");
+    expect(source).toContain("overflow-x-auto");
   });
 
   it("supports smooth hover only where a pointer is available", () => {
