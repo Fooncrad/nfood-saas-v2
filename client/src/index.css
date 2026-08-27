@@ -1933,3 +1933,56 @@ html[lang="ur"] body {
     padding: .5rem !important;
   }
 }
+
+/* Compact-card overflow protection for narrow mobile columns. */
+.nfood-menu-shell .nfood-menu-item-card,
+.nfood-menu-shell .nfood-menu-item-content,
+.nfood-menu-shell .nfood-menu-item-content > div {
+  max-width: 100%;
+  overflow: visible;
+}
+.nfood-menu-shell .nfood-menu-item-content > div:first-child {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: .35rem;
+}
+.nfood-menu-shell .nfood-menu-item-content > div:first-child h3 {
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.nfood-menu-shell .nfood-menu-item-content > div:first-child > div {
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+.nfood-menu-shell .nfood-menu-item-content > div:first-child strong {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal !important;
+  text-align: end;
+  line-height: 1rem;
+}
+@media (max-width: 767px) {
+  .nfood-menu-shell .nfood-menu-item-image > button,
+  .nfood-menu-shell .nfood-menu-item-image > span {
+    display: none !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-content > div:last-child {
+    width: 100%;
+    min-width: 0;
+    gap: .15rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-content > div:last-child > div:first-child {
+    min-width: 0;
+    gap: .2rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-content > div:last-child button {
+    height: 1.75rem !important;
+    width: 1.75rem !important;
+    flex: 0 0 auto;
+  }
+}
