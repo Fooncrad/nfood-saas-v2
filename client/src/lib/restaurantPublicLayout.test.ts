@@ -76,6 +76,8 @@ describe("RestaurantPublic menu layout", () => {
     expect(css).toContain("--menu-primary: #7c4d32 !important");
     expect(css).toContain("--menu-accent: #d99446 !important");
     expect(css).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
+    expect(css).toContain(".nfood-menu-template-editorial .category-results");
+    expect(css).toContain("grid-template-columns: minmax(0, 1fr) !important");
     expect(css).toContain("object-fit: contain !important");
   });
 });

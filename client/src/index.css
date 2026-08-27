@@ -1482,6 +1482,11 @@ html[lang="ur"] body {
 }
 
 
+/* Editorial list cards follow the attached compact item_thumbs reference. */
+.nfood-menu-template-editorial .category-results {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
 /* Menu image clarity and low-cost card interaction. */
 .nfood-menu-card-hover {
   transform: translateZ(0);
