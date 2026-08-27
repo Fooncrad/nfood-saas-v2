@@ -290,6 +290,15 @@ describe("Cardless menu experiment", () => {
     expect(source).toContain('nfood-product-detail-image h-[clamp(180px,30vh,260px)]');
   });
 
+  it("exposes a numbered vertical settings hub with separated workspace sections", () => {
+    expect(homeModulesSource).toContain("data-settings-hub");
+    expect(homeModulesSource).toContain("lg:grid-cols-[230px_minmax(0,1fr)]");
+    expect(homeModulesSource).toContain('number: "01"');
+    expect(homeModulesSource).toContain('number: "07"');
+    expect(homeModulesSource).toContain('activeTab === "messages"');
+    expect(homeModulesSource).toContain('activeTab === "menuLayouts"');
+  });
+
   it("exposes independent advanced detail-window controls and persistence", () => {
     expect(homeModulesSource).toContain("data-menu-detail-window-controls");
     expect(homeModulesSource).toContain("persistMenuDisplaySettings");

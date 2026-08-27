@@ -10527,16 +10527,18 @@ function RestaurantOperationsHub({ restaurantId, branchId, defaultTab = "tables"
 }
 
 function RestaurantSettingsHub({ restaurantId }: { restaurantId: number }) {
-  const [activeTab, setActiveTab] = useState<"identity" | "menuLayouts" | "commerce" | "integrations" | "preferences">("identity");
+  const [activeTab, setActiveTab] = useState<"identity" | "menuLayouts" | "commerce" | "receipts" | "messages" | "integrations" | "preferences">("identity");
   const tabs = [
-    { key: "identity" as const, label: "هوية المطعم", description: "الاسم، الشعار، التواصل، المحتوى وSEO" },
-    { key: "menuLayouts" as const, label: "تخطيطات المنيو", description: "القوالب، البطاقات، الألوان والمعاينة" },
-    { key: "commerce" as const, label: "التسعير والإيصالات", description: "العملة، الضريبة، الخصومات وقوالب الطباعة" },
-    { key: "integrations" as const, label: "التكاملات", description: "مصدر التكاملات وإعدادات الربط" },
-    { key: "preferences" as const, label: "اللغة والخصائص", description: "اللغة والميزات المتاحة للمطعم" },
+    { key: "identity" as const, number: "01", label: "هوية المطعم", description: "الاسم، الشعار، التواصل وSEO" },
+    { key: "menuLayouts" as const, number: "02", label: "تخطيط المنيو", description: "القوالب، النافذة، البطاقات والمعاينة" },
+    { key: "receipts" as const, number: "03", label: "الإيصالات والقوالب", description: "التخصيص والطباعة وقوالب الرسائل" },
+    { key: "messages" as const, number: "04", label: "البريد والرسائل", description: "رسائل الحسابات والطلبات والحجوزات" },
+    { key: "commerce" as const, number: "05", label: "التسعير والدفع", description: "العملة والضريبة والاشتراكات" },
+    { key: "integrations" as const, number: "06", label: "التكاملات", description: "مصدر التكاملات وإعدادات الربط" },
+    { key: "preferences" as const, number: "07", label: "اللغة والخصائص", description: "اللغة والميزات المتاحة للمطعم" },
   ];
   return (
-    <div data-settings-hub className="nfood-settings-hub space-y-3">
+    <div data-settings-hub className="nfood-settings-hub grid gap-4 space-y-0 lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start">
       <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -10546,7 +10548,7 @@ function RestaurantSettingsHub({ restaurantId }: { restaurantId: number }) {
           </div>
           <span className="rounded-full bg-orange-50 px-3 py-1.5 text-[11px] font-bold text-[#c75325] dark:bg-orange-950/40 dark:text-orange-200">{tabs.find(tab => tab.key === activeTab)?.label}</span>
         </div>
-        <div className="mt-3 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-5" role="tablist" aria-label="أقسام إعدادات المطعم">
+        <div className="mt-3 flex flex-col gap-1.5" role="tablist" aria-label="أقسام إعدادات المطعم">
           {tabs.map(tab => (
             <button
               key={tab.key}
@@ -10554,24 +10556,23 @@ function RestaurantSettingsHub({ restaurantId }: { restaurantId: number }) {
               role="tab"
               aria-selected={activeTab === tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`rounded-xl border px-3 py-2.5 text-right transition-all duration-200 ${activeTab === tab.key ? "border-[#e76f3c] bg-[#e76f3c] text-white shadow-md shadow-orange-900/10" : "border-slate-200 bg-slate-50/70 text-slate-700 hover:border-orange-200 hover:bg-orange-50 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:border-orange-700/60"}`}
+              className={`w-full rounded-xl border px-3 py-2.5 text-right transition-all duration-200 ${activeTab === tab.key ? "border-[#e76f3c] bg-[#e76f3c] text-white shadow-md shadow-orange-900/10" : "border-slate-200 bg-slate-50/70 text-slate-700 hover:border-orange-200 hover:bg-orange-50 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:border-orange-700/60"}`}
             >
-              <span className="block text-xs font-black">{tab.label}</span>
-              <span className={`mt-1 block text-[10px] leading-4 ${activeTab === tab.key ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>{tab.description}</span>
+              <span className="flex items-center gap-2 text-xs font-black"><span className={`text-[10px] ${activeTab === tab.key ? "text-white/70" : "text-[#e76f3c]"}`}>{tab.number}</span>{tab.label}</span>
+              <span className={`mt-1 block pr-5 text-[10px] leading-4 ${activeTab === tab.key ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>{tab.description}</span>
             </button>
           ))}
         </div>
       </section>
-      <div key={activeTab} className="nfood-settings-tab-enter space-y-3">
+      <div key={activeTab} className="nfood-settings-tab-enter min-w-0 space-y-4">
         {activeTab === "identity" && <>
           <RestaurantProfilePanel restaurantId={restaurantId} />
           <BrandingPanel restaurantId={restaurantId} section="identity" />
         </>}
         {activeTab === "menuLayouts" && <BrandingPanel restaurantId={restaurantId} section="layouts" />}
-        {activeTab === "commerce" && <>
-          <RestaurantPricingSettings restaurantId={restaurantId} />
-          <ReceiptCustomizationPanel restaurantId={restaurantId} />
-        </>}
+        {activeTab === "receipts" && <ReceiptCustomizationPanel restaurantId={restaurantId} />}
+        {activeTab === "messages" && <EmailTemplatesPanel restaurantId={restaurantId} />}
+        {activeTab === "commerce" && <RestaurantPricingSettings restaurantId={restaurantId} />}
         {activeTab === "integrations" && <>
           <RestaurantIntegrationSettings restaurantId={restaurantId} />
         </>}
