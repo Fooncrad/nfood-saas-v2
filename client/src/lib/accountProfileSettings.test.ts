@@ -11,6 +11,11 @@ describe("account profile image flow", () => {
     expect(home).toContain('window.location.assign("/account-profile")');
   });
 
+  it("uses a visible skeleton while the root session is loading", () => {
+    expect(app).toContain("if (loading) return <PageLoading />");
+    expect(app).toContain("animate-pulse");
+  });
+
   it("uploads account images through storage and persists avatarUrl", () => {
     expect(page).toContain("trpc.media.upload.useMutation");
     expect(page).toContain('scope: "user"');
