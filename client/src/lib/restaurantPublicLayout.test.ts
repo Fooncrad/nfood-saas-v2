@@ -199,3 +199,15 @@ describe("Product card detail flow refinement", () => {
     expect(css).toContain("-webkit-overflow-scrolling: touch");
   });
 });
+
+
+describe("Product title visibility regression", () => {
+  it("prevents the legacy first-child grid rule from collapsing the product title", () => {
+    const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(css).toContain(".nfood-menu-shell .nfood-menu-item-content > .nfood-menu-item-heading {");
+    expect(css).toContain("display: flex !important;");
+    expect(css).toContain(".nfood-menu-shell .nfood-menu-item-content > .nfood-menu-item-heading .nfood-menu-item-title {");
+    expect(css).toContain("width: 100% !important;");
+    expect(source).toContain("<h3 className=\"nfood-menu-item-title");
+  });
+});
