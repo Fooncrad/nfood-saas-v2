@@ -1,0 +1,62 @@
+{
+  "common": {
+    "dashboard": "لوحة التحكم",
+    "overview": "نظرة عامة",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "loading": "جارٍ التحميل...",
+    "retry": "إعادة المحاولة",
+    "search": "بحث",
+    "language": "اللغة",
+    "signIn": "تسجيل الدخول",
+    "signOut": "تسجيل الخروج",
+    "account": "الحساب",
+    "myAccount": "حسابي",
+    "menu": "المنيو",
+    "orders": "الطلبات",
+    "reservations": "الحجوزات",
+    "tables": "الطاولات",
+    "drivers": "السائقون",
+    "waiter": "النادل",
+    "available": "متاح",
+    "unavailable": "غير متاح",
+    "total": "الإجمالي",
+    "currency": "ر.س",
+    "requestId": "رقم الطلب"
+  },
+  "navigation": {
+    "home": "الرئيسية",
+    "menu": "قائمة الطعام",
+    "reservation": "الحجز",
+    "contact": "التواصل",
+    "cart": "السلة",
+    "open": "فتح قائمة التنقل",
+    "close": "إغلاق قائمة التنقل",
+    "openMenu": "فتح قائمة المطعم",
+    "openAccount": "فتح الحساب",
+    "chooseLanguage": "اختر اللغة",
+    "main": "التنقل الرئيسي"
+  },
+  "menu": {
+    "addToCart": "إضافة إلى السلة",
+    "viewDetails": "عرض تفاصيل {name}",
+    "fullDescription": "الوصف الكامل",
+    "chooseQuantity": "اختر الكمية",
+    "filterByCategory": "تصفية حسب الفئة",
+    "searchPlaceholder": "ابحث عن صنف...",
+    "empty": "لا توجد أصناف متاحة حاليًا.",
+    "selfOrderDisabled": "الطلب الذاتي متوقف لهذا المطعم؛ اطلب من النادل تنفيذ الطلب على الطاولة."
+  },
+  "auth": {
+    "signInToContinue": "سجّل الدخول للمتابعة",
+    "welcomeBack": "مرحبًا بعودتك",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "continueWithGoogle": "الدخول عبر Google / OAuth"
+  },
+  "errors": {
+    "missingTranslation": "الترجمة غير متوفرة بعد",
+    "generic": "حدث خطأ غير متوقع"
+  }
+}

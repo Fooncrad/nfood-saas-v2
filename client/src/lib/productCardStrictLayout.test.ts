@@ -20,11 +20,11 @@ describe("strict product card layout", () => {
     expect(css).toContain("right: 8px");
   });
 
-  it("truncates summaries and preserves quick add without opening details", () => {
+  it("truncates summaries and opens details from the plus action", () => {
     expect(css).toContain("white-space: nowrap");
     expect(css).toContain("text-overflow: ellipsis");
     expect(page).toContain("nfood-menu-card-shell");
-    expect(page).toContain("updateCart(item.id, 1)");
-    expect(page).toContain("إضافة ${item.name} إلى السلة");
+    expect(page).toContain("setSelectedMenuItem(item)");
+    expect(page).toContain("عرض تفاصيل ${item.name}");
   });
 });

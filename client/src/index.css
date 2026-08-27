@@ -149,10 +149,8 @@
    */
   .container {
     width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
-    padding-right: 1rem;
+    margin-inline: auto;
+    padding-inline: 1rem; /* 16px - mobile padding */
   }
 
   .flex {
@@ -162,15 +160,13 @@
 
   @media (min-width: 640px) {
     .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
-      padding-right: 1.5rem;
+      padding-inline: 1.5rem; /* 24px - tablet padding */
     }
   }
 
   @media (min-width: 1024px) {
     .container {
-      padding-left: 2rem; /* 32px - desktop padding */
-      padding-right: 2rem;
+      padding-inline: 2rem; /* 32px - desktop padding */
       max-width: 1280px; /* Standard content width */
     }
   }
@@ -302,6 +298,7 @@
   .nfood-language-switcher > summary { transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
   .nfood-language-switcher[open] > summary { transform: translateY(-1px); box-shadow: 0 10px 26px -18px oklch(0.3 0.08 55 / .55); }
   .nfood-language-switcher[open] > div { animation: nfood-popover-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both; transform-origin: top right; }
+  html[dir="rtl"] .nfood-language-switcher[open] > div { transform-origin: top left; }
   html.nfood-language-transition body { animation: nfood-language-crossfade 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
   html, body, #root { transition: background-color 220ms ease, color 220ms ease; }
   @media (prefers-reduced-motion: reduce) { .nfood-unified-sidebar, .nfood-unified-sidebar .nfood-sidebar-label, .nfood-unified-sidebar .nfood-sidebar-count, .nfood-language-switcher > summary, html, body, #root { transition: none !important; } }
@@ -782,6 +779,7 @@ html[lang="ur"] body {
   transform-origin: top right;
   animation: nfood-notification-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
+html[dir="rtl"] .nfood-notification-popover { transform-origin: top left; }
 @media (prefers-reduced-motion: reduce) {
   .nfood-notification-popover { animation: none; }
 }

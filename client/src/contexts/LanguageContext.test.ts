@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_MANUAL_STORAGE_KEY, autoTranslateText, detectVisitorLanguage, findUntranslatedArabic, formatGregorianDate, formatLatinNumber, isPublicLanguagePath, languageMeta, legacyUiTranslations, translations } from "./LanguageContext";
+import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_MANUAL_STORAGE_KEY, applyLanguageDocumentAttributes, autoTranslateText, createTranslator, detectVisitorLanguage, findUntranslatedArabic, formatCurrencyAmount, formatGregorianDate, formatLatinNumber, interpolateTranslation, isPublicLanguagePath, languageMeta, legacyUiTranslations, resolveStructuredTranslation, translations } from "./LanguageContext";
+import arLocale from "@/locales/ar.json";
+import enLocale from "@/locales/en.json";
+import frLocale from "@/locales/fr.json";
 
 describe("language configuration", () => {
   it("contains Arabic, English, and French with correct directions", () => {
@@ -58,6 +61,49 @@ describe("language configuration", () => {
       expect(arabicPattern.test(value), `Arabic characters remain in English for: ${key} => ${value}`).toBe(false);
       expect(arabicPattern.test(frenchValue ?? ""), `Arabic characters remain in French for: ${key} => ${frenchValue}`).toBe(false);
     }
+  });
+
+  it("keeps the structured Arabic and English JSON catalogs aligned", () => {
+    const flatten = (value: Record<string, unknown>, prefix = "") => Object.entries(value).flatMap(([key, item]) => {
+      const next = prefix ? `${prefix}.${key}` : key;
+      return typeof item === "string" ? [next] : flatten(item as Record<string, unknown>, next);
+    }).sort();
+    expect(flatten(arLocale)).toEqual(flatten(enLocale));
+    expect(flatten(arLocale)).toEqual(flatten(frLocale));
+  });
+
+  it("provides a reusable t helper with safe fallback and interpolation", () => {
+    const t = createTranslator("en");
+    expect(t("common.signIn")).toBe("Sign in");
+    expect(t("menu.viewDetails", { name: "Nasser Burger" })).toBe("View details for Nasser Burger");
+    expect(t("missing.key")).toBe("missing.key");
+  });
+
+  it("applies document language and direction attributes for RTL and LTR", () => {
+    const root = { documentElement: { lang: "", dir: "" }, body: { dir: "", dataset: {} } } as unknown as Document;
+    applyLanguageDocumentAttributes("ar", root);
+    expect(root.documentElement.lang).toBe("ar");
+    expect(root.documentElement.dir).toBe("rtl");
+    expect(root.body.dir).toBe("rtl");
+    expect(root.body.dataset.language).toBe("ar");
+    applyLanguageDocumentAttributes("en", root);
+    expect(root.documentElement.lang).toBe("en");
+    expect(root.documentElement.dir).toBe("ltr");
+    expect(root.body.dir).toBe("ltr");
+    expect(root.body.dataset.language).toBe("en");
+  });
+
+  it("resolves structured JSON keys and interpolates variables", () => {
+    expect(resolveStructuredTranslation("ar", "menu.viewDetails")).toBe("عرض تفاصيل {name}");
+    expect(resolveStructuredTranslation("fr", "menu.viewDetails")).toBe("Voir les détails de {name}");
+    expect(interpolateTranslation(resolveStructuredTranslation("en", "menu.viewDetails") ?? "", { name: "Nasser Burger" })).toBe("View details for Nasser Burger");
+    expect(interpolateTranslation("{missing}", {})).toBe("{missing}");
+  });
+
+  it("supports locale-aware currency labels without mixed-language strings", () => {
+    expect(formatCurrencyAmount(100, "SAR", "ar")).toContain("ر.س");
+    expect(formatCurrencyAmount(100, "SAR", "ar")).toContain("100.00");
+    expect(formatCurrencyAmount(100, "SAR", "en")).toBe("100.00 SAR");
   });
 
   it("formats Arabic dates with Gregorian calendar and Latin numerals", () => {

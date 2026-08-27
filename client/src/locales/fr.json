@@ -1,0 +1,62 @@
+{
+  "common": {
+    "dashboard": "Tableau de bord",
+    "overview": "Vue d’ensemble",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "loading": "Chargement...",
+    "retry": "Réessayer",
+    "search": "Rechercher",
+    "language": "Langue",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "account": "Compte",
+    "myAccount": "Mon compte",
+    "menu": "Menu",
+    "orders": "Commandes",
+    "reservations": "Réservations",
+    "tables": "Tables",
+    "drivers": "Livreurs",
+    "waiter": "Serveur",
+    "available": "Disponible",
+    "unavailable": "Indisponible",
+    "total": "Total",
+    "currency": "SAR",
+    "requestId": "ID de demande"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "menu": "Menu",
+    "reservation": "Réservation",
+    "contact": "Contact",
+    "cart": "Panier",
+    "open": "Ouvrir la navigation",
+    "close": "Fermer la navigation",
+    "openMenu": "Ouvrir le menu du restaurant",
+    "openAccount": "Ouvrir le compte",
+    "chooseLanguage": "Choisir la langue",
+    "main": "Navigation principale"
+  },
+  "menu": {
+    "addToCart": "Ajouter au panier",
+    "viewDetails": "Voir les détails de {name}",
+    "fullDescription": "Description complète",
+    "chooseQuantity": "Choisir la quantité",
+    "filterByCategory": "Filtrer par catégorie",
+    "searchPlaceholder": "Rechercher un article...",
+    "empty": "Aucun article n’est actuellement disponible.",
+    "selfOrderDisabled": "La commande autonome est désactivée pour ce restaurant ; demandez au serveur de saisir la commande à table."
+  },
+  "auth": {
+    "signInToContinue": "Connectez-vous pour continuer",
+    "welcomeBack": "Bienvenue",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "continueWithGoogle": "Continuer avec Google / OAuth"
+  },
+  "errors": {
+    "missingTranslation": "Traduction indisponible",
+    "generic": "Une erreur inattendue est survenue"
+  }
+}

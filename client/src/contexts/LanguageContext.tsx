@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { LANGUAGE_LOCALES, isEnterpriseLanguage, type EnterpriseLanguage } from "@/lib/enterpriseFormatting";
+import arLocale from "@/locales/ar.json";
+import enLocale from "@/locales/en.json";
+import frLocale from "@/locales/fr.json";
 
 export type Language = EnterpriseLanguage;
 export const LANGUAGE_STORAGE_KEY = "nfood-language";
@@ -32,6 +35,15 @@ export function formatGregorianDate(input: Date | string | number, language: Lan
 export function formatLatinNumber(input: number, language: Language = "en") {
   const locale = `${languageMeta[language].locale}-u-nu-latn`;
   return new Intl.NumberFormat(locale).format(input);
+}
+
+export function formatCurrencyAmount(input: number | string, currency = "SAR", language: Language = "en", decimals = 2) {
+  const value = Number(input);
+  const safeValue = Number.isFinite(value) ? value : 0;
+  const locale = language === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : language === "fr" ? "fr-FR" : "en-US";
+  const amount = new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(safeValue);
+  const label = language === "ar" && currency === "SAR" ? "ر.س" : currency;
+  return `${amount} ${label}`;
 }
 
 const arabic = {
@@ -441,30 +453,48 @@ function applyLegacyUiTranslations(language: Language, root: Node = document) {
   }
 }
 
+function flattenLocale(source: Record<string, unknown>, prefix = "") { return Object.entries(source).reduce<Record<string, string>>((result, [key, value]) => { const nextKey = prefix ? `${prefix}.${key}` : key; if (typeof value === "string") result[nextKey] = value; else if (value && typeof value === "object" && !Array.isArray(value)) Object.assign(result, flattenLocale(value as Record<string, unknown>, nextKey)); return result; }, {}); }
+const structuredTranslations: Record<"ar" | "en" | "fr", Record<string, string>> = { ar: flattenLocale(arLocale as Record<string, unknown>), en: flattenLocale(enLocale as Record<string, unknown>), fr: flattenLocale(frLocale as Record<string, unknown>) };
+export function resolveStructuredTranslation(language: Language, key: string) { return language === "ar" || language === "en" || language === "fr" ? structuredTranslations[language][key] : undefined; }
+export function interpolateTranslation(template: string, variables?: Record<string, string | number>) { return variables ? template.replace(/\{(\w+)\}/g, (_, name: string) => String(variables[name] ?? `{${name}}`)) : template; }
 const expandedLanguageFallback = { ...Object.fromEntries(Object.entries(arabic).map(([key, value]) => [key, english[key as keyof typeof english] || value])), dashboard: "ڈیش بورڈ" } as Record<keyof typeof arabic, string>;
 export type TranslationKey = keyof typeof arabic;
 export const translations: Record<Language, Record<TranslationKey, string>> = { ar: arabic, en: english, fr: french, ur: expandedLanguageFallback, es: expandedLanguageFallback, de: expandedLanguageFallback, tr: expandedLanguageFallback };
-type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; isLanguageChanging: boolean; setLanguage: (language: Language, persist?: boolean) => void; t: (key: TranslationKey | string) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
+
+export function createTranslator(language: Language) {
+  return (key: TranslationKey | string, variables?: Record<string, string | number>) => {
+    const databaseValue = isUiLanguage(language) ? databaseUiTranslations[language][key] : undefined;
+    const translated = databaseValue ?? resolveStructuredTranslation(language, key) ?? translations[language][key as TranslationKey] ?? key;
+    return interpolateTranslation(translated, variables);
+  };
+}
+
+type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; isLanguageChanging: boolean; setLanguage: (language: Language, persist?: boolean) => void; t: (key: TranslationKey | string, variables?: Record<string, string | number>) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
 function readStoredLanguage(): Language { if (typeof window === "undefined") return "en"; if (isPublicLanguagePath(window.location.pathname)) { const manual = window.localStorage.getItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY); if (isUiLanguage(manual)) return manual; return detectVisitorLanguage(); } const stored = window.localStorage.getItem(DASHBOARD_LANGUAGE_STORAGE_KEY); return isUiLanguage(stored) ? stored : "en"; }
+
+export function applyLanguageDocumentAttributes(language: Language, root: Document = document) {
+  const meta = languageMeta[language];
+  root.documentElement.lang = language;
+  root.documentElement.dir = meta.dir;
+  root.body.dir = meta.dir;
+  root.body.dataset.language = language;
+}
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>(readStoredLanguage);
   const [isLanguageChanging, setIsLanguageChanging] = useState(false);
   const meta = languageMeta[language];
   useEffect(() => {
-    document.documentElement.lang = language;
-    document.documentElement.dir = meta.dir;
-    document.body.dir = meta.dir;
-    document.body.dataset.language = language;
+    applyLanguageDocumentAttributes(language);
     if (!isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(DASHBOARD_LANGUAGE_STORAGE_KEY, language);
     applyLegacyUiTranslations(language);
     const observer = new MutationObserver((mutations) => mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => scheduleLegacyUiTranslations(language, node))));
     observer.observe(document.body, { subtree: true, childList: true });
     return () => { observer.disconnect(); };
   }, [language, meta.dir]);
-  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, isLanguageChanging, setLanguage: (next, persist = true) => { if (next !== language) { animateLanguageChange(); setIsLanguageChanging(true); if (typeof window !== "undefined") window.setTimeout(() => setIsLanguageChanging(false), 420); } setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(languageStorageKey(), next); if (isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: (key) => { const databaseValue = isUiLanguage(language) ? databaseUiTranslations[language][key] : undefined; return databaseValue ?? translations[language][key as TranslationKey] ?? key; }, formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language)   }), [language, meta.dir, meta.locale, isLanguageChanging]);
+  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, isLanguageChanging, setLanguage: (next, persist = true) => { if (next !== language) { animateLanguageChange(); setIsLanguageChanging(true); if (typeof window !== "undefined") window.setTimeout(() => setIsLanguageChanging(false), 420); } setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(languageStorageKey(), next); if (isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: createTranslator(language), formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language)   }), [language, meta.dir, meta.locale, isLanguageChanging]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 

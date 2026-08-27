@@ -1,0 +1,62 @@
+{
+  "common": {
+    "dashboard": "Dashboard",
+    "overview": "Overview",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "loading": "Loading...",
+    "retry": "Retry",
+    "search": "Search",
+    "language": "Language",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "account": "Account",
+    "myAccount": "My account",
+    "menu": "Menu",
+    "orders": "Orders",
+    "reservations": "Reservations",
+    "tables": "Tables",
+    "drivers": "Drivers",
+    "waiter": "Waiter",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "total": "Total",
+    "currency": "SAR",
+    "requestId": "Request ID"
+  },
+  "navigation": {
+    "home": "Home",
+    "menu": "Menu",
+    "reservation": "Reservations",
+    "contact": "Contact",
+    "cart": "Cart",
+    "open": "Open navigation",
+    "close": "Close navigation",
+    "openMenu": "Open restaurant menu",
+    "openAccount": "Open account",
+    "chooseLanguage": "Choose language",
+    "main": "Main navigation"
+  },
+  "menu": {
+    "addToCart": "Add to cart",
+    "viewDetails": "View details for {name}",
+    "fullDescription": "Full description",
+    "chooseQuantity": "Choose quantity",
+    "filterByCategory": "Filter by category",
+    "searchPlaceholder": "Search for an item...",
+    "empty": "No items are currently available.",
+    "selfOrderDisabled": "Self-ordering is disabled for this restaurant; ask a waiter to place the table order."
+  },
+  "auth": {
+    "signInToContinue": "Sign in to continue",
+    "welcomeBack": "Welcome back",
+    "email": "Email",
+    "password": "Password",
+    "continueWithGoogle": "Continue with Google / OAuth"
+  },
+  "errors": {
+    "missingTranslation": "Translation is not available yet",
+    "generic": "An unexpected error occurred"
+  }
+}

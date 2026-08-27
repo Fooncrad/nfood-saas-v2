@@ -270,7 +270,7 @@ export function HomeSidebar({
         initial={false}
         animate={{ width: getSidebarWidth(sidebarCollapsed) }}
         transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.8 }}
-        className={`nfood-unified-sidebar fixed inset-y-0 z-20 hidden h-full overflow-hidden overscroll-contain border-white/10 bg-[#091321]/95 text-white shadow-[0_24px_80px_rgba(3,10,20,.42)] backdrop-blur-2xl lg:flex lg:flex-col ${direction === "rtl" ? "right-0 border-l" : "left-0 border-r"}`}
+        className={`nfood-unified-sidebar fixed inset-y-0 z-20 hidden h-full overflow-hidden overscroll-contain border-white/10 bg-[#091321]/95 text-white shadow-[0_24px_80px_rgba(3,10,20,.42)] backdrop-blur-2xl lg:flex lg:flex-col ${direction === "rtl" ? "end-0 border-s" : "start-0 border-e"}`}
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(249,115,22,.12),transparent_36%),linear-gradient(180deg,rgba(23,43,68,.28),transparent_48%)]" />
         <header className={`relative flex h-[68px] shrink-0 items-center gap-2 border-b border-white/[.08] px-3 ${sidebarCollapsed ? "justify-center" : "justify-between"}`}>
@@ -282,7 +282,7 @@ export function HomeSidebar({
               <motion.div key="brand" initial={{ opacity: 0, x: direction === "rtl" ? 8 : -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: direction === "rtl" ? 8 : -8 }} transition={{ duration: 0.18 }} className="flex min-w-0 flex-1 items-center gap-2.5">
                 <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-300 to-orange-600 text-[#101a29] shadow-lg shadow-orange-950/30">
                   <Utensils className="h-5 w-5" />
-                  <span className="absolute -bottom-0.5 -left-0.5 h-2 w-2 rounded-full border-2 border-[#091321] bg-emerald-400" />
+                  <span className="absolute -bottom-0.5 -end-0.5 h-2 w-2 rounded-full border-2 border-[#091321] bg-emerald-400" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-[17px] font-black tracking-[.18em]">NFOOD</div>
@@ -305,7 +305,7 @@ export function HomeSidebar({
                   </div>
                   <div className="space-y-1.5">
                     <div className="relative">
-                      <Search className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+                      <Search className="pointer-events-none absolute end-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
                       <input value={workspaceQuery} onChange={event => setWorkspaceQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter") onOpenCommand(); }} placeholder={`${t("globalSearch")} / ${t("selectBranch")}`} aria-label={`${t("globalSearch")} / ${t("selectBranch")}`} className="h-8 w-full rounded-xl border border-white/[.08] bg-[#122238]/90 px-9 text-[11px] text-white outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-slate-500 focus:border-orange-300/60 focus:ring-2 focus:ring-orange-300/10" />
                     </div>
                     <select aria-label={t("selectRestaurant")} value={selectedRestaurantId} onChange={event => onRestaurantChange(Number(event.target.value))} className="h-8 w-full rounded-xl border border-white/[.08] bg-[#122238]/90 px-2.5 text-[11px] text-white outline-none transition-[border-color,box-shadow] duration-200 focus:border-orange-300/60 focus:ring-2 focus:ring-orange-300/10">
@@ -320,7 +320,7 @@ export function HomeSidebar({
                 </motion.div>
               ) : (
                 <motion.div key="workspace-collapsed" initial={{ opacity: 0, scale: .92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: .92 }} className="flex shrink-0 justify-center">
-                  {withTooltip(branch || selectedRestaurant?.name || copy.workspace, <button type="button" onClick={onOpenCommand} aria-label={branch || selectedRestaurant?.name || copy.workspace} className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-300/10 text-orange-100 transition hover:bg-orange-300/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70"><Store className="h-5 w-5" /><span className="absolute bottom-1 left-1 h-1.5 w-1.5 rounded-full bg-emerald-400 ring-2 ring-[#101d31]" /></button>)}
+                  {withTooltip(branch || selectedRestaurant?.name || copy.workspace, <button type="button" onClick={onOpenCommand} aria-label={branch || selectedRestaurant?.name || copy.workspace} className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-300/10 text-orange-100 transition hover:bg-orange-300/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70"><Store className="h-5 w-5" /><span className="absolute bottom-1 end-1 h-1.5 w-1.5 rounded-full bg-emerald-400 ring-2 ring-[#101d31]" /></button>)}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -329,8 +329,8 @@ export function HomeSidebar({
           {isCentralAdmin && (
             <div className={`shrink-0 rounded-2xl border border-orange-300/15 bg-orange-400/[.07] p-1.5 ${sidebarCollapsed ? "space-y-1" : ""}`}>
               {!sidebarCollapsed && <p className="mb-1 px-2 text-[9px] font-bold tracking-[.14em] text-orange-200/90">{t("integrationsCenter")}</p>}
-              {withTooltip(t("integrationsCenter"), <button type="button" onClick={() => { window.location.href = integrationScope; }} aria-label={t("integrationsCenter")} className={`flex w-full items-center rounded-xl text-slate-200 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-10 justify-center" : "gap-2 px-2 py-1.5 text-right text-[11px]"}`}><Settings2 className="h-4 w-4 shrink-0" />{!sidebarCollapsed && <span className="truncate">{t("integrationsCenter")}</span>}</button>)}
-              {withTooltip(transferReceiptLabel, <a href="/admin/subscription-receipts" aria-label={transferReceiptLabel} className={`relative flex w-full items-center rounded-xl text-slate-200 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-10 justify-center" : "gap-2 px-2 py-1.5 text-right text-[11px]"}`}><ReceiptText className="h-4 w-4 shrink-0" />{!sidebarCollapsed && <span className="min-w-0 flex-1 truncate">{transferReceiptLabel}</span>}{pendingReceiptCount > 0 && <span className={`${sidebarCollapsed ? "absolute -right-0.5 -top-0.5" : ""} inline-flex min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 py-0.5 text-[9px] font-black text-white`}>{pendingReceiptCount > 99 ? "99+" : formatSidebarCount(pendingReceiptCount)}</span>}</a>)}
+              {withTooltip(t("integrationsCenter"), <button type="button" onClick={() => { window.location.href = integrationScope; }} aria-label={t("integrationsCenter")} className={`flex w-full items-center rounded-xl text-slate-200 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-10 justify-center" : "gap-2 px-2 py-1.5 text-start text-[11px]"}`}><Settings2 className="h-4 w-4 shrink-0" />{!sidebarCollapsed && <span className="truncate">{t("integrationsCenter")}</span>}</button>)}
+              {withTooltip(transferReceiptLabel, <a href="/admin/subscription-receipts" aria-label={transferReceiptLabel} className={`relative flex w-full items-center rounded-xl text-slate-200 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-10 justify-center" : "gap-2 px-2 py-1.5 text-start text-[11px]"}`}><ReceiptText className="h-4 w-4 shrink-0" />{!sidebarCollapsed && <span className="min-w-0 flex-1 truncate">{transferReceiptLabel}</span>}{pendingReceiptCount > 0 && <span className={`${sidebarCollapsed ? "absolute -end-0.5 -top-0.5" : ""} inline-flex min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 py-0.5 text-[9px] font-black text-white`}>{pendingReceiptCount > 99 ? "99+" : formatSidebarCount(pendingReceiptCount)}</span>}</a>)}
             </div>
           )}
 
@@ -340,13 +340,13 @@ export function HomeSidebar({
               <div className={sidebarCollapsed ? "space-y-1" : "grid grid-cols-2 gap-1"}>
                 {favoriteItems.map(item => {
                   const Icon = item.icon;
-                  return withTooltip(item.label, <button key={item.key} type="button" onClick={() => onNavigate(item.key)} aria-label={item.label} className={`flex items-center rounded-xl text-orange-100 transition hover:bg-orange-300/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "relative h-9 w-full justify-center" : "min-w-0 gap-1.5 px-2 py-1.5 text-right text-[10px]"}`}><Icon className="h-3.5 w-3.5 shrink-0" />{!sidebarCollapsed && <span className="truncate">{item.label}</span>}</button>);
+                  return withTooltip(item.label, <button key={item.key} type="button" onClick={() => onNavigate(item.key)} aria-label={item.label} className={`flex items-center rounded-xl text-orange-100 transition hover:bg-orange-300/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "relative h-9 w-full justify-center" : "min-w-0 gap-1.5 px-2 py-1.5 text-start text-[10px]"}`}><Icon className="h-3.5 w-3.5 shrink-0" />{!sidebarCollapsed && <span className="truncate">{item.label}</span>}</button>);
                 })}
               </div>
             </div>
           )}
 
-          <nav aria-label={language === "ar" ? "التنقل الرئيسي" : "Main navigation"} className="nfood-sidebar-nav nfood-scroll-area min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5">
+          <nav aria-label={t("navigation.main")} className="nfood-sidebar-nav nfood-scroll-area min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5">
             <LayoutGroup id={`nfood-sidebar-${String(managerId)}-${roleScope}`}>
               {groups.map(group => {
                 const groupKey = group.id ?? group.label;
@@ -355,7 +355,7 @@ export function HomeSidebar({
                 const hasActiveItem = group.items.some(item => item.key === active);
                 return (
                   <div key={groupKey} className={`nfood-sidebar-group rounded-2xl border p-1 transition-[border-color,background-color,box-shadow] duration-200 ${hasActiveItem ? "border-orange-300/25 bg-orange-300/[.06] shadow-lg shadow-orange-950/10" : "border-white/[.07] bg-white/[.025]"}`}>
-                    {withTooltip(group.label, <button type="button" aria-expanded={!isGroupCollapsed} onClick={() => setCollapsedGroups(current => ({ ...current, [groupKey]: !isGroupCollapsed }))} className={`flex w-full items-center rounded-xl text-right transition-[background-color,color] duration-200 hover:bg-white/[.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-9 justify-center" : "gap-2 px-1.5 py-1.5"}`}>
+                    {withTooltip(group.label, <button type="button" aria-expanded={!isGroupCollapsed} onClick={() => setCollapsedGroups(current => ({ ...current, [groupKey]: !isGroupCollapsed }))} className={`flex w-full items-center rounded-xl text-start transition-[background-color,color] duration-200 hover:bg-white/[.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-9 justify-center" : "gap-2 px-1.5 py-1.5"}`}>
                       <GroupIcon className={`h-3.5 w-3.5 shrink-0 ${hasActiveItem ? "text-orange-200" : "text-slate-400"}`} />
                       {!sidebarCollapsed && <><span className={`min-w-0 flex-1 truncate text-[10px] font-bold tracking-[.08em] ${hasActiveItem ? "text-orange-100" : "text-slate-300"}`}>{group.label}</span><span className="rounded-full bg-white/[.08] px-1.5 py-0.5 text-[9px] text-slate-500">{formatSidebarCount(group.items.length)}</span><ChevronDown className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform duration-200 ${isGroupCollapsed ? "-rotate-90" : ""}`} /></>}
                     </button>)}
@@ -366,7 +366,7 @@ export function HomeSidebar({
                             const Icon = item.icon;
                             const isActive = item.key === active;
                             const isFavorite = favoriteKeys.includes(item.key);
-                            const itemButton = <button type="button" onClick={() => onNavigate(item.key)} aria-label={item.label} className={`relative flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl text-right transition-[color,background-color,transform] duration-150 active:scale-[.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-10 justify-center px-0" : "px-2 py-2 text-xs"} ${isActive ? "font-bold text-white" : "text-slate-300 hover:bg-white/[.07] hover:text-white"}`}>
+                            const itemButton = <button type="button" onClick={() => onNavigate(item.key)} aria-label={item.label} className={`relative flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl text-start transition-[color,background-color,transform] duration-150 active:scale-[.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-10 justify-center px-0" : "px-2 py-2 text-xs"} ${isActive ? "font-bold text-white" : "text-slate-300 hover:bg-white/[.07] hover:text-white"}`}>
                               {isActive && <motion.span layoutId="activePill" transition={{ type: "spring", stiffness: 430, damping: 31 }} className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-500/95 to-orange-400/80 shadow-lg shadow-orange-950/30" />}
                               <Icon className={`relative z-10 shrink-0 transition-transform duration-200 ${sidebarCollapsed ? "h-[18px] w-[18px]" : "h-4 w-4"} ${isActive ? "text-white" : "text-slate-400"}`} />
                               {!sidebarCollapsed && <span className="relative z-10 min-w-0 flex-1 truncate">{item.label}</span>}
@@ -393,13 +393,13 @@ export function HomeSidebar({
           <div className={`rounded-2xl border border-white/[.08] bg-white/[.035] ${sidebarCollapsed ? "p-1" : "p-2"}`}>
             {sidebarCollapsed ? (
               <div className="flex flex-col items-center gap-1">
-                {withTooltip(`${copy.system}: ${getStatusLabel(systemStatus)}`, <button type="button" disabled={!canOpenHealth} onClick={() => { if (canOpenHealth) onNavigate("health"); }} aria-label={`${copy.system}: ${getStatusLabel(systemStatus)}`} className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-300 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 disabled:cursor-default disabled:opacity-80"><Activity className="h-4 w-4" /><span className={`absolute bottom-1 left-1 h-1.5 w-1.5 rounded-full ${statusStyles[systemStatus].dot}`} /></button>)}
-                {canOpenPrinters && withTooltip(`${copy.printers}: ${getStatusLabel(printerStatus)}`, <button type="button" onClick={() => onNavigate("printers")} aria-label={`${copy.printers}: ${getStatusLabel(printerStatus)}`} className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-300 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70"><Printer className="h-4 w-4" /><span className={`absolute bottom-1 left-1 h-1.5 w-1.5 rounded-full ${statusStyles[printerStatus].dot}`} /></button>)}
+                {withTooltip(`${copy.system}: ${getStatusLabel(systemStatus)}`, <button type="button" disabled={!canOpenHealth} onClick={() => { if (canOpenHealth) onNavigate("health"); }} aria-label={`${copy.system}: ${getStatusLabel(systemStatus)}`} className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-300 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 disabled:cursor-default disabled:opacity-80"><Activity className="h-4 w-4" /><span className={`absolute bottom-1 end-1 h-1.5 w-1.5 rounded-full ${statusStyles[systemStatus].dot}`} /></button>)}
+                {canOpenPrinters && withTooltip(`${copy.printers}: ${getStatusLabel(printerStatus)}`, <button type="button" onClick={() => onNavigate("printers")} aria-label={`${copy.printers}: ${getStatusLabel(printerStatus)}`} className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-300 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70"><Printer className="h-4 w-4" /><span className={`absolute bottom-1 end-1 h-1.5 w-1.5 rounded-full ${statusStyles[printerStatus].dot}`} /></button>)}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" disabled={!canOpenHealth} onClick={() => { if (canOpenHealth) onNavigate("health"); }} className="min-w-0 rounded-xl px-1.5 py-1 text-right transition hover:bg-white/[.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 disabled:cursor-default"><div className="mb-1 flex items-center gap-1.5 text-slate-400"><Activity className="h-3.5 w-3.5" /><span className="truncate text-[9px] font-bold">{copy.system}</span></div><StatusLed tone={systemStatus} label={getStatusLabel(systemStatus)} /></button>
-                {canOpenPrinters && <button type="button" onClick={() => onNavigate("printers")} className="min-w-0 rounded-xl px-1.5 py-1 text-right transition hover:bg-white/[.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70"><div className="mb-1 flex items-center gap-1.5 text-slate-400"><Printer className="h-3.5 w-3.5" /><span className="truncate text-[9px] font-bold">{copy.printers}</span></div><StatusLed tone={printerStatus} label={getStatusLabel(printerStatus)} /></button>}
+                <button type="button" disabled={!canOpenHealth} onClick={() => { if (canOpenHealth) onNavigate("health"); }} className="min-w-0 rounded-xl px-1.5 py-1 text-start transition hover:bg-white/[.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 disabled:cursor-default"><div className="mb-1 flex items-center gap-1.5 text-slate-400"><Activity className="h-3.5 w-3.5" /><span className="truncate text-[9px] font-bold">{copy.system}</span></div><StatusLed tone={systemStatus} label={getStatusLabel(systemStatus)} /></button>
+                {canOpenPrinters && <button type="button" onClick={() => onNavigate("printers")} className="min-w-0 rounded-xl px-1.5 py-1 text-start transition hover:bg-white/[.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70"><div className="mb-1 flex items-center gap-1.5 text-slate-400"><Printer className="h-3.5 w-3.5" /><span className="truncate text-[9px] font-bold">{copy.printers}</span></div><StatusLed tone={printerStatus} label={getStatusLabel(printerStatus)} /></button>}
               </div>
             )}
           </div>
