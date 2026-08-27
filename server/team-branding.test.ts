@@ -15,6 +15,18 @@ describe("team and branding controls", () => {
     expect(editor).toContain("animate-spin");
   });
 
+  it("separates restaurant identity from menu layout settings", () => {
+    const modules = read("client/src/components/HomeModules.tsx");
+    expect(modules).toContain('data-restaurant-identity-card');
+    expect(modules).toContain('id="menu-layouts"');
+    expect(modules).toContain('data-menu-layouts-card');
+    expect(modules).toContain("هذا القسم للهوية فقط");
+    expect(modules).toContain("قسم مستقل بالكامل عن الهوية");
+    expect(modules).toContain('data-identity-preview');
+    expect(modules).not.toContain('import { BrandingEditorPanel }');
+    expect(modules).not.toContain('<BrandingEditorPanel restaurantId={restaurantId} />');
+  });
+
   it("keeps detailed permissions and audit procedures protected", () => {
     const permissions = read("shared/rolePermissions.ts");
     const router = read("server/routers.ts");

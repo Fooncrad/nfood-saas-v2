@@ -103,7 +103,6 @@ import { RestaurantIntegrationSettings } from "@/components/RestaurantIntegratio
 import { CustomerRewardsWalletPanel } from "@/components/CustomerRewardsWalletPanel";
 import { ReceiptCustomizationPanel } from "@/components/ReceiptCustomizationPanel";
 import { BrandingFeatureMatrix } from "@/components/BrandingFeatureMatrix";
-import { BrandingEditorPanel } from "@/components/BrandingEditorPanel";
 import { ReceiptDeliveryPanel } from "@/components/ReceiptDeliveryPanel";
 import { EmailTemplatesPanel } from "@/components/EmailTemplatesPanel";
 import { KitchenTicketBoard } from "@/components/KitchenTicketBoard";
@@ -9015,7 +9014,7 @@ const menuScheduleDays = [
 type MenuTemplateId = (typeof restaurantMenuTemplates)[number]["id"];
 type MenuTemplateRuleDraft = { days: number[]; start: string; end: string; template: MenuTemplateId };
 const defaultMenuTemplateRule: MenuTemplateRuleDraft = { days: [0, 1, 2, 3, 4, 5, 6], start: "18:00", end: "02:00", template: "glass" };
-function BrandingPanel({ restaurantId }: { restaurantId: number }) {
+function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number; section?: "all" | "identity" | "layouts" }) {
   const { user } = useAuth();
   const utils = trpc.useUtils();
   const brandingQuery = trpc.platform.branding.useQuery(
@@ -9192,15 +9191,23 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
   const setOneLineItemName = (oneLineItemName: boolean) => setDraft(current => ({ ...current, menuDisplaySettingsJson: JSON.stringify({ ...menuDisplayDraft, oneLineItemName }) }));
   const setMenuCustomizationValue = (patch: Partial<typeof defaultMenuDisplaySettings>) => setDraft(current => ({ ...current, menuDisplaySettingsJson: JSON.stringify({ ...menuDisplayDraft, ...patch }) }));
   const resetMenuCustomization = () => { setDraft(current => ({ ...current, menuDisplaySettingsJson: JSON.stringify(defaultMenuDisplaySettings) })); toast.success("تمت إعادة تخصيص المنيو إلى الإعدادات الافتراضية"); };
+  const showIdentity = section !== "layouts";
+  const showMenuLayouts = section !== "identity";
+  const saveBrandingDraft = () => {
+    const { customDomain: _customDomain, menuTemplateScheduleEnabled: _scheduleEnabled, menuTemplateScheduleTimezone: _scheduleTimezone, menuTemplateScheduleFallback: _scheduleFallback, menuTemplateScheduleRules: _scheduleRules, ...brandingDraft } = draft;
+    updateBranding.mutate({ restaurantId, ...brandingDraft, menuDisplaySettingsJson: draft.menuDisplaySettingsJson, menuTemplateScheduleJson: JSON.stringify({ enabled: draft.menuTemplateScheduleEnabled, timezone: draft.menuTemplateScheduleTimezone, fallbackTemplate: draft.menuTemplateScheduleFallback, rules: draft.menuTemplateScheduleRules }), menuTemplateScheduleTimezone: draft.menuTemplateScheduleTimezone });
+  };
   return (
-    <Card className="mb-6 overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-base">هوية المطعم وWhite Label</CardTitle>
-        <p className="text-xs text-slate-500">
-          خصّص الاسم واللون والوصف الذي يظهران لعملاء هذا المطعم.
-        </p>
-      </CardHeader>
-      <CardContent>
+    <div className="space-y-6" data-branding-settings data-branding-section={section}>
+      {showIdentity && (
+      <Card className="rounded-2xl border-slate-200 bg-white shadow-sm" data-restaurant-identity-card>
+        <CardHeader className="border-b border-slate-100 pb-4">
+          <CardTitle className="text-base">هوية المطعم وWhite Label</CardTitle>
+          <p className="text-xs text-slate-500">
+            هذا القسم للهوية فقط: الاسم، الشعار، الألوان، التواصل، المحتوى، وSEO.
+          </p>
+        </CardHeader>
+        <CardContent className="pt-5">
         {brandingQuery.isError ? (
           <div className="p-4 text-sm text-red-600">
             تعذر تحميل الهوية. Request ID: branding-{restaurantId}{" "}
@@ -9216,7 +9223,7 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
             جارٍ تحميل هوية المطعم...
           </div>
         ) : (
-          <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
+          <div className="max-w-5xl">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm font-semibold">
                 اسم العرض
@@ -9303,45 +9310,6 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
                     </button>
                   ))}
                 </div>
-                <div className="hidden" data-legacy-menu-template-controls><p className="mb-2 text-sm font-semibold">القالب الافتراضي للمنيو</p>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {restaurantMenuTemplates.map(template => (
-                    <button
-                      key={template.id}
-                      type="button"
-                      aria-pressed={draft.menuTemplate === template.id}
-                      onClick={() => setDraft({ ...draft, menuTemplate: template.id })}
-                      className={`rounded-xl border p-2 text-right transition ${draft.menuTemplate === template.id ? "border-orange-400 bg-orange-50 shadow-sm" : "border-slate-200 bg-slate-50 hover:border-orange-200"}`}
-                    >
-                      <span className="mb-2 block h-8 rounded-lg" style={{ background: template.swatch }} />
-                      <span className="block text-xs font-black text-slate-800">{template.name}</span>
-                      <span className="mt-0.5 block text-[10px] text-slate-500">{template.description}</span>
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-slate-500">
-                  سيظهر القالب والوضع المختار في صفحة المنيو العامة بعد الحفظ. يمكن للزائر معاينة نمط آخر مؤقتًا.
-                </p></div>
-              </div>
-              <section className="space-y-3 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 sm:col-span-2" data-menu-template-schedule>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h3 className="flex items-center gap-2 text-sm font-black text-slate-900"><Clock3 className="h-4 w-4 text-indigo-600" />جدولة قالب المنيو</h3>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">فعّل التبديل التلقائي حسب توقيت المطعم. المثال الافتراضي يعرض NFOOD Glass من 18:00 حتى 02:00.</p>
-                  </div>
-                  <button type="button" role="switch" aria-checked={draft.menuTemplateScheduleEnabled} onClick={() => setDraft(current => ({ ...current, menuTemplateScheduleEnabled: !current.menuTemplateScheduleEnabled }))} className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${draft.menuTemplateScheduleEnabled ? "bg-indigo-600" : "bg-slate-300"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${draft.menuTemplateScheduleEnabled ? "start-6" : "start-1"}`} /></button>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="space-y-1 text-xs font-bold">القالب خارج الفترات<select value={draft.menuTemplateScheduleFallback} onChange={event => setDraft({ ...draft, menuTemplateScheduleFallback: event.target.value as MenuTemplateId })} className="mt-1 h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-sm"><option value="editorial">Editorial</option><option value="bistro">Bistro</option><option value="glass">NFOOD Glass</option></select></label>
-                  <label className="space-y-1 text-xs font-bold">المنطقة الزمنية<select value={draft.menuTemplateScheduleTimezone} onChange={event => setDraft({ ...draft, menuTemplateScheduleTimezone: event.target.value })} className="mt-1 h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-sm" dir="ltr"><option value="Asia/Riyadh">Asia/Riyadh · الرياض</option><option value="Asia/Dubai">Asia/Dubai · دبي</option><option value="Africa/Cairo">Africa/Cairo · القاهرة</option><option value="Europe/Paris">Europe/Paris · باريس</option><option value="UTC">UTC</option></select></label>
-                </div>
-                <div className="space-y-2">
-                  {draft.menuTemplateScheduleRules.map((rule, index) => <div key={`schedule-rule-${index}`} className="rounded-xl border border-indigo-100 bg-white p-3 shadow-sm"><div className="flex flex-wrap items-end gap-2"><label className="text-xs font-bold">من<input type="time" value={rule.start} onChange={event => updateScheduleRule(index, { start: event.target.value })} className="mt-1 h-9 rounded-lg border border-slate-200 px-2 text-sm" dir="ltr" /></label><label className="text-xs font-bold">إلى<input type="time" value={rule.end} onChange={event => updateScheduleRule(index, { end: event.target.value })} className="mt-1 h-9 rounded-lg border border-slate-200 px-2 text-sm" dir="ltr" /></label><label className="min-w-40 flex-1 text-xs font-bold">القالب<select value={rule.template} onChange={event => updateScheduleRule(index, { template: event.target.value as MenuTemplateId })} className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-sm"><option value="editorial">Editorial</option><option value="bistro">Bistro</option><option value="glass">NFOOD Glass</option></select></label><button type="button" onClick={() => removeScheduleRule(index)} disabled={draft.menuTemplateScheduleRules.length <= 1} className="h-9 rounded-lg px-2 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40" aria-label="حذف فترة الجدولة">حذف</button></div><div className="mt-2 flex flex-wrap gap-1">{menuScheduleDays.map(day => <button key={day.value} type="button" aria-pressed={rule.days.includes(day.value)} onClick={() => toggleScheduleDay(index, day.value)} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${rule.days.includes(day.value) ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500 hover:bg-indigo-50"}`}>{day.label}</button>)}</div></div>)}
-                  <div className="flex flex-wrap items-center justify-between gap-2"><button type="button" onClick={addScheduleRule} disabled={draft.menuTemplateScheduleRules.length >= 12} className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 disabled:opacity-40"><Plus className="h-3.5 w-3.5" />إضافة فترة</button><Button type="button" onClick={saveSchedule} disabled={updateMenuTemplateSchedule.isPending || (draft.menuTemplateScheduleEnabled && draft.menuTemplateScheduleRules.some(rule => !rule.days.length))} className="rounded-lg bg-indigo-600 px-3 py-2 text-xs hover:bg-indigo-700">{updateMenuTemplateSchedule.isPending ? "جارٍ حفظ الجدولة..." : "حفظ الجدولة"}</Button></div>
-                </div>
-              </section>
-              {draft.menuTemplate === "glass" && <section className="space-y-3 rounded-2xl border border-slate-700 bg-slate-950 p-4 text-white sm:col-span-2" data-glass-customization><div className="flex items-start gap-3"><SlidersHorizontal className="mt-0.5 h-5 w-5 text-orange-400" /><div><h3 className="text-sm font-black">تخصيص NFOOD Glass</h3><p className="mt-1 text-xs leading-5 text-slate-400">اضبط لون التوهج ووضوح البطاقات، وستظهر القيم في المعاينة والمنيو العام بعد الحفظ.</p></div></div><div className="grid gap-3 sm:grid-cols-2"><label className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs font-bold">لون التوهج<div className="mt-2 flex items-center gap-2"><input type="color" value={draft.glassGlowColor} onChange={event => setDraft({ ...draft, glassGlowColor: event.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border-0 bg-transparent" aria-label="لون توهج NFOOD Glass" /><Input value={draft.glassGlowColor} onChange={event => setDraft({ ...draft, glassGlowColor: event.target.value })} dir="ltr" className="h-9 border-white/10 bg-white/10 font-mono text-xs text-white" /></div></label><label className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs font-bold">شفافية البطاقات<div className="mt-3 flex items-center gap-3"><input type="range" min="0.05" max="0.35" step="0.01" value={draft.glassCardOpacity} onChange={event => setDraft({ ...draft, glassCardOpacity: Number(event.target.value) })} className="w-full accent-orange-500" /><span className="min-w-12 rounded-lg bg-white/10 px-2 py-1 text-center font-mono text-[11px] text-orange-300">{Math.round(draft.glassCardOpacity * 100)}%</span></div><div className="mt-1 flex justify-between text-[10px] font-normal text-slate-500"><span>أكثر شفافية</span><span>أوضح</span></div></label></div></section>}
-              <section className="space-y-4 rounded-2xl border border-orange-100 bg-orange-50/50 p-4 sm:col-span-2" data-menu-display-settings data-menu-layouts id="menu-layouts"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="mb-2 inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-[10px] font-black text-orange-800"><SlidersHorizontal className="h-3.5 w-3.5" />مركز التحكم المرئي</div><h3 className="text-base font-black text-slate-900">تخطيطات المنيو</h3><p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500">مكان واحد للتحكم في شكل المنيو بالكامل: القوالب، البطاقات، الصور، الألوان، الخطوط، التنقل، وشريط الفئات، مع معاينة مباشرة قبل الحفظ.</p></div><div className="flex items-center gap-2"><div className="flex flex-wrap items-center gap-1.5"><span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-orange-700">معاينة فورية</span><button type="button" onClick={resetMenuCustomization} className="rounded-lg border border-orange-200 bg-white px-2.5 py-1.5 text-[10px] font-black text-orange-700 hover:bg-orange-50">إعادة ضبط الافتراضي</button></div></div></div><nav aria-label="أقسام تخطيطات المنيو" className="flex flex-wrap gap-2 rounded-xl border border-orange-100 bg-white/75 p-2"><span className="rounded-lg bg-slate-900 px-3 py-1.5 text-[10px] font-black text-white">القوالب</span><span className="rounded-lg bg-orange-50 px-3 py-1.5 text-[10px] font-bold text-orange-800">البطاقات والصور</span><span className="rounded-lg bg-orange-50 px-3 py-1.5 text-[10px] font-bold text-orange-800">الألوان والخطوط</span><span className="rounded-lg bg-orange-50 px-3 py-1.5 text-[10px] font-bold text-orange-800">التنقل والفئات</span></nav><section className="rounded-xl border border-orange-100 bg-white p-3" data-menu-template-controls><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-black text-slate-800">القالب الأساسي للمنيو</p><p className="mt-1 text-[10px] text-slate-500">اختر النمط من داخل تخطيطات المنيو، وستظهر النتيجة فورًا في المعاينة.</p></div><span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-bold text-orange-700">جزء من التخطيطات</span></div><div className="mt-3 grid gap-2 sm:grid-cols-3">{restaurantMenuTemplates.map(template => <button key={template.id} type="button" aria-pressed={draft.menuTemplate === template.id} onClick={() => setDraft(current => ({ ...current, menuTemplate: template.id }))} className={`rounded-xl border p-2 text-right transition ${draft.menuTemplate === template.id ? "border-orange-400 bg-orange-50 shadow-sm" : "border-slate-200 bg-slate-50 hover:border-orange-200"}`}><span className="mb-2 block h-7 rounded-lg" style={{ background: template.swatch }} /><span className="block text-xs font-black text-slate-800">{template.name}</span><span className="mt-0.5 block text-[10px] text-slate-500">{template.description}</span></button>)}</div></section><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{(Object.keys(menuToolLabels) as MenuDisplayToolKey[]).map(key => <label key={key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-white bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm"><input type="checkbox" checked={menuDisplayDraft.tools[key]} onChange={() => toggleMenuTool(key)} className="h-4 w-4 accent-orange-500" />{menuToolLabels[key]}</label>)}</div><label className="flex cursor-pointer items-center gap-2 rounded-xl border border-white bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm"><input type="checkbox" checked={menuDisplayDraft.showCustomerAccount} onChange={event => setDraft(current => ({ ...current, menuDisplaySettingsJson: JSON.stringify({ ...menuDisplayDraft, showCustomerAccount: event.target.checked }) }))} className="h-4 w-4 accent-orange-500" />إظهار التسجيل والدخول للعميل في الهيدر</label><div className="rounded-xl border border-white bg-white p-3"><p className="text-xs font-black text-slate-700">تخطيط شبكة الأصناف</p><p className="mt-1 text-[11px] text-slate-500">اختر عدد البطاقات في الصف على الشاشات الكبيرة.</p><div className="mt-2 grid grid-cols-4 gap-2">{([4, 3, 2, 1] as MenuGridColumns[]).map(columns => <button key={columns} type="button" onClick={() => setMenuGridColumns(columns)} aria-pressed={menuDisplayDraft.gridColumns === columns} className={`rounded-xl border px-2 py-2 text-xs font-black transition ${menuDisplayDraft.gridColumns === columns ? "border-orange-500 bg-orange-500 text-white shadow-sm" : "border-slate-100 bg-slate-50 text-slate-600 hover:border-orange-200"}`}>{columns}×{columns}<span className="mt-1 block text-[10px] font-medium opacity-70">{columns === 4 ? "كثيف" : columns === 3 ? "متوازن" : columns === 2 ? "واسع" : "مفرد"}</span></button>)}</div><div className="mt-3 rounded-xl border border-orange-200 bg-slate-950 p-3 text-white" data-menu-grid-live-preview><div className="flex items-center justify-between gap-2"><div><p className="text-xs font-black">معاينة مباشرة للتخطيط</p><p className="mt-1 text-[10px] text-white/60">تتغير فورًا قبل اعتماد الحفظ: {menuDisplayDraft.gridColumns}×{menuDisplayDraft.gridColumns}</p></div><span className="rounded-full bg-orange-500/20 px-2 py-1 text-[10px] font-black text-orange-200">مسودة</span></div><div className="mt-3 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${menuDisplayDraft.gridColumns}, minmax(0, 1fr))` }}>{Array.from({ length: menuDisplayDraft.gridColumns === 1 ? 4 : menuDisplayDraft.gridColumns * 2 }, (_, index) => <div key={index} className="min-h-10 rounded-lg border border-white/10 bg-white/10 p-1.5"><div className="h-4 rounded bg-white/15" /><div className="mt-1 h-1.5 w-3/4 rounded bg-orange-300/70" /></div>)}</div></div><div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr]"><div className="rounded-xl border border-white bg-white p-3"><p className="text-xs font-black text-slate-700">نسبة صورة الصنف</p><p className="mt-1 text-[11px] text-slate-500">تحكم في شكل الصورة داخل بطاقة المنيو.</p><div className="mt-2 grid grid-cols-3 gap-2">{([{ id: "square", label: "مربعة", ratio: "1 / 1" }, { id: "portrait", label: "طولية", ratio: "4 / 5" }, { id: "landscape", label: "أفقية", ratio: "4 / 3" }] as const).map(option => <button key={option.id} type="button" onClick={() => setMenuImageRatio(option.id)} aria-pressed={menuDisplayDraft.imageRatio === option.id} className={`rounded-lg border px-2 py-2 text-[11px] font-black ${menuDisplayDraft.imageRatio === option.id ? "border-orange-500 bg-orange-500 text-white" : "border-slate-100 bg-slate-50 text-slate-600 hover:border-orange-200"}`}>{option.label}<span className="mt-1 block text-[10px] font-normal opacity-70">{option.ratio}</span></button>)}</div></div><label className="flex cursor-pointer items-start gap-2 rounded-xl border border-white bg-white p-3 text-xs font-bold text-slate-700"><input type="checkbox" checked={menuDisplayDraft.oneLineItemName} onChange={event => setOneLineItemName(event.target.checked)} className="mt-0.5 h-4 w-4 accent-orange-500" /><span><span className="block">اسم الصنف في سطر واحد</span><span className="mt-1 block text-[10px] font-normal text-slate-500">يقلل الزحام البصري ويقص الاسم الطويل بسطر واحد.</span></span></label></div><div className="mt-3 grid gap-3 lg:grid-cols-3"><label className="rounded-xl border border-white bg-white p-3 text-xs font-bold text-slate-700">خلفية المنيو<div className="mt-2 flex items-center gap-2"><input type="color" value={menuDisplayDraft.menuBackgroundColor} onChange={event => setMenuCustomizationValue({ menuBackgroundColor: event.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border border-slate-200 bg-white p-1" aria-label="لون خلفية المنيو" /><Input value={menuDisplayDraft.menuBackgroundColor} onChange={event => setMenuCustomizationValue({ menuBackgroundColor: event.target.value })} dir="ltr" className="h-9 font-mono text-xs" /></div></label><label className="rounded-xl border border-white bg-white p-3 text-xs font-bold text-slate-700">نصوص البطاقات<div className="mt-2 flex items-center gap-2"><input type="color" value={menuDisplayDraft.cardTextColor} onChange={event => setMenuCustomizationValue({ cardTextColor: event.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border border-slate-200 bg-white p-1" aria-label="لون نصوص البطاقات" /><Input value={menuDisplayDraft.cardTextColor} onChange={event => setMenuCustomizationValue({ cardTextColor: event.target.value })} dir="ltr" className="h-9 font-mono text-xs" /></div></label><div className="rounded-xl border border-white bg-white p-3 text-xs font-bold text-slate-700"><span className="block">زر إضافة للسلة</span><div className="mt-2 flex items-center gap-2"><input type="color" value={menuDisplayDraft.cartButtonColor} onChange={event => setMenuCustomizationValue({ cartButtonColor: event.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border border-slate-200 bg-white p-1" aria-label="لون زر إضافة للسلة" /><div className="grid flex-1 grid-cols-3 gap-1">{([{ id: "filled", label: "ممتلئ" }, { id: "soft", label: "ناعم" }, { id: "outline", label: "حدود" }] as const).map(style => <button key={style.id} type="button" onClick={() => setMenuCustomizationValue({ cartButtonStyle: style.id })} aria-pressed={menuDisplayDraft.cartButtonStyle === style.id} className={`rounded-md px-1 py-2 text-[10px] font-black ${menuDisplayDraft.cartButtonStyle === style.id ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-600"}`}>{style.label}</button>)}</div></div></div></div><div className="mt-3 rounded-xl border border-orange-200 bg-slate-950 p-3 text-white" data-menu-card-live-preview><div className="flex items-center justify-between gap-2"><div><p className="text-xs font-black">معاينة مباشرة لبطاقة الصنف</p><p className="mt-1 text-[10px] text-white/60">تتغير مع كل اختيار قبل حفظ المنيو.</p></div><span className="rounded-full bg-orange-500/20 px-2 py-1 text-[10px] font-black text-orange-200">مسودة</span></div><div className="mt-3 flex max-w-sm overflow-hidden rounded-xl border border-white/10 bg-white/10" dir="rtl"><div className="w-1/2 shrink-0 bg-gradient-to-br from-orange-200/50 to-white/10" style={{ aspectRatio: menuDisplayDraft.imageRatio === "portrait" ? "4 / 5" : menuDisplayDraft.imageRatio === "landscape" ? "4 / 3" : "1 / 1" }} /><div className="flex min-w-0 flex-1 flex-col justify-between p-2"><strong className={`text-xs font-black text-orange-200 ${menuDisplayDraft.oneLineItemName ? "truncate" : "line-clamp-2"}`}>برغر ناصر المشوي</strong><p className="mt-1 line-clamp-2 text-[10px] text-white/70">شرح مبسط للصنف يظهر تحت السعر.</p><div className="mt-2 flex items-center justify-between"><span className="text-xs font-black">32 ر.س</span><span className="rounded-md bg-orange-500 px-2 py-1 text-[10px] font-bold">+ السلة</span></div></div></div></div></div></section>
               <label className="space-y-2 text-sm font-semibold sm:col-span-2">
                 رابط الشعار
                 <Input
@@ -9680,88 +9648,72 @@ function BrandingPanel({ restaurantId }: { restaurantId: number }) {
                   !/^#[0-9A-Fa-f]{6}$/.test(draft.brandColor) ||
                   draft.brandName.trim().length < 2
                 }
-                onClick={() => {
-                  const { customDomain: _customDomain, menuTemplateScheduleEnabled: _scheduleEnabled, menuTemplateScheduleTimezone: _scheduleTimezone, menuTemplateScheduleFallback: _scheduleFallback, menuTemplateScheduleRules: _scheduleRules, ...brandingDraft } = draft;
-                  updateBranding.mutate({ restaurantId, ...brandingDraft, menuDisplaySettingsJson: draft.menuDisplaySettingsJson, menuTemplateScheduleJson: JSON.stringify({ enabled: draft.menuTemplateScheduleEnabled, timezone: draft.menuTemplateScheduleTimezone, fallbackTemplate: draft.menuTemplateScheduleFallback, rules: draft.menuTemplateScheduleRules }), menuTemplateScheduleTimezone: draft.menuTemplateScheduleTimezone });
-                }}
-                className="w-fit rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]"
+                onClick={saveBrandingDraft}
+                className="w-fit rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e] sm:col-span-2"
               >
                 {updateBranding.isPending ? "جارٍ الحفظ..." : "حفظ الهوية"}
               </Button>
             </div>
-            <div
-              data-menu-template-preview={draft.menuTemplate}
-              className={`rounded-2xl p-5 text-white shadow-inner transition-colors ${draft.menuTemplate === "glass" ? "border border-white/15" : ""}`}
-              style={{
-                  background: draft.menuTemplate === "glass"
-                    ? `radial-gradient(circle at 85% 0%, ${draft.glassGlowColor}55, transparent 42%), linear-gradient(135deg, #0b0f17, #111c2d)`
-                    : /^#[0-9A-Fa-f]{6}$/.test(draft.brandColor)
-                      ? draft.brandColor
-                      : "#e76f3c",
-              }}
-            >
-              <div className="flex items-center justify-between gap-2">
+            <aside className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4" data-identity-preview>
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs opacity-80">
-                    معاينة حية · {draft.menuTemplate === "glass" ? "NFOOD Glass" : draft.menuTemplate === "bistro" ? "Bistro" : "Editorial"}
-                  </p>
-                  {brandingQuery.data?.slug && (
-                    <p
-                      className="mt-1 max-w-[220px] truncate font-mono text-[10px] text-white/75"
-                      dir="ltr"
-                    >
-                      {publicOrigin}/restaurant/{brandingQuery.data.slug}
-                    </p>
-                  )}
+                  <p className="text-xs font-black text-slate-900">معاينة الهوية</p>
+                  <p className="mt-1 text-[10px] text-slate-500">معاينة مختصرة مستقلة عن تخطيط المنيو.</p>
                 </div>
-                {brandingQuery.data?.slug && (
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={openPublicPreview}
-                      className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 text-[10px] font-semibold text-white hover:bg-white/25"
-                    >
-                      <Eye className="h-3 w-3" /> فتح معاينة المنيو
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void navigator.clipboard?.writeText(publicPreviewUrl);
-                        toast.success("تم نسخ رابط المطعم");
-                      }}
-                      className="rounded-lg bg-white/15 px-2 py-1 text-[10px] font-semibold text-white hover:bg-white/25"
-                    >
-                      نسخ
-                    </button>
-                  </div>
+                <span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-slate-500">هوية فقط</span>
+              </div>
+              <div className="mt-3 flex items-center gap-3 rounded-2xl p-3 text-white" style={{ background: /^#[0-9A-Fa-f]{6}$/.test(draft.brandColor) ? draft.brandColor : "#e76f3c" }}>
+                {draft.brandLogoUrl ? (
+                  <img src={draft.brandLogoUrl} alt="شعار المطعم" className="h-12 w-12 rounded-xl bg-white/90 object-contain p-2" />
+                ) : (
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/20 text-lg font-black">{draft.brandName.slice(0, 1) || "N"}</div>
                 )}
-              </div>
-              {draft.brandLogoUrl ? (
-                <img
-                  src={draft.brandLogoUrl}
-                  alt="شعار المطعم"
-                  className="mt-5 h-14 w-14 rounded-2xl bg-white/90 object-contain p-2"
-                />
-              ) : (
-                <div className="mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-xl font-bold">
-                  {draft.brandName.slice(0, 1) || "N"}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black">{draft.brandName || "اسم المطعم"}</p>
+                  <p className="mt-1 line-clamp-2 text-[10px] text-white/80">{draft.brandDescription || "وصف المطعم سيظهر هنا بعد الحفظ."}</p>
                 </div>
-              )}
-              <h3 className="mt-5 text-lg font-bold">
-                {draft.brandName || "اسم المطعم"}
-              </h3>
-              <p className="mt-2 text-xs leading-5 text-white/80">
-                {draft.brandDescription || "وصف المطعم سيظهر هنا بعد الحفظ."}
-              </p>
-              <div className={`mt-5 rounded-2xl p-3 ${draft.menuTemplate === "glass" ? "border border-white/15 backdrop-blur-xl" : draft.menuTemplate === "bistro" ? "bg-white/15" : "bg-white/10"}`} style={draft.menuTemplate === "glass" ? { backgroundColor: `rgba(255,255,255,${draft.glassCardOpacity})` } : undefined}>
-                <div className="flex items-center justify-between gap-2 text-[10px] font-black"><span>الأقسام</span><span className="rounded-full bg-white/15 px-2 py-1">السلة · 0</span></div>
-                <div className="mt-3 grid grid-cols-2 gap-2"><div className="rounded-xl bg-white/15 p-2"><span className="block h-2 w-2/3 rounded-full bg-white/60" /><span className="mt-2 block h-2 w-1/2 rounded-full bg-white/25" /><strong className="mt-3 block text-[10px]">طبق اليوم · 32 SAR</strong></div><div className="rounded-xl bg-white/15 p-2"><span className="block h-2 w-3/4 rounded-full bg-white/60" /><span className="mt-2 block h-2 w-1/2 rounded-full bg-white/25" /><strong className="mt-3 block text-[10px]">اختيار الشيف · 28 SAR</strong></div></div>
               </div>
+            </aside>
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      )}
+      {showMenuLayouts && (
+      <Card id="menu-layouts" className="rounded-2xl border-orange-200 bg-white shadow-sm" data-menu-layouts-card>
+        <CardHeader className="border-b border-orange-100 bg-orange-50/60 pb-4">
+          <CardTitle className="flex items-center gap-2 text-base text-slate-900"><SlidersHorizontal className="h-5 w-5 text-orange-600" />تخطيطات المنيو</CardTitle>
+          <p className="text-xs leading-5 text-slate-600">قسم مستقل بالكامل عن الهوية. هنا فقط تضبط القالب، البطاقات، الصور، الألوان، التنقل، الجدولة، والمعاينة المباشرة للمنيو.</p>
+        </CardHeader>
+        <CardContent className="space-y-4 p-4 sm:p-6">
+                        <section className="space-y-4 rounded-2xl border border-orange-100 bg-orange-50/50 p-4 sm:col-span-2" data-menu-display-settings data-menu-layouts-content><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="mb-2 inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-[10px] font-black text-orange-800"><SlidersHorizontal className="h-3.5 w-3.5" />مركز التحكم المرئي</div><h3 className="text-base font-black text-slate-900">أدوات تخطيط المنيو</h3><p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500">مكان واحد للتحكم في شكل المنيو بالكامل: القوالب، البطاقات، الصور، الألوان، الخطوط، التنقل، وشريط الفئات، مع معاينة مباشرة قبل الحفظ.</p></div><div className="flex items-center gap-2"><div className="flex flex-wrap items-center gap-1.5"><span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-orange-700">معاينة فورية</span><button type="button" onClick={resetMenuCustomization} className="rounded-lg border border-orange-200 bg-white px-2.5 py-1.5 text-[10px] font-black text-orange-700 hover:bg-orange-50">إعادة ضبط الافتراضي</button></div></div></div><nav aria-label="أقسام تخطيطات المنيو" className="flex flex-wrap gap-2 rounded-xl border border-orange-100 bg-white/75 p-2"><span className="rounded-lg bg-slate-900 px-3 py-1.5 text-[10px] font-black text-white">القوالب</span><span className="rounded-lg bg-orange-50 px-3 py-1.5 text-[10px] font-bold text-orange-800">البطاقات والصور</span><span className="rounded-lg bg-orange-50 px-3 py-1.5 text-[10px] font-bold text-orange-800">الألوان والخطوط</span><span className="rounded-lg bg-orange-50 px-3 py-1.5 text-[10px] font-bold text-orange-800">التنقل والفئات</span></nav><section className="rounded-xl border border-orange-100 bg-white p-3" data-menu-template-controls><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-black text-slate-800">القالب الأساسي للمنيو</p><p className="mt-1 text-[10px] text-slate-500">اختر النمط من داخل تخطيطات المنيو، وستظهر النتيجة فورًا في المعاينة.</p></div><span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-bold text-orange-700">جزء من التخطيطات</span></div><div className="mt-3 grid gap-2 sm:grid-cols-3">{restaurantMenuTemplates.map(template => <button key={template.id} type="button" aria-pressed={draft.menuTemplate === template.id} onClick={() => setDraft(current => ({ ...current, menuTemplate: template.id }))} className={`rounded-xl border p-2 text-right transition ${draft.menuTemplate === template.id ? "border-orange-400 bg-orange-50 shadow-sm" : "border-slate-200 bg-slate-50 hover:border-orange-200"}`}><span className="mb-2 block h-7 rounded-lg" style={{ background: template.swatch }} /><span className="block text-xs font-black text-slate-800">{template.name}</span><span className="mt-0.5 block text-[10px] text-slate-500">{template.description}</span></button>)}</div></section><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{(Object.keys(menuToolLabels) as MenuDisplayToolKey[]).map(key => <label key={key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-white bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm"><input type="checkbox" checked={menuDisplayDraft.tools[key]} onChange={() => toggleMenuTool(key)} className="h-4 w-4 accent-orange-500" />{menuToolLabels[key]}</label>)}</div><label className="flex cursor-pointer items-center gap-2 rounded-xl border border-white bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm"><input type="checkbox" checked={menuDisplayDraft.showCustomerAccount} onChange={event => setDraft(current => ({ ...current, menuDisplaySettingsJson: JSON.stringify({ ...menuDisplayDraft, showCustomerAccount: event.target.checked }) }))} className="h-4 w-4 accent-orange-500" />إظهار التسجيل والدخول للعميل في الهيدر</label><div className="rounded-xl border border-white bg-white p-3"><p className="text-xs font-black text-slate-700">تخطيط شبكة الأصناف</p><p className="mt-1 text-[11px] text-slate-500">اختر عدد البطاقات في الصف على الشاشات الكبيرة.</p><div className="mt-2 grid grid-cols-4 gap-2">{([4, 3, 2, 1] as MenuGridColumns[]).map(columns => <button key={columns} type="button" onClick={() => setMenuGridColumns(columns)} aria-pressed={menuDisplayDraft.gridColumns === columns} className={`rounded-xl border px-2 py-2 text-xs font-black transition ${menuDisplayDraft.gridColumns === columns ? "border-orange-500 bg-orange-500 text-white shadow-sm" : "border-slate-100 bg-slate-50 text-slate-600 hover:border-orange-200"}`}>{columns}×{columns}<span className="mt-1 block text-[10px] font-medium opacity-70">{columns === 4 ? "كثيف" : columns === 3 ? "متوازن" : columns === 2 ? "واسع" : "مفرد"}</span></button>)}</div><div className="mt-3 rounded-xl border border-orange-200 bg-slate-950 p-3 text-white" data-menu-grid-live-preview><div className="flex items-center justify-between gap-2"><div><p className="text-xs font-black">معاينة مباشرة للتخطيط</p><p className="mt-1 text-[10px] text-white/60">تتغير فورًا قبل اعتماد الحفظ: {menuDisplayDraft.gridColumns}×{menuDisplayDraft.gridColumns}</p></div><span className="rounded-full bg-orange-500/20 px-2 py-1 text-[10px] font-black text-orange-200">مسودة</span></div><div className="mt-3 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${menuDisplayDraft.gridColumns}, minmax(0, 1fr))` }}>{Array.from({ length: menuDisplayDraft.gridColumns === 1 ? 4 : menuDisplayDraft.gridColumns * 2 }, (_, index) => <div key={index} className="min-h-10 rounded-lg border border-white/10 bg-white/10 p-1.5"><div className="h-4 rounded bg-white/15" /><div className="mt-1 h-1.5 w-3/4 rounded bg-orange-300/70" /></div>)}</div></div><div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr]"><div className="rounded-xl border border-white bg-white p-3"><p className="text-xs font-black text-slate-700">نسبة صورة الصنف</p><p className="mt-1 text-[11px] text-slate-500">تحكم في شكل الصورة داخل بطاقة المنيو.</p><div className="mt-2 grid grid-cols-3 gap-2">{([{ id: "square", label: "مربعة", ratio: "1 / 1" }, { id: "portrait", label: "طولية", ratio: "4 / 5" }, { id: "landscape", label: "أفقية", ratio: "4 / 3" }] as const).map(option => <button key={option.id} type="button" onClick={() => setMenuImageRatio(option.id)} aria-pressed={menuDisplayDraft.imageRatio === option.id} className={`rounded-lg border px-2 py-2 text-[11px] font-black ${menuDisplayDraft.imageRatio === option.id ? "border-orange-500 bg-orange-500 text-white" : "border-slate-100 bg-slate-50 text-slate-600 hover:border-orange-200"}`}>{option.label}<span className="mt-1 block text-[10px] font-normal opacity-70">{option.ratio}</span></button>)}</div></div><label className="flex cursor-pointer items-start gap-2 rounded-xl border border-white bg-white p-3 text-xs font-bold text-slate-700"><input type="checkbox" checked={menuDisplayDraft.oneLineItemName} onChange={event => setOneLineItemName(event.target.checked)} className="mt-0.5 h-4 w-4 accent-orange-500" /><span><span className="block">اسم الصنف في سطر واحد</span><span className="mt-1 block text-[10px] font-normal text-slate-500">يقلل الزحام البصري ويقص الاسم الطويل بسطر واحد.</span></span></label></div><div className="mt-3 grid gap-3 lg:grid-cols-3"><label className="rounded-xl border border-white bg-white p-3 text-xs font-bold text-slate-700">خلفية المنيو<div className="mt-2 flex items-center gap-2"><input type="color" value={menuDisplayDraft.menuBackgroundColor} onChange={event => setMenuCustomizationValue({ menuBackgroundColor: event.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border border-slate-200 bg-white p-1" aria-label="لون خلفية المنيو" /><Input value={menuDisplayDraft.menuBackgroundColor} onChange={event => setMenuCustomizationValue({ menuBackgroundColor: event.target.value })} dir="ltr" className="h-9 font-mono text-xs" /></div></label><label className="rounded-xl border border-white bg-white p-3 text-xs font-bold text-slate-700">نصوص البطاقات<div className="mt-2 flex items-center gap-2"><input type="color" value={menuDisplayDraft.cardTextColor} onChange={event => setMenuCustomizationValue({ cardTextColor: event.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border border-slate-200 bg-white p-1" aria-label="لون نصوص البطاقات" /><Input value={menuDisplayDraft.cardTextColor} onChange={event => setMenuCustomizationValue({ cardTextColor: event.target.value })} dir="ltr" className="h-9 font-mono text-xs" /></div></label><div className="rounded-xl border border-white bg-white p-3 text-xs font-bold text-slate-700"><span className="block">زر إضافة للسلة</span><div className="mt-2 flex items-center gap-2"><input type="color" value={menuDisplayDraft.cartButtonColor} onChange={event => setMenuCustomizationValue({ cartButtonColor: event.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border border-slate-200 bg-white p-1" aria-label="لون زر إضافة للسلة" /><div className="grid flex-1 grid-cols-3 gap-1">{([{ id: "filled", label: "ممتلئ" }, { id: "soft", label: "ناعم" }, { id: "outline", label: "حدود" }] as const).map(style => <button key={style.id} type="button" onClick={() => setMenuCustomizationValue({ cartButtonStyle: style.id })} aria-pressed={menuDisplayDraft.cartButtonStyle === style.id} className={`rounded-md px-1 py-2 text-[10px] font-black ${menuDisplayDraft.cartButtonStyle === style.id ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-600"}`}>{style.label}</button>)}</div></div></div></div><div className="mt-3 rounded-xl border border-orange-200 bg-slate-950 p-3 text-white" data-menu-card-live-preview><div className="flex items-center justify-between gap-2"><div><p className="text-xs font-black">معاينة مباشرة لبطاقة الصنف</p><p className="mt-1 text-[10px] text-white/60">تتغير مع كل اختيار قبل حفظ المنيو.</p></div><span className="rounded-full bg-orange-500/20 px-2 py-1 text-[10px] font-black text-orange-200">مسودة</span></div><div className="mt-3 flex max-w-sm overflow-hidden rounded-xl border border-white/10 bg-white/10" dir="rtl"><div className="w-1/2 shrink-0 bg-gradient-to-br from-orange-200/50 to-white/10" style={{ aspectRatio: menuDisplayDraft.imageRatio === "portrait" ? "4 / 5" : menuDisplayDraft.imageRatio === "landscape" ? "4 / 3" : "1 / 1" }} /><div className="flex min-w-0 flex-1 flex-col justify-between p-2"><strong className={`text-xs font-black text-orange-200 ${menuDisplayDraft.oneLineItemName ? "truncate" : "line-clamp-2"}`}>برغر ناصر المشوي</strong><p className="mt-1 line-clamp-2 text-[10px] text-white/70">شرح مبسط للصنف يظهر تحت السعر.</p><div className="mt-2 flex items-center justify-between"><span className="text-xs font-black">32 ر.س</span><span className="rounded-md bg-orange-500 px-2 py-1 text-[10px] font-bold">+ السلة</span></div></div></div></div></div></section>
+                        <section className="space-y-3 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 sm:col-span-2" data-menu-template-schedule>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="flex items-center gap-2 text-sm font-black text-slate-900"><Clock3 className="h-4 w-4 text-indigo-600" />جدولة قالب المنيو</h3>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">فعّل التبديل التلقائي حسب توقيت المطعم. المثال الافتراضي يعرض NFOOD Glass من 18:00 حتى 02:00.</p>
+                  </div>
+                  <button type="button" role="switch" aria-checked={draft.menuTemplateScheduleEnabled} onClick={() => setDraft(current => ({ ...current, menuTemplateScheduleEnabled: !current.menuTemplateScheduleEnabled }))} className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${draft.menuTemplateScheduleEnabled ? "bg-indigo-600" : "bg-slate-300"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${draft.menuTemplateScheduleEnabled ? "start-6" : "start-1"}`} /></button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="space-y-1 text-xs font-bold">القالب خارج الفترات<select value={draft.menuTemplateScheduleFallback} onChange={event => setDraft({ ...draft, menuTemplateScheduleFallback: event.target.value as MenuTemplateId })} className="mt-1 h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-sm"><option value="editorial">Editorial</option><option value="bistro">Bistro</option><option value="glass">NFOOD Glass</option></select></label>
+                  <label className="space-y-1 text-xs font-bold">المنطقة الزمنية<select value={draft.menuTemplateScheduleTimezone} onChange={event => setDraft({ ...draft, menuTemplateScheduleTimezone: event.target.value })} className="mt-1 h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-sm" dir="ltr"><option value="Asia/Riyadh">Asia/Riyadh · الرياض</option><option value="Asia/Dubai">Asia/Dubai · دبي</option><option value="Africa/Cairo">Africa/Cairo · القاهرة</option><option value="Europe/Paris">Europe/Paris · باريس</option><option value="UTC">UTC</option></select></label>
+                </div>
+                <div className="space-y-2">
+                  {draft.menuTemplateScheduleRules.map((rule, index) => <div key={`schedule-rule-${index}`} className="rounded-xl border border-indigo-100 bg-white p-3 shadow-sm"><div className="flex flex-wrap items-end gap-2"><label className="text-xs font-bold">من<input type="time" value={rule.start} onChange={event => updateScheduleRule(index, { start: event.target.value })} className="mt-1 h-9 rounded-lg border border-slate-200 px-2 text-sm" dir="ltr" /></label><label className="text-xs font-bold">إلى<input type="time" value={rule.end} onChange={event => updateScheduleRule(index, { end: event.target.value })} className="mt-1 h-9 rounded-lg border border-slate-200 px-2 text-sm" dir="ltr" /></label><label className="min-w-40 flex-1 text-xs font-bold">القالب<select value={rule.template} onChange={event => updateScheduleRule(index, { template: event.target.value as MenuTemplateId })} className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-sm"><option value="editorial">Editorial</option><option value="bistro">Bistro</option><option value="glass">NFOOD Glass</option></select></label><button type="button" onClick={() => removeScheduleRule(index)} disabled={draft.menuTemplateScheduleRules.length <= 1} className="h-9 rounded-lg px-2 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40" aria-label="حذف فترة الجدولة">حذف</button></div><div className="mt-2 flex flex-wrap gap-1">{menuScheduleDays.map(day => <button key={day.value} type="button" aria-pressed={rule.days.includes(day.value)} onClick={() => toggleScheduleDay(index, day.value)} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${rule.days.includes(day.value) ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500 hover:bg-indigo-50"}`}>{day.label}</button>)}</div></div>)}
+                  <div className="flex flex-wrap items-center justify-between gap-2"><button type="button" onClick={addScheduleRule} disabled={draft.menuTemplateScheduleRules.length >= 12} className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 disabled:opacity-40"><Plus className="h-3.5 w-3.5" />إضافة فترة</button><Button type="button" onClick={saveSchedule} disabled={updateMenuTemplateSchedule.isPending || (draft.menuTemplateScheduleEnabled && draft.menuTemplateScheduleRules.some(rule => !rule.days.length))} className="rounded-lg bg-indigo-600 px-3 py-2 text-xs hover:bg-indigo-700">{updateMenuTemplateSchedule.isPending ? "جارٍ حفظ الجدولة..." : "حفظ الجدولة"}</Button></div>
+                </div>
+              </section>
+                        {draft.menuTemplate === "glass" && <section className="space-y-3 rounded-2xl border border-slate-700 bg-slate-950 p-4 text-white sm:col-span-2" data-glass-customization><div className="flex items-start gap-3"><SlidersHorizontal className="mt-0.5 h-5 w-5 text-orange-400" /><div><h3 className="text-sm font-black">تخصيص NFOOD Glass</h3><p className="mt-1 text-xs leading-5 text-slate-400">اضبط لون التوهج ووضوح البطاقات، وستظهر القيم في المعاينة والمنيو العام بعد الحفظ.</p></div></div><div className="grid gap-3 sm:grid-cols-2"><label className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs font-bold">لون التوهج<div className="mt-2 flex items-center gap-2"><input type="color" value={draft.glassGlowColor} onChange={event => setDraft({ ...draft, glassGlowColor: event.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border-0 bg-transparent" aria-label="لون توهج NFOOD Glass" /><Input value={draft.glassGlowColor} onChange={event => setDraft({ ...draft, glassGlowColor: event.target.value })} dir="ltr" className="h-9 border-white/10 bg-white/10 font-mono text-xs text-white" /></div></label><label className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs font-bold">شفافية البطاقات<div className="mt-3 flex items-center gap-3"><input type="range" min="0.05" max="0.35" step="0.01" value={draft.glassCardOpacity} onChange={event => setDraft({ ...draft, glassCardOpacity: Number(event.target.value) })} className="w-full accent-orange-500" /><span className="min-w-12 rounded-lg bg-white/10 px-2 py-1 text-center font-mono text-[11px] text-orange-300">{Math.round(draft.glassCardOpacity * 100)}%</span></div><div className="mt-1 flex justify-between text-[10px] font-normal text-slate-500"><span>أكثر شفافية</span><span>أوضح</span></div></label></div></section>}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-orange-100 bg-orange-50/50 p-3">
+            <p className="text-xs font-bold text-slate-700">احفظ تعديلات التخطيط بعد مراجعة المعاينة المباشرة.</p>
+            <Button type="button" onClick={saveBrandingDraft} disabled={updateBranding.isPending || brandingQuery.isLoading} className="rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]">{updateBranding.isPending ? "جارٍ حفظ التخطيطات..." : "حفظ تخطيطات المنيو"}</Button>
+          </div>
+        </CardContent>
+      </Card>
+      )}
+    </div>
   );
 }
 
@@ -10179,7 +10131,6 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
       <EmailTemplatesPanel restaurantId={restaurantId} />
       <BrandingPanel restaurantId={restaurantId} />
       <BrandingFeatureMatrix restaurantId={restaurantId} />
-      <BrandingEditorPanel restaurantId={restaurantId} />
       <LanguageSettingsPanel restaurantId={restaurantId} />
       <div className="grid gap-4 md:grid-cols-3">
         {remoteBranches.isError ? (
@@ -10402,9 +10353,10 @@ function RestaurantOperationsHub({ restaurantId, branchId, defaultTab = "tables"
 }
 
 function RestaurantSettingsHub({ restaurantId }: { restaurantId: number }) {
-  const [activeTab, setActiveTab] = useState<"identity" | "commerce" | "integrations" | "preferences">("identity");
+  const [activeTab, setActiveTab] = useState<"identity" | "menuLayouts" | "commerce" | "integrations" | "preferences">("identity");
   const tabs = [
-    { key: "identity" as const, label: "الهوية والمنيو", description: "البيانات العامة، القالب، SEO والمعاينة" },
+    { key: "identity" as const, label: "هوية المطعم", description: "الاسم، الشعار، التواصل، المحتوى وSEO" },
+    { key: "menuLayouts" as const, label: "تخطيطات المنيو", description: "القوالب، البطاقات، الألوان والمعاينة" },
     { key: "commerce" as const, label: "التسعير والإيصالات", description: "العملة، الضريبة، الخصومات وقوالب الطباعة" },
     { key: "integrations" as const, label: "التكاملات", description: "مصدر التكاملات وإعدادات الربط" },
     { key: "preferences" as const, label: "اللغة والخصائص", description: "اللغة والميزات المتاحة للمطعم" },
@@ -10420,7 +10372,7 @@ function RestaurantSettingsHub({ restaurantId }: { restaurantId: number }) {
           </div>
           <span className="rounded-full bg-orange-50 px-3 py-1.5 text-[11px] font-bold text-[#c75325] dark:bg-orange-950/40 dark:text-orange-200">{tabs.find(tab => tab.key === activeTab)?.label}</span>
         </div>
-        <div className="mt-3 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-4" role="tablist" aria-label="أقسام إعدادات المطعم">
+        <div className="mt-3 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-5" role="tablist" aria-label="أقسام إعدادات المطعم">
           {tabs.map(tab => (
             <button
               key={tab.key}
@@ -10439,8 +10391,9 @@ function RestaurantSettingsHub({ restaurantId }: { restaurantId: number }) {
       <div key={activeTab} className="nfood-settings-tab-enter space-y-3">
         {activeTab === "identity" && <>
           <RestaurantProfilePanel restaurantId={restaurantId} />
-          <BrandingPanel restaurantId={restaurantId} />
+          <BrandingPanel restaurantId={restaurantId} section="identity" />
         </>}
+        {activeTab === "menuLayouts" && <BrandingPanel restaurantId={restaurantId} section="layouts" />}
         {activeTab === "commerce" && <>
           <RestaurantPricingSettings restaurantId={restaurantId} />
           <ReceiptCustomizationPanel restaurantId={restaurantId} />

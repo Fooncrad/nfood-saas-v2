@@ -10,10 +10,11 @@ describe("attachment implementation wiring", () => {
     expect(read("docs/NFOOD-attachment-gap-audit.md")).toContain("Branding Editor");
   });
 
-  it("wires the plan matrix and editor into restaurant settings", () => {
+  it("keeps the plan matrix and separates the legacy editor from restaurant settings", () => {
     const modules = read("client/src/components/HomeModules.tsx");
     expect(modules).toContain("BrandingFeatureMatrix");
-    expect(modules).toContain("BrandingEditorPanel");
+    expect(modules).not.toContain("import { BrandingEditorPanel }");
+    expect(modules).not.toContain("<BrandingEditorPanel restaurantId={restaurantId} />");
     const editor = read("client/src/components/BrandingEditorPanel.tsx");
     expect(editor).toContain("المعاينة الحية");
     expect(editor).toContain("uploadBrandAsset");

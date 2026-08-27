@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Eye, ImagePlus, LoaderCircle, LockKeyhole, Palette, Save, SlidersHorizontal } from "lucide-react";
+import { Check, Eye, ImagePlus, LoaderCircle, LockKeyhole, Palette, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,7 +100,7 @@ export function BrandingEditorPanel({ restaurantId }: { restaurantId: number }) 
   );
 
   return <Card className="rounded-2xl border-amber-100 bg-gradient-to-br from-white to-amber-50/40 shadow-sm">
-    <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3"><div><CardTitle className="text-base">محرر الهوية والمعاينة الحية</CardTitle><p className="mt-1 text-xs text-slate-500">عدّل المظهر دون كتابة CSS، وتظهر الصلاحيات حسب باقة {query.data.plan}.</p></div><div className="flex items-center gap-2"><Button type="button" variant="outline" onClick={() => document.getElementById("menu-layouts")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="hidden rounded-xl border-orange-200 text-xs font-black text-orange-700 sm:inline-flex"><SlidersHorizontal className="me-1.5 h-4 w-4" />تخطيطات المنيو</Button><div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-100 text-amber-700"><Palette className="h-5 w-5" /></div></div></CardHeader>
+    <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3"><div><CardTitle className="text-base">محرر الهوية والمعاينة الحية</CardTitle><p className="mt-1 text-xs text-slate-500">عدّل المظهر دون كتابة CSS، وتظهر الصلاحيات حسب باقة {query.data.plan}.</p></div><div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-100 text-amber-700"><Palette className="h-5 w-5" /></div></CardHeader>
     <CardContent className="grid gap-4 lg:grid-cols-[1fr_260px]">
       <div className="space-y-3">
         <label className="block text-xs font-bold text-slate-700">اسم العلامة<input value={name} onChange={(event) => setName(event.target.value)} className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" /></label>
