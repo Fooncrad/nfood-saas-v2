@@ -211,3 +211,23 @@ describe("Product title visibility regression", () => {
     expect(source).toContain("<h3 className=\"nfood-menu-item-title");
   });
 });
+
+
+describe("Mobile menu navigation actions", () => {
+  it("moves reservation into the hero work-hours action and replaces the bottom reservation tab", () => {
+    expect(source).toContain("copy.workingHours");
+    expect(source).toContain("bg-orange-500 px-3 text-[10px] font-black");
+    expect(source).toContain("setReservationOpen(true)");
+    expect(source).toContain("<UserRound className=\"h-4 w-4\"");
+    expect(source).toContain("navigate(\"/customer-portal\")");
+    expect(source).toContain("setAccountMode(\"register\")");
+    expect(source).toContain("{user ? \"حسابي\" : \"تسجيل\"}");
+  });
+
+  it("keeps the food menu and cart actions in the mobile bottom navigation", () => {
+    expect(source).toContain("document.getElementById(\"menu\")?.scrollIntoView");
+    expect(source).toContain("setCartOpen(true)");
+    expect(source).toContain("<ShoppingBag className=\"h-4 w-4\"");
+    expect(source).not.toContain("<CalendarDays className=\"h-4 w-4\" style={{ color: brandColor }} />{copy.reservation}</button></nav>");
+  });
+});
