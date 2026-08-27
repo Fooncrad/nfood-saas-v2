@@ -2694,3 +2694,105 @@ html[lang="ur"] body {
   [data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"][data-detail-width="full"] { width: 100dvw !important; min-width: 100dvw !important; max-width: 100dvw !important; }
   [data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"] .nfood-product-detail-panel { height: 100% !important; max-height: none !important; }
 }
+
+
+/* Strict product-card layout: scoped to the selectable cards variant only. */
+.nfood-menu-cards .nfood-menu-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-rows: 200px;
+}
+.nfood-menu-cards .nfood-menu-card-shell {
+  height: 200px;
+  max-height: 200px;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+  border-radius: 1rem;
+}
+.nfood-menu-cards .nfood-menu-item-image {
+  aspect-ratio: auto;
+  height: 100%;
+  min-height: 0;
+}
+.nfood-menu-cards .nfood-menu-item-photo,
+.nfood-menu-cards .nfood-menu-item-image > div {
+  aspect-ratio: auto;
+  height: 100%;
+  min-height: 0;
+}
+.nfood-menu-cards .nfood-menu-item-image > button {
+  left: 8px;
+  right: auto;
+  top: 8px;
+  z-index: 30;
+  border-color: rgb(255 255 255 / 0.5);
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(8px);
+}
+.nfood-menu-cards .nfood-menu-item-image > span {
+  right: 8px;
+  left: auto;
+  top: 8px;
+  z-index: 30;
+  white-space: nowrap;
+}
+.nfood-menu-cards .nfood-menu-item-content {
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px;
+}
+.nfood-menu-cards .nfood-menu-item-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-clamp: unset;
+  -webkit-line-clamp: unset;
+}
+.nfood-menu-cards .nfood-menu-price-block {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.nfood-menu-cards .nfood-menu-price-current {
+  color: #111827 !important;
+  font-weight: 700;
+}
+.nfood-menu-cards .nfood-menu-price-compare {
+  color: #9ca3af;
+  font-size: 11px;
+  text-decoration: line-through;
+}
+.nfood-menu-cards .nfood-menu-cart-row {
+  justify-content: flex-start;
+  direction: ltr;
+  margin-top: 4px;
+  padding-top: 4px;
+}
+.nfood-menu-cards .nfood-menu-cart-row > button {
+  min-height: 36px;
+  min-width: 36px;
+  height: 36px;
+  width: 36px;
+}
+.nfood-menu-cards .nfood-menu-card-summary {
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 8px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 1.25rem;
+}
+.nfood-menu-dark.nfood-menu-cards .nfood-menu-price-current {
+  color: #f8fafc !important;
+}
+@media (min-width: 640px) {
+  .nfood-menu-cards .nfood-menu-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-auto-rows: 240px;
+  }
+  .nfood-menu-cards .nfood-menu-card-shell {
+    height: 240px;
+    max-height: 240px;
+  }
+}
