@@ -181,6 +181,8 @@ describe("Product card detail flow refinement", () => {
     expect(source).toContain("top-1.5 z-20");
     expect(css).toContain("word-break: keep-all !important");
     expect(css).toContain("color: #dc2626 !important");
+    expect(css).toContain(".nfood-menu-item-heading");
+    expect(css).toContain("top: 3rem !important");
   });
 
   it("places the short description in the second card row", () => {

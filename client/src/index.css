@@ -2411,3 +2411,51 @@ html[lang="ur"] body {
     line-height: 1rem !important;
   }
 }
+
+
+/* Final card header correction: the title must own the first line; availability must not sit beside the heart. */
+.nfood-menu-shell .nfood-menu-item-heading {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: .3rem !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+.nfood-menu-shell .nfood-menu-item-heading .nfood-menu-item-title {
+  display: -webkit-box !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  min-height: 2.25rem !important;
+  max-height: 2.45rem !important;
+  color: #0f172a !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: normal !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-heading .nfood-menu-item-title {
+  color: #fff8ed !important;
+}
+.nfood-menu-shell .nfood-menu-item-image > span {
+  top: 3rem !important;
+  right: .5rem !important;
+}
+.nfood-menu-shell .nfood-menu-item-image > button[aria-label*="المفضلة"] {
+  top: .25rem !important;
+  left: .5rem !important;
+}
+@media (max-width: 767px) {
+  .nfood-menu-shell .nfood-menu-item-heading .nfood-menu-item-title {
+    min-height: 2rem !important;
+    max-height: 2.15rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-image > span {
+    top: 2.9rem !important;
+  }
+}
