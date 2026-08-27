@@ -2542,3 +2542,46 @@ html[lang="ur"] body {
     line-height: 1.05rem !important;
   }
 }
+
+
+/* Cardless menu experiment: preserve the editorial grid while removing the enclosing card chrome. */
+.nfood-menu-shell .nfood-menu-item-card {
+  background: transparent !important;
+  border: 0 !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  gap: 0 !important;
+  transform: none !important;
+}
+.nfood-menu-shell .nfood-menu-item-card:hover,
+.nfood-menu-shell .nfood-menu-item-card:focus-visible {
+  box-shadow: none !important;
+  transform: none !important;
+}
+.nfood-menu-shell .nfood-menu-item-image {
+  border-radius: 1.15rem !important;
+  box-shadow: 0 8px 22px rgb(15 23 42 / .08) !important;
+}
+.nfood-menu-shell .nfood-menu-item-content {
+  background: transparent !important;
+  padding: .55rem .25rem .15rem !important;
+}
+.nfood-menu-shell .nfood-menu-card-summary {
+  border-top: 0 !important;
+  padding: .45rem .25rem .1rem !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-image {
+  box-shadow: 0 8px 22px rgb(0 0 0 / .22) !important;
+}
+@media (max-width: 767px) {
+  .nfood-menu-shell .nfood-menu-item-image {
+    border-radius: .9rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-content {
+    padding: .45rem .15rem .1rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-card-summary {
+    padding: .4rem .15rem .05rem !important;
+  }
+}

@@ -243,3 +243,26 @@ describe("Mobile product title visibility", () => {
     expect(css).toContain("width: 100% !important;");
   });
 });
+
+
+describe("Cardless menu experiment", () => {
+  it("removes card chrome while preserving the product content and interaction", () => {
+    expect(css).toContain(".nfood-menu-shell .nfood-menu-item-card {");
+    expect(css).toContain("background: transparent !important;");
+    expect(css).toContain("border: 0 !important;");
+    expect(css).toContain("box-shadow: none !important;");
+    expect(source).toContain("item.name");
+    expect(source).toContain("nfood-menu-price-current");
+    expect(source).toContain("nfood-menu-price-compare");
+    expect(source).toContain("nfood-menu-card-summary");
+    expect(source).toContain("setSelectedMenuItem(item)");
+  });
+
+  it("keeps the image, price, discount, add button, and detail click target in the cardless layout", () => {
+    expect(source).toContain("nfood-menu-item-image");
+    expect(source).toContain("nfood-menu-discount");
+    expect(source).toContain("nfood-menu-cart-row");
+    expect(source).toContain("aria-label={`عرض تفاصيل ${item.name}`}");
+    expect(css).toContain(".nfood-menu-shell .nfood-menu-item-image");
+  });
+});
