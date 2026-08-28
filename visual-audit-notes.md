@@ -12,3 +12,7 @@
 - Desktop public menu with `?lang=ar`: the waiter-call action and social rail mirror to the right, while the reservation/menu actions remain readable.
 - Mobile dashboard with `?lang=ar`: the menu trigger is on the right and the metric/content layout remains inside the viewport.
 - Mobile public menu with `?lang=ar`: the header, waiter-call panel, menu title, and bottom navigation are visible without an RTL horizontal overflow in the captured viewport.
+
+## Final admin RTL audit
+
+بعد إضافة لوحة متوسط استجابة النادل، بقيت واجهة Overview العربية مستقرة على سطح المكتب والهاتف: الشريط الجانبي ظاهر يمينًا، زر فتح القائمة في موضعه، وبطاقات المؤشرات ومساحة العمل ضمن إطار العرض دون قص ظاهر. تظهر البيانات التشغيلية في اللقطة دون انزياح أفقي.

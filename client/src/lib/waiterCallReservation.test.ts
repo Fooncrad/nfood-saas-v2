@@ -48,6 +48,25 @@ describe("waiter call and reservation blackout flows", () => {
     expect(menu).toContain("disabled={Boolean(selectedReservationBlackout)");
   });
 
+  it("renders manager response statistics without exposing them to waiter views", () => {
+    const statsPanel = read(`${root}/client/src/components/WaiterResponseStatsPanel.tsx`);
+    const home = read(`${root}/client/src/pages/Home.tsx`);
+    const panel = read(`${root}/client/src/components/WaiterCallsPanel.tsx`);
+    expect(statsPanel).toContain("waiterResponseStats.useQuery");
+    expect(statsPanel).toContain("averageResponseSeconds");
+    expect(home).toContain('role === "restaurant_admin" && <WaiterResponseStatsPanel');
+    expect(panel).not.toContain("waiterResponseStats.useQuery");
+  });
+
+  it("supports optional sound and vibration when the waiter acknowledges a call", () => {
+    const menu = read(`${root}/client/src/pages/RestaurantPublic.tsx`);
+    expect(menu).toContain("WaiterCallAlertSettings");
+    expect(menu).toContain("waiterCallAlertStorageKey");
+    expect(menu).toContain("navigator.vibrate?.([120, 60, 120])");
+    expect(menu).toContain("AudioContextClass");
+    expect(menu).toContain("Confirmation alert");
+  });
+
   it("exposes a manager policy for cooldown, reservation explanation, and blackout dates", () => {
     const schedule = read(`${root}/client/src/components/ReservationSchedulePanel.tsx`);
     const router = read(`${root}/server/routers.ts`);
