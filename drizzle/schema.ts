@@ -812,6 +812,7 @@ export const waiterCalls = mysqlTable("waiterCalls", {
   reason: varchar("reason", { length: 80 }).notNull(),
   status: mysqlEnum("status", ["active", "acknowledged", "closed", "expired"]).default("active").notNull(),
   customerName: varchar("customerName", { length: 160 }),
+  publicToken: varchar("publicToken", { length: 128 }).unique(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   acknowledgedAt: timestamp("acknowledgedAt"),
   closedAt: timestamp("closedAt"),

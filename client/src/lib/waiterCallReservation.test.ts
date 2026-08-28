@@ -27,6 +27,27 @@ describe("waiter call and reservation blackout flows", () => {
     expect(panel).toContain("acknowledgeWaiterCall.useMutation");
   });
 
+  it("renders a live cooldown timer and follows waiter acknowledgement for the customer", () => {
+    const db = read(`${root}/server/db.ts`);
+    const menu = read(`${root}/client/src/pages/RestaurantPublic.tsx`);
+    expect(db).toContain("publicToken");
+    expect(db).toContain("getPublicWaiterCallStatus");
+    expect(db).toContain('status === "acknowledged"');
+    expect(menu).toContain("waiterCallRemainingSeconds");
+    expect(menu).toContain("waiterCallStatus");
+    expect(menu).toContain('role="status"');
+    expect(menu).toContain("waiterCallStorageKey");
+    expect(menu).toContain("disabled={waiterCallCooldownActive");
+  });
+
+  it("marks blackout days visibly before the customer submits a reservation", () => {
+    const menu = read(`${root}/client/src/pages/RestaurantPublic.tsx`);
+    expect(menu).toContain("reservationBlackoutDates.filter");
+    expect(menu).toContain("bg-rose-600");
+    expect(menu).toContain("selectedReservationBlackout ?");
+    expect(menu).toContain("disabled={Boolean(selectedReservationBlackout)");
+  });
+
   it("exposes a manager policy for cooldown, reservation explanation, and blackout dates", () => {
     const schedule = read(`${root}/client/src/components/ReservationSchedulePanel.tsx`);
     const router = read(`${root}/server/routers.ts`);
