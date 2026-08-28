@@ -395,6 +395,12 @@ export default function RestaurantPublic() {
   const categories = useMemo(() => [...(page.data?.categories ?? [])].sort((a, b) => a.sortOrder - b.sortOrder).map((category) => localizeMenuEntity(category, language, "category", runtimeTranslations)), [page.data?.categories, language, runtimeTranslations]);
   const items = useMemo(() => (page.data?.items ?? []).map((item) => localizeMenuEntity(item, language, "item", runtimeTranslations)), [page.data?.items, language, runtimeTranslations]);
   const [selectedMenuItem, setSelectedMenuItem] = useState<({ id: number; name: string; description?: string | null; imageUrl?: string | null; price: string | number; compareAtPrice?: string | number | null } & ProductDetailData) | null>(null);
+  useEffect(() => {
+    if (!selectedMenuItem) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [Boolean(selectedMenuItem)]);
   const [detailAddonIds, setDetailAddonIds] = useState<number[]>([]);
   const [detailSizeId, setDetailSizeId] = useState<string | null>(null);
   const [detailQuantity, setDetailQuantity] = useState(1);
@@ -591,7 +597,7 @@ export default function RestaurantPublic() {
         {selectedMenuItem && <div onTouchStart={(event) => { detailSwipeStart.current = event.touches[0]?.clientY ?? null; }} onTouchEnd={(event) => { const startY = detailSwipeStart.current; const endY = event.changedTouches[0]?.clientY; detailSwipeStart.current = null; if (startY !== null && endY !== undefined && endY - startY > 90) setSelectedMenuItem(null); }} className="nfood-product-detail-panel flex max-h-[92dvh] min-h-0 flex-col overflow-hidden sm:grid sm:max-h-[86dvh] sm:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
           <div className="relative shrink-0 bg-gradient-to-br from-orange-50 via-white to-pink-50 p-3 sm:flex sm:min-h-0 sm:items-center sm:p-6">
             {selectedMenuItem.imageUrl ? <img src={selectedMenuItem.imageUrl} alt={selectedMenuItem.name} className={`nfood-product-detail-image h-[clamp(180px,30vh,260px)] max-h-[260px] w-full rounded-[1.25rem] sm:h-full sm:max-h-[72dvh] sm:min-h-[360px] ${detailWindow.imageFit === "cover" ? "object-cover" : "object-contain"}`} /> : <div className="nfood-product-detail-image flex h-[clamp(180px,30vh,260px)] max-h-[260px] w-full items-center justify-center rounded-[1.25rem] bg-white/75 text-orange-200 sm:h-full sm:max-h-[72dvh] sm:min-h-[360px]"><Utensils className="h-20 w-20" /></div>}
-            {detailWindow.showCloseButton && <Button type="button" size="icon" variant="ghost" onClick={() => setSelectedMenuItem(null)} aria-label={detailCopy.close} className="absolute end-5 top-5 h-11 w-11 rounded-full bg-white/95 text-slate-700 shadow-md hover:bg-white"><X className="h-5 w-5" /></Button>}
+            <Button type="button" size="icon" variant="ghost" onClick={() => setSelectedMenuItem(null)} aria-label={detailCopy.close} className="absolute end-2 top-2 z-10 h-10 w-10 rounded-full bg-white/95 text-slate-800 shadow-lg ring-1 ring-slate-200/80 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"><X className="h-5 w-5" /></Button>
             <div className="absolute bottom-5 start-5 hidden rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-black text-slate-600 shadow-sm sm:block">{restaurantName}</div>
           </div>
           <div className="flex min-h-0 flex-1 flex-col bg-white">

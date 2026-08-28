@@ -33,6 +33,18 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain('className="min-h-12 flex-1 rounded-xl');
   });
 
+  it("keeps the product detail modal contained, scrollable, and closable", () => {
+    expect(source).toContain('document.body.style.overflow = "hidden"');
+    expect(source).toContain('aria-label={detailCopy.close}');
+    expect(source).toContain("z-10 h-10 w-10");
+    expect(css).toContain("max-width: 480px !important");
+    expect(css).toContain("height: 200px !important");
+    expect(css).toContain("overflow-y: auto !important");
+    expect(css).toContain("background: rgba(0, 0, 0, 0.6) !important");
+    expect(css).toContain("backdrop-filter: blur(4px) !important");
+    expect(css).toContain("max-height: 85dvh !important");
+  });
+
   it("passes stored calories into the public menu without fabricating optional sections", () => {
     expect(dbSource).toContain("calories: menuItems.calories");
     expect(source).toContain("hasBaseCalories");

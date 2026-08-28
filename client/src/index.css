@@ -2785,6 +2785,123 @@ html[dir="rtl"] .nfood-notification-popover { transform-origin: top left; }
 .nfood-menu-dark.nfood-menu-cards .nfood-menu-price-current {
   color: #f8fafc !important;
 }
+
+/* Final product-detail modal layout fix: keep the image and controls inside one responsive container. */
+body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="dialog-overlay"] {
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+[data-slot="dialog-content"].nfood-product-detail-dialog,
+[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"],
+[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="top"],
+[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="bottom"] {
+  top: 50% !important;
+  bottom: auto !important;
+  left: 50% !important;
+  right: auto !important;
+  width: min(calc(100dvw - 1rem), 480px) !important;
+  min-width: 0 !important;
+  max-width: 480px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 85dvh !important;
+  margin: 0 !important;
+  border-radius: 12px !important;
+  transform: translate(-50%, -50%) !important;
+  translate: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-width="compact"],
+[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-width="wide"],
+[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-width="full"] {
+  width: min(calc(100dvw - 1rem), 480px) !important;
+  min-width: 0 !important;
+  max-width: 480px !important;
+}
+[data-slot="dialog-content"].nfood-product-detail-dialog .nfood-product-detail-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 85dvh !important;
+  overflow: hidden !important;
+}
+[data-slot="dialog-content"].nfood-product-detail-dialog .nfood-product-detail-panel > div:first-child {
+  position: relative !important;
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #fff !important;
+}
+[data-slot="dialog-content"].nfood-product-detail-dialog .nfood-product-detail-image {
+  display: block !important;
+  width: 100% !important;
+  height: 200px !important;
+  min-height: 0 !important;
+  max-height: 200px !important;
+  margin: 0 !important;
+  border-radius: 12px 12px 0 0 !important;
+  object-fit: cover !important;
+  object-position: center !important;
+}
+[data-slot="dialog-content"].nfood-product-detail-dialog .nfood-product-detail-panel > div:nth-child(2) {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  max-height: calc(85dvh - 200px) !important;
+  overflow: hidden !important;
+  background: #fff !important;
+}
+[data-slot="dialog-content"].nfood-product-detail-dialog .nfood-product-detail-panel > div:nth-child(2) > div:first-child {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding: 16px !important;
+  -webkit-overflow-scrolling: touch;
+}
+[data-slot="dialog-content"].nfood-product-detail-dialog .nfood-product-detail-panel > div:nth-child(2) > div:last-child {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  padding: 12px 16px !important;
+  border-top: 1px solid #e2e8f0 !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  z-index: 2 !important;
+}
+[data-slot="dialog-content"].nfood-product-detail-dialog .nfood-product-detail-panel > div:first-child > button {
+  z-index: 10 !important;
+  pointer-events: auto !important;
+}
+@media (max-width: 639px) {
+  [data-slot="dialog-content"].nfood-product-detail-dialog,
+  [data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"],
+  [data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="top"],
+  [data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="bottom"] {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100dvw !important;
+    min-width: 100dvw !important;
+    max-width: 100dvw !important;
+    max-height: 85dvh !important;
+    border-radius: 12px 12px 0 0 !important;
+    transform: translateY(100%) !important;
+  }
+  [data-slot="dialog-content"].nfood-product-detail-dialog[data-state="open"] {
+    transform: translateY(0) !important;
+  }
+  [data-slot="dialog-content"].nfood-product-detail-dialog .nfood-product-detail-panel {
+    max-height: 85dvh !important;
+  }
+}
 @media (min-width: 640px) {
   .nfood-menu-cards .nfood-menu-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
