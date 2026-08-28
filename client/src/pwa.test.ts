@@ -19,9 +19,11 @@ describe("NFOOD PWA contract", () => {
     expect(worker).toContain('addEventListener("sync"');
     expect(worker).toContain('addEventListener("fetch"');
     expect(worker).toContain("nfood-data-sync");
-    expect(worker).toContain("caches.match(request)");
-    expect(worker).toContain('if (request.mode === "navigate")');
-    expect(worker).toContain("Never return HTML for JS/CSS/media requests");
+    expect(worker).toContain("nfood-shell-v5");
+    expect(worker).toContain("networkFirstDocument");
+    expect(worker).toContain("cacheFirstAsset");
+    expect(worker).toContain('request.mode === "navigate" ? networkFirstDocument(request) : cacheFirstAsset(request)');
+    expect(worker).toContain("cache.put(request, response.clone())");
   });
 
   it("ships role-specific manifests with maskable icon support", () => {

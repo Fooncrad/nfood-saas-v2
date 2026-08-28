@@ -59,8 +59,10 @@ import { getVisibleTables, hasRecentAutoCancellation, type TableFilter, type Tab
 import {
   enqueueOfflineItem,
   readOfflineQueue,
+  replayOfflineQueue,
   writeOfflineQueue,
 } from "@/lib/offlineQueue";
+import { readPosCache, writePosCache } from "@/lib/posOfflineCache";
 import {
   enqueueAdminOfflineOperation,
   readAdminOfflineQueue,
@@ -2877,9 +2879,16 @@ function NasserCafeDetailsPanel({
   );
 }
 
+type CachedPosMenuItem = { id: number; name: string; categoryId: number; price: string | number; compareAtPrice?: string | number | null; tagsJson?: string | null; isAvailable: boolean };
+type CachedPosBranch = { id: number; name: string };
+
 function PosView({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const menuCacheKey = `nfood-pos-menu-cache:${restaurantId}`;
+  const branchCacheKey = `nfood-pos-branches-cache:${restaurantId}`;
+  const cachedMenu = useMemo(() => typeof window === "undefined" ? null : readPosCache<CachedPosMenuItem[]>(window.localStorage, menuCacheKey), [menuCacheKey]);
+  const cachedBranches = useMemo(() => typeof window === "undefined" ? null : readPosCache<CachedPosBranch[]>(window.localStorage, branchCacheKey), [branchCacheKey]);
   const remoteMenu = trpc.platform.menuItems.useQuery(
     { restaurantId },
     { enabled: Boolean(user), retry: false }
@@ -2892,8 +2901,12 @@ function PosView({ restaurantId }: { restaurantId: number }) {
     { restaurantId },
     { enabled: Boolean(user), retry: false }
   );
-  const branchId = remoteBranches.data?.[0]?.id;
-  const posProducts: MenuProduct[] = (remoteMenu.data ?? []).map(item => ({
+  const menuRows = remoteMenu.data ?? cachedMenu ?? [];
+  const branchRows = remoteBranches.data ?? cachedBranches ?? [];
+  const branchId = branchRows[0]?.id;
+  useEffect(() => { if (typeof window !== "undefined" && remoteMenu.data?.length) writePosCache(window.localStorage, menuCacheKey, remoteMenu.data); }, [menuCacheKey, remoteMenu.data]);
+  useEffect(() => { if (typeof window !== "undefined" && remoteBranches.data?.length) writePosCache(window.localStorage, branchCacheKey, remoteBranches.data.map((branch) => ({ id: branch.id, name: branch.name }))); }, [branchCacheKey, remoteBranches.data]);
+  const posProducts: MenuProduct[] = menuRows.map(item => ({
     id: item.id,
     name: item.name,
     category: String(item.categoryId),
@@ -2947,8 +2960,11 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       discountSource?: "default" | "coupon_or_default";
     };
   } | null>(null);
+  const syncingRef = useRef(false);
+  const syncInFlightRef = useRef<Promise<void> | null>(null);
   const createOrder = trpc.platform.createOrder.useMutation({
     onSuccess: result => {
+      if (syncingRef.current) return;
       setLastReceipt({
         orderId: result.orderId,
         paymentStatus: result.paymentStatus,
@@ -2963,7 +2979,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       setCart([]);
       setPaymentSplits([]);
     },
-    onError: error => toast.error(`تعذر حفظ الطلب: ${error.message}`),
+    onError: error => { if (!syncingRef.current) toast.error(`تعذر حفظ الطلب: ${error.message}`); },
   });
   const markOrderPaid = trpc.platform.markOrderPaid.useMutation({
     onSuccess: () => {
@@ -2992,28 +3008,29 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       queueKey
     );
   const syncQueue = async () => {
-    if (!navigator.onLine || !branchId) return;
-    const queue = readQueue();
-    let remaining = [...queue];
-    for (const payload of queue) {
+    if (syncInFlightRef.current) return syncInFlightRef.current;
+    const run = (async () => {
+      if (!navigator.onLine || !branchId) return;
+      syncingRef.current = true;
       try {
-        const { offlineId: _offlineId, ...orderPayload } = payload;
-        await createOrder.mutateAsync(orderPayload);
-        remaining = remaining.slice(1);
-        writeOfflineQueue(localStorage, queueKey, remaining);
-        setQueuedCount(remaining.length);
-      } catch {
-        break;
+        const result = await replayOfflineQueue<Parameters<typeof createOrder.mutate>[0]>(
+          localStorage,
+          queueKey,
+          payload => createOrder.mutateAsync(payload),
+          () => navigator.onLine,
+        );
+        setQueuedCount(result.remainingCount);
+        if (result.syncedCount > 0) {
+          toast.success(result.remainingCount === 0 ? `تمت مزامنة ${result.syncedCount} طلبات محفوظة` : `تمت مزامنة ${result.syncedCount} طلبات، وبقي ${result.remainingCount} للمحاولة لاحقًا`);
+          window.dispatchEvent(new CustomEvent("nfood:sync-complete", { detail: { count: result.syncedCount, remaining: result.remainingCount } }));
+        }
+      } finally {
+        syncingRef.current = false;
+        syncInFlightRef.current = null;
       }
-    }
-    if (queue.length > 0 && remaining.length === 0) {
-      toast.success(`تمت مزامنة ${queue.length} طلبات محفوظة`);
-      window.dispatchEvent(
-        new CustomEvent("nfood:sync-complete", {
-          detail: { count: queue.length },
-        })
-      );
-    }
+    })();
+    syncInFlightRef.current = run;
+    return run;
   };
   const submitOrder = () => {
     if (!branchId) {
@@ -3113,7 +3130,11 @@ function PosView({ restaurantId }: { restaurantId: number }) {
     markOrderReceiptPrinted.mutate({ restaurantId, orderId: lastReceipt.orderId });
   };
   return (
-    <div>
+    <div data-pos-offline-shell>
+      <div className={`mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm ${isOnline ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-950"}`} role="status" aria-live="polite">
+        <div className="flex items-center gap-2"><span className={`h-2.5 w-2.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-amber-500"}`} />{isOnline ? "متصل — الطلبات تُرسل مباشرة" : "وضع عدم الاتصال — POS مستمر بالعمل محليًا"}{!isOnline && !remoteMenu.data && cachedMenu?.length ? <span className="text-xs font-bold opacity-70">· آخر نسخة محفوظة</span> : null}</div>
+        {queuedCount > 0 && <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-black">{queuedCount} طلب بانتظار المزامنة</span>}
+      </div>
       {lastReceipt && (
         <Card className="mb-5 overflow-hidden rounded-2xl border-emerald-200 bg-white shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between border-b border-emerald-100 bg-emerald-50/70 px-5 py-4">

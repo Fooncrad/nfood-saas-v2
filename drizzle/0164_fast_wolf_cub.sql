@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `waiterCallAlertMode` enum('none','sound','vibrate','both') DEFAULT 'both' NOT NULL;

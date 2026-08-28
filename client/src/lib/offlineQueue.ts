@@ -20,3 +20,65 @@ export function enqueueOfflineItem<T>(storage: Pick<Storage, "getItem" | "setIte
   writeOfflineQueue(storage, key, next);
   return next;
 }
+
+export type OfflineReplayResult = {
+  attempted: number;
+  syncedCount: number;
+  remainingCount: number;
+  stoppedOnError: boolean;
+};
+
+function errorCode(error: unknown) {
+  return error && typeof error === "object" && "data" in error
+    ? (error as { data?: { code?: string } }).data?.code
+    : undefined;
+}
+
+export function isOfflineDuplicateError(error: unknown) {
+  return errorCode(error) === "CONFLICT";
+}
+
+export async function replayOfflineQueue<T extends object>(
+  storage: Pick<Storage, "getItem" | "setItem">,
+  key: string,
+  send: (payload: T) => Promise<unknown>,
+  isOnline: () => boolean = () => true,
+): Promise<OfflineReplayResult> {
+  const initialQueue = readOfflineQueue<T>(storage, key);
+  let attempted = 0;
+  let syncedCount = 0;
+  let stoppedOnError = false;
+
+  for (const queuedItem of initialQueue) {
+    if (!isOnline()) {
+      stoppedOnError = true;
+      break;
+    }
+    attempted += 1;
+    const offlineId = queuedItem.offlineId;
+    const { offlineId: _offlineId, ...payload } = queuedItem;
+    try {
+      await send(payload as T);
+      syncedCount += 1;
+    } catch (error) {
+      if (isOfflineDuplicateError(error)) {
+        syncedCount += 1;
+      } else {
+        stoppedOnError = true;
+        break;
+      }
+    }
+    const currentQueue = readOfflineQueue<T>(storage, key);
+    const nextQueue = offlineId
+      ? currentQueue.filter((item) => item.offlineId !== offlineId)
+      : currentQueue.slice(1);
+    writeOfflineQueue(storage, key, nextQueue);
+  }
+
+  return {
+    attempted,
+    syncedCount,
+    remainingCount: readOfflineQueue<T>(storage, key).length,
+    stoppedOnError,
+  };
+}

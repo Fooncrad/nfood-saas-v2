@@ -150,6 +150,7 @@ export const restaurants = mysqlTable("restaurants", {
   reservationEventTypesJson: varchar("reservationEventTypesJson", { length: 1000 }).default('["حفل عيد ميلاد","فعالية","اجتماع","عشاء خاص"]').notNull(),
   waiterCallEnabled: boolean("waiterCallEnabled").default(true).notNull(),
   waiterCallCooldownMinutes: int("waiterCallCooldownMinutes").default(10).notNull(),
+  waiterCallAlertMode: mysqlEnum("waiterCallAlertMode", ["none", "sound", "vibrate", "both"]).default("both").notNull(),
   reservationHelpText: text("reservationHelpText"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({ menuTemplateScheduleTaskIdx: index("restaurants_menu_template_schedule_task_idx").on(table.menuTemplateScheduleCronTaskUid) }));

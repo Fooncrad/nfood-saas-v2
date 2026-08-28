@@ -80,8 +80,13 @@ describe("Home decomposition", () => {
       'location === "/register" || location === "/restaurant/register"'
     );
     expect(homeSource).toContain('location === "/login"');
+    expect(homeSource).toContain('direction === "rtl"');
     expect(homeSource).toContain('lg:mr-[256px]');
     expect(homeSource).toContain('lg:mr-[80px]');
+    expect(homeSource).toContain('lg:ml-[256px]');
+    expect(homeSource).toContain('lg:ml-[80px]');
+    expect(sidebarSource).toContain('dir={direction}');
+    expect(sidebarSource).toContain('start-0');
     expect(sidebarSource).toContain("getSidebarWidth(sidebarCollapsed)");
     expect(sidebarSource).toContain("isSidebarToggleShortcut");
     expect(sidebarSource).toContain("nfood-unified-sidebar");
@@ -166,6 +171,17 @@ describe("Home decomposition", () => {
     expect(modulesSource).toContain('title="نقطة البيع POS"');
     expect(modulesSource).toContain("title={station === \"bar\"");
     expect(modulesSource).toContain('title="الطاولات"');
+  });
+
+  it("keeps POS offline fallback and replay wiring intact", () => {
+    expect(modulesSource).toContain("readPosCache<CachedPosMenuItem[]>");
+    expect(modulesSource).toContain("remoteMenu.data ?? cachedMenu ?? []");
+    expect(modulesSource).toContain("remoteBranches.data ?? cachedBranches ?? []");
+    expect(modulesSource).toContain("enqueueOfflineItem");
+    expect(modulesSource).toContain("replayOfflineQueue");
+    expect(modulesSource).toContain("syncInFlightRef");
+    expect(modulesSource).toContain('window.addEventListener("online", refresh)');
+    expect(modulesSource).toContain('window.addEventListener("nfood:sync-request", refresh)');
   });
 
   it("keeps the deferred operational modules self-contained", () => {

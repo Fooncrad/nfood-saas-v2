@@ -34,7 +34,7 @@ describe("TranslationReviewPanel progress", () => {
     expect(homeSource).toContain("MobileNavigationDrawer");
     expect(mobileDrawerSource).toContain("visibleNavItems.slice(0, 6)");
     expect(mobileDrawerSource).toContain("nfood-mobile-drawer");
-    expect(homeSource).toContain("lg:hidden left-3");
+    expect(homeSource).toContain("lg:hidden start-3");
   });
 
   it("shows a visible language-switch loading state", () => {

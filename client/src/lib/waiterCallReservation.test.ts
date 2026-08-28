@@ -43,8 +43,8 @@ describe("waiter call and reservation blackout flows", () => {
   it("marks blackout days visibly before the customer submits a reservation", () => {
     const menu = read(`${root}/client/src/pages/RestaurantPublic.tsx`);
     expect(menu).toContain("reservationBlackoutDates.filter");
-    expect(menu).toContain("bg-rose-600");
-    expect(menu).toContain("selectedReservationBlackout ?");
+    expect(menu).toContain("bg-rose-50");
+    expect(menu).toContain("selectedReservationBlackout &&");
     expect(menu).toContain("disabled={Boolean(selectedReservationBlackout)");
   });
 
