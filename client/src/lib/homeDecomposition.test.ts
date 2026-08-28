@@ -184,6 +184,18 @@ describe("Home decomposition", () => {
     expect(modulesSource).toContain('window.addEventListener("nfood:sync-request", refresh)');
   });
 
+  it("keeps POS routing and single-screen order controls explicit", () => {
+    expect(modulesSource).toContain("data-pos-category-shortcuts");
+    expect(modulesSource).toContain("data-pos-routing-selector");
+    expect(modulesSource).toContain("selectedRoutingSectionIds");
+    expect(modulesSource).toContain("routingSectionIds");
+    expect(modulesSource).toContain("إرسال الطلب للأقسام المحددة");
+    expect(modulesSource).not.toContain("إرسال الطلب للمطبخ");
+    expect(modulesSource).toContain("data-pos-submit-order");
+    expect(modulesSource).toContain("data-pos-mobile-cart-jump");
+    expect(modulesSource).toContain("xl:max-h-[calc(100vh-156px)]");
+  });
+
   it("keeps the deferred operational modules self-contained", () => {
     expect(modulesSource).toContain("export function ModuleView(");
     expect(modulesSource).toContain("trpc.platform.menuItems.useQuery");

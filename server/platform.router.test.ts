@@ -4,7 +4,10 @@ import { TEST_SESSION_COOKIE } from "@shared/const";
 import { getDb, getLoyaltyTier, getFeatureAccess } from "./db";
 import { branches, menuCategories, menuItems, menuItemAddons, orderItems, orders, reservations, restaurants, referralRecords, loyaltyTransactions, loyaltyAccounts, users, integrationSettings, campaigns, coupons, driverApplications, kitchenSections, printerRoutingRules, restaurantTables, testAccounts, auditLogs, featureDefinitions, restaurantFeatures, orderStatusHistory } from "../drizzle/schema";
 import { and, eq } from "drizzle-orm";
+import { readFileSync } from "node:fs";
 import type { TrpcContext } from "./_core/context";
+
+const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
 
 function context(role: "admin" | "user" = "user", testRole?: "restaurant_admin" | "waiter" | "kitchen" | "bar" | "cashier" | "customer" | "driver", restaurantId?: number): TrpcContext {
   return {
@@ -79,6 +82,14 @@ describe("platform procedures", () => {
     await admin.platform.deletePrinterRoutingRule({ restaurantId: restaurant.id, id: rule.id });
     await db.delete(kitchenSections).where(eq(kitchenSections.id, created.id));
   });
+  it("persists POS routing selections for multiple enabled sections", () => {
+    expect(routerSource).toContain("routingSectionIds: z.array(z.number().int().positive()).max(20).optional()");
+    expect(routerSource).toContain("routingSectionIdsJson: routingSectionIds.length ? JSON.stringify(routingSectionIds) : null");
+    expect(routerSource).toContain("eq(kitchenSections.isEnabled, true)");
+    expect(routerSource).toContain('source: "manual-selection"');
+    expect(routerSource).toContain("explicitSectionIds.map");
+  });
+
   it("protects kitchen ticket reads by restaurant and role", async () => {
     const kitchen = appRouter.createCaller({ ...context("user", "kitchen"), user: { ...context("user", "kitchen").user, restaurantId: 1 } });
     const bar = appRouter.createCaller({ ...context("user", "bar"), user: { ...context("user", "bar").user, restaurantId: 1 } });

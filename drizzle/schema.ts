@@ -595,6 +595,7 @@ export const orders = mysqlTable("orders", {
   restaurantId: int("restaurantId").notNull(),
   branchId: int("branchId").notNull(),
   kitchenSectionId: int("kitchenSectionId").references(() => kitchenSections.id),
+  routingSectionIdsJson: text("routingSectionIdsJson"),
   seatingSectionId: int("seatingSectionId").references(() => seatingSections.id),
   tableName: varchar("tableName", { length: 80 }),
   partySize: int("partySize"),

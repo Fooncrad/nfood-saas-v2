@@ -644,6 +644,7 @@ export function ModuleView({
 type MenuProduct = {
   id: number;
   name: string;
+  categoryId: number;
   category: string;
   price: number;
   compareAtPrice: number | null;
@@ -2881,19 +2882,33 @@ function NasserCafeDetailsPanel({
 
 type CachedPosMenuItem = { id: number; name: string; categoryId: number; price: string | number; compareAtPrice?: string | number | null; tagsJson?: string | null; isAvailable: boolean };
 type CachedPosBranch = { id: number; name: string };
+type CachedPosCategory = { id: number; name: string };
+type CachedPosKitchenSection = { id: number; name: string; isEnabled: boolean; displayOrder: number };
 
 function PosView({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const menuCacheKey = `nfood-pos-menu-cache:${restaurantId}`;
   const branchCacheKey = `nfood-pos-branches-cache:${restaurantId}`;
+  const categoryCacheKey = `nfood-pos-categories-cache:${restaurantId}`;
+  const kitchenCacheKey = `nfood-pos-kitchen-sections-cache:${restaurantId}`;
   const cachedMenu = useMemo(() => typeof window === "undefined" ? null : readPosCache<CachedPosMenuItem[]>(window.localStorage, menuCacheKey), [menuCacheKey]);
   const cachedBranches = useMemo(() => typeof window === "undefined" ? null : readPosCache<CachedPosBranch[]>(window.localStorage, branchCacheKey), [branchCacheKey]);
+  const cachedCategories = useMemo(() => typeof window === "undefined" ? null : readPosCache<CachedPosCategory[]>(window.localStorage, categoryCacheKey), [categoryCacheKey]);
+  const cachedKitchenSections = useMemo(() => typeof window === "undefined" ? null : readPosCache<CachedPosKitchenSection[]>(window.localStorage, kitchenCacheKey), [kitchenCacheKey]);
   const remoteMenu = trpc.platform.menuItems.useQuery(
     { restaurantId },
     { enabled: Boolean(user), retry: false }
   );
   const remoteBranches = trpc.platform.branches.useQuery(
+    { restaurantId },
+    { enabled: Boolean(user), retry: false }
+  );
+  const remoteCategories = trpc.platform.menuCategories.useQuery(
+    { restaurantId },
+    { enabled: Boolean(user), retry: false }
+  );
+  const remoteKitchenSections = trpc.platform.listKitchenSections.useQuery(
     { restaurantId },
     { enabled: Boolean(user), retry: false }
   );
@@ -2903,13 +2918,20 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   );
   const menuRows = remoteMenu.data ?? cachedMenu ?? [];
   const branchRows = remoteBranches.data ?? cachedBranches ?? [];
+  const kitchenSectionRows = remoteKitchenSections.data ?? cachedKitchenSections ?? [];
+  const categoryRows = remoteCategories.data ?? cachedCategories ?? [];
   const branchId = branchRows[0]?.id;
   useEffect(() => { if (typeof window !== "undefined" && remoteMenu.data?.length) writePosCache(window.localStorage, menuCacheKey, remoteMenu.data); }, [menuCacheKey, remoteMenu.data]);
   useEffect(() => { if (typeof window !== "undefined" && remoteBranches.data?.length) writePosCache(window.localStorage, branchCacheKey, remoteBranches.data.map((branch) => ({ id: branch.id, name: branch.name }))); }, [branchCacheKey, remoteBranches.data]);
+  useEffect(() => { if (typeof window !== "undefined" && remoteCategories.data?.length) writePosCache(window.localStorage, categoryCacheKey, remoteCategories.data.map((category) => ({ id: category.id, name: category.name }))); }, [categoryCacheKey, remoteCategories.data]);
+  useEffect(() => { if (typeof window !== "undefined" && remoteKitchenSections.data?.length) writePosCache(window.localStorage, kitchenCacheKey, remoteKitchenSections.data.map((section) => ({ id: section.id, name: section.name, isEnabled: section.isEnabled, displayOrder: section.displayOrder }))); }, [kitchenCacheKey, remoteKitchenSections.data]);
+  const enabledKitchenSections = useMemo(() => kitchenSectionRows.filter(section => section.isEnabled), [kitchenSectionRows]);
+  const categoryNameById = useMemo(() => new Map(categoryRows.map(category => [category.id, category.name])), [categoryRows]);
   const posProducts: MenuProduct[] = menuRows.map(item => ({
     id: item.id,
     name: item.name,
-    category: String(item.categoryId),
+    categoryId: item.categoryId,
+    category: categoryNameById.get(item.categoryId) ?? `تصنيف ${item.categoryId}`,
     price: parsePriceToCents(item.price) / 100,
     compareAtPrice:
       item.compareAtPrice == null
@@ -2919,9 +2941,30 @@ function PosView({ restaurantId }: { restaurantId: number }) {
     available: item.isAvailable,
   }));
   const [productSearch, setProductSearch] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedRoutingSectionIds, setSelectedRoutingSectionIds] = useState<number[]>([]);
+  const routingSelectionTouchedRef = useRef(false);
+  const categoryOptions = useMemo(() => Array.from(new Map(posProducts.map(product => [product.categoryId, product.category])).entries()).map(([id, name]) => ({ id, name })), [posProducts]);
+  const suggestedRoutingSectionIds = useMemo(() => {
+    const tokens = ["bar", "kitchen", "مطبخ", "حلى", "حلويات", "عصير", "عصائر", "مشروبات", "مشروب", "بار"];
+    const matching = enabledKitchenSections.filter(section => tokens.some(token => section.name.toLocaleLowerCase().includes(token)));
+    return (matching.length ? matching : enabledKitchenSections).slice(0, 4).map(section => section.id);
+  }, [enabledKitchenSections]);
+  useEffect(() => {
+    const availableIds = new Set(enabledKitchenSections.map(section => section.id));
+    setSelectedRoutingSectionIds(current => current.filter(id => availableIds.has(id)));
+  }, [enabledKitchenSections]);
+  useEffect(() => {
+    if (routingSelectionTouchedRef.current || selectedRoutingSectionIds.length || !suggestedRoutingSectionIds.length) return;
+    setSelectedRoutingSectionIds(suggestedRoutingSectionIds);
+  }, [selectedRoutingSectionIds.length, suggestedRoutingSectionIds]);
+  useEffect(() => {
+    if (selectedCategoryId !== null && !categoryOptions.some(category => category.id === selectedCategoryId)) setSelectedCategoryId(null);
+  }, [categoryOptions, selectedCategoryId]);
   const availableProducts = posProducts.filter(
     product =>
       product.available &&
+      (selectedCategoryId === null || product.categoryId === selectedCategoryId) &&
       product.name
         .toLocaleLowerCase()
         .includes(productSearch.trim().toLocaleLowerCase())
@@ -3058,6 +3101,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       couponCode: couponCode.trim() || undefined,
       notes: customerNote.trim() || undefined,
       cashierNotes: cashierNotes.trim() || undefined,
+      routingSectionIds: selectedRoutingSectionIds.length ? selectedRoutingSectionIds : undefined,
       items: cart.map(item => ({
         menuItemId: item.product.id,
         quantity: item.quantity,
@@ -3306,9 +3350,18 @@ function PosView({ restaurantId }: { restaurantId: number }) {
           {queuedCount > 0 && ` · ${queuedCount} بانتظار المزامنة`}
         </Badge>
       </div>
-      <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
-        <Card className="rounded-2xl border-slate-200 bg-white shadow-sm">
-          <CardHeader className="border-b border-slate-100 px-5 py-4">
+      {cart.length > 0 && (
+        <div className="sticky top-2 z-20 mb-4 flex items-center justify-between gap-3 rounded-2xl border border-orange-200 bg-white/95 p-3 shadow-sm backdrop-blur xl:hidden" data-pos-mobile-cart-jump>
+          <div className="min-w-0">
+            <p className="truncate text-xs font-bold text-slate-800">السلة الحالية</p>
+            <p className="mt-1 text-[11px] text-slate-500">{cart.reduce((sum, item) => sum + item.quantity, 0)} أصناف · {money(total)}</p>
+          </div>
+          <Button type="button" className="shrink-0 rounded-xl bg-[#e76f3c] text-xs hover:bg-[#d85f2e]" onClick={() => document.querySelector('[data-pos-order-card]')?.scrollIntoView({ behavior: "smooth", block: "start" })}>فتح السلة والإرسال</Button>
+        </div>
+      )}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:max-h-[calc(100vh-156px)] xl:overflow-hidden">
+          <CardHeader className="shrink-0 border-b border-slate-100 px-5 py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <CardTitle className="text-base">الأصناف المتاحة</CardTitle>
               <div className="flex flex-wrap items-center gap-2">
@@ -3319,21 +3372,42 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                   aria-label="البحث عن صنف"
                   className="h-9 w-44 rounded-xl bg-slate-50 text-xs"
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-1">
                   {["داخل المطعم", "استلام", "توصيل", "حجز", "فندق"].map(item => (
                     <button
                       key={item}
                       onClick={() => setChannel(item)}
-                      className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold ${channel === item ? "bg-orange-50 text-[#e76f3c]" : "text-slate-400"}`}
+                      className={`shrink-0 rounded-lg px-3 py-1.5 text-[11px] font-semibold ${channel === item ? "bg-orange-50 text-[#e76f3c]" : "text-slate-400"}`}
                     >
                       {item}
                     </button>
                   ))}
                 </div>
               </div>
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1" data-pos-category-shortcuts>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategoryId(null)}
+                  aria-pressed={selectedCategoryId === null}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-[11px] font-bold ${selectedCategoryId === null ? "bg-[#111c2e] text-white" : "bg-slate-100 text-slate-500"}`}
+                >
+                  كل الأصناف
+                </button>
+                {categoryOptions.map(category => (
+                  <button
+                    type="button"
+                    key={category.id}
+                    onClick={() => setSelectedCategoryId(category.id)}
+                    aria-pressed={selectedCategoryId === category.id}
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-[11px] font-semibold ${selectedCategoryId === category.id ? "bg-orange-50 text-[#e76f3c]" : "bg-slate-50 text-slate-500"}`}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3 sm:p-5">
+          <CardContent className="grid min-h-0 grid-cols-2 gap-2 overflow-y-auto p-3 sm:grid-cols-2 sm:p-5 lg:grid-cols-3 xl:flex-1 xl:overscroll-contain">
             {remoteMenu.isLoading ? (
               <div className="col-span-full rounded-2xl bg-slate-50 p-10 text-center text-sm text-slate-500">
                 جارٍ تحميل الأصناف...
@@ -3372,8 +3446,8 @@ function PosView({ restaurantId }: { restaurantId: number }) {
             )}
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-slate-200 bg-white shadow-sm">
-          <CardHeader className="border-b border-slate-100 px-5 py-4">
+        <Card className="flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:max-h-[calc(100vh-156px)] xl:overflow-hidden" data-pos-order-card>
+          <CardHeader className="shrink-0 border-b border-slate-100 px-5 py-4">
             <CardTitle className="flex items-center justify-between text-base">
               الطلب الحالي
               <span className="text-xs font-normal text-slate-400">
@@ -3381,7 +3455,29 @@ function PosView({ restaurantId }: { restaurantId: number }) {
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-5">
+          <CardContent className="flex min-h-0 flex-col p-5 xl:flex-1">
+            <div className="mb-4 shrink-0 rounded-2xl border border-orange-100 bg-orange-50/60 p-3" data-pos-routing-selector>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-bold text-slate-800">أقسام الإرسال</p>
+                  <p className="mt-1 text-[10px] leading-5 text-slate-500">اختر قسمًا أو أكثر؛ لا توجد وجهة ثابتة باسم المطبخ.</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black text-orange-700">{selectedRoutingSectionIds.length} محدد</span>
+                  <Button type="button" variant="outline" className="h-7 rounded-lg px-2 text-[10px]" onClick={() => { routingSelectionTouchedRef.current = true; setSelectedRoutingSectionIds(enabledKitchenSections.map(section => section.id)); }} disabled={!enabledKitchenSections.length}>تحديد الكل</Button>
+                  <Button type="button" variant="outline" className="h-7 rounded-lg px-2 text-[10px]" onClick={() => { routingSelectionTouchedRef.current = true; setSelectedRoutingSectionIds([]); }} disabled={!selectedRoutingSectionIds.length}>مسح</Button>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="أقسام إرسال الطلب">
+                {remoteKitchenSections.isLoading && <span className="text-[10px] text-slate-500">جارٍ تحميل الأقسام...</span>}
+                {!remoteKitchenSections.isLoading && enabledKitchenSections.length === 0 && <span className="text-[10px] text-amber-700">لا توجد أقسام مفعّلة؛ راجع إعدادات أقسام التشغيل.</span>}
+                {enabledKitchenSections.map(section => {
+                  const selected = selectedRoutingSectionIds.includes(section.id);
+                  return <button type="button" key={section.id} aria-pressed={selected} onClick={() => { routingSelectionTouchedRef.current = true; setSelectedRoutingSectionIds(current => selected ? current.filter(id => id !== section.id) : [...current, section.id]); }} className={`shrink-0 rounded-xl border px-3 py-2 text-[11px] font-bold ${selected ? "border-orange-300 bg-white text-orange-700" : "border-transparent bg-white/60 text-slate-500"}`}><span className={`ml-1 inline-block h-2 w-2 rounded-full ${selected ? "bg-orange-500" : "bg-slate-300"}`} />{section.name}</button>;
+                })}
+              </div>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1 xl:overscroll-contain">
             <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Input
                 value={tableName}
@@ -3518,14 +3614,17 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                 ))
               )}
             </div>
-            <div className="border-t border-slate-100 pt-4">
+            </div>
+            <div className="sticky bottom-0 z-10 border-t border-slate-100 bg-white/95 pt-4 backdrop-blur">
               <div className="mb-3 flex justify-between text-sm">
                 <span className="text-slate-500">الإجمالي</span>
                 <strong className="text-lg">{money(total)}</strong>
               </div>
               <Button
-                disabled={!cart.length || !branchId || createOrder.isPending}
+                disabled={!cart.length || !branchId || createOrder.isPending || remoteKitchenSections.isLoading || (enabledKitchenSections.length > 0 && selectedRoutingSectionIds.length === 0)}
                 onClick={submitOrder}
+                aria-label="إرسال الطلب إلى الأقسام المحددة"
+                data-pos-submit-order
                 className="w-full rounded-xl bg-[#e76f3c] py-5 hover:bg-[#d85f2e]"
               >
                 {remoteBranches.isLoading
@@ -3534,7 +3633,9 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                     ? "لا يوجد فرع مرتبط"
                     : createOrder.isPending
                       ? "جارٍ حفظ الطلب..."
-                      : "إرسال الطلب للمطبخ"}
+                      : enabledKitchenSections.length > 0 && selectedRoutingSectionIds.length === 0
+                        ? "حدد أقسام الإرسال أولًا"
+                        : "إرسال الطلب للأقسام المحددة"}
               </Button>
             </div>
           </CardContent>
