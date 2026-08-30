@@ -60,6 +60,15 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain("detailData.reviews?.length ?");
   });
 
+  it("initializes branch data before evaluating reservation blackout selection", () => {
+    const branchesIndex = source.indexOf("const allBranches = page.data?.branches ?? [];");
+    const blackoutIndex = source.indexOf("const selectedReservationBlackout =");
+    expect(branchesIndex).toBeGreaterThan(-1);
+    expect(blackoutIndex).toBeGreaterThan(-1);
+    expect(branchesIndex).toBeLessThan(blackoutIndex);
+    expect(source).toContain("selectedBranchId ?? allBranches[0]?.id");
+  });
+
   it("keeps restaurant identity in the sticky header and lets it collapse", () => {
     expect(source).toContain("showHeaderBrand");
     expect(source).toContain("nfood-menu-header sticky top-0");

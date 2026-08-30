@@ -75,4 +75,15 @@ describe("team and branding controls", () => {
     expect(panel).toContain("إيقاف الحساب");
     expect(panel).toContain("أُنشئ");
   });
+
+  it("supports restaurant staff identity, waiter table assignments, and self password changes", () => {
+    const router = read("server/routers.ts");
+    const panel = read("client/src/components/RestaurantTeamAccountsPanel.tsx");
+    expect(router).toContain("userId: (await db.select({ id: users.id })");
+    expect(router).toContain("changeMyTeamPassword:");
+    expect(router).toContain("replaceWaiterTableAssignments:");
+    expect(panel).toContain("account.userId");
+    expect(panel).toContain("حفظ ربط");
+    expect(panel).toContain("tablesByBranch.useQuery");
+  });
 });

@@ -289,8 +289,9 @@ export default function RestaurantPublic() {
   const [reservationReceipt, setReservationReceipt] = useState<number | null>(null);
   const [reservationOpen, setReservationOpen] = useState(false);
   const [showReservationPolicy, setShowReservationPolicy] = useState(false);
+  const allBranches = page.data?.branches ?? [];
   const reservationBlackoutDates = page.data?.reservationBlackoutDates ?? [];
-  const selectedReservationBlackout = reservationBlackoutDates.find((item) => item.branchId === (selectedBranchId ?? branches[0]?.id) && item.blackoutDate === reservationDate.slice(0, 10));
+  const selectedReservationBlackout = reservationBlackoutDates.find((item) => item.branchId === (selectedBranchId ?? allBranches[0]?.id) && item.blackoutDate === reservationDate.slice(0, 10));
   const [activeCategory, setActiveCategory] = useState<number | "all">("all");   const [activeTag, setActiveTag] = useState("all");   const [expandedCategoryIds, setExpandedCategoryIds] = useState<number[]>([]);
   const [contentCategoryFilter, setContentCategoryFilter] = useState("all");
   const [cartOpen, setCartOpen] = useState(false);
@@ -429,7 +430,6 @@ export default function RestaurantPublic() {
     setDetailSizeId(parsed.sizes?.[0]?.id ?? null);
     setDetailQuantity(1);
   }, [selectedMenuItem]);
-  const allBranches = page.data?.branches ?? [];
   const publicTableOptions = useMemo(() => Array.from(new Map([...(page.data?.availableTables ?? []), ...(page.data?.serviceTables ?? [])].map((table) => [table.id, table])).values()), [page.data?.availableTables, page.data?.serviceTables]);
   const showBranches = Boolean(page.data?.restaurant.showBranchesOnMenu) && allBranches.length > 1;
   const branches = showBranches ? allBranches : [];

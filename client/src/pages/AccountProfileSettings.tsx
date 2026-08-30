@@ -21,6 +21,12 @@ export default function AccountProfileSettings() {
   });
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? "");
   const [uploading, setUploading] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const changePassword = trpc.platform.changeMyTeamPassword.useMutation({
+    onSuccess: () => { setCurrentPassword(""); setNewPassword(""); toast.success("تم تغيير كلمة المرور وإبطال الجلسات السابقة"); },
+    onError: (error) => toast.error(error.message || "تعذر تغيير كلمة المرور"),
+  });
   useEffect(() => setAvatarUrl(user?.avatarUrl ?? ""), [user?.avatarUrl]);
 
   const handleUpload = async (file: File) => {
@@ -60,6 +66,7 @@ export default function AccountProfileSettings() {
         </Card>
         <Card className="mt-5 rounded-3xl border-cyan-100 bg-cyan-50/60"><CardContent className="flex gap-3 p-5 text-sm leading-7 text-cyan-950"><ImagePlus className="mt-1 h-5 w-5 shrink-0 text-cyan-700" /><p>يمكنك تغيير الصورة في أي وقت. لا تُستخدم الصورة في صفحات المطاعم العامة إلا إذا حفظتها داخل إعدادات هوية المطعم.</p></CardContent></Card>
         <Button type="button" variant="outline" disabled={!avatarUrl || updateAvatar.isPending} onClick={() => updateAvatar.mutate({ avatarUrl: null })} className="mt-5 rounded-xl text-red-600 hover:bg-red-50">حذف صورة الحساب</Button>
+        <Card className="mt-5 rounded-3xl border-orange-100 bg-white shadow-sm"><CardHeader><CardTitle className="text-base">تغيير كلمة المرور</CardTitle><p className="text-xs text-slate-500">ينطبق على حسابات الفريق التجريبية مثل النادل والسائق، ويتم إبطال الجلسات السابقة بعد التغيير.</p></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold">كلمة المرور الحالية<input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" /></label><label className="text-xs font-bold">كلمة المرور الجديدة<input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" placeholder="8 أحرف على الأقل" /></label><Button type="button" disabled={changePassword.isPending || currentPassword.length < 1 || newPassword.length < 8} onClick={() => changePassword.mutate({ currentPassword, newPassword })} className="rounded-xl bg-[#111c2e] sm:col-span-2">{changePassword.isPending ? "جارٍ تغيير كلمة المرور..." : "حفظ كلمة المرور الجديدة"}</Button></CardContent></Card>
       </div>
     </main>
   );

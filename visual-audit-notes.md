@@ -48,3 +48,9 @@
 ## Final modal computed verification after restart
 
 بعد إعادة تشغيل الخادم وفتح زر التفاصيل الصحيح، أصبحت القياسات الفعلية: عرض النافذة 480px، حد العرض الأقصى 480px، الصورة بعرض النافذة وارتفاع 200px مع max-height 200px، محتوى التفاصيل overflow-y = auto، زر الإغلاق نحو 41px، وbody overflow = hidden. تم بذلك حل تعارض النسخة القديمة 30rem التي كانت تحسب 450px.
+
+[2026-08-28] فحص صفحة Cafe Nasser العامة على /restaurant/nssercafa: ظهرت صفحة خطأ فعلية بعد Skeleton، والسبب المعروض `Cannot access 'H' before initialization` مع Request ID ui-afe20194. يجب تحديد مرجع H غير المهيأ في RestaurantPublic أو imports قبل استئناف إعداد الفريق.
+
+[2026-08-28] أُعيد تحميل Menu ناصر كافيه بعد تثبيت مستمع أخطاء مؤقت في المتصفح؛ بدأت الصفحة بحالة Skeleton، ويجري الآن استخراج stack trace لتحديد سبب `Cannot access 'H' before initialization` بدقة.
+
+[2026-08-28] تكرر تعطل Menu ناصر كافيه بعد إعادة التحميل الكاملة، والرسالة نفسها `Cannot access 'H' before initialization` مع Request ID ui-564f6b01؛ المشكلة runtime ثابتة وليست حالة تحميل مؤقتة.
