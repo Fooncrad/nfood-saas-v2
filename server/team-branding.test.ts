@@ -85,5 +85,8 @@ describe("team and branding controls", () => {
     expect(panel).toContain("account.userId");
     expect(panel).toContain("حفظ ربط");
     expect(panel).toContain("tablesByBranch.useQuery");
+    expect(router).toContain('if (ctx.user?.testRole === "waiter")');
+    expect(router).toContain("listTablesForWaiter({ restaurantId: input.restaurantId, branchId: input.branchId, waiterUserId: ctx.user.id })");
+    expect(router).toContain("لا يمكنك إنشاء طلب إلا للطاولات المعيّنة لك");
   });
 });
