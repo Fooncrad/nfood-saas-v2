@@ -2981,3 +2981,23 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
 @media (prefers-reduced-motion: reduce) {
   .nfood-auth-card { animation: none; }
 }
+
+/* Operations layout: clearer hierarchy and more breathing room. */
+.nfood-unified-sidebar[data-sidebar-collapsed="false"] { width: 292px !important; }
+.nfood-unified-sidebar[data-sidebar-collapsed="true"] { width: 78px !important; }
+.nfood-unified-sidebar > header { height: 76px !important; padding-inline: 18px !important; border-color: rgba(255, 250, 245, 0.12) !important; }
+.nfood-unified-sidebar > div.relative.flex { gap: 12px !important; padding: 14px 12px 10px !important; }
+.nfood-unified-sidebar .nfood-sidebar-nav { padding-inline: 2px !important; scrollbar-width: thin; scrollbar-color: rgba(255, 250, 245, 0.22) transparent; }
+.nfood-unified-sidebar .nfood-sidebar-group { border-radius: 16px !important; border-color: rgba(255, 250, 245, 0.08) !important; background: rgba(255, 250, 245, 0.035) !important; }
+.nfood-unified-sidebar .nfood-sidebar-group:has(.bg-gradient-to-r) { border-color: rgba(215, 122, 85, 0.34) !important; background: rgba(215, 122, 85, 0.08) !important; }
+.nfood-unified-sidebar .nfood-sidebar-group > button { min-height: 38px; padding-inline: 10px !important; }
+.nfood-unified-sidebar .nfood-sidebar-group > div { margin-top: 4px !important; padding: 0 3px 4px; }
+.nfood-unified-sidebar .nfood-sidebar-group > div button { min-height: 42px; border-radius: 12px !important; padding-block: 9px !important; }
+.nfood-unified-sidebar footer { padding: 12px !important; background: rgba(9, 19, 33, 0.48) !important; }
+.nfood-dashboard-shell main[data-testid="dashboard-center-canvas"] { gap: 0 !important; }
+.nfood-dashboard-shell [data-testid="dashboard-center-header"] { min-height: 76px !important; padding-inline: 24px !important; background: rgba(247, 245, 239, 0.94) !important; }
+.nfood-dashboard-content { padding: 20px 24px 28px !important; }
+.nfood-dashboard-content > [data-testid="dashboard-center-workspace"] { max-width: 1680px !important; gap: 18px !important; }
+.nfood-dashboard-shell [data-testid="dashboard-center-workspace"] [data-slot="card"] { border-color: #e5e1d8 !important; border-radius: 22px !important; box-shadow: 0 12px 30px rgba(36, 48, 43, 0.055) !important; }
+.nfood-dashboard-shell [role="alert"] { border-radius: 16px !important; border-color: rgba(200, 120, 89, 0.28) !important; background: rgba(255, 247, 243, 0.92) !important; }
+@media (max-width: 1023px) { .nfood-dashboard-content { padding: 14px 12px 22px !important; } .nfood-dashboard-shell [data-testid="dashboard-center-header"] { padding-inline: 14px !important; } }
