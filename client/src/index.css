@@ -2940,8 +2940,9 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
 }
 
 @media (max-width: 1023px) {
-  .nfood-auth-shell { min-height: 100dvh !important; height: auto !important; overflow: visible !important; }
-  .nfood-auth-main { min-height: 100dvh !important; align-items: flex-start !important; padding-top: 72px !important; padding-bottom: 24px !important; }
+  html:has(.nfood-auth-shell), body:has(.nfood-auth-shell) { overflow: hidden !important; }
+  .nfood-auth-shell { min-height: 100dvh !important; height: 100dvh !important; overflow: hidden !important; }
+  .nfood-auth-main { height: 100dvh !important; min-height: 0 !important; max-height: 100dvh !important; align-items: flex-start !important; padding-top: 72px !important; padding-bottom: 24px !important; }
   .nfood-auth-card { width: 100%; }
 }
 
