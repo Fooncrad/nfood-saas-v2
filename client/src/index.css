@@ -2925,6 +2925,26 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
   animation: nfood-auth-card-in 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
+.nfood-auth-shell { overscroll-behavior: none; }
+.nfood-auth-main { scrollbar-width: none; }
+.nfood-auth-main::-webkit-scrollbar { display: none; }
+.nfood-auth-card .space-y-5 > button:last-child svg { display: none !important; }
+
+@media (max-height: 760px) and (min-width: 1024px) {
+  .nfood-auth-card { padding: 20px !important; border-radius: 24px !important; }
+  .nfood-auth-card > div:first-child { margin-bottom: 16px !important; }
+  .nfood-auth-card > div:nth-child(2) { margin-bottom: 16px !important; padding: 10px !important; }
+  .nfood-auth-card > div:nth-child(2) button { min-height: 54px !important; }
+  .nfood-auth-card .space-y-5 { gap: 12px !important; }
+  .nfood-auth-card .mt-7 { margin-top: 14px !important; }
+}
+
+@media (max-width: 1023px) {
+  .nfood-auth-shell { min-height: 100dvh !important; height: auto !important; overflow: visible !important; }
+  .nfood-auth-main { min-height: 100dvh !important; align-items: flex-start !important; padding-top: 72px !important; padding-bottom: 24px !important; }
+  .nfood-auth-card { width: 100%; }
+}
+
 .nfood-auth-shell input:focus {
   border-color: #c87859 !important;
   box-shadow: 0 0 0 4px rgba(200, 120, 89, 0.14) !important;
