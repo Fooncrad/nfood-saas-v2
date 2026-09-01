@@ -36,7 +36,7 @@ describe("menu AI import, translation, and content showcase", () => {
     expect(source).toContain("translateMenuEntity.mutateAsync");
   });
 
-  it("publishes only approved restaurant video listings and labels payment as unconfigured", () => {
+  it("keeps approved content infrastructure private from the public menu layout", () => {
     const db = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
     const router = readFileSync(
       resolve(process.cwd(), "server/routers.ts"),
@@ -57,11 +57,11 @@ describe("menu AI import, translation, and content showcase", () => {
     expect(panel).toContain("تسعير وبيع المحتوى");
     expect(panel).toContain("contentCategory");
     expect(panel).toContain("watermarkEnabled");
-    expect(publicPage).toContain("contentCategoryFilter");
-    expect(publicPage).toContain("NFOOD · PREVIEW");
+    expect(publicPage).not.toContain('<section id="media-showcase"');
+    expect(publicPage).not.toContain("NFOOD · PREVIEW");
     expect(publicPage).toContain("paymentMethod");
-    expect(publicPage).toContain("media-showcase");
-    expect(publicPage).toContain("إضافة إلى سلة المحتوى");
+    expect(publicPage).not.toContain("media-showcase");
+    expect(publicPage).not.toContain("إضافة إلى سلة المحتوى");
     expect(publicPage).toContain("سلة المحتوى المرئي");
     expect(publicPage).toContain("manualPaymentInstructions");
   });

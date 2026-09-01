@@ -317,9 +317,10 @@ export default function Home() {
   const title = localizedNavItems.find((item) => item.key === active)?.label ?? t("overview");
   const sidebarGroups = [
     { id: "restaurant-overview", label: t("overview"), keys: ["overview", "admin"] as NavKey[] },
-    { id: "restaurant-operations", label: t("operations"), keys: ["operations", "orders", "pos", "kds", "menu", "tables", "printers", "inventory", "reservations"] as NavKey[] },
-    { id: "restaurant-growth", label: `${t("marketing")} · ${t("team")}`, keys: ["marketing", "team", "remote"] as NavKey[] },
-    { id: "restaurant-settings", label: t("accountPlatform"), keys: ["settings", "branches", "security", "health", "files"] as NavKey[] },
+    { id: "restaurant-operations", label: t("operations"), keys: ["operations", "orders", "pos", "kds", "menu", "tables", "waiters", "drivers", "printers", "inventory", "reservations"] as NavKey[] },
+    { id: "restaurant-people-growth", label: `${t("team")} · ${t("marketing")}`, keys: ["team", "marketing", "remote"] as NavKey[] },
+    { id: "restaurant-workspace", label: t("accountPlatform"), keys: ["settings", "branches", "files"] as NavKey[] },
+    { id: "restaurant-system", label: t("security"), keys: ["security", "health"] as NavKey[] },
   ].map((group) => ({ ...group, items: group.keys.map((key) => visibleNavItems.find((item) => item.key === key)).filter((item): item is (typeof visibleNavItems)[number] => Boolean(item)) })).filter((group) => group.items.length > 0);
   const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success(t("logout")), notifyError: (message) => toast.error(message) }); };
   const handleSwitchAccount = async () => { await executeSwitchAccountFlow({ logout, closeMenu: () => setProfileOpen(false), startLogin, redirect: () => undefined, notifyError: (message) => toast.error(message) }); };

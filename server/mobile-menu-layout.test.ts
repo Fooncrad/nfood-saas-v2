@@ -47,13 +47,13 @@ describe("mobile menu order preferences and notes", () => {
     expect(source).not.toContain("trackingQuery");
   });
 
-  it("keeps the mobile cart full-width without horizontal distortion", () => {
+  it("keeps the mobile cart compact without horizontal distortion", () => {
     const source = page();
-    expect(source).toContain("w-screen flex-col items-stretch");
+    expect(source).toContain("w-screen flex-col items-center");
     expect(source).toContain("overflow-x-hidden");
-    expect(source).toContain("w-full min-w-0 max-w-none");
+    expect(source).toContain("w-[calc(100%-1rem)] min-w-0 max-w-[440px]");
     expect(source).toContain("bg-transparent");
-    expect(source).toContain("max-h-[76dvh]");
+    expect(source).toContain("max-h-[68dvh]");
   });
 
   it("keeps category motion accessible", () => {

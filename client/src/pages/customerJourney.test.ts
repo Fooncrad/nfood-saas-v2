@@ -22,7 +22,10 @@ describe("customer journey regression", () => {
   });
 
   it("keeps the menu auth sheet compact and the portal customer-specific", () => {
-    expect(menu).toContain("max-h-[76dvh]");
+    expect(menu).toContain("max-h-[68dvh]");
+    expect(menu).toContain("max-w-[440px]");
+    expect(menu).toContain("flex flex-col gap-2");
+    expect(menu).toContain('return modes.length ? modes : allowed;');
     expect(menu).toContain("loginCustomer.mutate");
     expect(portal).toContain("CustomerRewardsWalletPanel");
     expect(portal).toContain("تسجيل الخروج");

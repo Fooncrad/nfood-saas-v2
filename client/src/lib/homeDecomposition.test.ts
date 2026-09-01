@@ -203,8 +203,10 @@ describe("Home decomposition", () => {
     expect(sidebarSource).toContain("export function HomeSidebar(");
     expect(sidebarSource).toContain("onNavigate");
     expect(homeSource).toContain('id: "restaurant-operations"');
-    expect(homeSource).toContain('id: "restaurant-growth"');
-    expect(homeSource).toContain('"printers", "inventory", "reservations"');
+    expect(homeSource).toContain('id: "restaurant-people-growth"');
+    expect(homeSource).toContain('id: "restaurant-workspace"');
+    expect(homeSource).toContain('id: "restaurant-system"');
+    expect(homeSource).toContain('"waiters", "drivers", "printers", "inventory", "reservations"');
     expect(sidebarSource).toContain("aria-expanded={!isGroupCollapsed}");
     expect(sidebarSource).toContain("activeGroupId");
     expect(homeSource).toContain('data-testid="dashboard-center-canvas"');
