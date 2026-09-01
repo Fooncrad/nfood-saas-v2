@@ -9,6 +9,14 @@ describe("customer account security contract", () => {
     expect(TEAM_PERMISSION_CATALOG.map((permission) => permission.key)).toEqual(expect.arrayContaining(["customers.read", "customers.password_reset"]));
   });
 
+  it("exposes waiter calls, notifications, and studio permissions", async () => {
+    const keys = TEAM_PERMISSION_CATALOG.map((permission) => permission.key);
+    expect(keys).toEqual(expect.arrayContaining(["waiter_calls.read", "waiter_calls.update", "notifications.read", "studio.manage"]));
+    const roles = await import("../shared/rolePermissions");
+    expect(roles.DEFAULT_TEAM_ROLE_PERMISSIONS.waiter).toEqual(expect.arrayContaining(["waiter_calls.read", "waiter_calls.update", "notifications.read"]));
+    expect(roles.DEFAULT_TEAM_ROLE_PERMISSIONS.restaurant_admin).toContain("studio.manage");
+  });
+
   it("keeps password assignment separate from email changes", () => {
     expect(routerSource).toContain("setRestaurantCustomerPassword");
     expect(routerSource).toContain("emailChanged: false");

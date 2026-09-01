@@ -128,8 +128,16 @@ describe("RestaurantPublic menu layout", () => {
 
   it("centers and constrains the waiter call dialog on mobile", () => {
     expect(source).toContain("open={waiterCallDialogOpen}");
-    expect(source).toContain("w-[90vw] max-w-sm max-h-[85dvh] overflow-y-auto");
+    expect(source).toContain("nfood-waiter-dialog w-[calc(100%-1rem)] max-w-sm max-h-[85dvh] overflow-y-auto");
+    expect(source).toContain("onClick={callWaiter}");
+    expect(source).not.toContain("setDrawerOpen(false); callWaiter();");
     expect(source).toContain("setWaiterCallDialogOpen(false)");
+  });
+
+  it("keeps the menu barcode at the bottom and uses the public menu route", () => {
+    expect(source).toContain('aria-label="باركود المنيو"');
+    expect(source).toContain("<Barcode value=");
+    expect(source).toContain("/menu/${encodeURIComponent(slug)}");
   });
 
   it("places category navigation in normal flow below the cover", () => {

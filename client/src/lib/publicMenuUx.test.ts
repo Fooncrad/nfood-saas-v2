@@ -104,7 +104,8 @@ describe("public menu UX", () => {
     expect(page).not.toContain('showMenuTool("orderType")');
     expect(page).toContain("registerCustomer");
     expect(page).toContain("requestCustomerOtp");
-    expect(page).toContain("<footer className=\"mt-14");
+    expect(page).toContain("<footer className=\"mt-8");
+    expect(page).toContain('aria-label="باركود المنيو"');
     expect(page).toContain("{copy.workingHours}");
     expect(page).toContain("min-h-[19rem]");
     expect(page).toContain("LanguageSwitcher compact minimal");

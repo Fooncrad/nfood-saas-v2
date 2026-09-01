@@ -7,6 +7,10 @@ export const TEAM_PERMISSION_CATALOG = [
   { key: "menu.manage", label: "إدارة الأصناف والمنيو", group: "المنيو" },
   { key: "inventory.manage", label: "إدارة المخزون", group: "المخزون" },
   { key: "reservations.manage", label: "إدارة الحجوزات", group: "الحجوزات" },
+  { key: "waiter_calls.read", label: "استقبال نداءات النادل", group: "التشغيل" },
+  { key: "waiter_calls.update", label: "تأكيد وإغلاق نداءات النادل", group: "التشغيل" },
+  { key: "notifications.read", label: "استقبال إشعارات التشغيل والحجوزات", group: "الإشعارات" },
+  { key: "studio.manage", label: "إدارة مساحة الاستوديو", group: "الاستوديو" },
   { key: "reports.read", label: "عرض التقارير", group: "التقارير" },
   { key: "finance.read", label: "عرض البيانات المالية", group: "المالية" },
   { key: "team.manage", label: "إدارة الفريق والحسابات", group: "الإدارة" },
@@ -20,7 +24,7 @@ export const TEAM_PERMISSION_CATALOG = [
 export type TeamPermission = (typeof TEAM_PERMISSION_CATALOG)[number]["key"];
 export const DEFAULT_TEAM_ROLE_PERMISSIONS: Record<string, TeamPermission[]> = {
   restaurant_admin: TEAM_PERMISSION_CATALOG.map((permission) => permission.key),
-  waiter: ["orders.read", "orders.update", "menu.read", "reservations.manage"],
+  waiter: ["orders.read", "orders.update", "menu.read", "reservations.manage", "waiter_calls.read", "waiter_calls.update", "notifications.read"],
   kitchen: ["orders.read", "orders.update", "kds.manage", "menu.read"],
   cashier: ["orders.read", "orders.update", "orders.cancel", "menu.read"],
   driver: ["orders.read", "orders.update"],

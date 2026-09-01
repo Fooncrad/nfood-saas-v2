@@ -217,6 +217,17 @@
     min-width: 0;
   }
 
+  .nfood-waiter-dialog {
+    position: fixed !important;
+    inset-inline-start: 50% !important;
+    inset-block-start: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    width: min(calc(100% - 1rem), 28rem) !important;
+    max-height: 85dvh !important;
+    overflow-y: auto !important;
+  }
+
   @media (max-width: 767px) {
     html, body, #root {
       height: auto;
