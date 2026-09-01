@@ -88,5 +88,7 @@ describe("team and branding controls", () => {
     expect(router).toContain('if (ctx.user?.testRole === "waiter")');
     expect(router).toContain("listTablesForWaiter({ restaurantId: input.restaurantId, branchId: input.branchId, waiterUserId: ctx.user.id })");
     expect(router).toContain("لا يمكنك إنشاء طلب إلا للطاولات المعيّنة لك");
+    expect(router).toContain("scopedRestaurantId ? listRestaurants(scopedRestaurantId) : []");
+    expect(router).not.toContain("?.restaurantId ?? 1; return isAdminContext(ctx) ? listRestaurants() : listRestaurants(scopedRestaurantId)");
   });
 });
