@@ -10,8 +10,10 @@ describe("super admin restaurant catalog safety layout", () => {
     expect(source).toContain("enterRestaurant.mutate({ id: restaurant.id })");
     expect(source).toContain("ui.resetPassword");
     expect(source).not.toContain("ui.editPlan");
-    expect(source).not.toContain("ui.pause");
-    expect(source).not.toContain("ui.activate");
+    expect(source).toContain("ui.pause");
+    expect(source).toContain("ui.activate");
+    expect(source).toContain("data-testid={`restaurant-status-toggle-${restaurant.id}`}");
+    expect(source).toContain("status: restaurant.status === \"suspended\" ? \"active\" : \"suspended\"");
   });
 
   it("renders deletion as explicitly disabled to prevent accidental removal", () => {

@@ -671,6 +671,18 @@ export function SuperAdminRestaurantCatalog() {
                         type="button"
                         size="sm"
                         variant="outline"
+                        disabled={updateRestaurant.isPending}
+                        onClick={() => updateRestaurant.mutate({ id: restaurant.id, status: restaurant.status === "suspended" ? "active" : "suspended" })}
+                        className={`h-7 max-w-full gap-1 rounded-lg px-2 text-[10px] font-bold ${restaurant.status === "suspended" ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-300" : "border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-300"}`}
+                        data-testid={`restaurant-status-toggle-${restaurant.id}`}
+                      >
+                        {restaurant.status === "suspended" ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0" />}
+                        {restaurant.status === "suspended" ? ui.activate : ui.pause}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
                         disabled={resetPassword.isPending}
                         onClick={() => {
                           const password = window.prompt(
