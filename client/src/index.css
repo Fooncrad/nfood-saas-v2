@@ -2884,19 +2884,16 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
   [data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"],
   [data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="top"],
   [data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="bottom"] {
-    top: auto !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100dvw !important;
-    min-width: 100dvw !important;
-    max-width: 100dvw !important;
+    top: 50% !important;
+    bottom: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    width: min(90vw, 480px) !important;
+    min-width: 0 !important;
+    max-width: 480px !important;
     max-height: 85dvh !important;
-    border-radius: 12px 12px 0 0 !important;
-    transform: translateY(100%) !important;
-  }
-  [data-slot="dialog-content"].nfood-product-detail-dialog[data-state="open"] {
-    transform: translateY(0) !important;
+    border-radius: 12px !important;
+    transform: translate(-50%, -50%) !important;
   }
   [data-slot="dialog-content"].nfood-product-detail-dialog .nfood-product-detail-panel {
     max-height: 85dvh !important;

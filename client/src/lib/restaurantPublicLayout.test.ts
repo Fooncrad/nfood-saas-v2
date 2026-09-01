@@ -20,7 +20,7 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain('open={selectedMenuItem !== null}');
     expect(source).toContain("nfood-product-detail-dialog");
     expect(source).toContain("nfood-product-detail-panel");
-    expect(source).toContain("h-[clamp(180px,30vh,260px)");
+    expect(source).toContain("h-[200px]");
     expect(source).toContain("الوصف الكامل");
     expect(source).toContain("selectedMenuItem.description || copy.defaultDescription");
     expect(source).toContain("detailCalories");
@@ -86,15 +86,17 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).not.toContain("<span>أدوات المنيو</span>");
   });
 
-  it("keeps secondary menu tools available through their existing flows", () => {
+  it("keeps non-QR menu tools available without exposing QR controls", () => {
     expect(source).toContain("downloadMenuPdf");
-    expect(source).toContain("menuQrOpen");
-    expect(source).toContain("qrMenuUrl");
+    expect(source).not.toContain("menuQrOpen");
+    expect(source).not.toContain("qrMenuUrl");
+    expect(source).not.toContain("QRCodeSVG");
   });
 
-  it("does not expose the raw QR URL in the visible dialog", () => {
-    expect(source).not.toContain('<p dir="ltr" className="break-all rounded-xl bg-slate-50');
-    expect(source).toContain("NFOOD · {restaurantName}");
+  it("removes QR controls from the public menu UI", () => {
+    expect(source).not.toContain("عرض QR");
+    expect(source).not.toContain("باركود منيو المطعم");
+    expect(source).not.toContain("رمز الفاتورة المشتركة");
   });
 
   it("protects menu cards from the fixed mobile navigation", () => {
@@ -110,19 +112,30 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain("overflow-x-auto");
   });
 
-  it("styles the product detail panel for mobile bottom-sheet and desktop two-column layouts", () => {
+  it("centers the product detail panel with image-first internal scrolling", () => {
     const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
     expect(css).toContain(".nfood-product-detail-dialog");
-    expect(css).toContain("bottom: 0 !important");
-    expect(css).toContain("right: 0 !important");
-    expect(css).toContain("left: 0 !important");
-    expect(css).toContain("width: 100dvw !important");
-    expect(css).toContain("transform: none !important");
-    expect(css).toContain("overflow-wrap: anywhere");
-    expect(css).toContain("max-height: 92dvh !important");
-    expect(source).toContain("sm:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]");
-    expect(source).toContain("overflow-y-auto p-4 sm:p-7");
-    expect(source).toContain("shrink-0 border-t border-slate-100");
+    expect(css).toContain("top: 50% !important");
+    expect(css).toContain("left: 50% !important");
+    expect(css).toContain("width: min(90vw, 480px) !important");
+    expect(css).toContain("transform: translate(-50%, -50%) !important");
+    expect(css).toContain("overflow-y: auto !important");
+    expect(css).toContain("max-height: 85dvh !important");
+    expect(css).toContain("flex-direction: column !important;");
+    expect(source).toContain("overflow-y-auto overscroll-contain p-4 sm:p-6");
+    expect(source).toContain("h-[200px] max-h-[200px]");
+  });
+
+  it("centers and constrains the waiter call dialog on mobile", () => {
+    expect(source).toContain("open={waiterCallDialogOpen}");
+    expect(source).toContain("w-[90vw] max-w-sm max-h-[85dvh] overflow-y-auto");
+    expect(source).toContain("setWaiterCallDialogOpen(false)");
+  });
+
+  it("places category navigation in normal flow below the cover", () => {
+    expect(source).toContain("nfood-menu-cover");
+    expect(source).toContain("nfood-menu-category-bar relative z-10");
+    expect(source).not.toContain("nfood-menu-category-bar sticky top-16");
   });
 
   it("supports smooth hover only where a pointer is available", () => {
@@ -298,17 +311,16 @@ describe("Cardless menu experiment", () => {
     expect(homeModulesSource).toContain('menuDisplayDraft.itemLayout === "cardless"');
   });
 
-  it("pins the mobile detail sheet to the viewport and contains the primary image", () => {
-    expect(css).toContain("inset-inline: 0 !important;");
-    expect(css).toContain("width: 100dvw !important;");
-    expect(css).toContain("translate: none !important;");
-    expect(css).toContain("object-fit: contain !important;");
-    expect(css).toContain("object-position: center !important;");
+  it("centers the detail modal on mobile and contains the primary image", () => {
     expect(css).toContain('[data-slot="dialog-content"].nfood-product-detail-dialog');
-    expect(css).toContain("min-width: 100dvw !important;");
-    expect(css).toContain("top: 0 !important;");
-    expect(css).toContain("bottom: 0 !important;");
-    expect(source).toContain('nfood-product-detail-image h-[clamp(180px,30vh,260px)]');
+    expect(css).toContain("top: 50% !important;");
+    expect(css).toContain("left: 50% !important;");
+    expect(css).toContain("width: min(90vw, 480px) !important;");
+    expect(css).toContain("transform: translate(-50%, -50%) !important;");
+    expect(css).toContain("object-fit: cover !important;");
+    expect(css).toContain("object-position: center !important;");
+    expect(css).toContain("max-height: 85dvh !important;");
+    expect(source).toContain("nfood-product-detail-image h-[200px] max-h-[200px]");
   });
 
   it("exposes a numbered vertical settings hub with separated workspace sections", () => {

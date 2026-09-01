@@ -108,22 +108,22 @@ describe("public menu UX", () => {
     expect(page).toContain("{copy.workingHours}");
     expect(page).toContain("min-h-[19rem]");
     expect(page).toContain("LanguageSwitcher compact minimal");
-    expect(page).toContain("nfood-menu-category-bar sticky top-16");
+    expect(page).toContain("nfood-menu-category-bar relative z-10");
+    expect(page).not.toContain("nfood-menu-category-bar sticky top-16");
     expect(page).toContain("category.imageUrl");
     expect(page).toContain("page.data.restaurant.tiktokUrl");
     expect(styles).toContain("background: #fff !important");
     expect(page).not.toContain("<a href=\"#contact\" className=\"transition hover:text-[var(--menu-primary)]\">");
   });
 
-  it("keeps QR outside the primary menu content and removes the drawer helper copy", () => {
+  it("removes QR controls from the public menu while keeping PDF fallback", () => {
     const mainMenu = page.slice(page.indexOf('<div id="menu"'), page.indexOf('<section id="reservation"'));
     expect(mainMenu).not.toContain("QRCodeSVG");
-    expect(page).toContain("menuQrOpen");
-    expect(page).toContain("{copy.qrTitle}");
-    expect(page).toContain("{copy.qrHelp}");
-    expect(page).toContain('size={72}');
-    expect(page).not.toContain('<p dir="ltr" className="break-all rounded-xl bg-slate-50');
-    expect(page).toContain("grid grid-cols-2 gap-2");
+    expect(page).not.toContain("menuQrOpen");
+    expect(page).not.toContain("qrMenuUrl");
+    expect(page).not.toContain("عرض QR");
+    expect(page).not.toContain("باركود منيو المطعم");
+    expect(page).toContain("downloadMenuPdf");
     expect(page).not.toContain("shareMenuLink");
   });
 
