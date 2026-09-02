@@ -152,6 +152,22 @@ function vitePluginManusDebugCollector(): Plugin {
 
 const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
 
+function manualChunks(id: string) {
+  const normalizedId = id.replaceAll("\\\\", "/");
+  if (!normalizedId.includes("node_modules")) {
+    if (normalizedId.includes("/client/src/components/") || normalizedId.includes("/client/src/pages/")) {
+      if (/\/(PosView|KdsOperationsBoard|KitchenTicketBoard|CompactOrdersBoard|OrderRealtimeAlerts|DriverDeliveryView|DeliveryOperationsPanel|KitchenPrinterSettings|ReservationsView|ReservationSchedulePanel|ReservationPolicyPanel)\./.test(normalizedId)) return "dashboard-operations";
+      if (/\/(MenuAddonsPanel|TranslationGlossaryPanel|TranslationReviewPanel|MediaLibraryPanel|MenuImportReviewPanel|RestaurantMenuInsightsPanel|QROperationsPanel)\./.test(normalizedId)) return "dashboard-content";
+      if (/\/(ContentMarketplace|CustomerRewardsWalletPanel|CustomerContentLibrary|CustomerProfileSettings|VcardAccountBinding|LoyaltyPanel|ReviewsPanel)\./.test(normalizedId)) return "dashboard-growth";
+    }
+    return undefined;
+  }
+  if (normalizedId.includes("lucide-react")) return "vendor-icons";
+  if (normalizedId.includes("@radix-ui")) return "vendor-radix";
+  if (normalizedId.includes("react-barcode")) return "vendor-barcode";
+  return undefined;
+}
+
 export default defineConfig({
   plugins,
   resolve: {
@@ -167,9 +183,11 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
-    // Keep route-level lazy imports for performance. Automatic chunking avoids
-    // circular React runtime dependencies that can break production mounting.
-    rollupOptions: {},
+    // Keep route-level lazy imports for performance and split heavy dashboard
+    // modules so the initial authenticated shell does not carry every station.
+    rollupOptions: {
+      output: { manualChunks },
+    },
   },
   server: {
     host: true,
