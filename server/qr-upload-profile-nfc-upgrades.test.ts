@@ -45,4 +45,11 @@ describe("QR menu, image upload, Profile plans and NFC upgrades", () => {
     expect(moderation).toContain("generatedCardCode");
     expect(moderation).toContain("يظهر مرة واحدة فقط");
   });
+
+  it("makes NFC binding single-use by transitioning available codes to bound", () => {
+    expect(db).toContain('code.status !== "available"');
+    expect(db).toContain('throw new Error("VCard code is unavailable")');
+    expect(db).toContain('status: "bound", boundAt: new Date()');
+    expect(db).toContain("where(eq(vcardCardCodes.id, code.id))");
+  });
 });
