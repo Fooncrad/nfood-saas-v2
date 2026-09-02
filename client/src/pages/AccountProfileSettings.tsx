@@ -49,6 +49,8 @@ export default function AccountProfileSettings() {
   };
 
   const roleLabel = user?.role === "admin" ? "Super Admin" : user?.testRole === "restaurant_admin" ? "مدير المطعم" : user?.testRole === "kitchen" ? "المطبخ" : user?.testRole === "waiter" ? "النادل" : user?.testRole === "cashier" ? "الكاشير" : user?.testRole === "driver" ? "السائق" : "العميل";
+  const canUseCustomerProfile = user?.testRole === "customer" || (!user?.testRole && user?.role === "user");
+  if (user && !canUseCustomerProfile) return <main dir="rtl" className="flex min-h-screen items-center justify-center bg-[#f7f8fb] p-6 text-slate-900"><Card className="w-full max-w-md rounded-3xl border-slate-200 bg-white shadow-sm"><CardHeader><CardTitle>الملف الشخصي غير متاح</CardTitle></CardHeader><CardContent><p className="text-sm leading-7 text-slate-500">إعدادات الملف الشخصي مخصصة للعملاء فقط. تُدار حسابات المطاعم والفريق من لوحات التشغيل والصلاحيات.</p><Link href="/"><Button className="mt-5 rounded-xl bg-[#111c2e]">العودة للوحة</Button></Link></CardContent></Card></main>;
   return (
     <main dir="rtl" className="min-h-screen bg-[#f7f8fb] p-5 text-slate-900 sm:p-8">
       <div className="mx-auto max-w-3xl">

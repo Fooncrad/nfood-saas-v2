@@ -1077,6 +1077,7 @@ export const testAccounts = mysqlTable("testAccounts", {
   phone: varchar("phone", { length: 40 }),
   role: mysqlEnum("role", ["admin", "restaurant_admin", "waiter", "kitchen", "bar", "cashier", "customer", "driver"]).notNull(),
   passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  permissionsJson: text("permissionsJson"),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

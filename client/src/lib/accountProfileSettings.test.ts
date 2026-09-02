@@ -16,6 +16,12 @@ describe("account profile image flow", () => {
     expect(app).toContain("animate-pulse");
   });
 
+  it("keeps the profile surface customer-only", () => {
+    expect(home).toContain('user?.testRole === "customer" || (!user?.testRole && user?.role === "user")');
+    expect(page).toContain("canUseCustomerProfile");
+    expect(page).toContain("الملف الشخصي غير متاح");
+  });
+
   it("uploads account images through storage and persists avatarUrl", () => {
     expect(page).toContain("trpc.media.upload.useMutation");
     expect(page).toContain('scope: "user"');

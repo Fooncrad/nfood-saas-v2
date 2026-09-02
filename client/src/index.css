@@ -2935,3 +2935,31 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
     max-height: 240px;
   }
 }
+
+/* Final waiter dialog centering override: never render the public waiter call as a side drawer. */
+[data-slot="dialog-content"].nfood-waiter-dialog,
+[data-slot="dialog-content"].nfood-waiter-dialog[data-state="open"] {
+  position: fixed !important;
+  top: 50% !important;
+  bottom: auto !important;
+  left: 50% !important;
+  right: auto !important;
+  width: min(calc(100dvw - 1rem), 28rem) !important;
+  min-width: 0 !important;
+  max-width: 28rem !important;
+  max-height: 85dvh !important;
+  margin: 0 !important;
+  transform: translate(-50%, -50%) !important;
+  translate: none !important;
+  inset-inline: auto !important;
+  border-radius: 1.5rem !important;
+  overflow-y: auto !important;
+}
+@media (max-width: 639px) {
+  [data-slot="dialog-content"].nfood-waiter-dialog,
+  [data-slot="dialog-content"].nfood-waiter-dialog[data-state="open"] {
+    width: calc(100dvw - 1rem) !important;
+    max-width: 28rem !important;
+    max-height: 85dvh !important;
+  }
+}
