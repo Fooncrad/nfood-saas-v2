@@ -1179,19 +1179,19 @@ export async function listAdminCustomerAccounts() {
     db.select({ customerId: walletAccounts.customerId, balance: walletAccounts.balance }).from(walletAccounts),
     db.select({ ownerUserId: contentListings.ownerUserId, status: contentListings.status }).from(contentListings),
     db.select({ buyerUserId: contentPurchaseOrders.buyerUserId, customerUserId: contentPurchaseOrders.customerUserId, total: contentPurchaseOrders.total, status: contentPurchaseOrders.status }).from(contentPurchaseOrders),
-    db.select({ userId: customerProfiles.userId, slug: customerProfiles.slug, email: customerProfiles.email, displayName: customerProfiles.displayName, phone: customerProfiles.phone, createdAt: customerProfiles.createdAt }).from(customerProfiles),
+    db.select({ id: customerProfiles.id, userId: customerProfiles.userId, slug: customerProfiles.slug, email: customerProfiles.email, displayName: customerProfiles.displayName, phone: customerProfiles.phone, createdAt: customerProfiles.createdAt }).from(customerProfiles),
     db.select({ userId: vcardCardBindings.userId }).from(vcardCardBindings).innerJoin(vcardCardCodes, eq(vcardCardBindings.codeId, vcardCardCodes.id)).where(eq(vcardCardCodes.status, "bound")),
   ]);
   const rawCustomers = [
-    ...accounts.map((account) => { const userId = userRows.find((candidate) => candidate.openId === `test_${account.id}`)?.id ?? null; return { sourceId: account.id, userId, email: account.email, displayName: account.displayName, phone: account.phone, isActive: account.isActive, createdAt: account.createdAt, profileSlug: profileRows.find((profile) => profile.userId === userId)?.slug ?? null, lastSignedIn: userRows.find((candidate) => candidate.openId === `test_${account.id}`)?.lastSignedIn ?? null }; }),
-    ...profileRows.filter((profile) => !accounts.some((account) => userRows.find((candidate) => candidate.openId === `test_${account.id}`)?.id === profile.userId)).map((profile) => ({ sourceId: profile.userId, userId: profile.userId, email: profile.email ?? "بريد غير مسجل", displayName: profile.displayName ?? `عميل #${profile.userId}`, phone: profile.phone, isActive: true, createdAt: profile.createdAt, profileSlug: profile.slug, lastSignedIn: userRows.find((candidate) => candidate.id === profile.userId)?.lastSignedIn ?? null })),
+    ...accounts.map((account) => { const userId = userRows.find((candidate) => candidate.openId === `test_${account.id}`)?.id ?? null; const profile = profileRows.find((candidate) => candidate.userId === userId); return { sourceId: account.id, userId, customerProfileId: profile?.id ?? null, email: account.email, displayName: profile?.displayName ?? account.displayName, phone: account.phone, isActive: account.isActive, createdAt: account.createdAt, profileSlug: profile?.slug ?? null, lastSignedIn: userRows.find((candidate) => candidate.openId === `test_${account.id}`)?.lastSignedIn ?? null }; }),
+    ...profileRows.filter((profile) => !accounts.some((account) => userRows.find((candidate) => candidate.openId === `test_${account.id}`)?.id === profile.userId)).map((profile) => ({ sourceId: profile.userId, userId: profile.userId, customerProfileId: profile.id, email: profile.email ?? "بريد غير مسجل", displayName: profile.displayName ?? `عميل #${profile.userId}`, phone: profile.phone, isActive: true, createdAt: profile.createdAt, profileSlug: profile.slug, lastSignedIn: userRows.find((candidate) => candidate.id === profile.userId)?.lastSignedIn ?? null })),
   ].map((account) => {
     const wallet = account.userId ? walletRows.find((row) => row.customerId === account.userId) : undefined;
     const listed = listings.filter((row) => row.ownerUserId === account.userId);
     const soldOrders = purchaseRows.filter((row) => row.customerUserId === account.userId && row.status === "approved");
     const purchasedOrders = purchaseRows.filter((row) => row.buyerUserId === account.userId && row.status === "approved");
     const grossSales = soldOrders.reduce((sum, row) => sum + Number(row.total ?? 0), 0);
-    return { id: account.sourceId, userId: account.userId, email: account.email, displayName: account.displayName, phone: account.phone, isActive: account.isActive, createdAt: account.createdAt, lastSignedIn: account.lastSignedIn, profileSlug: account.profileSlug ?? null, hasActiveNfc: Boolean(account.userId && cardBindings.some((binding) => binding.userId === account.userId)), walletBalance: Number(wallet?.balance ?? 0), listedCount: listed.length, soldCount: soldOrders.length, purchasedCount: purchasedOrders.length, grossSales };
+    return { id: account.sourceId, userId: account.userId, customerProfileId: account.customerProfileId ?? null, email: account.email, displayName: account.displayName, phone: account.phone, isActive: account.isActive, createdAt: account.createdAt, lastSignedIn: account.lastSignedIn, profileSlug: account.profileSlug ?? null, hasActiveNfc: Boolean(account.userId && cardBindings.some((binding) => binding.userId === account.userId)), walletBalance: Number(wallet?.balance ?? 0), listedCount: listed.length, soldCount: soldOrders.length, purchasedCount: purchasedOrders.length, grossSales };
   });
   const customerMap = new Map<string, (typeof rawCustomers)[number]>();
   rawCustomers.forEach((customer) => {
@@ -1241,13 +1241,30 @@ export async function createCustomerCardRequest(input: { requesterUserId: number
 export async function listCustomerCardRequests(requesterUserId?: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(customerCardRequests).where(requesterUserId ? eq(customerCardRequests.requesterUserId, requesterUserId) : undefined).orderBy(desc(customerCardRequests.createdAt));
+  return db.select({
+    id: customerCardRequests.id,
+    requesterUserId: customerCardRequests.requesterUserId,
+    customerProfileId: customerCardRequests.customerProfileId,
+    bindingId: customerCardRequests.bindingId,
+    requestType: customerCardRequests.requestType,
+    status: customerCardRequests.status,
+    reason: customerCardRequests.reason,
+    adminNote: customerCardRequests.adminNote,
+    price: customerCardRequests.price,
+    currency: customerCardRequests.currency,
+    resolvedByUserId: customerCardRequests.resolvedByUserId,
+    resolvedAt: customerCardRequests.resolvedAt,
+    createdAt: customerCardRequests.createdAt,
+    updatedAt: customerCardRequests.updatedAt,
+    profileDisplayName: customerProfiles.displayName,
+    profileSlug: customerProfiles.slug,
+  }).from(customerCardRequests).leftJoin(customerProfiles, eq(customerCardRequests.customerProfileId, customerProfiles.id)).where(requesterUserId ? eq(customerCardRequests.requesterUserId, requesterUserId) : undefined).orderBy(desc(customerCardRequests.createdAt));
 }
 
-export async function updateCustomerCardRequest(id: number, input: { status?: "pending" | "approved" | "rejected" | "fulfilled" | "cancelled"; adminNote?: string | null; price?: string | null; resolvedByUserId?: number | null }) {
+export async function updateCustomerCardRequest(id: number, input: { status?: "pending" | "approved" | "rejected" | "fulfilled" | "cancelled"; adminNote?: string | null; price?: string | null; resolvedByUserId?: number | null; bindingId?: number | null }) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
-  await db.update(customerCardRequests).set({ status: input.status, adminNote: input.adminNote, price: input.price, resolvedByUserId: input.resolvedByUserId, resolvedAt: input.status && input.status !== "pending" ? new Date() : undefined, updatedAt: new Date() }).where(eq(customerCardRequests.id, id));
+  await db.update(customerCardRequests).set({ status: input.status, adminNote: input.adminNote, price: input.price, resolvedByUserId: input.resolvedByUserId, bindingId: input.bindingId, resolvedAt: input.status && input.status !== "pending" ? new Date() : undefined, updatedAt: new Date() }).where(eq(customerCardRequests.id, id));
 }
 
 

@@ -86,11 +86,12 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).not.toContain("<span>أدوات المنيو</span>");
   });
 
-  it("keeps non-QR menu tools available without exposing QR controls", () => {
+  it("keeps non-QR menu tools available while showing the compact identity QR", () => {
     expect(source).toContain("downloadMenuPdf");
     expect(source).not.toContain("menuQrOpen");
     expect(source).not.toContain("qrMenuUrl");
-    expect(source).not.toContain("QRCodeSVG");
+    expect(source).toContain("QRCodeSVG");
+    expect(source).toContain('aria-label="QR المنيو"');
   });
 
   it("removes QR controls from the public menu UI", () => {
@@ -143,9 +144,9 @@ describe("RestaurantPublic menu layout", () => {
     expect((source.match(/<select value=\{orderType\}/g) ?? []).length).toBe(1);
   });
 
-  it("keeps the menu barcode at the bottom and uses the public menu route", () => {
-    expect(source).toContain('aria-label="باركود المنيو"');
-    expect(source).toContain("<Barcode value=");
+  it("keeps the compact menu QR at the bottom and uses the public menu route", () => {
+    expect(source).toContain('aria-label="QR المنيو"');
+    expect(source).toContain("<QRCodeSVG");
     expect(source).toContain("/menu/${encodeURIComponent(slug)}");
   });
 

@@ -63,8 +63,9 @@ describe("public menu UX", () => {
 
   it("opens a real menu preview in a new tab from branding settings", () => {
     const settings = readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
-    expect(settings).toContain("1000×900 بكسل");
-    expect(settings).toContain("image.naturalWidth > 1000 || image.naturalHeight > 900");
+    expect(settings).toContain("20MB");
+    expect(settings).toContain("قص وضغط تلقائي إلى مربع");
+    expect(settings).not.toContain("image.naturalWidth > 1000 || image.naturalHeight > 900");
     expect(settings).toContain("window.open(publicPreviewUrl");
     expect(settings).toContain('url.searchParams.set("preview", "1")');
     expect(settings).toContain('url.searchParams.set("template", draft.menuTemplate)');
@@ -105,7 +106,8 @@ describe("public menu UX", () => {
     expect(page).toContain("registerCustomer");
     expect(page).toContain("requestCustomerOtp");
     expect(page).toContain("<footer className=\"mt-8");
-    expect(page).toContain('aria-label="باركود المنيو"');
+    expect(page).toContain('aria-label="QR المنيو"');
+    expect(page).toContain("<QRCodeSVG");
     expect(page).toContain("{copy.workingHours}");
     expect(page).toContain("min-h-[19rem]");
     expect(page).toContain("LanguageSwitcher compact minimal");

@@ -28,7 +28,7 @@ describe("content review experience", () => {
     expect(router).toContain("hasValidImageSignature");
     expect(router).toContain("scanBufferWithClamAV");
     expect(router).toContain("لم يتم تخزينها");
-    expect(router).toContain("virusScanStatus: \"clean\"");
+    expect(router).toContain('virusScanStatus: virusScan.status === "unavailable" ? "unavailable" : "clean"');
     expect(router.indexOf("scanBufferWithClamAV(buffer)")).toBeLessThan(router.indexOf("storagePut(`media/"));
   });
 });

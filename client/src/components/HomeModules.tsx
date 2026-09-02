@@ -960,6 +960,15 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
   const [newTags, setNewTags] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
+  const generateMenuImage = trpc.media.generateMenuImage.useMutation({
+    onSuccess: result => {
+      const generatedUrl = result.url ?? "";
+      if (!generatedUrl) return toast.error("لم تُرجع خدمة التوليد رابط صورة صالحًا");
+      setNewImageUrl(generatedUrl);
+      toast.success("تم توليد صورة الصنف وإضافتها إلى المعاينة");
+    },
+    onError: error => toast.error(error.message || "تعذر توليد صورة الصنف الآن"),
+  });
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(
     null
   );
@@ -1114,8 +1123,8 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
   ) => {
     if (!file.type.startsWith("image/"))
       return toast.error("اختر ملف صورة صالحًا");
-    if (file.size > 8 * 1024 * 1024)
-      return toast.error("حجم الصورة يتجاوز 8 ميجابايت");
+    if (file.size > 20 * 1024 * 1024)
+      return toast.error("حجم الصورة الأصلي يتجاوز 20 ميجابايت. اختر صورة أصغر ثم حاول مجددًا.");
     setImageUploading(true);
     try {
       const prepared = await prepareSquareImage(file);
@@ -1136,7 +1145,8 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
       onUploaded(result.url);
       toast.success(successMessage);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "تعذر رفع الصورة");
+      const message = error instanceof Error ? error.message : "";
+      toast.error(message.includes("Service Unavailable") || message.includes("Unexpected token") ? "خدمة رفع الصور غير متاحة مؤقتًا. حاول مجددًا أو استخدم زر توليد صورة بالذكاء الاصطناعي." : message || "تعذر رفع الصورة");
     } finally {
       setImageUploading(false);
     }
@@ -1153,25 +1163,11 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
       toast.error("اختر ملف صورة صالحًا للصنف");
       return;
     }
-    const objectUrl = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      if (image.naturalWidth > 1000 || image.naturalHeight > 900) {
-        toast.error(`أبعاد صورة الصنف يجب ألا تتجاوز 1000×900 بكسل. الصورة الحالية ${image.naturalWidth}×${image.naturalHeight} بكسل.`);
-        return;
-      }
-      void uploadPreparedImage(
-        file,
-        url => setNewImageUrl(url),
-        "تم تجهيز صورة الصنف ورفعها بنجاح"
-      );
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      toast.error("تعذر قراءة أبعاد الصورة. اختر صورة PNG أو JPG أو WEBP صالحة.");
-    };
-    image.src = objectUrl;
+    void uploadPreparedImage(
+      file,
+      url => setNewImageUrl(url),
+      "تم قص الصورة تلقائيًا إلى مربع وضغطها ورفعها بنجاح"
+    );
   };
   const updateCategoryImage = (categoryId: number, file: File) => {
     void uploadPreparedImage(
@@ -1668,9 +1664,19 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
                       {imageUploading ? "جارٍ رفع الصورة..." : "رفع صورة الصنف"}
                     </span>
                     <span className="mt-1 text-xs text-slate-400">
-                      PNG أو JPG أو WEBP · حتى 8MB · الحد الأقصى 1000×900 بكسل
+                      PNG أو JPG أو WEBP · حتى 20MB · قص وضغط تلقائي إلى مربع
                     </span>
                   </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={generateMenuImage.isPending || newName.trim().length < 2}
+                    onClick={() => generateMenuImage.mutate({ restaurantId, itemName: newName.trim(), categoryName: categories.find(category => String(category.id) === newCategoryId)?.name })}
+                    className="mt-3 w-full rounded-xl border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100"
+                  >
+                    {generateMenuImage.isPending ? "جارٍ توليد الصورة..." : "توليد صورة بالذكاء الاصطناعي"}
+                  </Button>
+                  <p className="mt-2 text-center text-[11px] leading-5 text-slate-400">اكتب اسم الصنف أولًا، مثل «برجر لحم»، ثم اضغط للتوليد.</p>
                 </div>
                 <div className="mt-6 flex justify-end gap-2 border-t border-orange-100 pt-5">
                   <Button
