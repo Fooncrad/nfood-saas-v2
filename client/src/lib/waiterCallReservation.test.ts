@@ -12,7 +12,9 @@ describe("waiter call and reservation blackout flows", () => {
     expect(router).toContain("branchId: z.number().int().positive()");
     expect(router).toContain("tableName: z.string().trim().min(1)");
     expect(router).toContain("isWaiterAssignedToTable");
-    expect(menu).toContain("اختر طاولتك وسيصل النداء للنادل المسؤول");
+    expect(menu).toContain("nfood-waiter-dialog");
+    expect(menu).toContain("اختر الطاولة");
+    expect(menu).not.toContain("waiterCallEnabled !== false");
     expect(menu).toContain("selectedReservationBlackout");
   });
 

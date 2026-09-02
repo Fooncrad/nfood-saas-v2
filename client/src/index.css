@@ -219,13 +219,28 @@
 
   .nfood-waiter-dialog {
     position: fixed !important;
-    inset-inline-start: 50% !important;
-    inset-block-start: 50% !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    inset-inline-start: auto !important;
+    inset-inline-end: auto !important;
+    inset-block-start: auto !important;
+    inset-block-end: auto !important;
     transform: translate(-50%, -50%) !important;
+    translate: none !important;
     margin: 0 !important;
     width: min(calc(100% - 1rem), 28rem) !important;
     max-height: 85dvh !important;
     overflow-y: auto !important;
+  }
+
+  [data-slot="dialog-content"].nfood-waiter-dialog[data-state="open"] {
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
   }
 
   @media (max-width: 767px) {

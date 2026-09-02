@@ -25,7 +25,7 @@ describe("mobile menu order preferences and notes", () => {
 
   it("includes hotel service and requires sign-in before checkout", () => {
     const source = page();
-    expect(source).toContain('setOrderType("hotel")');
+    expect(source).toContain('value="hotel"');
     expect(source).toContain('hotelName.trim()');
     expect(source).toContain('if (!user)');
     expect(source).toContain('startLogin()');
@@ -49,10 +49,10 @@ describe("mobile menu order preferences and notes", () => {
 
   it("keeps the mobile cart compact without horizontal distortion", () => {
     const source = page();
-    expect(source).toContain("w-screen flex-col items-center");
+    expect(source).toContain("nfood-cart-modal fixed inset-0 z-40 flex w-screen items-center justify-center");
     expect(source).toContain("overflow-x-hidden");
     expect(source).toContain("w-[calc(100%-1rem)] min-w-0 max-w-[440px]");
-    expect(source).toContain("bg-transparent");
+    expect(source).toContain("bg-slate-950/35");
     expect(source).toContain("max-h-[68dvh]");
   });
 

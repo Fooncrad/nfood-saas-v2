@@ -131,7 +131,16 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain("nfood-waiter-dialog w-[calc(100%-1rem)] max-w-sm max-h-[85dvh] overflow-y-auto");
     expect(source).toContain("onClick={callWaiter}");
     expect(source).not.toContain("setDrawerOpen(false); callWaiter();");
+    expect(source).not.toContain("waiterCallEnabled !== false");
     expect(source).toContain("setWaiterCallDialogOpen(false)");
+    const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(css).toContain("[data-slot=\"dialog-content\"].nfood-waiter-dialog[data-state=\"open\"]");
+    expect(source).toContain("nfood-cart-modal fixed inset-0 z-40 flex w-screen items-center justify-center");
+  });
+
+  it("keeps one order-type selector and removes the duplicate quick picker", () => {
+    expect(source).not.toContain("اختر نوع الطلب بسرعة");
+    expect((source.match(/<select value=\{orderType\}/g) ?? []).length).toBe(1);
   });
 
   it("keeps the menu barcode at the bottom and uses the public menu route", () => {
