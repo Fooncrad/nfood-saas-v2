@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import {
   Activity,
@@ -79,54 +79,54 @@ import {
 import { getMissingTranslationTasks } from "@/lib/menuBulkTranslation";
 import { detectMenuSourceLanguage } from "@/lib/translationSource";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { MenuAddonsPanel } from "@/components/MenuAddonsPanel";
-import { TranslationGlossaryPanel } from "@/components/TranslationGlossaryPanel";
-import { TranslationReviewPanel } from "@/components/TranslationReviewPanel";
-import AccountManagementPanel from "@/components/AccountManagementPanel";
-import { RestaurantTeamAccountsPanel } from "@/components/RestaurantTeamAccountsPanel";
-import { RestaurantCustomersPanel } from "@/components/RestaurantCustomersPanel";
-import { RestaurantAccessControlPanel } from "@/components/RestaurantAccessControlPanel";
-import { MediaLibraryPanel } from "@/components/MediaLibraryPanel";
-import { ContentOrdersPanel } from "@/components/ContentOrdersPanel";
-import { MenuImportReviewPanel } from "@/components/MenuImportReviewPanel";
-import { ReservationsView } from "@/pages/ReservationsView";
-import { PlatformSettingsPanel } from "@/components/PlatformSettingsPanel";
-import { ActivityAnalyticsPanel } from "@/components/ActivityAnalyticsPanel";
-import { CreateRestaurantDialog } from "@/components/CreateRestaurantDialog";
-import { LoyaltyPanel } from "@/components/LoyaltyPanel";
-import { ReviewsPanel } from "@/components/ReviewsPanel";
-import { DriverDeliveryView } from "@/components/DriverDeliveryView";
+const MenuAddonsPanel = lazy(() => import("@/components/MenuAddonsPanel").then(({ MenuAddonsPanel }) => ({ default: MenuAddonsPanel })));
+const TranslationGlossaryPanel = lazy(() => import("@/components/TranslationGlossaryPanel").then(({ TranslationGlossaryPanel }) => ({ default: TranslationGlossaryPanel })));
+const TranslationReviewPanel = lazy(() => import("@/components/TranslationReviewPanel").then(({ TranslationReviewPanel }) => ({ default: TranslationReviewPanel })));
+const AccountManagementPanel = lazy(() => import("@/components/AccountManagementPanel"));
+const RestaurantTeamAccountsPanel = lazy(() => import("@/components/RestaurantTeamAccountsPanel").then(({ RestaurantTeamAccountsPanel }) => ({ default: RestaurantTeamAccountsPanel })));
+const RestaurantCustomersPanel = lazy(() => import("@/components/RestaurantCustomersPanel").then(({ RestaurantCustomersPanel }) => ({ default: RestaurantCustomersPanel })));
+const RestaurantAccessControlPanel = lazy(() => import("@/components/RestaurantAccessControlPanel").then(({ RestaurantAccessControlPanel }) => ({ default: RestaurantAccessControlPanel })));
+const MediaLibraryPanel = lazy(() => import("@/components/MediaLibraryPanel").then(({ MediaLibraryPanel }) => ({ default: MediaLibraryPanel })));
+const ContentOrdersPanel = lazy(() => import("@/components/ContentOrdersPanel").then(({ ContentOrdersPanel }) => ({ default: ContentOrdersPanel })));
+const MenuImportReviewPanel = lazy(() => import("@/components/MenuImportReviewPanel").then(({ MenuImportReviewPanel }) => ({ default: MenuImportReviewPanel })));
+const ReservationsView = lazy(() => import("@/pages/ReservationsView").then(({ ReservationsView }) => ({ default: ReservationsView })));
+const PlatformSettingsPanel = lazy(() => import("@/components/PlatformSettingsPanel").then(({ PlatformSettingsPanel }) => ({ default: PlatformSettingsPanel })));
+const ActivityAnalyticsPanel = lazy(() => import("@/components/ActivityAnalyticsPanel").then(({ ActivityAnalyticsPanel }) => ({ default: ActivityAnalyticsPanel })));
+const CreateRestaurantDialog = lazy(() => import("@/components/CreateRestaurantDialog").then(({ CreateRestaurantDialog }) => ({ default: CreateRestaurantDialog })));
+const LoyaltyPanel = lazy(() => import("@/components/LoyaltyPanel").then(({ LoyaltyPanel }) => ({ default: LoyaltyPanel })));
+const ReviewsPanel = lazy(() => import("@/components/ReviewsPanel").then(({ ReviewsPanel }) => ({ default: ReviewsPanel })));
+const DriverDeliveryView = lazy(() => import("@/components/DriverDeliveryView").then(({ DriverDeliveryView }) => ({ default: DriverDeliveryView })));
 import { CompactOrdersBoard } from "@/components/CompactOrdersBoard";
 import { OperationalModuleShell } from "@/components/OperationalModuleShell";
 import { CompactModuleSummary } from "@/components/CompactModuleSummary";
-import SubscriptionReceiptsAdminPage from "@/pages/SubscriptionReceiptsAdminPage";
-import { KitchenPrinterSettings } from "@/components/KitchenPrinterSettings";
-import { RestaurantPricingSettings } from "@/components/RestaurantPricingSettings";
-import { RestaurantIntegrationSettings } from "@/components/RestaurantIntegrationSettings";
-import { CustomerRewardsWalletPanel } from "@/components/CustomerRewardsWalletPanel";
-import { ReceiptCustomizationPanel } from "@/components/ReceiptCustomizationPanel";
-import { BrandingFeatureMatrix } from "@/components/BrandingFeatureMatrix";
-import { ReceiptDeliveryPanel } from "@/components/ReceiptDeliveryPanel";
-import { EmailTemplatesPanel } from "@/components/EmailTemplatesPanel";
-import { KitchenTicketBoard } from "@/components/KitchenTicketBoard";
-import { KdsOperationsBoard } from "@/components/KdsOperationsBoard";
-import { KitchenPerformancePanel } from "@/components/KitchenPerformancePanel";
-import { OrderRealtimeAlerts } from "@/components/OrderRealtimeAlerts";
-import { RestaurantDisplayMarketingPanel } from "@/components/RestaurantDisplayMarketingPanel";
-import { RestaurantMenuInsightsPanel } from "@/components/RestaurantMenuInsightsPanel";
-import { MediaTemplateStudio } from "@/components/MediaTemplateStudio";
-import { DeliveryOperationsPanel } from "@/components/DeliveryOperationsPanel";
-import { ReservationSchedulePanel } from "@/components/ReservationSchedulePanel";
-import { ReservationPolicyPanel } from "@/components/ReservationPolicyPanel";
-import { QROperationsPanel } from "@/components/QROperationsPanel";
+const SubscriptionReceiptsAdminPage = lazy(() => import("@/pages/SubscriptionReceiptsAdminPage"));
+const KitchenPrinterSettings = lazy(() => import("@/components/KitchenPrinterSettings").then(({ KitchenPrinterSettings }) => ({ default: KitchenPrinterSettings })));
+const RestaurantPricingSettings = lazy(() => import("@/components/RestaurantPricingSettings").then(({ RestaurantPricingSettings }) => ({ default: RestaurantPricingSettings })));
+const RestaurantIntegrationSettings = lazy(() => import("@/components/RestaurantIntegrationSettings").then(({ RestaurantIntegrationSettings }) => ({ default: RestaurantIntegrationSettings })));
+const CustomerRewardsWalletPanel = lazy(() => import("@/components/CustomerRewardsWalletPanel").then(({ CustomerRewardsWalletPanel }) => ({ default: CustomerRewardsWalletPanel })));
+const ReceiptCustomizationPanel = lazy(() => import("@/components/ReceiptCustomizationPanel").then(({ ReceiptCustomizationPanel }) => ({ default: ReceiptCustomizationPanel })));
+const BrandingFeatureMatrix = lazy(() => import("@/components/BrandingFeatureMatrix").then(({ BrandingFeatureMatrix }) => ({ default: BrandingFeatureMatrix })));
+const ReceiptDeliveryPanel = lazy(() => import("@/components/ReceiptDeliveryPanel").then(({ ReceiptDeliveryPanel }) => ({ default: ReceiptDeliveryPanel })));
+const EmailTemplatesPanel = lazy(() => import("@/components/EmailTemplatesPanel").then(({ EmailTemplatesPanel }) => ({ default: EmailTemplatesPanel })));
+const KitchenTicketBoard = lazy(() => import("@/components/KitchenTicketBoard").then(({ KitchenTicketBoard }) => ({ default: KitchenTicketBoard })));
+const KdsOperationsBoard = lazy(() => import("@/components/KdsOperationsBoard").then(({ KdsOperationsBoard }) => ({ default: KdsOperationsBoard })));
+const KitchenPerformancePanel = lazy(() => import("@/components/KitchenPerformancePanel").then(({ KitchenPerformancePanel }) => ({ default: KitchenPerformancePanel })));
+const OrderRealtimeAlerts = lazy(() => import("@/components/OrderRealtimeAlerts").then(({ OrderRealtimeAlerts }) => ({ default: OrderRealtimeAlerts })));
+const RestaurantDisplayMarketingPanel = lazy(() => import("@/components/RestaurantDisplayMarketingPanel").then(({ RestaurantDisplayMarketingPanel }) => ({ default: RestaurantDisplayMarketingPanel })));
+const RestaurantMenuInsightsPanel = lazy(() => import("@/components/RestaurantMenuInsightsPanel").then(({ RestaurantMenuInsightsPanel }) => ({ default: RestaurantMenuInsightsPanel })));
+const MediaTemplateStudio = lazy(() => import("@/components/MediaTemplateStudio").then(({ MediaTemplateStudio }) => ({ default: MediaTemplateStudio })));
+const DeliveryOperationsPanel = lazy(() => import("@/components/DeliveryOperationsPanel").then(({ DeliveryOperationsPanel }) => ({ default: DeliveryOperationsPanel })));
+const ReservationSchedulePanel = lazy(() => import("@/components/ReservationSchedulePanel").then(({ ReservationSchedulePanel }) => ({ default: ReservationSchedulePanel })));
+const ReservationPolicyPanel = lazy(() => import("@/components/ReservationPolicyPanel").then(({ ReservationPolicyPanel }) => ({ default: ReservationPolicyPanel })));
+const QROperationsPanel = lazy(() => import("@/components/QROperationsPanel").then(({ QROperationsPanel }) => ({ default: QROperationsPanel })));
 import {
   RemoteTaskDialog,
   type RemoteTaskDraft,
 } from "@/components/RemoteTaskDialog";
 import CustomerProfileSettings from "@/pages/CustomerProfileSettings";
 import VcardAccountBinding from "@/pages/VcardAccountBinding";
-import ContentMarketplace from "@/pages/ContentMarketplace";
-import CustomerContentLibrary from "@/pages/CustomerContentLibrary";
+const ContentMarketplace = lazy(() => import("@/pages/ContentMarketplace"));
+const CustomerContentLibrary = lazy(() => import("@/pages/CustomerContentLibrary"));
 import {
   navItems,
   navTranslationKeys,
