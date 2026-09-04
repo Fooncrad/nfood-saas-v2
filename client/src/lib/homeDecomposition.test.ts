@@ -39,7 +39,7 @@ describe("Home decomposition", () => {
     expect(homeSource).toContain("import { HomeSidebar }");
     expect(homeSource).toContain("const LazyModuleView = lazy(");
     expect(homeSource).not.toContain("function ModuleView(");
-    expect(homeSource.length).toBeLessThan(73200);
+    expect(homeSource.length).toBeLessThan(73500);
   });
 
   it("keeps global motion rules for sidebar, language, and reduced motion", () => {

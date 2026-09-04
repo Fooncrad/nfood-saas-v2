@@ -62,3 +62,13 @@ describe("menu template scheduling", () => {
     expect(buildMenuTemplateCron()).toBe("0 */5 * * * *");
   });
 });
+
+
+  it("accepts the customer showcase template", () => {
+    const normalized = normalizeMenuTemplateSchedule({
+      enabled: false,
+      fallbackTemplate: "customer",
+      rules: [],
+    });
+    expect(normalized.fallbackTemplate).toBe("customer");
+  });

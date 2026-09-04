@@ -19,11 +19,12 @@ import {
   Sparkles,
   Truck,
   ClipboardList,
+  Languages,
 } from "lucide-react";
 import type { TranslationKey } from "@/contexts/LanguageContext";
 
 export type OrderStatus = "new" | "preparing" | "ready" | "completed";
-export type NavKey = "overview" | "admin" | "accounts" | "settings" | "operations" | "files" | "trend" | "branches" | "orders" | "pos" | "printers" | "kds" | "menu" | "tables" | "qr" | "inventory" | "team" | "drivers" | "waiters" | "marketing" | "reservations" | "remote" | "security" | "health";
+export type NavKey = "overview" | "admin" | "accounts" | "settings" | "operations" | "files" | "trend" | "branches" | "orders" | "pos" | "printers" | "kds" | "menu" | "tables" | "qr" | "inventory" | "team" | "drivers" | "waiters" | "marketing" | "reservations" | "remote" | "languages" | "security" | "health";
 export type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string; ageMinutes: number; createdAt?: string | Date | null; paymentMethod?: string | null; currencyCode?: string | null; itemDetails?: { itemName: string; quantity: number; categoryName?: string | null }[]; guestName?: string | null; guestPhone?: string | null; customerNote?: string | null; cashierNotes?: string | null; deliveryNote?: string | null; kitchenSectionId?: number | null; reservationDate?: string | Date | null; reservationEventType?: string | null; partySize?: number | null; childrenCount?: number | null; splitBillMode?: string | null };
 
 export const navItems: { key: NavKey; label: string; icon: LucideIcon }[] = [
@@ -46,8 +47,9 @@ export const navItems: { key: NavKey; label: string; icon: LucideIcon }[] = [
   { key: "marketing", label: "التسويق والحملات", icon: Megaphone },
   { key: "reservations", label: "الحجوزات والانتظار", icon: Clock3 },
   { key: "remote", label: "التوظيف عن بُعد", icon: Users },
+  { key: "languages", label: "اللغة والترجمة", icon: Languages },
   { key: "security", label: "أمان الحساب والجلسات", icon: ShieldCheck },
   { key: "health", label: "صحة النظام", icon: Activity },
 ];
 
-export const navTranslationKeys: Record<NavKey, TranslationKey> = { overview: "overview", admin: "platformAdmin", accounts: "platformAdmin", settings: "generalSettings", operations: "restaurantManagementCenter", files: "mediaLibrary", trend: "mediaLibrary", branches: "branches", orders: "orders", pos: "pos", printers: "printers", kds: "kds", menu: "menu", tables: "tables", qr: "qrCustomization", inventory: "inventory", team: "team", drivers: "team", waiters: "team", marketing: "marketing", reservations: "reservations", remote: "remote", security: "security", health: "health" };
+export const navTranslationKeys: Record<NavKey, TranslationKey> = { overview: "overview", admin: "platformAdmin", accounts: "platformAdmin", settings: "generalSettings", operations: "restaurantManagementCenter", files: "mediaLibrary", trend: "mediaLibrary", branches: "branches", orders: "orders", pos: "pos", printers: "printers", kds: "kds", menu: "menu", tables: "tables", qr: "qrCustomization", inventory: "inventory", team: "team", drivers: "team", waiters: "team", marketing: "marketing", reservations: "reservations", remote: "remote", languages: "languageDirection", security: "security", health: "health" };

@@ -149,7 +149,7 @@ export default function Home() {
     const requested = new URLSearchParams(window.location.search).get("module") as NavKey | null;
     return requested && navItems.some(item => item.key === requested) ? requested : "overview";
   });
-  const localizedNavItems = useMemo(() => navItems.map((item) => ({ ...item, label: item.key === "trend" ? "Trend Kitchen · سوق نفود" : t(navTranslationKeys[item.key]) })), [language, t]);
+  const localizedNavItems = useMemo(() => navItems.map((item) => ({ ...item, label: item.key === "trend" ? "Trend Kitchen · سوق نفود" : item.key === "languages" ? (language === "ar" ? "اللغة والترجمة" : language === "fr" ? "Langue et traduction" : language === "ur" ? "زبان اور ترجمہ" : "Language & translation") : t(navTranslationKeys[item.key]) })), [language, t]);
   const visibleNavItems = useMemo(() => { const role = (user?.testRole as string | undefined) ?? (user?.role === "admin" ? "admin" : user ? "customer" : undefined); const keys = getVisibleNavigation(role, user?.role === "admin" || role === "admin"); return localizedNavItems.filter((item) => keys.includes(item.key as (typeof keys)[number])); }, [user?.role, user?.testRole, localizedNavItems]);
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -320,7 +320,7 @@ export default function Home() {
     { id: "restaurant-operations", label: t("operations"), keys: ["operations", "orders", "pos", "kds", "menu", "tables", "waiters", "drivers", "printers", "inventory", "reservations"] as NavKey[] },
     { id: "restaurant-people-growth", label: `${t("team")} · ${t("marketing")}`, keys: ["team", "marketing", "remote"] as NavKey[] },
     { id: "restaurant-workspace", label: t("accountPlatform"), keys: ["settings", "branches", "files"] as NavKey[] },
-    { id: "restaurant-system", label: t("security"), keys: ["security", "health"] as NavKey[] },
+    { id: "restaurant-system", label: t("security"), keys: ["languages", "security", "health"] as NavKey[] },
   ].map((group) => ({ ...group, items: group.keys.map((key) => visibleNavItems.find((item) => item.key === key)).filter((item): item is (typeof visibleNavItems)[number] => Boolean(item)) })).filter((group) => group.items.length > 0);
   const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success(t("logout")), notifyError: (message) => toast.error(message) }); };
   const handleSwitchAccount = async () => { await executeSwitchAccountFlow({ logout, closeMenu: () => setProfileOpen(false), startLogin, redirect: () => undefined, notifyError: (message) => toast.error(message) }); };

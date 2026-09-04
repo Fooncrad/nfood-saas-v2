@@ -442,6 +442,11 @@ export function ModuleView({
       description: "أنشئ مهامًا مدفوعة وتواصل مع الموظفين من مكان واحد.",
       icon: Users,
     },
+    languages: {
+      title: "اللغة والترجمة",
+      description: "إدارة لغات المنيو ومراجعة الترجمات وحماية أسماء العلامة التجارية.",
+      icon: Languages,
+    },
     security: {
       title: "أمان الحساب والجلسات",
       description: "أدر الأجهزة والجلسات والتحقق بخطوتين.",
@@ -602,6 +607,7 @@ export function ModuleView({
     );
   if (active === "remote")
     return <RemoteWorkView restaurantId={restaurantId} />;
+  if (active === "languages") return <LanguageSettingsPanel restaurantId={restaurantId} />;
   if (active === "security")
     return <SecurityView restaurantId={restaurantId} />;
   if (active === "health") return <SystemHealthView />;
@@ -9157,6 +9163,7 @@ const restaurantMenuTemplates = [
   { id: "editorial", name: "Editorial", description: "فاخر وواضح", swatch: "linear-gradient(135deg, #fff8f2, #f4c7a1)" },
   { id: "bistro", name: "Bistro", description: "دافئ وحميم", swatch: "linear-gradient(135deg, #f3ebe2, #b86b45)" },
   { id: "glass", name: "NFOOD Glass", description: "داكن وزجاجي", swatch: "linear-gradient(135deg, #0b0f17, #f97316)" },
+  { id: "customer", name: "واجهة العميل", description: "منيو وسلة بطابع ضيافة فاخر", swatch: "linear-gradient(135deg, #fffdfa 0%, #f1e6d8 56%, #8b5a2b 100%)" },
 ] as const;
 const menuScheduleDays = [
   { value: 0, label: "الأحد" },
@@ -9198,7 +9205,7 @@ function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number
       | "olive-cream"
       | "midnight-berry"
       | "ocean-mint",
-    menuTemplate: "editorial" as "editorial" | "bistro" | "glass",
+    menuTemplate: "editorial" as "editorial" | "bistro" | "glass" | "customer",
     menuTemplateScheduleEnabled: false,
     menuTemplateScheduleTimezone: "Asia/Riyadh",
     menuTemplateScheduleFallback: "editorial" as MenuTemplateId,
@@ -9210,6 +9217,7 @@ function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number
     pwaInstallIconUrl: "",
     brandDescription: "",
     homepageContent: "",
+    customPagesJson: "[]",
     termsOfService: "",
     privacyPolicy: "",
     refundPolicy: "",
@@ -9258,10 +9266,10 @@ function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number
           | "olive-cream"
           | "midnight-berry"
           | "ocean-mint",
-        menuTemplate: brandingQuery.data.menuTemplate as "editorial" | "bistro" | "glass",
+        menuTemplate: brandingQuery.data.menuTemplate as "editorial" | "bistro" | "glass" | "customer",
         menuTemplateScheduleEnabled: (() => { try { return Boolean(JSON.parse(brandingQuery.data.menuTemplateScheduleJson ?? "{}").enabled); } catch { return false; } })(),
         menuTemplateScheduleTimezone: brandingQuery.data.menuTemplateScheduleTimezone ?? "Asia/Riyadh",
-        menuTemplateScheduleFallback: (() => { try { const parsed = JSON.parse(brandingQuery.data.menuTemplateScheduleJson ?? "{}"); return ["editorial", "bistro", "glass"].includes(parsed.fallbackTemplate) ? parsed.fallbackTemplate : brandingQuery.data.menuTemplate as MenuTemplateId; } catch { return brandingQuery.data.menuTemplate as MenuTemplateId; } })(),
+        menuTemplateScheduleFallback: (() => { try { const parsed = JSON.parse(brandingQuery.data.menuTemplateScheduleJson ?? "{}"); return ["editorial", "bistro", "glass", "customer"].includes(parsed.fallbackTemplate) ? parsed.fallbackTemplate : brandingQuery.data.menuTemplate as MenuTemplateId; } catch { return brandingQuery.data.menuTemplate as MenuTemplateId; } })(),
         menuTemplateScheduleRules: (() => { try { const parsed = JSON.parse(brandingQuery.data.menuTemplateScheduleJson ?? "{}"); return Array.isArray(parsed.rules) && parsed.rules.length ? parsed.rules : [defaultMenuTemplateRule]; } catch { return [defaultMenuTemplateRule]; } })(),
         glassGlowColor: brandingQuery.data.glassGlowColor ?? "#F97316",
         glassCardOpacity: Number(brandingQuery.data.glassCardOpacity ?? 0.1),
@@ -9270,6 +9278,7 @@ function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number
         pwaInstallIconUrl: brandingQuery.data.pwaInstallIconUrl,
         brandDescription: brandingQuery.data.brandDescription,
         homepageContent: brandingQuery.data.homepageContent,
+        customPagesJson: brandingQuery.data.customPagesJson ?? "[]",
         termsOfService: brandingQuery.data.termsOfService,
         privacyPolicy: brandingQuery.data.privacyPolicy,
         refundPolicy: brandingQuery.data.refundPolicy,
@@ -9870,6 +9879,17 @@ function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number
                 />
               </label>
               <label className="space-y-2 text-sm font-semibold sm:col-span-2">
+                صفحات المطعم الاختيارية
+                <textarea
+                  value={draft.customPagesJson}
+                  onChange={event => setDraft({ ...draft, customPagesJson: event.target.value })}
+                  className="mt-1 min-h-32 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs outline-none"
+                  placeholder='[{"slug":"about","title":"عن المطعم","content":"نبذة...","published":true}]'
+                  aria-label="الصفحات الاختيارية بصيغة JSON"
+                />
+                <span className="block text-[11px] font-normal text-slate-500">أضف أي عدد من الصفحات بصيغة JSON: slug وtitle وcontent وpublished. ستظهر المنشورة فقط للعملاء.</span>
+              </label>
+              <label className="space-y-2 text-sm font-semibold sm:col-span-2">
                 الشروط والأحكام
                 <textarea
                   value={draft.termsOfService}
@@ -9971,7 +9991,7 @@ function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number
                               <h3 className="mt-1 text-base font-black">معاينة تخطيط المنيو قبل الحفظ</h3>
                               <p className="mt-1 max-w-2xl text-xs leading-5 text-white/60">كل تغيير في القالب، الألوان، الخطوط، نسبة الصورة أو عدد الأعمدة يظهر هنا فورًا، ولا يُطبّق على المنيو العام حتى تضغط «حفظ الهوية».</p>
                             </div>
-                            <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-black text-orange-200">{draft.menuTemplate === "editorial" ? "تحرير فاخر" : draft.menuTemplate === "bistro" ? "بيسترو دافئ" : "NFOOD Glass"}</span>
+                            <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-black text-orange-200">{draft.menuTemplate === "editorial" ? "تحرير فاخر" : draft.menuTemplate === "bistro" ? "بيسترو دافئ" : draft.menuTemplate === "glass" ? "NFOOD Glass" : "واجهة العميل"}</span>
                           </div>
                           <div className="overflow-hidden rounded-2xl border border-white/10" style={{ backgroundColor: menuDisplayDraft.menuBackgroundColor, color: menuDisplayDraft.cardTextColor, fontFamily: draft.brandFontFamily }}>
                             <div className="flex flex-wrap items-center justify-between gap-3 p-4" style={{ backgroundColor: draft.brandColor, color: "#ffffff", fontFamily: draft.brandHeadingFontFamily }}>
@@ -10007,11 +10027,11 @@ function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number
                   <button type="button" role="switch" aria-checked={draft.menuTemplateScheduleEnabled} onClick={() => setDraft(current => ({ ...current, menuTemplateScheduleEnabled: !current.menuTemplateScheduleEnabled }))} className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${draft.menuTemplateScheduleEnabled ? "bg-indigo-600" : "bg-slate-300"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${draft.menuTemplateScheduleEnabled ? "start-6" : "start-1"}`} /></button>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="space-y-1 text-xs font-bold">القالب خارج الفترات<select value={draft.menuTemplateScheduleFallback} onChange={event => setDraft({ ...draft, menuTemplateScheduleFallback: event.target.value as MenuTemplateId })} className="mt-1 h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-sm"><option value="editorial">Editorial</option><option value="bistro">Bistro</option><option value="glass">NFOOD Glass</option></select></label>
+                  <label className="space-y-1 text-xs font-bold">القالب خارج الفترات<select value={draft.menuTemplateScheduleFallback} onChange={event => setDraft({ ...draft, menuTemplateScheduleFallback: event.target.value as MenuTemplateId })} className="mt-1 h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-sm"><option value="editorial">Editorial</option><option value="bistro">Bistro</option><option value="glass">NFOOD Glass</option><option value="customer">واجهة العميل</option></select></label>
                   <label className="space-y-1 text-xs font-bold">المنطقة الزمنية<select value={draft.menuTemplateScheduleTimezone} onChange={event => setDraft({ ...draft, menuTemplateScheduleTimezone: event.target.value })} className="mt-1 h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-sm" dir="ltr"><option value="Asia/Riyadh">Asia/Riyadh · الرياض</option><option value="Asia/Dubai">Asia/Dubai · دبي</option><option value="Africa/Cairo">Africa/Cairo · القاهرة</option><option value="Europe/Paris">Europe/Paris · باريس</option><option value="UTC">UTC</option></select></label>
                 </div>
                 <div className="space-y-2">
-                  {draft.menuTemplateScheduleRules.map((rule, index) => <div key={`schedule-rule-${index}`} className="rounded-xl border border-indigo-100 bg-white p-3 shadow-sm"><div className="flex flex-wrap items-end gap-2"><label className="text-xs font-bold">من<input type="time" value={rule.start} onChange={event => updateScheduleRule(index, { start: event.target.value })} className="mt-1 h-9 rounded-lg border border-slate-200 px-2 text-sm" dir="ltr" /></label><label className="text-xs font-bold">إلى<input type="time" value={rule.end} onChange={event => updateScheduleRule(index, { end: event.target.value })} className="mt-1 h-9 rounded-lg border border-slate-200 px-2 text-sm" dir="ltr" /></label><label className="min-w-40 flex-1 text-xs font-bold">القالب<select value={rule.template} onChange={event => updateScheduleRule(index, { template: event.target.value as MenuTemplateId })} className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-sm"><option value="editorial">Editorial</option><option value="bistro">Bistro</option><option value="glass">NFOOD Glass</option></select></label><button type="button" onClick={() => removeScheduleRule(index)} disabled={draft.menuTemplateScheduleRules.length <= 1} className="h-9 rounded-lg px-2 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40" aria-label="حذف فترة الجدولة">حذف</button></div><div className="mt-2 flex flex-wrap gap-1">{menuScheduleDays.map(day => <button key={day.value} type="button" aria-pressed={rule.days.includes(day.value)} onClick={() => toggleScheduleDay(index, day.value)} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${rule.days.includes(day.value) ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500 hover:bg-indigo-50"}`}>{day.label}</button>)}</div></div>)}
+                  {draft.menuTemplateScheduleRules.map((rule, index) => <div key={`schedule-rule-${index}`} className="rounded-xl border border-indigo-100 bg-white p-3 shadow-sm"><div className="flex flex-wrap items-end gap-2"><label className="text-xs font-bold">من<input type="time" value={rule.start} onChange={event => updateScheduleRule(index, { start: event.target.value })} className="mt-1 h-9 rounded-lg border border-slate-200 px-2 text-sm" dir="ltr" /></label><label className="text-xs font-bold">إلى<input type="time" value={rule.end} onChange={event => updateScheduleRule(index, { end: event.target.value })} className="mt-1 h-9 rounded-lg border border-slate-200 px-2 text-sm" dir="ltr" /></label><label className="min-w-40 flex-1 text-xs font-bold">القالب<select value={rule.template} onChange={event => updateScheduleRule(index, { template: event.target.value as MenuTemplateId })} className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-sm"><option value="editorial">Editorial</option><option value="bistro">Bistro</option><option value="glass">NFOOD Glass</option><option value="customer">واجهة العميل</option></select></label><button type="button" onClick={() => removeScheduleRule(index)} disabled={draft.menuTemplateScheduleRules.length <= 1} className="h-9 rounded-lg px-2 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40" aria-label="حذف فترة الجدولة">حذف</button></div><div className="mt-2 flex flex-wrap gap-1">{menuScheduleDays.map(day => <button key={day.value} type="button" aria-pressed={rule.days.includes(day.value)} onClick={() => toggleScheduleDay(index, day.value)} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${rule.days.includes(day.value) ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500 hover:bg-indigo-50"}`}>{day.label}</button>)}</div></div>)}
                   <div className="flex flex-wrap items-center justify-between gap-2"><button type="button" onClick={addScheduleRule} disabled={draft.menuTemplateScheduleRules.length >= 12} className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 disabled:opacity-40"><Plus className="h-3.5 w-3.5" />إضافة فترة</button><Button type="button" onClick={saveSchedule} disabled={updateMenuTemplateSchedule.isPending || (draft.menuTemplateScheduleEnabled && draft.menuTemplateScheduleRules.some(rule => !rule.days.length))} className="rounded-lg bg-indigo-600 px-3 py-2 text-xs hover:bg-indigo-700">{updateMenuTemplateSchedule.isPending ? "جارٍ حفظ الجدولة..." : "حفظ الجدولة"}</Button></div>
                 </div>
               </section>
@@ -10459,9 +10479,8 @@ function BranchesView({ restaurantId }: { restaurantId: number }) {
       <RestaurantIntegrationSettings restaurantId={restaurantId} />
       <ReceiptCustomizationPanel restaurantId={restaurantId} />
       <EmailTemplatesPanel restaurantId={restaurantId} />
-      <BrandingPanel restaurantId={restaurantId} />
+      <BrandingPanel restaurantId={restaurantId} section="identity" />
       <BrandingFeatureMatrix restaurantId={restaurantId} />
-      <LanguageSettingsPanel restaurantId={restaurantId} />
       <div className="grid gap-4 md:grid-cols-3">
         {remoteBranches.isError ? (
           <div className="p-6 text-sm text-red-600">

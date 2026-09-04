@@ -40,7 +40,7 @@ describe("translation coverage for login and operational modules", () => {
     }
   });
 
-  it("keeps the platform navigation free of the removed translation manager", () => {
-    expect(navItems.some((item) => item.key === "languages")).toBe(false);
+  it("exposes language and translation settings in navigation", () => {
+    expect(navItems.some((item) => item.key === "languages")).toBe(true);
   });
 });

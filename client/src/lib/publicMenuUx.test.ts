@@ -33,13 +33,14 @@ describe("public menu UX", () => {
     expect(styles).toContain("min-height: 0 !important");
   });
 
-  it("exposes three distinct menu templates with a persisted switch", () => {
-    expect(page).toContain('type PublicMenuTemplate = "editorial" | "bistro" | "glass";');
+  it("exposes four distinct menu templates with a persisted switch", () => {
+    expect(page).toContain('type PublicMenuTemplate = "editorial" | "bistro" | "glass" | "customer";');
     expect(page).toContain('useState<PublicMenuTemplate>("editorial")');
     expect(page).toContain("nfood-menu-template-${menuTemplate}");
     expect(styles).toContain(".nfood-menu-template-editorial");
     expect(styles).toContain(".nfood-menu-template-bistro");
     expect(styles).toContain(".nfood-menu-template-glass");
+    expect(styles).toContain(".nfood-menu-template-customer");
     expect(page).toContain('requested === "glass"');
     expect(page).toContain("localStorage.setItem(`nfood-menu-template-${slug}`, template)");
     expect(page).toContain("selectMenuTemplate");

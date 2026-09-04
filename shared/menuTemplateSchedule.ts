@@ -1,4 +1,4 @@
-export type MenuTemplate = "editorial" | "bistro" | "glass";
+export type MenuTemplate = "editorial" | "bistro" | "glass" | "customer";
 
 export type MenuTemplateScheduleRule = {
   days: number[];
@@ -21,7 +21,7 @@ export const DEFAULT_MENU_TEMPLATE_SCHEDULE: MenuTemplateSchedule = {
   rules: [],
 };
 
-const templateValues: MenuTemplate[] = ["editorial", "bistro", "glass"];
+const templateValues: MenuTemplate[] = ["editorial", "bistro", "glass", "customer"];
 const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const weekdayByShortName: Record<string, number> = {
   Sun: 0,
