@@ -110,15 +110,15 @@ describe("Home decomposition", () => {
     expect(quickAccessSource).toContain("group.items.map");
   });
 
-  it("keeps package cards collapsed and integrations platform-scoped", () => {
+  it("keeps package cards visible and integrations platform-scoped", () => {
     expect(modulesSource).toContain(
-      "const [isOpen, setIsOpen] = useState(false)"
+      "const isOpen = true"
     );
-    expect(modulesSource).toContain("aria-expanded={isOpen}");
+    expect(modulesSource).toContain("className=\"grid\"");
     expect(modulesSource).toContain("enabledCount");
     expect(modulesSource).toContain("isRecommended");
     expect(modulesSource).toContain("الأكثر شيوعًا");
-    expect(modulesSource).toContain("grid-rows-[1fr]");
+    expect(modulesSource).not.toContain("grid-rows-[0fr]");
     expect(integrationsSource).toContain("LockKeyhole");
     expect(integrationsSource).toContain("يتطلب ترقية الباقة");
     expect(integrationsSource).toContain('scope: "platform"');

@@ -6198,7 +6198,7 @@ function PackagePlanCard({
   const [monthlyPrice, setMonthlyPrice] = useState(plan.monthlyPrice);
   const [yearlyPrice, setYearlyPrice] = useState(plan.yearlyPrice);
   const [isActive, setIsActive] = useState(plan.isActive);
-  const [isOpen, setIsOpen] = useState(false);
+  const isOpen = true;
   const isRecommended = ["growth", "pro", "business"].includes(
     plan.key.toLowerCase()
   );
@@ -6273,11 +6273,8 @@ function PackagePlanCard({
     <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
       <CardHeader className="border-b border-slate-100 bg-slate-50/70 p-0">
         <div className="flex items-center gap-3 p-4">
-          <button
-            type="button"
-            onClick={() => setIsOpen(value => !value)}
-            aria-expanded={isOpen}
-            className="flex min-w-0 flex-1 items-center gap-3 text-right transition-transform duration-200 ease-out active:scale-[0.99]"
+          <div
+            className="flex min-w-0 flex-1 items-center gap-3 text-right"
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-100 text-cyan-700">
               <Package className="h-4 w-4" />
@@ -6299,11 +6296,8 @@ function PackagePlanCard({
               <span className="rounded-full bg-slate-200 px-2 py-1 text-[10px] font-bold text-slate-600">
                 {enabledCount}/{definitions.length} مميزة
               </span>
-              <ChevronDown
-                className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-              />
             </span>
-          </button>
+          </div>
           <button
             type="button"
             onClick={() => {
@@ -6318,9 +6312,9 @@ function PackagePlanCard({
         </div>
       </CardHeader>
       <div
-        className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+        className="grid"
       >
-        <div className="min-h-0 overflow-hidden">
+        <div className="min-h-0">
           <CardContent className="space-y-4 p-5">
             <div className="grid gap-3 sm:grid-cols-2">
               <Input
