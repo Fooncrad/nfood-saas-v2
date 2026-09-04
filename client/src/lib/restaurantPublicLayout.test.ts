@@ -271,7 +271,10 @@ describe("Mobile menu navigation actions", () => {
   it("moves reservation into the hero work-hours action and replaces the bottom reservation tab", () => {
     expect(source).toContain("copy.workingHours");
     expect(source).toContain("bg-orange-500 px-3 text-[10px] font-black");
-    expect(source).toContain("setReservationOpen(true)");
+    expect(source).toContain("setReservationOpen(false)");
+    expect(source).toContain('role="dialog" aria-modal="true" aria-label={copy.bookTable}');
+    expect(source).toContain('fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4');
+    expect(source).not.toContain('fixed inset-y-0 right-0 z-[60]');
     expect(source).toContain("<UserRound className=\"h-4 w-4\"");
     expect(source).toContain('navigate(isAdmin ? "/admin" : isRestaurantStaff ? "/restaurant/dashboard" : "/customer-portal")');
     expect(source).toContain("setAccountMode(\"register\")");

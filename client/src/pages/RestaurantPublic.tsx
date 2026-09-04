@@ -555,8 +555,8 @@ export default function RestaurantPublic() {
       </section>
 
 
-      <section id="reservation" className={reservationOpen ? "fixed inset-y-0 right-0 z-[60] w-full max-w-sm overflow-y-auto bg-white p-4 shadow-2xl sm:max-w-md" : "hidden"}>
-        <Card className="rounded-[1.5rem] border-0 bg-white shadow-lg shadow-slate-200/50">
+      <section id="reservation" role="dialog" aria-modal="true" aria-label={copy.bookTable} className={reservationOpen ? "fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" : "hidden"}>
+        <Card className="max-h-[85dvh] w-full max-w-sm overflow-y-auto rounded-[1.5rem] border-0 bg-white shadow-2xl shadow-slate-950/30 sm:max-w-md">
           <CardHeader className="flex-row items-start justify-between gap-3 border-b border-slate-100 p-4 sm:p-5">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg font-black"><CalendarDays className="h-5 w-5" style={{ color: brandColor }} /> {copy.bookTable}</CardTitle>
