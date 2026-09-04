@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
@@ -105,6 +105,8 @@ function AppContent() {
   return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<PageLoading />}><Router /></Suspense>{showGlobalLoader && <NfoodsLoadingScreen key={loaderKey} onComplete={completeGlobalLoader} />}</div>;
 }
 
+const RESTAURANT_AREA_ROLES = new Set(["restaurant_admin", "waiter", "driver", "cashier", "kitchen", "bar", "restaurant"]);
+function CustomerAreaGuard({ children }: { children: ReactNode }) { const { user, loading } = useAuth(); const [, navigate] = useLocation(); const role = String(user?.testRole ?? user?.role ?? ""); const blocked = Boolean(user && RESTAURANT_AREA_ROLES.has(role)); useEffect(() => { if (blocked) navigate("/restaurant/dashboard"); }, [blocked, navigate]); if (loading || blocked) return <PageLoading />; return <>{children}</>; }
 function RootRoute() { const { user, loading } = useAuth(); if (loading) return <PageLoading />; return user ? <Home /> : <LandingPage />; }
 
 function Router() {
@@ -137,21 +139,21 @@ function Router() {
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
       <Route path="/restaurant/:slug" component={RestaurantPublic} />
       <Route path="/menu/:slug" component={RestaurantPublic} />
-      <Route path="/customer/:slug" component={CustomerPublic} />
-      <Route path="/vcard/:slug" component={CustomerPublic} />
-      <Route path="/customer-profile" component={CustomerProfileSettingsRoute} />
-      <Route path="/account-profile" component={AccountProfileSettings} />
+      <Route path="/customer/:slug" component={() => <CustomerAreaGuard><CustomerPublic /></CustomerAreaGuard>} />
+      <Route path="/vcard/:slug" component={() => <CustomerAreaGuard><CustomerPublic /></CustomerAreaGuard>} />
+      <Route path="/customer-profile" component={() => <CustomerAreaGuard><CustomerProfileSettingsRoute /></CustomerAreaGuard>} />
+      <Route path="/account-profile" component={() => <CustomerAreaGuard><AccountProfileSettings /></CustomerAreaGuard>} />
       <Route path="/integrations" component={IntegrationsSettings} />
-      <Route path="/customer-portal" component={CustomerPortal} />
-      <Route path="/customer-content-orders" component={CustomerContentOrders} />
-      <Route path="/customer-content-library" component={CustomerContentLibrary} />
-      <Route path="/customer-orders" component={CustomerOrders} />
-      <Route path="/customer-reservations" component={CustomerReservations} />
-      <Route path="/customer-rewards" component={CustomerRewards} />
-      <Route path="/customer-studio" component={CustomerStudio} />
-      <Route path="/customer-studio-plans" component={CustomerStudioPlans} />
-      <Route path="/customer-benefits" component={CustomerBenefits} />
-      <Route path="/favorites" component={FavoritesPage} />
+      <Route path="/customer-portal" component={() => <CustomerAreaGuard><CustomerPortal /></CustomerAreaGuard>} />
+      <Route path="/customer-content-orders" component={() => <CustomerAreaGuard><CustomerContentOrders /></CustomerAreaGuard>} />
+      <Route path="/customer-content-library" component={() => <CustomerAreaGuard><CustomerContentLibrary /></CustomerAreaGuard>} />
+      <Route path="/customer-orders" component={() => <CustomerAreaGuard><CustomerOrders /></CustomerAreaGuard>} />
+      <Route path="/customer-reservations" component={() => <CustomerAreaGuard><CustomerReservations /></CustomerAreaGuard>} />
+      <Route path="/customer-rewards" component={() => <CustomerAreaGuard><CustomerRewards /></CustomerAreaGuard>} />
+      <Route path="/customer-studio" component={() => <CustomerAreaGuard><CustomerStudio /></CustomerAreaGuard>} />
+      <Route path="/customer-studio-plans" component={() => <CustomerAreaGuard><CustomerStudioPlans /></CustomerAreaGuard>} />
+      <Route path="/customer-benefits" component={() => <CustomerAreaGuard><CustomerBenefits /></CustomerAreaGuard>} />
+      <Route path="/favorites" component={() => <CustomerAreaGuard><FavoritesPage /></CustomerAreaGuard>} />
       <Route path="/support" component={SupportManagement} />
       <Route path="/vcard-cards" component={VcardCardsAdmin} />
       <Route path="/translation-editor" component={TranslationEditorPage} />

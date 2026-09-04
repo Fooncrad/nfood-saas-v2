@@ -273,7 +273,7 @@ describe("Mobile menu navigation actions", () => {
     expect(source).toContain("bg-orange-500 px-3 text-[10px] font-black");
     expect(source).toContain("setReservationOpen(true)");
     expect(source).toContain("<UserRound className=\"h-4 w-4\"");
-    expect(source).toContain("navigate(\"/customer-portal\")");
+    expect(source).toContain('navigate(isAdmin ? "/admin" : isRestaurantStaff ? "/restaurant/dashboard" : "/customer-portal")');
     expect(source).toContain("setAccountMode(\"register\")");
     expect(source).toContain("{user ? \"حسابي\" : \"تسجيل\"}");
   });

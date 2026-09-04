@@ -7,7 +7,7 @@ describe("restaurant menu account and operational role entry points", () => {
     const source = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"), "utf8");
     expect(source).toContain('className="hidden h-10 items-center gap-1.5 rounded-full bg-orange-50');
     expect(source).toContain('"تسجيل الدخول"');
-    expect(source).toContain('navigate("/customer-portal")');
+    expect(source).toContain('navigate(isAdmin ? "/admin" : isRestaurantStaff ? "/restaurant/dashboard" : "/customer-portal")');
     expect(source).toContain('if (!user) { toast.info("سجّل الدخول أولًا لإتمام الطلب"); startLogin(); return; }');
     expect(source).toContain('selfOrderEnabled');
     expect(source).toContain('setSelectedMenuItem(item); }} aria-label={`عرض تفاصيل ${item.name}`}');

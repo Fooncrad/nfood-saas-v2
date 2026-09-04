@@ -52,7 +52,7 @@ describe("customer governance contracts", () => {
     expect(market).toContain("المطاعم والحسابات المصنفة كتاجر هي الجهات المشترية افتراضيًا");
     expect(market).toContain("بيع العملاء · شراء التجار");
     expect(router).toContain("contentPurchaseEligibility");
-    expect(router).toContain("التصفح متاح للعميل، أما شراء المحتوى فمتاح للمطاعم والحسابات التجارية فقط");
+    expect(router).toContain("الشراء محصور بالمطاعم والحسابات التجارية عند تفعيل الإدارة");
     expect(schema).toContain('mysqlTable("contentPurchaseEntitlements"');
   });
 });

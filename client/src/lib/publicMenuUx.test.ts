@@ -4,6 +4,7 @@ import { validateCheckoutDetails } from "../pages/RestaurantPublic";
 
 const page = readFileSync(new URL("../pages/RestaurantPublic.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../index.css", import.meta.url), "utf8");
+const dialog = readFileSync(new URL("../components/ui/dialog.tsx", import.meta.url), "utf8");
 const operations = readFileSync(new URL("../components/DeliveryOperationsPanel.tsx", import.meta.url), "utf8");
 const tracking = readFileSync(new URL("../components/CustomerDeliveryTrackingCard.tsx", import.meta.url), "utf8");
 const driverView = readFileSync(new URL("../components/DriverDeliveryView.tsx", import.meta.url), "utf8");
@@ -53,6 +54,14 @@ describe("public menu UX", () => {
     expect(page).toContain("page.data?.restaurant.glassCardOpacity");
     expect(page).toContain("glassGlow");
     expect(page).toContain("glassOpacity");
+  });
+
+  it("forces every shared dialog to stay centered in RTL and LTR", () => {
+    expect(dialog).toContain("!left-[50%]");
+    expect(dialog).toContain("!top-[50%]");
+    expect(dialog).toContain("!translate-x-[-50%]");
+    expect(dialog).toContain("!translate-y-[-50%]");
+    expect(dialog).toContain("!right-auto");
   });
 
   it("keeps manager Glass settings configurable through CSS variables", () => {

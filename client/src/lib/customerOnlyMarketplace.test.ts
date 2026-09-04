@@ -14,10 +14,10 @@ describe("customer-only content marketplace", () => {
   const studioPlans = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerStudioPlans.tsx"), "utf8");
   const app = readFileSync(resolve(process.cwd(), "client/src/App.tsx"), "utf8");
 
-  it("keeps restaurants out of selling while allowing merchant buying", () => {
-    expect(router).toContain("المطاعم تعرض نشاطها فقط ولا تملك صلاحية بيع المحتوى");
+  it("keeps customers out of buying while allowing merchant buying only when admin enables it", () => {
     expect(router).toContain("الشراء متاح لهذا الحساب التجاري");
-    expect(router).toContain("allowCustomerContentPurchase");
+    expect(router).toContain("allowRestaurantContentPurchase");
+    expect(router).toContain("شراء المحتوى متوقف من إعدادات إدارة المنصة");
     expect(router).not.toContain('buyerType: z.enum(["customer", "restaurant"])');
     expect(db).not.toContain('buyerType: "restaurant"');
     expect(db).toContain("contentPurchaseEntitlements");
@@ -53,6 +53,9 @@ describe("customer-only content marketplace", () => {
     expect(studioPlans).toContain("باقات مساحة Studio");
     expect(studioPlans).toContain("طلب الترقية والتواصل مع الدعم");
     expect(app).toContain('path="/customer-studio-plans"');
+    expect(app).toContain("CustomerAreaGuard");
+    expect(app).toContain('path="/customer-portal" component={() => <CustomerAreaGuard>');
+    expect(app).toContain('path="/customer-profile" component={() => <CustomerAreaGuard>');
     expect(login).toContain("continueWithGoogle");
   });
 });
