@@ -163,8 +163,9 @@ function manualChunks(id: string) {
     }
     return undefined;
   }
-  if (normalizedId.includes("lucide-react")) return "vendor-icons";
-  if (normalizedId.includes("@radix-ui")) return "vendor-radix";
+  // Keep React-dependent UI libraries in the consuming chunks. Splitting
+  // lucide-react/Radix manually can create an initialization cycle where
+  // forwardRef is undefined in production before React has initialized.
   if (normalizedId.includes("react-barcode")) return "vendor-barcode";
   return undefined;
 }

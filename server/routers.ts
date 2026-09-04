@@ -25,12 +25,19 @@ async function classifyMarketplaceImage(imageUrl: string) {
   try {
     const result = await invokeLLM({ model: "gemini-3-flash-preview", maxTokens: 300, messages: [{ role: "system", content: "صنّف الصورة لأغراض سوق نفود. أعد JSON فقط: {isFoodOrDrink:boolean,isUnsafe:boolean,isAiEdited:boolean,category:string,reason:string}. الطعام والشراب فقط مقبولان مبدئيًا. لا تستنتج هوية الأشخاص." }, { role: "user", content: [{ type: "text", text: "هل هذه صورة حديثة لطعام أو شراب فقط؟ افحص وجود أشخاص أو محتوى غير آمن أو علامات تعديل مولد بالذكاء الاصطناعي." }, { type: "image_url", image_url: { url: imageUrl, detail: "low" } }] }], responseFormat: { type: "json_object" } });
     const content = result.choices[0]?.message?.content;
-    const text = typeof content === "string" ? content : "";
-    const parsed = JSON.parse(text) as { isFoodOrDrink?: boolean; isUnsafe?: boolean; isAiEdited?: boolean; category?: string; reason?: string };
+    const text = typeof content === "string" ? content.trim() : "";
+    const jsonCandidate = text.match(/\{[\s\S]*\}/)?.[0];
+    if (!jsonCandidate) return { status: "pending" as const, category: "other_food", reason: "بانتظار المراجعة البشرية" };
+    let parsed: { isFoodOrDrink?: boolean; isUnsafe?: boolean; isAiEdited?: boolean; category?: string; reason?: string };
+    try {
+      parsed = JSON.parse(jsonCandidate) as typeof parsed;
+    } catch {
+      return { status: "pending" as const, category: "other_food", reason: "بانتظار المراجعة البشرية" };
+    }
     const blocked = parsed.isFoodOrDrink !== true || parsed.isUnsafe === true || parsed.isAiEdited === true;
     return { status: blocked ? "blocked" as const : "pending" as const, category: parsed.category ?? "other_food", reason: parsed.reason ?? (blocked ? "لم تجتز الصورة فحص السوق الآلي" : null) };
   } catch (error) {
-    console.warn("[ContentMarket] visual review unavailable; keeping item pending", error);
+    console.warn("[ContentMarket] visual review unavailable; keeping item pending", error instanceof Error ? error.message : "unknown error");
     return { status: "pending" as const, category: "other_food", reason: "بانتظار المراجعة البشرية" };
   }
 }

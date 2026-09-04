@@ -29,6 +29,9 @@ describe("content review experience", () => {
     expect(router).toContain("scanBufferWithClamAV");
     expect(router).toContain("لم يتم تخزينها");
     expect(router).toContain('virusScanStatus: virusScan.status === "unavailable" ? "unavailable" : "clean"');
+    expect(router).toContain("text.match(/\\{[\\s\\S]*\\}/)?.[0]");
+    expect(router).toContain("بانتظار المراجعة البشرية");
+    expect(router).toContain("catch {\n      return { status: \"pending\"");
     expect(router.indexOf("scanBufferWithClamAV(buffer)")).toBeLessThan(router.indexOf("storagePut(`media/"));
   });
 });
