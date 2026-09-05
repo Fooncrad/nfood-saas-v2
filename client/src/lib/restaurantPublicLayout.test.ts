@@ -6,6 +6,7 @@ const source = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantP
 const homeModulesSource = readFileSync(resolve(process.cwd(), "client/src/components/HomeModules.tsx"), "utf8");
 const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
 const dbSource = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
+const menuSettingsSource = readFileSync(resolve(process.cwd(), "shared/menuDisplaySettings.ts"), "utf8");
 
 describe("RestaurantPublic menu layout", () => {
   it("shows complete dish images without object-cover cropping", () => {
@@ -221,9 +222,11 @@ describe("Product card detail flow refinement", () => {
     expect(source).not.toContain("detailCopy.share");
   });
 
-  it("limits each category to five items before expanding", () => {
-    expect(source).toContain("group.items.length : 5");
-    expect(source).toContain("group.items.length > 5");
+  it("uses a configurable category item limit before expanding", () => {
+    expect(source).toContain("group.items.length : menuDisplaySettings.itemsPerCategory");
+    expect(source).toContain("group.items.length > menuDisplaySettings.itemsPerCategory");
+    expect(menuSettingsSource).toContain("itemsPerCategory: 30");
+    expect(menuSettingsSource).toContain("Math.min(200");
     expect(source).toContain("عرض المزيد");
   });
 

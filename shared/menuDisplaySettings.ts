@@ -42,6 +42,7 @@ export type MenuDisplaySettings = {
   toolOrder: MenuDisplayToolKey[];
   showCustomerAccount: boolean;
   gridColumns: MenuGridColumns;
+  itemsPerCategory: number;
   imageRatio: MenuImageRatio;
   oneLineItemName: boolean;
   menuBackgroundColor: string;
@@ -67,6 +68,7 @@ export const defaultMenuDisplaySettings: MenuDisplaySettings = {
   toolOrder: [...MENU_DISPLAY_TOOL_KEYS],
   showCustomerAccount: true,
   gridColumns: 4,
+  itemsPerCategory: 30,
   imageRatio: "square",
   oneLineItemName: false,
   menuBackgroundColor: "#fbf7f0",
@@ -100,6 +102,8 @@ export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySe
       : defaultMenuDisplaySettings.toolOrder;
     const requestedColumns = Number(parsed.gridColumns);
     const gridColumns: MenuGridColumns = requestedColumns === 1 || requestedColumns === 2 || requestedColumns === 3 || requestedColumns === 4 ? requestedColumns : 4;
+    const requestedItemsPerCategory = Number(parsed.itemsPerCategory);
+    const itemsPerCategory = Number.isFinite(requestedItemsPerCategory) ? Math.max(1, Math.min(200, Math.round(requestedItemsPerCategory))) : defaultMenuDisplaySettings.itemsPerCategory;
     const imageRatio = parsed.imageRatio === "portrait" || parsed.imageRatio === "landscape" || parsed.imageRatio === "square" ? parsed.imageRatio : "square";
     const isHex = (value: unknown): value is string => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
     const cartButtonStyle = parsed.cartButtonStyle === "outline" || parsed.cartButtonStyle === "soft" || parsed.cartButtonStyle === "filled" ? parsed.cartButtonStyle : "filled";
@@ -125,6 +129,7 @@ export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySe
       toolOrder: Array.from(new Set([...toolOrder, ...MENU_DISPLAY_TOOL_KEYS])),
       showCustomerAccount: parsed.showCustomerAccount !== false,
       gridColumns,
+      itemsPerCategory,
       imageRatio,
       oneLineItemName: parsed.oneLineItemName === true,
       menuBackgroundColor: isHex(parsed.menuBackgroundColor) ? parsed.menuBackgroundColor : defaultMenuDisplaySettings.menuBackgroundColor,
