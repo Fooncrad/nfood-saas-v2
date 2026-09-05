@@ -3378,3 +3378,106 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
   .nfood-customer-redesign .nfood-menu-card-summary { font-size: .59rem !important; line-height: .95rem !important; }
   .nfood-customer-redesign .nfood-menu-price-current { font-size: .85rem !important; }
 }
+
+
+/* Alignment repair: one compact card per grid cell, no inherited fixed rows or detached columns. */
+.nfood-customer-redesign .nfood-menu-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-rows: minmax(8.5rem, auto) !important;
+  align-items: stretch !important;
+  gap: 1rem !important;
+  width: 100% !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-card,
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-card-shell {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: 8.5rem !important;
+  min-height: 8.5rem !important;
+  max-height: 8.5rem !important;
+  align-self: stretch !important;
+  justify-self: stretch !important;
+  margin: 0 !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image {
+  position: relative !important;
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: 6.5rem !important;
+  height: 8.5rem !important;
+  min-height: 8.5rem !important;
+  max-height: 8.5rem !important;
+  align-self: stretch !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-content {
+  position: relative !important;
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: auto !important;
+  height: 8.5rem !important;
+  min-height: 8.5rem !important;
+  max-height: 8.5rem !important;
+  align-self: stretch !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-card-summary {
+  max-width: 100% !important;
+  overflow: hidden !important;
+  border-top: 0 !important;
+}
+@media (min-width: 768px) and (max-width: 1199px) {
+  .nfood-customer-redesign .nfood-menu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+@media (max-width: 767px) {
+  .nfood-customer-redesign .nfood-menu-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: 7.5rem !important;
+    gap: .65rem !important;
+  }
+  .nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-card,
+  .nfood-customer-redesign .nfood-menu-grid .nfood-menu-card-shell {
+    height: 7.5rem !important;
+    min-height: 7.5rem !important;
+    max-height: 7.5rem !important;
+  }
+  .nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image {
+    width: 5.5rem !important;
+    height: 7.5rem !important;
+    min-height: 7.5rem !important;
+    max-height: 7.5rem !important;
+  }
+  .nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-content {
+    height: 7.5rem !important;
+    min-height: 7.5rem !important;
+    max-height: 7.5rem !important;
+    padding: .65rem !important;
+  }
+}
+
+
+/* Final card integrity: keep image and content in one horizontal flex row. */
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-card,
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-card-shell {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  gap: 0 !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image {
+  flex: 0 0 6.5rem !important;
+  order: 0 !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-content {
+  flex: 1 1 auto !important;
+  order: 1 !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  min-width: 0 !important;
+}
+@media (max-width: 767px) {
+  .nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image { flex-basis: 5.5rem !important; }
+}
