@@ -454,14 +454,15 @@ export default function RestaurantPublic() {
   const filteredItems = useMemo(() => items.filter((item) => (activeCategory === "all" || item.categoryId === activeCategory) && (activeTag === "all" || parseMenuTags(item.tagsJson).includes(activeTag)) && (!searchTerm.trim() || item.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.trim().toLowerCase()))), [activeCategory, activeTag, items, searchTerm]);
   const menuCategoryGroups = useMemo(() => categories.map((category) => ({ category, items: filteredItems.filter((item) => Number(item.categoryId) === Number(category.id)) })).filter((group) => group.items.length > 0), [categories, filteredItems]);
   const publicKitchenSections = useMemo(() => {
-    const configured = (page.data?.kitchenSections ?? []).filter((section) => section.name?.trim());
-    if (configured.length) return configured;
-    return [
+    const defaults = [
       { id: -1, name: "Bar" },
       { id: -2, name: "Kitchen" },
       { id: -3, name: "الحلى" },
       { id: -4, name: "العصائر" },
     ];
+    const configured = (page.data?.kitchenSections ?? []).filter((section) => section.name?.trim());
+    const configuredNames = new Set(configured.map((section) => section.name.trim().toLowerCase()));
+    return [...defaults.filter((section) => !configuredNames.has(section.name.toLowerCase())), ...configured];
   }, [page.data?.kitchenSections]);
   const selectCategoryAndScroll = (category: "all" | number) => { setActiveCategory(category); setCategoryFilterOpen(false); window.requestAnimationFrame(() => document.getElementById("menu")?.scrollIntoView({ behavior: "smooth", block: "start" })); };
   const toggleCategoryExpanded = (categoryId: number) => setExpandedCategoryIds((current) => current.includes(categoryId) ? current.filter((id) => id !== categoryId) : [...current, categoryId]);
