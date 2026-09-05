@@ -111,7 +111,7 @@ describe("public menu UX", () => {
 
   it("provides translated order type selection and mobile navigation", () => {
     expect(page).toContain("orderType");
-    expect(page).toContain("copy.dineIn");
+    expect(page).toContain("طلب داخلي · داخل المطعم");
     expect(page).toContain("copy.takeaway");
     expect(page).toContain("copy.delivery");
     expect(page).toContain("fixed inset-x-3 bottom-3");

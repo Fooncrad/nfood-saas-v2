@@ -4166,3 +4166,95 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
   0%, 100% { filter: saturate(1); }
   50% { filter: saturate(1.25) brightness(1.04); }
 }
+
+
+/* Final mobile polish: compact dialogs, centered install prompt, and clear recommendation/search surfaces. */
+.nfood-menu-shell { scroll-behavior: smooth; }
+.nfood-menu-shell .nfood-recommendations {
+  scroll-margin-top: 4.5rem;
+}
+.nfood-menu-shell .nfood-menu-recommendations {
+  border-top: 1px solid color-mix(in srgb, var(--menu-primary, #d97706) 24%, transparent);
+  padding-top: .75rem;
+}
+.nfood-menu-shell .nfood-menu-recommendation-item {
+  min-width: 9.5rem !important;
+  max-width: 13rem;
+  border-color: color-mix(in srgb, var(--menu-primary, #d97706) 30%, #e5e7eb) !important;
+  background: color-mix(in srgb, var(--menu-page, #fffaf3) 78%, white) !important;
+}
+.nfood-menu-shell .nfood-menu-recommendation-item .tracking-\[\.08em\] {
+  letter-spacing: .08em;
+}
+.nfood-menu-shell .nfood-cart-modal > * {
+  width: min(100%, 30rem) !important;
+  max-height: 82dvh !important;
+  border-radius: 1.25rem !important;
+}
+.nfood-menu-shell .nfood-waiter-dialog {
+  max-height: 76dvh !important;
+}
+.nfood-menu-shell .nfood-waiter-dialog > div:first-child {
+  padding: .85rem 1rem !important;
+}
+.nfood-menu-shell .nfood-waiter-dialog > div:last-child {
+  gap: .7rem !important;
+  padding: 1rem !important;
+}
+.nfood-menu-shell .nfood-install-banner {
+  position: fixed;
+  inset-inline-start: 50%;
+  top: .35rem;
+  z-index: 70;
+  width: min(92vw, 22rem);
+  margin: 0 !important;
+  transform: translateX(-50%);
+  padding-inline: .35rem !important;
+}
+.nfood-menu-shell .nfood-install-banner > div {
+  gap: .5rem !important;
+  border-radius: 999px !important;
+  padding: .35rem .5rem !important;
+  border-color: color-mix(in srgb, var(--menu-primary, #d97706) 24%, white) !important;
+  box-shadow: 0 8px 24px rgba(23, 32, 51, .16) !important;
+}
+.nfood-menu-shell .nfood-install-banner > div > div:first-child > div:first-child {
+  height: 2rem !important;
+  width: 2rem !important;
+  border-radius: 999px !important;
+}
+.nfood-menu-shell .nfood-install-banner p:first-child {
+  font-size: .68rem !important;
+}
+.nfood-menu-shell .nfood-install-banner p:nth-child(2),
+.nfood-menu-shell .nfood-install-banner .hidden {
+  display: none !important;
+}
+.nfood-menu-shell .nfood-install-banner button {
+  min-height: 2rem !important;
+  border-radius: 999px !important;
+  background: var(--menu-primary, #d97706) !important;
+  padding-inline: .75rem !important;
+  font-size: .68rem !important;
+}
+.nfood-menu-shell .nfood-install-banner button[aria-label="إغلاق تنبيه التثبيت"] {
+  background: transparent !important;
+  color: var(--menu-ink, #172033) !important;
+  padding-inline: .35rem !important;
+}
+@media (max-width: 640px) {
+  .nfood-menu-shell .nfood-product-detail-dialog {
+    width: min(92vw, 25rem) !important;
+    max-height: 82dvh !important;
+  }
+  .nfood-menu-shell .nfood-cart-modal {
+    padding: .5rem !important;
+  }
+  .nfood-menu-shell .nfood-cart-modal > * {
+    max-height: 78dvh !important;
+  }
+  .nfood-menu-shell .nfood-menu-recommendation-item {
+    min-width: 8.75rem !important;
+    max-width: 10.5rem;
+  }
+}
