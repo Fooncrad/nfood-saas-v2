@@ -4699,3 +4699,59 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
     display: none !important;
   }
 }
+
+
+/* Optional restaurant template: two menu cards side by side, matching recommendation cards. */
+.nfood-menu-shell.nfood-menu-grid .nfood-menu-grid.category-results {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+.nfood-menu-shell.nfood-menu-grid .nfood-menu-grid.category-results > .nfood-menu-item-card {
+  display: flex !important;
+  min-width: 0;
+  flex-direction: column !important;
+  height: 100%;
+  border-radius: 1rem;
+}
+
+.nfood-menu-shell.nfood-menu-grid .nfood-menu-grid.category-results > .nfood-menu-item-card > .nfood-menu-item-image {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0;
+  aspect-ratio: 1 / 1 !important;
+  flex: 0 0 auto;
+  border-radius: 0.95rem 0.95rem 0 0;
+}
+
+.nfood-menu-shell.nfood-menu-grid .nfood-menu-grid.category-results > .nfood-menu-item-card > .nfood-menu-item-image > img.nfood-menu-item-photo,
+.nfood-menu-shell.nfood-menu-grid .nfood-menu-grid.category-results > .nfood-menu-item-card > .nfood-menu-item-image > div:not(.absolute) {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
+
+.nfood-menu-shell.nfood-menu-grid .nfood-menu-grid.category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+  width: 100% !important;
+  flex: 1 1 auto;
+  padding: 0.65rem !important;
+}
+
+.nfood-menu-shell.nfood-menu-grid .nfood-menu-grid.category-results .nfood-menu-item-title {
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 420px) {
+  .nfood-menu-shell.nfood-menu-grid .nfood-menu-grid.category-results {
+    gap: 0.5rem;
+  }
+  .nfood-menu-shell.nfood-menu-grid .nfood-menu-grid.category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+    padding: 0.55rem !important;
+  }
+}

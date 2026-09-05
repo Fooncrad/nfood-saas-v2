@@ -102,7 +102,8 @@ describe("RestaurantPublic menu layout", () => {
   });
 
   it("protects menu cards from the fixed mobile navigation", () => {
-    expect(source).toContain("nfood-menu-shell ${menuItemLayout === \"cardless\" ? \"nfood-menu-cardless\" : \"nfood-menu-cards\"} flex flex-col pb-32 sm:pb-0");
+    expect(source).toContain("nfood-menu-shell ${menuItemLayout === \"grid\" ? \"nfood-menu-grid\" : menuItemLayout === \"cardless\" ? \"nfood-menu-cardless\" : \"nfood-menu-cards\"} flex flex-col pb-32 sm:pb-0");
+    expect(source).toContain('menuItemLayout === "grid" ? "nfood-grid-category-groups" : ""');
     expect(source).toContain("fixed inset-x-3 bottom-3");
   });
 

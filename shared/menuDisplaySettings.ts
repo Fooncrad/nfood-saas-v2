@@ -15,7 +15,7 @@ export type MenuDisplayToolKey = (typeof MENU_DISPLAY_TOOL_KEYS)[number];
 export type MenuGridColumns = 1 | 2 | 3 | 4;
 export type MenuImageRatio = "square" | "portrait" | "landscape";
 export type MenuButtonStyle = "filled" | "outline" | "soft";
-export type MenuItemLayout = "cards" | "cardless";
+export type MenuItemLayout = "cards" | "cardless" | "grid";
 export type MenuDetailDirection = "auto" | "right" | "left";
 export type MenuDetailPosition = "side" | "bottom" | "top";
 export type MenuDetailWidth = "compact" | "wide" | "full";
@@ -107,7 +107,7 @@ export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySe
     const imageRatio = parsed.imageRatio === "portrait" || parsed.imageRatio === "landscape" || parsed.imageRatio === "square" ? parsed.imageRatio : "square";
     const isHex = (value: unknown): value is string => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
     const cartButtonStyle = parsed.cartButtonStyle === "outline" || parsed.cartButtonStyle === "soft" || parsed.cartButtonStyle === "filled" ? parsed.cartButtonStyle : "filled";
-    const itemLayout: MenuItemLayout = parsed.itemLayout === "cards" || parsed.itemLayout === "cardless" ? parsed.itemLayout : "cardless";
+    const itemLayout: MenuItemLayout = parsed.itemLayout === "cards" || parsed.itemLayout === "cardless" || parsed.itemLayout === "grid" ? parsed.itemLayout : "cardless";
     const rawDetailWindow = parsed.detailWindow && typeof parsed.detailWindow === "object" ? parsed.detailWindow as Partial<MenuDetailWindowSettings> : {};
     const overlayOpacity = Number(rawDetailWindow.overlayOpacity);
     const detailWindow: MenuDetailWindowSettings = {
