@@ -271,6 +271,8 @@ export default function RestaurantPublic() {
   const [accountCode, setAccountCode] = useState("");
   const [accountOtpRequested, setAccountOtpRequested] = useState(false);
   const [customPageSlug, setCustomPageSlug] = useState<string | null>(null);
+  const customerDetailsStorageKey = `nfood-customer-details-${slug}`;
+  const [customerDetailsHydrated, setCustomerDetailsHydrated] = useState(false);
   useEffect(() => { if (!user || typeof window === "undefined") return; const key = `nfood-account-intent-${slug}`; try { const raw = sessionStorage.getItem(key); if (!raw) return; const intent = JSON.parse(raw) as { restaurantId?: number; name?: string; phone?: string }; if (intent.restaurantId) void linkCustomerRestaurant.mutateAsync({ restaurantId: intent.restaurantId }).catch(() => undefined); if (intent.name) { setGuestName(current => current || intent.name || ""); setReservationName(current => current || intent.name || ""); } if (intent.phone) { setGuestPhone(current => current || intent.phone || ""); setReservationPhone(current => current || intent.phone || ""); } sessionStorage.removeItem(key); toast.success("تم ربط حسابك بالطلب", { description: "ستُحفظ الطلبات الجديدة باسم حسابك ويمكنك ربط الطلبات السابقة عبر OTP." }); } catch { sessionStorage.removeItem(key); } }, [slug, user]);
   const [gameOpen, setGameOpen] = useState(false);
   const [gameScore, setGameScore] = useState(0);
@@ -299,6 +301,8 @@ export default function RestaurantPublic() {
   const [activeCategory, setActiveCategory] = useState<number | "all">("all");   const [activeTag, setActiveTag] = useState("all");   const [expandedCategoryIds, setExpandedCategoryIds] = useState<number[]>([]);
   const [contentCategoryFilter, setContentCategoryFilter] = useState("all");
   const [cartOpen, setCartOpen] = useState(false);
+  useEffect(() => { if (typeof window === "undefined") return; try { const raw = window.localStorage.getItem(customerDetailsStorageKey); if (raw) { const details = JSON.parse(raw) as { name?: string; phone?: string; email?: string }; if (details.name) { setGuestName((current) => current || details.name || ""); setReservationName((current) => current || details.name || ""); setAccountName((current) => current || details.name || ""); } if (details.phone) { setGuestPhone((current) => current || details.phone || ""); setReservationPhone((current) => current || details.phone || ""); setAccountPhone((current) => current || details.phone || ""); } if (details.email) { setReservationEmail((current) => current || details.email || ""); setAccountEmail((current) => current || details.email || ""); } } } catch { window.localStorage.removeItem(customerDetailsStorageKey); } finally { setCustomerDetailsHydrated(true); } }, [customerDetailsStorageKey]);
+  useEffect(() => { if (!customerDetailsHydrated || typeof window === "undefined") return; const details = { name: reservationName.trim() || guestName.trim(), phone: reservationPhone.trim() || guestPhone.trim(), email: reservationEmail.trim() }; if (details.name || details.phone || details.email) window.localStorage.setItem(customerDetailsStorageKey, JSON.stringify(details)); }, [customerDetailsHydrated, customerDetailsStorageKey, guestName, guestPhone, reservationEmail, reservationName, reservationPhone]);
   const [contentCartIds, setContentCartIds] = useState<number[]>([]);
   const [contentCartOpen, setContentCartOpen] = useState(false);
   const [contentOrderId, setContentOrderId] = useState<number | null>(null);

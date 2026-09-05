@@ -4074,3 +4074,95 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
     padding: 1rem !important;
   }
 }
+
+
+/* High-contrast menu sections, featured cover, and restrained interaction motion. */
+.nfood-menu-shell {
+  --nfood-default-orange: #d97706;
+  --nfood-default-navy: #172033;
+}
+.nfood-menu-shell .nfood-menu-header {
+  border-bottom: 2px solid color-mix(in srgb, var(--menu-primary, var(--nfood-default-orange)) 72%, var(--nfood-default-navy)) !important;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--menu-primary, var(--nfood-default-orange)) 30%, transparent), 0 8px 20px rgba(23, 32, 51, .08) !important;
+}
+.nfood-menu-shell .nfood-menu-cover {
+  position: relative;
+  margin-top: .75rem !important;
+  border: 2px solid color-mix(in srgb, var(--menu-primary, var(--nfood-default-orange)) 68%, white) !important;
+  border-radius: 1.35rem !important;
+  box-shadow: 0 14px 34px rgba(23, 32, 51, .2), inset 0 1px 0 rgba(255,255,255,.25) !important;
+}
+.nfood-menu-shell .nfood-menu-cover::before {
+  content: "";
+  position: absolute;
+  inset-inline: 1rem;
+  top: -.55rem;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--menu-primary, var(--nfood-default-orange));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--menu-page, #f8f4ee) 85%, transparent);
+  z-index: 3;
+}
+.nfood-menu-shell .nfood-menu-section {
+  border-top: 1px solid color-mix(in srgb, var(--menu-primary, var(--nfood-default-orange)) 24%, transparent);
+  padding-top: .85rem !important;
+}
+.nfood-menu-shell #menu > .mb-5 {
+  border-inline-start: 4px solid var(--menu-primary, var(--nfood-default-orange));
+  padding-inline-start: .85rem !important;
+}
+.nfood-menu-shell .menu-category-group > div:first-child {
+  padding: .55rem .75rem .6rem;
+  border-radius: .85rem;
+  background: color-mix(in srgb, var(--menu-primary, var(--nfood-default-orange)) 12%, var(--menu-page, #f8f4ee));
+  border-bottom: 2px solid color-mix(in srgb, var(--menu-primary, var(--nfood-default-orange)) 68%, transparent);
+}
+.nfood-menu-shell .menu-category-group > div:first-child h3 {
+  color: var(--menu-ink, var(--nfood-default-navy)) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.55);
+}
+.nfood-menu-shell .menu-category-group > div:first-child span {
+  color: color-mix(in srgb, var(--menu-ink, var(--nfood-default-navy)) 78%, var(--menu-primary, var(--nfood-default-orange))) !important;
+}
+.nfood-menu-shell .nfood-menu-item-card {
+  border-color: color-mix(in srgb, var(--menu-primary, var(--nfood-default-orange)) 22%, #d8dee8) !important;
+}
+.nfood-menu-shell .nfood-menu-item-card .nfood-menu-item-image > span {
+  background: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: #b91c1c !important;
+}
+.nfood-menu-shell .nfood-menu-item-card .nfood-menu-price-current {
+  color: var(--menu-primary, var(--nfood-default-orange)) !important;
+}
+.nfood-menu-shell .nfood-menu-item-card,
+.nfood-menu-shell .nfood-menu-category-bar button,
+.nfood-menu-shell .nfood-menu-cover button[class*="bg-orange"] {
+  transform: translateZ(0);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nfood-menu-shell .nfood-menu-cover button[class*="bg-orange"] {
+    animation: nfood-reservation-pulse 2.4s ease-in-out infinite;
+  }
+  .nfood-menu-shell .nfood-menu-item-card:hover,
+  .nfood-menu-shell .nfood-menu-category-bar button:hover {
+    transform: translateY(-2px);
+  }
+  .nfood-menu-shell .nfood-menu-item-image > span {
+    animation: nfood-availability-glow 2.8s ease-in-out infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nfood-menu-shell .nfood-menu-cover button[class*="bg-orange"],
+  .nfood-menu-shell .nfood-menu-item-image > span {
+    animation: none !important;
+  }
+}
+@keyframes nfood-reservation-pulse {
+  0%, 100% { box-shadow: 0 5px 14px rgba(217, 119, 6, .18); }
+  50% { box-shadow: 0 0 0 6px rgba(217, 119, 6, .12), 0 8px 20px rgba(217, 119, 6, .28); }
+}
+@keyframes nfood-availability-glow {
+  0%, 100% { filter: saturate(1); }
+  50% { filter: saturate(1.25) brightness(1.04); }
+}
