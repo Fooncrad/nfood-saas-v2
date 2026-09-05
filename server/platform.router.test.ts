@@ -219,7 +219,7 @@ describe("platform procedures", () => {
     const tableId = Number(table[0].insertId);
     try {
       const created = await appRouter.createCaller(context()).platform.createPublicReservation({ slug: restaurant.slug, branchId: branch.id, customerName: "ضيف حجز", phone: "0500000000", partySize: 2, policyAccepted: true, reservedFor: new Date(Date.now() + 86400000), notes: "اختبار" });
-      expect(created).toEqual(expect.objectContaining({ success: true, status: "confirmed", tableId: expect.any(Number), tableName: expect.any(String) }));
+      expect(created).toEqual(expect.objectContaining({ success: true, status: "pending", tableId: expect.any(Number), tableName: expect.any(String) }));
       expect(created.tableId).toBeGreaterThan(0);
       const storedReservation = (await db.select({ customerId: reservations.customerId }).from(reservations).where(eq(reservations.id, created.id)).limit(1))[0];
       expect(storedReservation?.customerId).toBe(1);

@@ -11,6 +11,8 @@ describe("email templates", () => {
       "order.received",
       "order.status",
       "reservation.accepted",
+      "reservation.rejected",
+      "reservation.updated",
       "reservation.cancelled",
       "payment.receipt",
       "driver.assignment",
