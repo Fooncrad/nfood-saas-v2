@@ -161,7 +161,8 @@ function manualChunks(id: string) {
       if (/\/(ContentMarketplace|CustomerRewardsWalletPanel|CustomerContentLibrary|CustomerProfileSettings|VcardAccountBinding|LoyaltyPanel|ReviewsPanel)\./.test(normalizedId)) return "dashboard-growth";
       if (/\/(HomeModules)\./.test(normalizedId)) return "dashboard-overview-modules";
       if (/\/(Home)\./.test(normalizedId)) return "dashboard-shell";
-      if (/\/(RestaurantOverviewWorkspace|ManagerOperationsPanel|SmartInsightsPanel|AuditSecurityAlerts|WaiterCallsPanel|WaiterResponseStatsPanel|DashboardQuickAccess|PlatformOverview|PendingTransferBanner|MobileNavigationDrawer|HomeSidebar|PlatformSettingsPanel|ActivityAnalyticsPanel)\./.test(normalizedId)) return "dashboard-overview";
+      if (/\/(RestaurantOverviewWorkspace|ManagerOperationsPanel|SmartInsightsPanel|PlatformOverview)\./.test(normalizedId)) return "dashboard-overview-workspace";
+      if (/\/(AuditSecurityAlerts|WaiterCallsPanel|WaiterResponseStatsPanel|DashboardQuickAccess|PendingTransferBanner|MobileNavigationDrawer|HomeSidebar|PlatformSettingsPanel|ActivityAnalyticsPanel)\./.test(normalizedId)) return "dashboard-overview";
     }
     return undefined;
   }
