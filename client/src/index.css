@@ -3966,3 +3966,111 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
     color: #b87920 !important;
   }
 }
+
+
+/* Final mobile header cleanup: compact cover, readable navigation, and smaller waiter action. */
+@media (max-width: 640px) {
+  .nfood-menu-shell .nfood-menu-header {
+    min-height: 3rem !important;
+    height: 3rem !important;
+    padding-block: 0 !important;
+  }
+  .nfood-menu-shell .nfood-menu-header > div {
+    min-height: 3rem !important;
+    height: 3rem !important;
+    padding-block: 0 !important;
+    gap: .25rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-header button,
+  .nfood-menu-shell .nfood-menu-header [role="button"] {
+    min-height: 2rem !important;
+    height: 2rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-header button[aria-label="نداء النادل"] {
+    width: 2rem !important;
+    padding-inline: .35rem !important;
+    gap: 0 !important;
+    border-radius: .7rem !important;
+    background: #d99446 !important;
+    color: #171526 !important;
+    box-shadow: 0 3px 8px rgba(217, 148, 70, .22) !important;
+  }
+  .nfood-menu-shell .nfood-menu-header button[aria-label="نداء النادل"] svg {
+    width: 1rem !important;
+    height: 1rem !important;
+    color: #171526 !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-cover > div {
+    min-height: 8.75rem !important;
+    padding-top: .65rem !important;
+    padding-bottom: .65rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-cover > div > div:last-child {
+    gap: .2rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-cover img {
+    width: 3.5rem !important;
+    height: 3.5rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-cover h1 {
+    font-size: 1.35rem !important;
+    line-height: 1 !important;
+  }
+  .nfood-menu-shell .nfood-menu-cover p {
+    margin-top: 0 !important;
+    font-size: .55rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-cover a[aria-label="QR المنيو"] {
+    display: none !important;
+  }
+  .nfood-menu-shell .nfood-menu-cover .mt-4.grid {
+    margin-top: .3rem !important;
+    padding-top: .3rem !important;
+    gap: .25rem !important;
+  }
+  .nfood-menu-shell main {
+    margin-top: -.75rem !important;
+  }
+
+  .nfood-menu-shell .nfood-mobile-bottom-nav {
+    bottom: .5rem !important;
+    padding: .25rem !important;
+    border-color: #b87920 !important;
+    background: #171526 !important;
+    box-shadow: 0 8px 22px rgba(23, 21, 38, .24) !important;
+  }
+  .nfood-menu-shell .nfood-mobile-bottom-nav > button {
+    min-height: 2.45rem !important;
+    padding: .25rem .8rem !important;
+    color: #fffaf2 !important;
+  }
+  .nfood-menu-shell .nfood-mobile-bottom-nav > button svg {
+    color: #d99446 !important;
+  }
+  .nfood-menu-shell .nfood-mobile-bottom-nav > button:nth-child(2) svg {
+    color: #f1b65f !important;
+  }
+  .nfood-menu-shell .nfood-mobile-bottom-nav > button:nth-child(3) svg {
+    color: #d98ad0 !important;
+  }
+  .nfood-menu-shell .nfood-mobile-bottom-nav > button span {
+    color: #fffaf2 !important;
+  }
+  .nfood-menu-shell .nfood-mobile-bottom-nav > button > span[style] {
+    background: #b87920 !important;
+  }
+
+  .nfood-menu-shell .nfood-waiter-dialog {
+    width: min(calc(100vw - 2rem), 20rem) !important;
+    max-height: 76dvh !important;
+    border-radius: 1rem !important;
+  }
+  .nfood-menu-shell .nfood-waiter-dialog > div:first-child {
+    padding: .85rem 1rem !important;
+  }
+  .nfood-menu-shell .nfood-waiter-dialog > div:last-child {
+    gap: .65rem !important;
+    padding: 1rem !important;
+  }
+}
