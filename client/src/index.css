@@ -4631,3 +4631,71 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
     max-height: 72dvh !important;
   }
 }
+
+
+/* Extra-compact account form for mobile screens. */
+@media (max-width: 639px) {
+  [data-slot="dialog-content"].nfood-account {
+    width: calc(100dvw - 1.25rem) !important;
+    max-width: 22rem !important;
+    max-height: calc(100dvh - .75rem) !important;
+    border-radius: 1rem !important;
+  }
+  [data-slot="dialog-content"].nfood-account > div:first-child {
+    padding: .6rem .8rem !important;
+  }
+  [data-slot="dialog-content"].nfood-account > div:first-child p {
+    font-size: .58rem !important;
+    line-height: 1rem !important;
+  }
+  [data-slot="dialog-content"].nfood-account > div:first-child [data-slot="dialog-title"] {
+    margin-top: .2rem !important;
+    font-size: 1.15rem !important;
+    line-height: 1.35 !important;
+  }
+  [data-slot="dialog-content"].nfood-account > div:first-child [data-slot="dialog-description"] {
+    display: none !important;
+  }
+  [data-slot="dialog-content"].nfood-account > form {
+    gap: .4rem !important;
+    padding: .6rem .75rem !important;
+  }
+  [data-slot="dialog-content"].nfood-account > form > label,
+  [data-slot="dialog-content"].nfood-account > form > div > label {
+    font-size: .68rem !important;
+    line-height: 1rem !important;
+  }
+  [data-slot="dialog-content"].nfood-account input,
+  [data-slot="dialog-content"].nfood-account select,
+  [data-slot="dialog-content"].nfood-account .h-11 {
+    height: 2.25rem !important;
+    min-height: 2.25rem !important;
+    margin-top: .15rem !important;
+    border-radius: .7rem !important;
+    padding-block: .25rem !important;
+  }
+  [data-slot="dialog-content"].nfood-account [role="tablist"] {
+    border-radius: .7rem !important;
+    padding: .15rem !important;
+  }
+  [data-slot="dialog-content"].nfood-account [role="tablist"] button {
+    padding-block: .35rem !important;
+    font-size: .68rem !important;
+  }
+  [data-slot="dialog-content"].nfood-account > form > p {
+    margin: 0 !important;
+    padding: .45rem .6rem !important;
+    font-size: .62rem !important;
+    line-height: 1.15rem !important;
+  }
+  [data-slot="dialog-content"].nfood-account > form > div:last-child button {
+    min-height: 2.35rem !important;
+    padding-block: .35rem !important;
+    font-size: .72rem !important;
+  }
+}
+@media (max-height: 740px) and (max-width: 639px) {
+  [data-slot="dialog-content"].nfood-account > form > p {
+    display: none !important;
+  }
+}
