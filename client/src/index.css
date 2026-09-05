@@ -4258,3 +4258,100 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
     max-width: 10.5rem;
   }
 }
+
+
+/* Mobile menu safety and charcoal/gold card polish. */
+.nfood-menu-shell {
+  padding-top: max(.5rem, env(safe-area-inset-top));
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  background: #171717;
+  color: #f8fafc;
+}
+.nfood-menu-shell #menu,
+.nfood-menu-shell .menu-category-groups {
+  padding-bottom: 1.5rem;
+  scroll-margin-top: 4.5rem;
+}
+.nfood-menu-shell .nfood-menu-item-card {
+  min-height: 7rem;
+  padding-inline-start: 1rem;
+  border-color: rgba(251, 191, 36, .22) !important;
+  background: #242424 !important;
+  color: #f8fafc;
+}
+.nfood-menu-shell .nfood-menu-item-image,
+.nfood-menu-shell .nfood-menu-item-photo {
+  aspect-ratio: 1 / 1 !important;
+  height: auto !important;
+  width: 6.5rem !important;
+  max-width: 6.5rem;
+  flex: 0 0 6.5rem;
+  object-fit: cover;
+}
+.nfood-menu-shell .nfood-menu-item-image {
+  align-self: center;
+  border-radius: .9rem;
+}
+.nfood-menu-shell .nfood-menu-item-image > img,
+.nfood-menu-shell .nfood-menu-item-image > span {
+  aspect-ratio: 1 / 1;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+.nfood-menu-shell .nfood-menu-item-card button[aria-label*="إضافة"],
+.nfood-menu-shell .nfood-menu-item-card button[aria-label*="Add"],
+.nfood-menu-shell .nfood-menu-item-card .nfood-quick-add {
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  min-width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.25rem;
+  border-radius: .75rem;
+  background: #f59e0b;
+  color: #171717;
+}
+.nfood-menu-shell .nfood-menu-category-bar {
+  min-height: 3.25rem;
+  scrollbar-width: none;
+  border-color: rgba(251, 191, 36, .42) !important;
+  background: #202020 !important;
+}
+.nfood-menu-shell .nfood-menu-category-bar::-webkit-scrollbar { display: none; }
+.nfood-menu-shell .nfood-menu-category-bar > button {
+  position: relative;
+  min-height: 2.5rem;
+  border: 1px solid rgba(251, 191, 36, .18);
+  background: #2d2d2d;
+  color: #f8fafc;
+}
+.nfood-menu-shell .nfood-menu-category-bar > button > span:last-child {
+  position: absolute;
+  inset-inline-end: .28rem;
+  top: .2rem;
+  height: 1.15rem;
+  min-width: 1.15rem;
+  padding-inline: .25rem;
+  border: 1px solid rgba(251, 191, 36, .55);
+  background: #f59e0b;
+  color: #171717;
+  font-size: .62rem;
+  font-weight: 900;
+}
+.nfood-menu-shell .nfood-mobile-bottom-nav {
+  bottom: max(.75rem, env(safe-area-inset-bottom));
+  border-color: rgba(251, 191, 36, .7) !important;
+  background: #171717 !important;
+  color: #f8fafc;
+}
+.nfood-menu-shell .nfood-mobile-bottom-nav svg { color: #f59e0b !important; }
+@media (max-width: 640px) {
+  .nfood-menu-shell .nfood-menu-item-card { padding-inline-start: 1rem; }
+  .nfood-menu-shell .nfood-menu-item-image,
+  .nfood-menu-shell .nfood-menu-item-photo { width: 6rem !important; max-width: 6rem; flex-basis: 6rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nfood-menu-shell .nfood-menu-item-card:active { transform: scale(.985); }
+}
