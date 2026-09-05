@@ -38,6 +38,16 @@ describe("public menu UX", () => {
     expect(styles).toContain("grid-auto-flow: row !important;");
   });
 
+  it("shows real menu recommendations and confirms direct cart additions", () => {
+    expect(page).toContain("nfood-menu-recommendations");
+    expect(page).toContain("اختيارات مقترحة");
+    expect(page).toContain("items.slice(0, 6)");
+    expect(page).toContain("toast.success(language === \"ar\"");
+    expect(page).toContain("lastAddedItemId");
+    expect(styles).toContain("nfood-reservation-pulse");
+    expect(styles).toContain("prefers-reduced-motion: reduce");
+  });
+
   it("exposes four distinct menu templates with a persisted switch", () => {
     expect(page).toContain('type PublicMenuTemplate = "editorial" | "bistro" | "glass" | "customer";');
     expect(page).toContain('useState<PublicMenuTemplate>("editorial")');
