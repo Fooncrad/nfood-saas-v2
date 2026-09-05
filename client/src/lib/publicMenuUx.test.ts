@@ -34,6 +34,8 @@ describe("public menu UX", () => {
     expect(styles).toContain("min-height: 0 !important");
     expect(styles).toContain("grid-template-columns: minmax(0, 1fr) !important;");
     expect(styles).toContain("grid-column: 1 / -1 !important;");
+    expect(styles).toContain(".nfood-customer-redesign.nfood-menu-shell .nfood-menu-grid.category-results");
+    expect(styles).toContain("grid-auto-flow: row !important;");
   });
 
   it("exposes four distinct menu templates with a persisted switch", () => {

@@ -3831,3 +3831,21 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
     margin-bottom: 1.35rem !important;
   }
 }
+
+
+/* Actual mobile grid root: applies to the live customer shell even when cardless/editorial is selected. */
+@media (max-width: 767px) {
+  .nfood-customer-redesign.nfood-menu-shell .nfood-menu-grid.category-results {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-auto-flow: row !important;
+    gap: .7rem !important;
+    width: 100% !important;
+  }
+  .nfood-customer-redesign.nfood-menu-shell .nfood-menu-grid.category-results > .nfood-menu-item-card {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+  }
+}
