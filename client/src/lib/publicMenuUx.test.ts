@@ -17,7 +17,7 @@ describe("public menu UX", () => {
     expect(page).toContain("<main className=\"min-w-0 px-3 sm:px-6\">");
     expect(page).toContain("formatCurrencyAmount");
     expect(page).toContain("aspect-square w-full min-w-0 cursor-pointer");
-    expect(page).toContain("grid min-w-0 grid-cols-[minmax(0,34%)_minmax(0,1fr)]");
+    expect(page).toContain("grid min-w-0 grid-cols-1");
     expect(page).toContain("setSelectedMenuItem(item)");
     expect(page).toContain('loading="lazy"');
     expect(page).toContain('decoding="async"');

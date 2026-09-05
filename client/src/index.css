@@ -3067,3 +3067,70 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
     height: 2rem !important;
   }
 }
+
+
+/* Compact vertical product cards: image above content, never a tall side panel. */
+.nfood-menu-shell .nfood-menu-item-card {
+  grid-template-columns: 1fr !important;
+  grid-template-rows: 5.5rem auto !important;
+  min-height: 0 !important;
+}
+
+.nfood-menu-shell .nfood-menu-item-image {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  height: 5.5rem !important;
+  min-height: 0 !important;
+  aspect-ratio: auto !important;
+}
+
+.nfood-menu-shell .nfood-menu-item-content {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  padding: .65rem .7rem .7rem !important;
+}
+
+.nfood-menu-shell .nfood-menu-item-photo,
+.nfood-menu-shell .nfood-menu-item-image > div {
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: auto !important;
+  object-fit: cover;
+}
+
+@media (max-width: 767px) {
+  .nfood-menu-shell .nfood-menu-item-card {
+    grid-template-rows: 4.5rem auto !important;
+    border-radius: .85rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-item-image {
+    height: 4.5rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-item-content {
+    padding: .5rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-item-title {
+    font-size: .72rem !important;
+    line-height: 1.1rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-price-current {
+    font-size: .75rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-card-summary {
+    margin-top: .35rem !important;
+    padding-top: .35rem !important;
+    font-size: .6rem !important;
+    line-height: .95rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-cart-row > button {
+    width: 1.9rem !important;
+    height: 1.9rem !important;
+  }
+}
