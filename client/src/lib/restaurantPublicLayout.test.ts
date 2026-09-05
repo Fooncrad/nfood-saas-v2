@@ -70,6 +70,12 @@ describe("RestaurantPublic menu layout", () => {
     expect(source).toContain("selectedBranchId ?? allBranches[0]?.id");
   });
 
+  it("keeps the public reservation branch id numeric and defaults to the first open branch", () => {
+    expect(source).toContain("const [selectedBranchId, setSelectedBranchId] = useState<number | null>(null);");
+    expect(source).toContain("if (selectedBranchId === null && allBranches[0]) setSelectedBranchId(allBranches[0].id);");
+    expect(source).toContain("const branchId = selectedBranchId ?? branches[0]?.id;");
+  });
+
   it("keeps restaurant identity in the sticky header and lets it collapse", () => {
     expect(source).toContain("showHeaderBrand");
     expect(source).toContain("nfood-menu-header sticky top-0");
