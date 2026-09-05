@@ -130,7 +130,7 @@ describe("RestaurantPublic menu layout", () => {
 
   it("centers and constrains the waiter call dialog on mobile", () => {
     expect(source).toContain("open={waiterCallDialogOpen}");
-    expect(source).toContain("nfood-waiter-dialog w-[calc(100%-1rem)] max-w-sm max-h-[85dvh] overflow-y-auto");
+    expect(source).toContain("nfood-waiter-dialog w-[calc(100%-1.25rem)] max-w-xs max-h-[72dvh] overflow-y-auto");
     expect(source).toContain("onClick={callWaiter}");
     expect(source).not.toContain("setDrawerOpen(false); callWaiter();");
     expect(source).not.toContain("waiterCallEnabled !== false");

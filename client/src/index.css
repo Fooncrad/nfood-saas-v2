@@ -4470,3 +4470,44 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
   .nfood-menu-shell .nfood-waiter-dialog,
   .nfood-menu-shell [data-slot="dialog-content"] { max-height: 74dvh !important; }
 }
+
+
+/* Let the product image touch the card edges on mobile. */
+@media (max-width: 767px) {
+  .nfood-menu-shell .nfood-menu-grid.category-results .nfood-menu-item-card {
+    display: flex !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+    min-height: 6rem !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  .nfood-menu-shell .nfood-menu-grid.category-results .nfood-menu-item-image {
+    flex: 0 0 6rem !important;
+    width: 6rem !important;
+    max-width: 6rem !important;
+    height: auto !important;
+    min-height: 6rem !important;
+    max-height: none !important;
+    align-self: stretch !important;
+    aspect-ratio: auto !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border-start-end-radius: .9rem !important;
+    border-end-end-radius: .9rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-grid.category-results .nfood-menu-item-image > img.nfood-menu-item-photo,
+  .nfood-menu-shell .nfood-menu-grid.category-results .nfood-menu-item-image > span:not(.absolute) {
+    display: flex !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 6rem !important;
+    aspect-ratio: auto !important;
+    object-fit: cover !important;
+  }
+  .nfood-menu-shell .nfood-menu-grid.category-results .nfood-menu-item-content {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    padding: .65rem .75rem !important;
+  }
+}
