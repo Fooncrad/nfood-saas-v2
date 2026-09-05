@@ -4831,3 +4831,150 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
     padding: 0.5rem !important;
   }
 }
+
+
+/* Reference-matched two-card rows: each card owns its image and full decision content. */
+.nfood-menu-shell.nfood-menu-grid .category-results > .nfood-menu-item-card {
+  min-height: 8.5rem !important;
+  height: 8.5rem !important;
+  max-height: 8.5rem !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+}
+
+.nfood-menu-shell.nfood-menu-grid .category-results > .nfood-menu-item-card > .nfood-menu-item-image {
+  order: 1 !important;
+  flex: 0 0 40% !important;
+  width: 40% !important;
+  height: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 0 0.95rem 0.95rem 0 !important;
+}
+
+.nfood-menu-shell.nfood-menu-grid .category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+  order: 2 !important;
+  flex: 1 1 60% !important;
+  width: 60% !important;
+  height: 100% !important;
+  justify-content: space-between !important;
+  overflow: hidden !important;
+  padding: 0.55rem !important;
+}
+
+.nfood-menu-shell.nfood-menu-grid .category-results > .nfood-menu-item-card .nfood-menu-item-heading {
+  gap: 0.25rem !important;
+}
+
+.nfood-menu-shell.nfood-menu-grid .category-results > .nfood-menu-item-card .nfood-menu-item-title {
+  font-size: 0.78rem !important;
+  line-height: 1.25 !important;
+}
+
+.nfood-menu-shell.nfood-menu-grid .category-results > .nfood-menu-item-card .nfood-menu-card-summary {
+  margin-top: 0.15rem !important;
+  padding-top: 0.15rem !important;
+  font-size: 0.62rem !important;
+  line-height: 1.2 !important;
+}
+
+@media (max-width: 420px) {
+  .nfood-menu-shell.nfood-menu-grid .category-results > .nfood-menu-item-card {
+    min-height: 7.5rem !important;
+    height: 7.5rem !important;
+    max-height: 7.5rem !important;
+  }
+  .nfood-menu-shell.nfood-menu-grid .category-results > .nfood-menu-item-card > .nfood-menu-item-image {
+    flex-basis: 39% !important;
+    width: 39% !important;
+  }
+  .nfood-menu-shell.nfood-menu-grid .category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+    width: 61% !important;
+    padding: 0.45rem !important;
+  }
+}
+
+
+/* Direct marker wins over legacy grid/cardless rules for the selected two-column template. */
+.nfood-two-column-results {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-flow: row !important;
+  gap: 0.65rem !important;
+  align-items: stretch !important;
+}
+
+.nfood-two-column-results > .nfood-menu-item-card {
+  display: flex !important;
+  flex-direction: row !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 8rem !important;
+  height: 8rem !important;
+  max-height: 8rem !important;
+  overflow: hidden !important;
+  border-radius: 1rem !important;
+}
+
+.nfood-two-column-results > .nfood-menu-item-card > .nfood-menu-item-image {
+  order: 1 !important;
+  flex: 0 0 40% !important;
+  width: 40% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
+  border-radius: 0 0.95rem 0.95rem 0 !important;
+}
+
+.nfood-two-column-results > .nfood-menu-item-card > .nfood-menu-item-content {
+  order: 2 !important;
+  display: flex !important;
+  flex: 1 1 60% !important;
+  width: 60% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  overflow: hidden !important;
+  padding: 0.5rem !important;
+}
+
+.nfood-two-column-results .nfood-menu-item-title {
+  display: -webkit-box !important;
+  overflow: hidden !important;
+  font-size: 0.75rem !important;
+  line-height: 1.25 !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.nfood-two-column-results .nfood-menu-price-block,
+.nfood-two-column-results .nfood-menu-price-current,
+.nfood-two-column-results .nfood-menu-card-summary {
+  font-size: 0.62rem !important;
+  line-height: 1.2 !important;
+}
+
+.nfood-two-column-results .nfood-menu-card-summary {
+  margin-top: 0 !important;
+  padding-top: 0.15rem !important;
+}
+
+@media (max-width: 420px) {
+  .nfood-two-column-results {
+    gap: 0.45rem !important;
+  }
+  .nfood-two-column-results > .nfood-menu-item-card {
+    min-height: 7.25rem !important;
+    height: 7.25rem !important;
+    max-height: 7.25rem !important;
+  }
+  .nfood-two-column-results > .nfood-menu-item-card > .nfood-menu-item-image {
+    flex-basis: 39% !important;
+    width: 39% !important;
+  }
+  .nfood-two-column-results > .nfood-menu-item-card > .nfood-menu-item-content {
+    width: 61% !important;
+    padding: 0.4rem !important;
+  }
+}
