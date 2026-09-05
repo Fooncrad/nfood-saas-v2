@@ -32,11 +32,29 @@ describe("reservation operations wiring", () => {
     expect(source).toContain("window.confirm");
   });
 
+  it("exposes restaurant-admin controls for accept, reject-with-reason, and edit", () => {
+    expect(source).toContain('status: "confirmed"');
+    expect(source).toContain('status: "rejected"');
+    expect(source).toContain("rejectionReason");
+    expect(source).toContain("updateReservationDetails");
+    expect(source).toContain("تعديل بيانات الحجز");
+  });
+
   it("collects branch, slot, email, and duration for the protected reservation flow", () => {
     expect(source).toContain("reservationSlotsForRestaurant");
     expect(source).toContain("slotId");
     expect(source).toContain("durationMinutes");
     expect(source).toContain("email");
     expect(source).toContain("branchId");
+  });
+
+  it("documents deposit preview and flexible daily capacity settings", () => {
+    const policy = readFileSync(resolve(process.cwd(), "client/src/components/ReservationPolicyPanel.tsx"), "utf8");
+    const publicMenu = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"), "utf8");
+    expect(policy).toContain("reservationMaxPerDay");
+    expect(policy).toContain("reservationDepositEnabled");
+    expect(policy).toContain("اتركه فارغًا لغير محدود");
+    expect(publicMenu).toContain("reservationDepositAmount");
+    expect(publicMenu).toContain("يتطلب هذا الحجز تسجيل الدخول");
   });
 });

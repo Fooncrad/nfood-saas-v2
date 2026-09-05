@@ -1198,6 +1198,13 @@
       "when": 1788631838239,
       "tag": "0170_certain_serpent_society",
       "breakpoints": true
+    },
+    {
+      "idx": 171,
+      "version": "5",
+      "when": 1788632775239,
+      "tag": "0171_shocking_pride",
+      "breakpoints": true
     }
   ]
 }
