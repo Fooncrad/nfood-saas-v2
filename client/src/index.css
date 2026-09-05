@@ -3134,3 +3134,65 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
     height: 1.9rem !important;
   }
 }
+
+
+/* Customer menu redesign: a single coherent visual system inspired by the supplied reference. */
+.nfood-customer-redesign {
+  --customer-bg: #0b0b14;
+  --customer-panel: #141522;
+  --customer-panel-2: #1b1d2a;
+  --customer-line: rgba(255,255,255,.09);
+  --customer-muted: #9aa0b2;
+  --customer-accent: #f59e0b;
+  min-height: 100dvh;
+  background: radial-gradient(circle at 50% -10%, rgba(245,158,11,.16), transparent 34%), var(--customer-bg) !important;
+  color: #f8fafc !important;
+}
+
+.nfood-customer-redesign .nfood-menu-header {
+  background: rgba(11,11,20,.92) !important;
+  border-color: var(--customer-line) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,.2) !important;
+  backdrop-filter: blur(18px);
+}
+
+.nfood-customer-redesign .nfood-menu-header * { border-color: var(--customer-line); }
+.nfood-customer-redesign main { background: transparent !important; }
+.nfood-customer-redesign main > div { max-width: 72rem !important; }
+.nfood-customer-redesign .nfood-menu-item-card,
+.nfood-customer-redesign .nfood-menu-card-shell {
+  background: var(--customer-panel) !important;
+  border: 1px solid var(--customer-line) !important;
+  box-shadow: 0 14px 30px rgba(0,0,0,.2) !important;
+  color: #f8fafc !important;
+}
+.nfood-customer-redesign .nfood-menu-item-card:hover { border-color: rgba(245,158,11,.55) !important; }
+.nfood-customer-redesign .nfood-menu-item-image {
+  background: linear-gradient(135deg, #191a28, #29212a) !important;
+}
+.nfood-customer-redesign .nfood-menu-item-content { background: var(--customer-panel) !important; }
+.nfood-customer-redesign .nfood-menu-item-title { color: #f8fafc !important; }
+.nfood-customer-redesign .nfood-menu-card-summary { color: var(--customer-muted) !important; border-color: var(--customer-line) !important; }
+.nfood-customer-redesign .nfood-menu-price-compare { color: #7f8799 !important; }
+.nfood-customer-redesign .nfood-menu-discount { color: #fb7185 !important; }
+.nfood-customer-redesign .nfood-menu-price-current { color: var(--customer-accent) !important; }
+.nfood-customer-redesign .nfood-menu-item-image > span { background: rgba(16,185,129,.18) !important; border-color: rgba(52,211,153,.4) !important; color: #86efac !important; }
+.nfood-customer-redesign .nfood-menu-item-image button { background: rgba(11,11,20,.78) !important; border-color: var(--customer-line) !important; color: #f8fafc !important; }
+.nfood-customer-redesign input,
+.nfood-customer-redesign select,
+.nfood-customer-redesign textarea { background: var(--customer-panel) !important; border-color: var(--customer-line) !important; color: #f8fafc !important; }
+.nfood-customer-redesign input::placeholder { color: #7f8799 !important; }
+.nfood-customer-redesign .nfood-menu-category-bar button { background: var(--customer-panel) !important; border-color: var(--customer-line) !important; color: #cbd5e1 !important; }
+.nfood-customer-redesign .nfood-menu-category-bar button[data-active="true"],
+.nfood-customer-redesign .nfood-menu-category-bar button[aria-current="true"] { background: var(--customer-accent) !important; color: #17120a !important; border-color: var(--customer-accent) !important; }
+.nfood-customer-redesign .nfood-menu-cart-row > button { background: var(--customer-accent) !important; color: #17120a !important; border: 0 !important; }
+.nfood-customer-redesign .nfood-menu-cart-row > button:hover { background: #fbbf24 !important; }
+.nfood-customer-redesign [class*="bg-white"],
+.nfood-customer-redesign [class*="bg-slate-50"] { background-color: var(--customer-panel) !important; }
+.nfood-customer-redesign [class*="text-slate-950"],
+.nfood-customer-redesign [class*="text-slate-900"],
+.nfood-customer-redesign [class*="text-slate-800"] { color: #f8fafc !important; }
+.nfood-customer-redesign [class*="text-slate-600"],
+.nfood-customer-redesign [class*="text-slate-500"],
+.nfood-customer-redesign [class*="text-slate-400"] { color: var(--customer-muted) !important; }
