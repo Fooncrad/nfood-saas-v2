@@ -40,15 +40,16 @@ describe("public menu UX", () => {
     expect(styles).toContain("grid-auto-flow: row !important;");
   });
 
-  it("keeps public reservations pending and exposes customer order sections", () => {
+  it("keeps public reservations pending and keeps restaurant sections inside booking only", () => {
     expect(page).toContain("بانتظار موافقة المطعم");
     expect(page).not.toContain("تم تأكيد الحجز وتخصيص الطاولة");
-    expect(page).toContain("publicKitchenSections");
-    expect(page).toContain('name: "Bar"');
-    expect(page).toContain('name: "Kitchen"');
-    expect(page).toContain('name: "الحلى"');
-    expect(page).toContain('name: "العصائر"');
-    expect(page).toContain("page.data?.kitchenSections");
+    expect(page).toContain('aria-label="قسم الجلسة"');
+    expect(page).toContain("seatingSections.map");
+    expect(page).not.toContain("publicKitchenSections");
+    expect(page).not.toContain('name: "Bar"');
+    expect(page).not.toContain('name: "Kitchen"');
+    expect(page).not.toContain('name: "الحلى"');
+    expect(page).not.toContain('name: "العصائر"');
   });
 
   it("shows real menu recommendations and confirms direct cart additions", () => {

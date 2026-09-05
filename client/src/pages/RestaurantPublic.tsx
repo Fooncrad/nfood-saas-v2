@@ -453,17 +453,6 @@ export default function RestaurantPublic() {
   const allTags = useMemo(() => Array.from(new Set(items.flatMap((item) => parseMenuTags(item.tagsJson)))), [items]);
   const filteredItems = useMemo(() => items.filter((item) => (activeCategory === "all" || item.categoryId === activeCategory) && (activeTag === "all" || parseMenuTags(item.tagsJson).includes(activeTag)) && (!searchTerm.trim() || item.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.trim().toLowerCase()))), [activeCategory, activeTag, items, searchTerm]);
   const menuCategoryGroups = useMemo(() => categories.map((category) => ({ category, items: filteredItems.filter((item) => Number(item.categoryId) === Number(category.id)) })).filter((group) => group.items.length > 0), [categories, filteredItems]);
-  const publicKitchenSections = useMemo(() => {
-    const defaults = [
-      { id: -1, name: "Bar" },
-      { id: -2, name: "Kitchen" },
-      { id: -3, name: "الحلى" },
-      { id: -4, name: "العصائر" },
-    ];
-    const configured = (page.data?.kitchenSections ?? []).filter((section) => section.name?.trim());
-    const configuredNames = new Set(configured.map((section) => section.name.trim().toLowerCase()));
-    return [...defaults.filter((section) => !configuredNames.has(section.name.toLowerCase())), ...configured];
-  }, [page.data?.kitchenSections]);
   const selectCategoryAndScroll = (category: "all" | number) => { setActiveCategory(category); setCategoryFilterOpen(false); window.requestAnimationFrame(() => document.getElementById("menu")?.scrollIntoView({ behavior: "smooth", block: "start" })); };
   const toggleCategoryExpanded = (categoryId: number) => setExpandedCategoryIds((current) => current.includes(categoryId) ? current.filter((id) => id !== categoryId) : [...current, categoryId]);
   const cartItems = useMemo(() => items.filter((item) => (cart[item.id] ?? 0) > 0).map((item) => { const selectedAddonIds = cartAddons[item.id] ?? []; const selectedAddons = (addonsByItem[item.id] ?? []).filter((addon) => selectedAddonIds.includes(addon.id)); return { ...item, quantity: cart[item.id] ?? 0, selectedAddonIds, selectedAddons }; }), [addonsByItem, cart, cartAddons, items]);
@@ -554,8 +543,6 @@ export default function RestaurantPublic() {
         </div>
       </div>
     </section>
-
-    {publicKitchenSections.length > 0 && <section aria-labelledby="public-kitchen-sections" className="mx-auto mt-3 w-full max-w-7xl px-4 sm:px-8"><div className="mb-2 flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.2em] text-[var(--menu-primary)]">ORDER SECTIONS</p><h2 id="public-kitchen-sections" className="text-base font-black text-slate-950">أقسام الطلب المتاحة</h2></div><span className="text-[10px] font-bold text-slate-400">{publicKitchenSections.length} أقسام</span></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{publicKitchenSections.map((section) => <div key={section.id} className="flex min-h-12 items-center justify-center rounded-2xl border border-orange-200/70 bg-white/90 px-3 py-2 text-center text-xs font-black text-slate-800 shadow-sm">{section.name}</div>)}</div></section>}
 
     {items.length > 0 && <section aria-labelledby="recommended-menu-items" className="nfood-menu-recommendations mx-auto mt-3 w-full max-w-7xl px-4 sm:px-8"><div className="mb-3 flex items-end justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.24em] text-[var(--menu-primary)]">NFOOD PICKS</p><h2 id="recommended-menu-items" className="mt-1 text-lg font-black text-slate-950">اختيارات مقترحة</h2><p className="mt-1 text-xs font-bold text-slate-500">أصناف مختارة من قائمة المطعم لتبدأ طلبك بسرعة</p></div><Sparkles className="h-5 w-5 text-[var(--menu-primary)]" aria-hidden="true" /></div><div className="flex gap-3 overflow-x-auto pb-2">{items.slice(0, 6).map((item) => <button key={`recommended-${item.id}`} type="button" onClick={() => setSelectedMenuItem(item)} className="nfood-menu-recommendation-item flex min-w-[11rem] flex-1 items-center gap-3 rounded-2xl border border-orange-200/70 bg-white/90 p-2 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400 hover:shadow-md"><span className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-orange-50">{item.imageUrl ? <img src={item.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" /> : <span className="flex h-full w-full items-center justify-center text-orange-400"><Utensils className="h-5 w-5" /></span>}</span><span className="min-w-0"><strong className="block truncate text-xs font-black text-slate-900">{item.name}</strong><span className="mt-1 block text-xs font-black text-[var(--menu-primary)]">{formatPrice(item.price)}</span><span className="mt-1 flex items-center gap-1 text-[10px] leading-4"><span aria-hidden="true" className="tracking-[.08em] text-amber-500">☆☆☆☆☆</span><span className="truncate text-slate-400">لا توجد تقييمات بعد</span></span></span></button>)}</div></section>}
 
