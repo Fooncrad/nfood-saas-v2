@@ -3807,3 +3807,27 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
     text-align: right !important;
   }
 }
+
+
+/* Reference correction: one full-width product row at a time on mobile. */
+@media (max-width: 767px) {
+  .nfood-customer-redesign.nfood-menu-cards .nfood-menu-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    column-gap: 0 !important;
+    row-gap: .65rem !important;
+    width: 100% !important;
+  }
+  .nfood-customer-redesign.nfood-menu-cards .nfood-menu-grid .nfood-menu-item-card {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .nfood-customer-redesign.nfood-menu-cards .nfood-menu-grid + button {
+    align-self: flex-start !important;
+    margin-top: .75rem !important;
+  }
+  .nfood-customer-redesign.nfood-menu-cards section[id^="category-"] {
+    margin-bottom: 1.35rem !important;
+  }
+}

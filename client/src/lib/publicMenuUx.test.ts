@@ -32,6 +32,8 @@ describe("public menu UX", () => {
     expect(styles).toContain("var(--menu-page)");
     expect(styles).toContain("padding-inline: 1rem !important");
     expect(styles).toContain("min-height: 0 !important");
+    expect(styles).toContain("grid-template-columns: minmax(0, 1fr) !important;");
+    expect(styles).toContain("grid-column: 1 / -1 !important;");
   });
 
   it("exposes four distinct menu templates with a persisted switch", () => {
