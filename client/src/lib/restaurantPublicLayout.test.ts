@@ -197,10 +197,11 @@ describe("RestaurantPublic menu layout", () => {
 
 
 describe("Product card detail flow refinement", () => {
-  it("opens product details from the whole card and from the plus action", () => {
+  it("opens details from the card while the plus action adds directly to the cart", () => {
     expect(source).toContain("onClick={() => setSelectedMenuItem(item)}");
     expect(source).toContain("tabIndex={0} aria-label={`عرض تفاصيل ${item.name}`}");
-    expect(source).toContain('aria-label={`عرض تفاصيل ${item.name}`}><Plus');
+    expect(source).toContain("addMenuItemDirectly(item)");
+    expect(source).toContain('aria-label={`إضافة ${item.name} إلى السلة`}');
     expect(source).toContain("nfood-menu-card-summary");
     expect(source).toContain("compareAtPrice");
     expect(source).toContain("nfood-menu-item-title");
