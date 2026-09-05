@@ -2992,3 +2992,78 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
 .nfood-menu-template-customer.nfood-menu-dark .nfood-menu-item-card .nfood-menu-item-content strong,
 .nfood-menu-template-customer.nfood-menu-dark .nfood-menu-item-card .nfood-menu-item-content h3,
 .nfood-menu-template-customer.nfood-menu-dark .nfood-cart-modal [data-slot="card-title"] { color: #fff8f0; }
+
+
+/* Reference horizontal menu cards: three-up desktop, two-up mobile. */
+.nfood-menu-shell .category-results {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: .75rem !important;
+}
+
+.nfood-menu-shell .nfood-menu-item-card {
+  grid-template-columns: minmax(0, 34%) minmax(0, 1fr) !important;
+  min-height: 9rem !important;
+  border-radius: 1rem !important;
+}
+
+.nfood-menu-shell .nfood-menu-item-image,
+.nfood-menu-shell .nfood-menu-item-photo {
+  min-height: 0 !important;
+  aspect-ratio: 1 / 1 !important;
+}
+
+.nfood-menu-shell .nfood-menu-item-photo {
+  padding: 0 !important;
+}
+
+.nfood-menu-shell .nfood-menu-item-content {
+  min-width: 0 !important;
+  padding: .75rem !important;
+}
+
+.nfood-menu-shell .nfood-menu-card-summary {
+  min-width: 0 !important;
+  min-height: 2.5rem;
+  overflow: hidden;
+  padding: .4rem .75rem .65rem !important;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (max-width: 767px) {
+  .nfood-menu-shell .category-results {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: .5rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-item-card {
+    grid-template-columns: minmax(0, 32%) minmax(0, 1fr) !important;
+    min-height: 8rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-item-content {
+    padding: .55rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-item-title {
+    font-size: .75rem !important;
+    line-height: 1.2rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-price-current {
+    font-size: .78rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-card-summary {
+    min-height: 2.15rem;
+    padding: .3rem .5rem .5rem !important;
+    font-size: .625rem !important;
+    line-height: 1.05rem !important;
+  }
+
+  .nfood-menu-shell .nfood-menu-cart-row > button {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+}
