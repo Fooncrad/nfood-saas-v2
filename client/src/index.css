@@ -3849,3 +3849,26 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
     min-width: 0 !important;
   }
 }
+
+
+/* Square product image inside the single-row mobile card. */
+@media (max-width: 767px) {
+  .nfood-customer-redesign.nfood-menu-shell .nfood-menu-grid.category-results .nfood-menu-item-image {
+    flex: 0 0 6.5rem !important;
+    width: 6.5rem !important;
+    height: 6.5rem !important;
+    min-height: 6.5rem !important;
+    max-height: 6.5rem !important;
+    aspect-ratio: 1 / 1 !important;
+    align-self: center !important;
+    overflow: hidden !important;
+    border-radius: .45rem !important;
+  }
+  .nfood-customer-redesign.nfood-menu-shell .nfood-menu-grid.category-results .nfood-menu-item-photo,
+  .nfood-customer-redesign.nfood-menu-shell .nfood-menu-grid.category-results .nfood-menu-item-image > div {
+    width: 100% !important;
+    height: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+  }
+}
