@@ -59,8 +59,9 @@ describe("public menu UX", () => {
   it("forces every shared dialog to stay centered in RTL and LTR", () => {
     expect(dialog).toContain("!left-[50%]");
     expect(dialog).toContain("!top-[50%]");
-    expect(dialog).toContain("!translate-x-[-50%]");
-    expect(dialog).toContain("!translate-y-[-50%]");
+    expect(dialog).toContain("!translate-none");
+    expect(dialog).not.toContain("!translate-x-[-50%]");
+    expect(dialog).not.toContain("!translate-y-[-50%]");
     expect(dialog).toContain("!right-auto");
   });
 

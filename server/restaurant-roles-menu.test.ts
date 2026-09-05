@@ -10,7 +10,7 @@ describe("restaurant menu account and operational role entry points", () => {
     expect(source).toContain('navigate(isAdmin ? "/admin" : isRestaurantStaff ? "/restaurant/dashboard" : "/customer-portal")');
     expect(source).toContain('if (!user) { toast.info("سجّل الدخول أولًا لإتمام الطلب"); startLogin(); return; }');
     expect(source).toContain('selfOrderEnabled');
-    expect(source).toContain('setSelectedMenuItem(item); }} aria-label={`عرض تفاصيل ${item.name}`}');
+    expect(source).toContain('const openCartItemDetails = (item: typeof items[number]) => { setCartOpen(false); setSelectedMenuItem(item); }');
     expect(source).not.toContain('updateCart(item.id, 1); }} aria-label={`إضافة ${item.name} إلى السلة`}');
   });
 

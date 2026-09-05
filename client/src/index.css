@@ -3481,3 +3481,252 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
 @media (max-width: 767px) {
   .nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image { flex-basis: 5.5rem !important; }
 }
+
+
+/* Final mobile integrity pass: remove fixed grid rows and keep every item as one compact horizontal card. */
+.nfood-customer-redesign .menu-category-groups {
+  gap: 1rem !important;
+}
+.nfood-customer-redesign .menu-category-group {
+  min-height: 0 !important;
+  height: auto !important;
+  margin-block: 0 !important;
+}
+.nfood-customer-redesign .menu-category-group + .menu-category-group {
+  margin-top: 1rem !important;
+}
+.nfood-customer-redesign .nfood-menu-grid {
+  grid-auto-rows: unset !important;
+  align-content: start !important;
+  grid-auto-flow: row !important;
+  row-gap: .75rem !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-card,
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-card-shell {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  height: auto !important;
+  min-height: 8rem !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image {
+  flex: 0 0 6.25rem !important;
+  order: 0 !important;
+  width: 6.25rem !important;
+  height: auto !important;
+  min-height: 8rem !important;
+  max-height: none !important;
+  align-self: stretch !important;
+  overflow: hidden !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image > img,
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image > div {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-content {
+  order: 1 !important;
+  flex: 1 1 auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 8rem !important;
+  max-height: none !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  gap: .35rem !important;
+  padding: .7rem .8rem !important;
+  overflow: hidden !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-heading {
+  min-width: 0 !important;
+  display: flex !important;
+  flex: 1 1 auto !important;
+  gap: .25rem !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-price-block {
+  min-height: 1rem !important;
+  flex-wrap: nowrap !important;
+  line-height: 1rem !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-title {
+  min-height: 2.25rem !important;
+  line-height: 1.15rem !important;
+  overflow: hidden !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-card-summary {
+  flex: 0 0 auto !important;
+  max-height: 1.15rem !important;
+  margin-top: .1rem !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-price-current {
+  flex: 0 0 auto !important;
+  line-height: 1.1rem !important;
+  margin-top: auto !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image > button[aria-label*="المفضلة"],
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image > button[aria-label*="favorite"] {
+  top: .45rem !important;
+  left: .45rem !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  z-index: 25 !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image > span {
+  top: .45rem !important;
+  right: .45rem !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 25 !important;
+  white-space: nowrap !important;
+}
+@media (max-width: 767px) {
+  .nfood-customer-redesign .nfood-menu-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    column-gap: .55rem !important;
+    row-gap: .65rem !important;
+  }
+  .nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-card,
+  .nfood-customer-redesign .nfood-menu-grid .nfood-menu-card-shell {
+    min-height: 7.8rem !important;
+  }
+  .nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-image {
+    flex-basis: 4.6rem !important;
+    width: 4.6rem !important;
+    min-height: 7.8rem !important;
+  }
+  .nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-content {
+    min-height: 7.8rem !important;
+    padding: .55rem .55rem !important;
+  }
+  .nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-title {
+    font-size: .72rem !important;
+    line-height: 1.05rem !important;
+  }
+  .nfood-customer-redesign .nfood-menu-grid .nfood-card-summary {
+    font-size: .58rem !important;
+  }
+  .nfood-customer-redesign .nfood-menu-grid .nfood-menu-price-current {
+    font-size: .78rem !important;
+  }
+}
+
+/* Prevent the title row from pushing the quick-add control outside the card. */
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-heading > .flex.min-w-0.items-start.justify-between {
+  width: 100% !important;
+  min-width: 0 !important;
+  align-items: flex-start !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-heading .nfood-menu-item-title {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-heading .nfood-menu-cart-row {
+  flex: 0 0 2.15rem !important;
+  width: 2.15rem !important;
+  min-width: 2.15rem !important;
+  max-width: 2.15rem !important;
+  height: 2.15rem !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  align-self: flex-start !important;
+  overflow: visible !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-heading .nfood-menu-cart-row > button {
+  width: 2.15rem !important;
+  height: 2.15rem !important;
+  min-width: 2.15rem !important;
+  min-height: 2.15rem !important;
+  padding: 0 !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-card-summary {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: 1.2rem !important;
+  line-height: 1.2rem !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-item-title {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-cart-row {
+  flex: 0 0 2.15rem !important;
+  width: 2.15rem !important;
+  min-width: 2.15rem !important;
+  max-width: 2.15rem !important;
+  height: 2.15rem !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+}
+.nfood-customer-redesign .nfood-menu-grid .nfood-menu-cart-row > button {
+  width: 2.15rem !important;
+  height: 2.15rem !important;
+  min-width: 2.15rem !important;
+  min-height: 2.15rem !important;
+  padding: 0 !important;
+}
+
+/* Last-mile dialog centering: override saved side-panel settings for the public customer modal. */
+[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"][data-detail-width="wide"],
+[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"][data-detail-width="compact"],
+[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"][data-detail-width="full"],
+[data-slot="dialog-content"].nfood-product-detail-dialog.nfood-product-detail-from-right {
+  position: fixed !important;
+  inset: 50% auto auto 50% !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: 50% !important;
+  width: min(calc(100dvw - 2rem), 30rem) !important;
+  min-width: 0 !important;
+  max-width: 30rem !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 85dvh !important;
+  margin: 0 !important;
+  transform: translate(-50%, -50%) !important;
+  translate: none !important;
+  animation: none !important;
+  transition: none !important;
+}
+[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"] .nfood-product-detail-panel {
+  height: auto !important;
+  max-height: 85dvh !important;
+}
+@media (max-width: 639px) {
+  [data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"],
+  [data-slot="dialog-content"].nfood-product-detail-dialog.nfood-product-detail-from-right {
+    width: calc(100dvw - 1rem) !important;
+    max-width: 30rem !important;
+    max-height: 85dvh !important;
+  }
+}
+[data-slot="dialog-overlay"],
+body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="dialog-overlay"] {
+  background: rgb(0 0 0 / .35) !important;
+  background-color: rgb(0 0 0 / .35) !important;
+  backdrop-filter: blur(2px) !important;
+  opacity: 1 !important;
+}
