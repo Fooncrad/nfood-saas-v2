@@ -3286,3 +3286,95 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
   .nfood-customer-redesign .nfood-menu-price-current { font-size: .78rem !important; }
   .nfood-customer-redesign .nfood-menu-card-summary { font-size: .59rem !important; line-height: .95rem !important; }
 }
+
+
+/* Exact compact reference layout for the customer menu. */
+.nfood-customer-redesign {
+  background: #080b16 !important;
+  color: #f8fafc !important;
+}
+.nfood-customer-redesign .nfood-menu-header {
+  background: rgba(8,11,22,.94) !important;
+  border-color: rgba(148,163,184,.16) !important;
+}
+.nfood-customer-redesign .nfood-menu-item-card,
+.nfood-customer-redesign .nfood-menu-card-shell {
+  grid-template-columns: minmax(0, 1fr) 6.5rem !important;
+  grid-template-rows: 8.5rem !important;
+  min-height: 8.5rem !important;
+  height: 8.5rem !important;
+  border-radius: 1.05rem !important;
+  border: 1px solid rgba(148,163,184,.18) !important;
+  background: #111827 !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.2) !important;
+}
+.nfood-customer-redesign .nfood-menu-item-image {
+  width: 6.5rem !important;
+  min-height: 8.5rem !important;
+  height: 8.5rem !important;
+  background: #1f2937 !important;
+}
+.nfood-customer-redesign .nfood-menu-item-image img,
+.nfood-customer-redesign .nfood-menu-item-image > div {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+.nfood-customer-redesign .nfood-menu-item-content {
+  height: 8.5rem !important;
+  min-height: 0 !important;
+  justify-content: space-between !important;
+  padding: 1rem 1.1rem !important;
+  background: #111827 !important;
+}
+.nfood-customer-redesign .nfood-menu-item-title {
+  font-size: .95rem !important;
+  line-height: 1.45rem !important;
+  color: #f8fafc !important;
+}
+.nfood-customer-redesign .nfood-menu-card-summary {
+  margin-top: .2rem !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+  color: #aab2c3 !important;
+  font-size: .68rem !important;
+  line-height: 1.15rem !important;
+}
+.nfood-customer-redesign .nfood-menu-price-current {
+  color: #f59e0b !important;
+  font-size: 1.05rem !important;
+  font-weight: 900 !important;
+  align-self: flex-start !important;
+}
+.nfood-customer-redesign .nfood-menu-cart-row > button {
+  width: 2.15rem !important;
+  height: 2.15rem !important;
+  border-radius: .75rem !important;
+  background: #f59e0b !important;
+  color: #111827 !important;
+}
+.nfood-customer-redesign .nfood-menu-category-bar button {
+  background: #111827 !important;
+  border-color: rgba(148,163,184,.18) !important;
+  color: #cbd5e1 !important;
+}
+.nfood-customer-redesign .nfood-menu-category-bar button[data-active="true"],
+.nfood-customer-redesign .nfood-menu-category-bar button[aria-current="true"] {
+  background: #f59e0b !important;
+  color: #111827 !important;
+  border-color: #f59e0b !important;
+}
+@media (max-width: 767px) {
+  .nfood-customer-redesign .nfood-menu-item-card,
+  .nfood-customer-redesign .nfood-menu-card-shell {
+    grid-template-columns: minmax(0, 1fr) 5.5rem !important;
+    grid-template-rows: 7.5rem !important;
+    height: 7.5rem !important;
+    min-height: 7.5rem !important;
+  }
+  .nfood-customer-redesign .nfood-menu-item-image { width: 5.5rem !important; height: 7.5rem !important; min-height: 7.5rem !important; }
+  .nfood-customer-redesign .nfood-menu-item-content { height: 7.5rem !important; padding: .75rem .8rem !important; }
+  .nfood-customer-redesign .nfood-menu-item-title { font-size: .78rem !important; line-height: 1.2rem !important; }
+  .nfood-customer-redesign .nfood-menu-card-summary { font-size: .59rem !important; line-height: .95rem !important; }
+  .nfood-customer-redesign .nfood-menu-price-current { font-size: .85rem !important; }
+}
