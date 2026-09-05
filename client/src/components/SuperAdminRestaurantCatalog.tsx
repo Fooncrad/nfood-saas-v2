@@ -183,7 +183,6 @@ export function SuperAdminRestaurantCatalog() {
   const catalogLoading = plansQuery.isLoading || definitionsQuery.isLoading;
   const catalogError = plansQuery.isError || definitionsQuery.isError;
   const [showAllFeatures, setShowAllFeatures] = useState(false);
-  const [catalogOpen, setCatalogOpen] = useState(true);
   const visibleDefinitions = showAllFeatures
     ? definitions
     : definitions.slice(0, 8);
@@ -209,16 +208,6 @@ export function SuperAdminRestaurantCatalog() {
           <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500 dark:text-slate-400">{ui.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            aria-expanded={catalogOpen}
-            onClick={() => setCatalogOpen(open => !open)}
-            className="h-9 gap-1.5 rounded-lg border-slate-200 px-3 text-xs"
-          >
-            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${catalogOpen ? "rotate-180" : ""}`} />
-            {catalogOpen ? (language === "ar" ? "طي القائمة" : language === "fr" ? "Réduire la liste" : language === "ur" ? "فہرست سمیٹیں" : "Collapse list") : (language === "ar" ? "فتح القائمة" : language === "fr" ? "Ouvrir la liste" : language === "ur" ? "فہرست کھولیں" : "Open list")}
-          </Button>
           <Button
             onClick={() => setCreateOpen(true)}
             className="h-9 gap-1.5 rounded-lg bg-[#e76f3c] px-3 text-xs shadow-sm hover:bg-[#d85f2e]"
@@ -487,8 +476,7 @@ export function SuperAdminRestaurantCatalog() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {catalogOpen && (
-        <div className="animate-[nfood-enter_180ms_ease-out]">
+      <div>
         <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
         <CardHeader className="border-b border-slate-100 bg-gradient-to-l from-slate-50/80 via-white to-white p-3.5 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
           <div className="flex flex-wrap items-center gap-3">
@@ -535,7 +523,6 @@ export function SuperAdminRestaurantCatalog() {
                 <div className="absolute left-0 top-11 z-30 min-w-48 rounded-xl border border-slate-200 bg-white p-1.5 text-right shadow-xl dark:border-slate-700 dark:bg-slate-900">
                   <button type="button" onClick={() => { void restaurantsQuery.refetch(); setActionsOpen(false); }} className="flex w-full items-center rounded-lg px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-orange-50 hover:text-[#c75325] dark:text-slate-200 dark:hover:bg-orange-500/10">{actionsCopy.refresh}</button>
                   <button type="button" onClick={() => { setQuery(""); setFilter("الكل"); setPlanFilter("الكل"); setActionsOpen(false); }} className="flex w-full items-center rounded-lg px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-orange-50 hover:text-[#c75325] dark:text-slate-200 dark:hover:bg-orange-500/10">{actionsCopy.reset}</button>
-                  <button type="button" onClick={() => { setCatalogOpen(true); setActionsOpen(false); }} className="flex w-full items-center rounded-lg px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-orange-50 hover:text-[#c75325] dark:text-slate-200 dark:hover:bg-orange-500/10">{actionsCopy.openCatalog}</button>
                 </div>
               )}
             </div>
@@ -724,8 +711,7 @@ export function SuperAdminRestaurantCatalog() {
           )}
         </CardContent>
       </Card>
-        </div>
-      )}
+      </div>
 
       <div data-testid="restaurant-governance-grid" className="grid gap-4 xl:grid-cols-[1.15fr_1fr]">
         <Card className="overflow-hidden rounded-[22px] border-slate-200/80 bg-white/95 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
