@@ -4355,3 +4355,41 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
 @media (prefers-reduced-motion: no-preference) {
   .nfood-menu-shell .nfood-menu-item-card:active { transform: scale(.985); }
 }
+
+
+/* Fix availability badge being treated as the full-size image fallback. */
+.nfood-menu-shell .nfood-menu-item-image > span.absolute {
+  position: absolute;
+  inset-inline-end: .35rem;
+  inset-inline-start: auto;
+  top: .35rem;
+  bottom: auto;
+  z-index: 20;
+  width: auto !important;
+  min-width: 0;
+  height: auto !important;
+  aspect-ratio: auto !important;
+  max-width: calc(100% - .7rem);
+  padding: .22rem .45rem;
+  border-radius: 999px;
+  background: rgba(220, 252, 231, .94);
+  color: #15803d;
+  white-space: nowrap;
+  object-fit: initial;
+}
+.nfood-menu-shell .nfood-menu-item-image > span:not(.absolute) {
+  display: flex;
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  align-items: center;
+  justify-content: center;
+  object-fit: cover;
+}
+.nfood-menu-shell .nfood-menu-item-image > img.nfood-menu-item-photo {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  object-fit: cover !important;
+}
