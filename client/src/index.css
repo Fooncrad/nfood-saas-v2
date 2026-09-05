@@ -4577,3 +4577,57 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
     max-height: 78dvh !important;
   }
 }
+
+
+/* Compact, high-contrast mobile account dialog. */
+[data-slot="dialog-content"].nfood-account {
+  width: min(calc(100dvw - 2rem), 24rem) !important;
+  max-width: 24rem !important;
+  max-height: 72dvh !important;
+  border: 1px solid rgba(245, 158, 11, .55) !important;
+  background: #111827 !important;
+  color: #f8fafc !important;
+  border-radius: 1.25rem !important;
+}
+[data-slot="dialog-content"].nfood-account > div:first-child {
+  background: linear-gradient(135deg, #111827 0%, #1f2937 62%, #78350f 100%) !important;
+  border-bottom: 1px solid rgba(245, 158, 11, .42) !important;
+  padding: .9rem 1rem !important;
+}
+[data-slot="dialog-content"].nfood-account > form {
+  background: #111827 !important;
+  color: #f8fafc !important;
+  gap: .65rem !important;
+  padding: .85rem 1rem !important;
+}
+[data-slot="dialog-content"].nfood-account input {
+  background: #1f2937 !important;
+  color: #f8fafc !important;
+  border-color: rgba(245, 158, 11, .35) !important;
+}
+[data-slot="dialog-content"].nfood-account input::placeholder {
+  color: #cbd5e1 !important;
+  opacity: 1 !important;
+}
+[data-slot="dialog-content"].nfood-account [role="tablist"] {
+  background: #1f2937 !important;
+}
+[data-slot="dialog-content"].nfood-account [role="tablist"] button {
+  color: #e5e7eb !important;
+}
+[data-slot="dialog-content"].nfood-account [role="tablist"] button[class*="bg-white"] {
+  background: #f59e0b !important;
+  color: #111827 !important;
+}
+[data-slot="dialog-content"].nfood-account > form > p {
+  background: rgba(245, 158, 11, .12) !important;
+  color: #fde68a !important;
+  border: 1px solid rgba(245, 158, 11, .24) !important;
+}
+@media (max-width: 639px) {
+  [data-slot="dialog-content"].nfood-account {
+    width: calc(100dvw - 2rem) !important;
+    max-width: 24rem !important;
+    max-height: 72dvh !important;
+  }
+}
