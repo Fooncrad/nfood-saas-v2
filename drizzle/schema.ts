@@ -1065,6 +1065,7 @@ export const reservations = mysqlTable("reservations", {
   durationMinutes: int("durationMinutes").default(60).notNull(),
   reservedFor: timestamp("reservedFor").notNull(),
   status: mysqlEnum("status", ["pending", "confirmed", "seated", "completed", "cancelled", "no_show"]).default("pending").notNull(),
+  isTest: boolean("isTest").default(false).notNull(),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

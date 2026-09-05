@@ -1,0 +1,1 @@
+ALTER TABLE `reservations` ADD `isTest` boolean DEFAULT false NOT NULL;

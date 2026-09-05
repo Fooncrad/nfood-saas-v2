@@ -21,7 +21,7 @@ const weekdayLabels: Record<CalendarLanguage, string[]> = {
   ur: ["اتوار", "پیر", "منگل", "بدھ", "جمعرات", "جمعہ", "ہفتہ"],
 };
 
-const localeByLanguage: Record<CalendarLanguage, string> = { ar: "ar-SA", en: "en-US", fr: "fr-FR", ur: "ur-PK" };
+const localeByLanguage: Record<CalendarLanguage, string> = { ar: "ar-SA-u-ca-gregory-nu-latn", en: "en-US-u-ca-gregory-nu-latn", fr: "fr-FR-u-ca-gregory-nu-latn", ur: "ur-PK-u-ca-gregory-nu-latn" };
 
 function toDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;

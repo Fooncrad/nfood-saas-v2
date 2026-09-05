@@ -23,6 +23,15 @@ describe("reservation draft validation", () => {
 describe("reservation operations wiring", () => {
   const source = readFileSync(resolve(process.cwd(), "client/src/pages/ReservationsView.tsx"), "utf8");
 
+  it("supports explicitly marked test reservations and safe cleanup controls", () => {
+    expect(source).toContain("isTestReservation");
+    expect(source).toContain("isTest: isTestReservation");
+    expect(source).toContain("حجز اختباري (يمكن حذفه نهائيًا لاحقًا)");
+    expect(source).toContain("deleteTestReservation");
+    expect(source).toContain("حذف الاختبار");
+    expect(source).toContain("window.confirm");
+  });
+
   it("collects branch, slot, email, and duration for the protected reservation flow", () => {
     expect(source).toContain("reservationSlotsForRestaurant");
     expect(source).toContain("slotId");
