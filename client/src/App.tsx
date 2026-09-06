@@ -70,6 +70,10 @@ function PageLoading() {
   return <div className="min-h-screen bg-background px-4 py-4 text-foreground" aria-live="polite"><div className="mx-auto max-w-7xl space-y-3 opacity-80"><div className="h-10 w-48 animate-pulse rounded-2xl bg-muted" /><div className="grid gap-3 sm:grid-cols-3"><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /></div></div></div>;
 }
 
+function RouteLoading() {
+  return <div className="pointer-events-none fixed inset-x-0 top-0 z-[90] h-0.5 overflow-hidden bg-orange-100" aria-live="polite"><div className="h-full w-1/3 animate-pulse rounded-full bg-orange-500" /></div>;
+}
+
 const NFOODS_LOADER_SESSION_KEY = "nfood-global-loader-seen";
 
 function AppContent() {
@@ -89,8 +93,7 @@ function AppContent() {
   useEffect(() => {
     if (previousLocation.current === location) return;
     previousLocation.current = location;
-    setLoaderKey((current) => current + 1);
-    setShowGlobalLoader(true);
+    // Keep the branded loader for the first session load only; route changes use Suspense's lightweight bar.
   }, [location]);
   useEffect(() => {
     const key = languageStorageKey(location);
@@ -102,7 +105,7 @@ function AppContent() {
     if (nextLanguage !== language) setLanguage(nextLanguage);
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
   }, [location]);
-  return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<PageLoading />}><Router /></Suspense>{showGlobalLoader && <NfoodsLoadingScreen key={loaderKey} onComplete={completeGlobalLoader} />}</div>;
+  return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<RouteLoading />}><Router /></Suspense>{showGlobalLoader && <NfoodsLoadingScreen key={loaderKey} onComplete={completeGlobalLoader} />}</div>;
 }
 
 const RESTAURANT_AREA_ROLES = new Set(["restaurant_admin", "waiter", "driver", "cashier", "kitchen", "bar", "restaurant"]);

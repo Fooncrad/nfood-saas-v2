@@ -18,6 +18,15 @@ describe("country and currency catalog", () => {
     expect(formatMoney("not-a-number", "SAR", "en-US")).toBe("0.00");
   });
 
+  it("includes African countries and their ISO currencies", () => {
+    expect(getCountry("NG")).toMatchObject({ nameAr: "نيجيريا", currencyCode: "NGN" });
+    expect(getCountry("ZA")).toMatchObject({ nameAr: "جنوب أفريقيا", currencyCode: "ZAR" });
+    expect(getCountry("KE")).toMatchObject({ nameAr: "كينيا", currencyCode: "KES" });
+    expect(getCountry("DZ")).toMatchObject({ nameAr: "الجزائر", currencyCode: "DZD" });
+    expect(getCurrency("XOF").name).toContain("West African");
+    expect(getCurrency("XAF").name).toContain("Central African");
+  });
+
   it("keeps country and currency catalogs non-empty and unique", () => {
     expect(new Set(COUNTRIES.map((country) => country.code)).size).toBe(COUNTRIES.length);
     expect(new Set(CURRENCIES.map((currency) => currency.code)).size).toBe(CURRENCIES.length);

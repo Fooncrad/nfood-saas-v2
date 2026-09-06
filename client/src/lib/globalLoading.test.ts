@@ -6,11 +6,12 @@ const loader = readFileSync(new URL("../components/NfoodsLoadingScreen.tsx", imp
 const styles = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 
 describe("NFOODS global loading screen", () => {
-  it("mounts once for a session and reopens on route changes", () => {
+  it("mounts once for a session without reopening on route changes", () => {
     expect(app).toContain('const NFOODS_LOADER_SESSION_KEY = "nfood-global-loader-seen";');
     expect(app).toContain("sessionStorage.getItem(NFOODS_LOADER_SESSION_KEY)");
     expect(app).toContain("previousLocation.current === location");
-    expect(app).toContain("setShowGlobalLoader(true)");
+    expect(app).not.toContain("setShowGlobalLoader(true)");
+    expect(app).toContain("<RouteLoading />");
     expect(app).toContain("<NfoodsLoadingScreen key={loaderKey} onComplete={completeGlobalLoader} />");
   });
 

@@ -19,6 +19,6 @@ describe("route code splitting", () => {
     expect(appSource).toContain("lazy(routeLoaders.Home)");
     expect(appSource).toContain("lazy(routeLoaders.RestaurantPublic)");
     expect(appSource).toContain("lazy(routeLoaders.PublicDisplay)");
-    expect(appSource).toContain("<Suspense fallback={<PageLoading />}>");
+    expect(appSource).toContain("<Suspense fallback={<RouteLoading />}>");
   });
 });
