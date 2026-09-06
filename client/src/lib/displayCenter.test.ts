@@ -22,7 +22,7 @@ describe("display center organization", () => {
     expect(source).toContain("صور أصناف المنيو");
     expect(source).toContain("imageUrl");
     expect(publicDisplaySource).toContain("Nasser Cafe · شاشة النكهات");
-    expect(publicDisplaySource).toContain("نكهة تستحق التوقف");
+    expect(publicDisplaySource).toContain("صورة الصنف قيد الاعتماد");
     expect(publicDisplaySource).toContain("slide?.menuItem?.imageUrl");
     expect(publicDisplaySource).toContain("displayCacheKey");
     expect(publicDisplaySource).toContain("nfood-display-slide-enter");
