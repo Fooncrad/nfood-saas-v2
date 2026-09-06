@@ -19,6 +19,7 @@ export function RestaurantPricingSettings({ restaurantId }: { restaurantId: numb
   const [countryCode, setCountryCode] = useState("SA");
   const [currencyCode, setCurrencyCode] = useState("SAR");
   const [integrationMode, setIntegrationMode] = useState<"platform" | "custom">("platform");
+  const [countrySearch, setCountrySearch] = useState("");
   const selectedCurrency = useMemo(() => CURRENCIES.find((currency) => currency.code === currencyCode) ?? CURRENCIES[0], [currencyCode]);
 
   useEffect(() => {
@@ -30,11 +31,16 @@ export function RestaurantPricingSettings({ restaurantId }: { restaurantId: numb
     setIntegrationMode(query.data.integrationMode === "custom" ? "custom" : "platform");
   }, [query.data]);
 
+  const filteredCountries = useMemo(() => {
+    const queryText = countrySearch.trim().toLocaleLowerCase();
+    if (!queryText) return COUNTRIES;
+    return COUNTRIES.filter((country) => `${country.name} ${country.nameAr} ${country.code}`.toLocaleLowerCase().includes(queryText));
+  }, [countrySearch]);
   const valid = [discount, tax].every((value) => /^\d{1,3}(\.\d{1,2})?$/.test(value) && Number(value) >= 0 && Number(value) <= 100);
   return <Card className="mb-6 rounded-2xl border-amber-200 bg-gradient-to-br from-amber-50/70 via-white to-white shadow-sm">
     <CardHeader className="border-b border-amber-100"><div className="flex items-center justify-between gap-3"><div><CardTitle className="flex items-center gap-2 text-base"><Globe2 className="h-4 w-4 text-amber-600" />الدولة والعملة والتسعير</CardTitle><p className="mt-1 text-xs text-slate-500">تُحفظ العملة على مستوى المطعم وتُلتقط داخل الطلب عند إنشائه، لذلك لا تتغير الإيصالات التاريخية عند تحديث الإعدادات.</p></div><Badge className="rounded-lg bg-emerald-50 text-emerald-700">تحديث فوري</Badge></div></CardHeader>
     <CardContent className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-6 xl:items-end">
-      <label className="grid gap-2 text-xs font-bold text-slate-700">الدولة<select value={countryCode} onChange={(event) => { const nextCountry = COUNTRIES.find((country) => country.code === event.target.value); setCountryCode(event.target.value); if (nextCountry) setCurrencyCode(nextCountry.currencyCode); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold" aria-label="الدولة">{COUNTRIES.map((country) => <option key={country.code} value={country.code}>{country.nameAr} · {country.name}</option>)}</select></label>
+      <label className="grid gap-2 text-xs font-bold text-slate-700">الدولة<Input value={countrySearch} onChange={(event) => setCountrySearch(event.target.value)} placeholder="ابحث باسم الدولة أو الرمز" className="h-9 rounded-lg bg-white text-xs" aria-label="البحث عن الدولة" /><select value={countryCode} onChange={(event) => { const nextCountry = COUNTRIES.find((country) => country.code === event.target.value); setCountryCode(event.target.value); if (nextCountry) setCurrencyCode(nextCountry.currencyCode); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold" aria-label="الدولة">{filteredCountries.map((country) => <option key={country.code} value={country.code}>{country.nameAr} · {country.name}</option>)}</select></label>
       <label className="grid gap-2 text-xs font-bold text-slate-700">العملة<select value={currencyCode} onChange={(event) => setCurrencyCode(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold" aria-label="العملة">{CURRENCIES.map((currency) => <option key={currency.code} value={currency.code}>{currency.code} · {currency.nameAr} ({currency.symbol})</option>)}</select></label>
       <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-600"><p className="font-bold text-slate-800">طريقة العرض</p><p className="mt-1">{selectedCurrency.decimals} منازل عشرية · {selectedCurrency.symbolPosition === "before" ? "الرمز قبل الرقم" : "الرمز بعد الرقم"}</p></div>
       <label className="grid gap-2 text-xs font-bold text-slate-700">الخصم الافتراضي (%)<Input inputMode="decimal" min="0" max="100" step="0.01" value={discount} onChange={(event) => setDiscount(event.target.value)} className="rounded-xl bg-white" aria-label="نسبة الخصم الافتراضية" /></label>

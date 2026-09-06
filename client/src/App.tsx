@@ -71,7 +71,7 @@ function PageLoading() {
 }
 
 function RouteLoading() {
-  return <div className="pointer-events-none fixed inset-x-0 top-0 z-[90] h-0.5 overflow-hidden bg-orange-100" aria-live="polite"><div className="h-full w-1/3 animate-pulse rounded-full bg-orange-500" /></div>;
+  return <div className="pointer-events-none fixed inset-x-0 top-0 z-[90] h-1 overflow-hidden bg-[#17212b]/80" aria-live="polite"><div className="h-full w-1/3 animate-pulse rounded-full bg-[#f4a340] shadow-[0_0_10px_rgba(244,163,64,0.9)]" /></div>;
 }
 
 const NFOODS_LOADER_SESSION_KEY = "nfood-global-loader-seen";

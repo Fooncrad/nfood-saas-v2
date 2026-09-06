@@ -8,7 +8,7 @@ const read = (file: string) => readFileSync(resolve(root, file), "utf8");
 describe("multi-country and multi-currency integration", () => {
   it("exposes country and currency controls in restaurant pricing settings", () => {
     const source = read("client/src/components/RestaurantPricingSettings.tsx");
-    expect(source).toContain("COUNTRIES.map");
+    expect(source).toContain("filteredCountries.map");
     expect(source).toContain("CURRENCIES.map");
     expect(source).toContain("selectedCurrency.decimals");
     expect(source).toContain("countryCode, currencyCode");
