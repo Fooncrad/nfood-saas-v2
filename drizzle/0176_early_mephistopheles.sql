@@ -1,0 +1,1 @@
+ALTER TABLE `restaurantDisplaySlides` ADD `externalImageUrl` varchar(500);
