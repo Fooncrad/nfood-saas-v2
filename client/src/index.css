@@ -5254,3 +5254,17 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
   .nfood-display-slide-enter,
   .nfood-display-media-enter { animation: none !important; }
 }
+.nfood-display-copy-panel {
+  max-height: 54vh;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(251, 146, 60, .65) transparent;
+}
+@media (min-width: 768px) {
+  .nfood-display-copy-panel {
+    margin-inline-end: clamp(8rem, 18vw, 16rem);
+    max-width: min(68vw, 60rem) !important;
+  }
+}
+@media (max-width: 767px) {
+  .nfood-display-copy-panel { max-height: 48vh; }
+}
