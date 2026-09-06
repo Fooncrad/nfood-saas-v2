@@ -13,6 +13,7 @@ describe("driver section navigation", () => {
   it("keeps the driver module focused on driver operations", () => {
     const modules = readFileSync(resolve(process.cwd(), "client/src/components/HomeModules.tsx"), "utf8");
     expect(modules).toContain('active === "drivers"');
+    expect(modules).toContain('data-testid="drivers-management-page"');
     expect(modules).toContain('focusRole="driver"');
     expect(modules).toContain("DeliveryOperationsPanel");
   });

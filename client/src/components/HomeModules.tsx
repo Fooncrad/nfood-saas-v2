@@ -547,10 +547,18 @@ export function ModuleView({
     );
   if (active === "drivers")
     return (
-      <OperationalModuleShell title="السائقون والتوصيل">
-        <TeamView restaurantId={restaurantId} focusRole="driver" />
-        <DeliveryOperationsPanel restaurantId={restaurantId} branchId={branchId} />
-      </OperationalModuleShell>
+      <div data-testid="drivers-management-page" data-page="drivers" className="min-h-full space-y-4">
+        <OperationalModuleShell title="السائقون والتوصيل">
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-orange-200 bg-gradient-to-l from-orange-50 via-white to-amber-50 p-4 shadow-sm dark:border-orange-900/40 dark:from-orange-950/30 dark:via-slate-900 dark:to-amber-950/20">
+              <p className="text-xs font-black tracking-wide text-orange-700 dark:text-orange-300">صفحة مستقلة لإدارة السائقين</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">الحسابات، الجاهزية، الطلبات، التعويض، الموقع، والتنبيهات الصوتية كلها في مساحة واحدة.</p>
+            </div>
+            <TeamView restaurantId={restaurantId} focusRole="driver" />
+            <DeliveryOperationsPanel restaurantId={restaurantId} branchId={branchId} />
+          </div>
+        </OperationalModuleShell>
+      </div>
     );
   if (active === "waiters")
     return (
