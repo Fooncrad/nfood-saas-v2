@@ -19,6 +19,14 @@ describe("customer wallet and driver chat regression", () => {
     expect(driver).toContain("orderId={selected.id}");
   });
 
+  it("refreshes the driver inbox quickly and keeps background polling enabled", () => {
+    expect(driver).toContain("refetchInterval: 3000");
+    expect(driver).toContain("refetchIntervalInBackground: true");
+    expect(driver).toContain("refetchOnWindowFocus: true");
+    expect(router).toContain("eq(orders.driverId, ctx.user?.id ?? -1)");
+    expect(router).toContain('ctx.user?.testRole === "driver" && order.driverId !== ctx.user.id');
+  });
+
   it("notifies the customer only on the first approval transition", () => {
     expect(router).toContain("تم شراء محتواك من المطعم");
     expect(router).toContain("current.status !== \"approved\"");

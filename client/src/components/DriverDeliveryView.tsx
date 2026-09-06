@@ -22,7 +22,7 @@ export function DriverDeliveryView({ restaurantId }: { restaurantId: number }) {
   const [failureReason, setFailureReason] = useState<DriverRefusalReason | "">("");
   const [note, setNote] = useState("");
   const [locationSharing, setLocationSharing] = useState(false);
-  const orders = trpc.platform.driverDeliveryOrders.useQuery({ restaurantId }, { retry: false, refetchInterval: 30000 });
+  const orders = trpc.platform.driverDeliveryOrders.useQuery({ restaurantId }, { retry: false, refetchInterval: 3000, refetchIntervalInBackground: true, refetchOnWindowFocus: true, staleTime: 0 });
   const updateDriverLocation = trpc.platform.updateDriverLocation.useMutation({ onError: (error) => toast.error(`تعذر تحديث موقعك: ${error.message}`) });
   useEffect(() => { if (!locationSharing) return; if (!navigator.geolocation) { toast.error("المتصفح لا يدعم مشاركة الموقع"); setLocationSharing(false); return; } const watchId = navigator.geolocation.watchPosition((position) => { updateDriverLocation.mutate({ restaurantId, latitude: position.coords.latitude, longitude: position.coords.longitude }); }, () => toast.error("اسمح بالوصول إلى الموقع لتفعيل التتبع الحي"), { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }); return () => navigator.geolocation.clearWatch(watchId); }, [locationSharing, restaurantId, updateDriverLocation]);
   const updateStatus = trpc.platform.updateDeliveryStatus.useMutation({ onSuccess: async () => { await orders.refetch(); setFailureReason(""); setNote(""); toast.success("تم تحديث حالة التوصيل"); }, onError: (error) => toast.error(error.message) });

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { legacyUiTranslations, modernUiTranslations, translations } from "../contexts/LanguageContext";
 import { navItems } from "../components/homeNavigation";
+import fs from "node:fs";
+const homeModulesSource = fs.readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
 
 const criticalMiddlePageLabels = [
   "أدخل بياناتك، وسنوجهك إلى مساحة العمل المناسبة.",
@@ -42,5 +44,10 @@ describe("translation coverage for login and operational modules", () => {
 
   it("exposes language and translation settings in navigation", () => {
     expect(navItems.some((item) => item.key === "languages")).toBe(true);
+  });
+
+  it("keeps the restaurant language settings aligned with the supported catalog", () => {
+    expect(homeModulesSource).toContain('["ar", "en", "fr", "ur"]');
+    expect(homeModulesSource).toContain('ur: { name: "اردو"');
   });
 });

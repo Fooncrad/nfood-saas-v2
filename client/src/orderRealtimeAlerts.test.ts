@@ -14,6 +14,8 @@ describe("POS and KDS realtime alerts", () => {
     expect(source).toContain("لا توجد طلبات نشطة حاليًا");
     expect(source).toContain("soundEnabled");
     expect(source).toContain("AudioContext");
+    expect(source).toContain("void audioContext.current.resume()");
+    expect(source).toContain("localStorage.setItem(`nfood-order-alert-sound-${mode}`");
     expect(source).toContain("visual alerts remain the source of truth");
   });
 

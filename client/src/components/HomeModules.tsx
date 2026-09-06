@@ -10066,7 +10066,7 @@ function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
     { restaurantId },
     { enabled: Boolean(user), retry: false }
   );
-  const [selected, setSelected] = useState<string[]>(["ar", "en", "fr"]);
+  const [selected, setSelected] = useState<string[]>(["ar", "en", "fr", "ur"]);
   const [notice, setNotice] = useState("");
   const update = trpc.platform.updateBranding.useMutation({
     onSuccess: async () => {
@@ -10082,12 +10082,12 @@ function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
       setSelected(
         Array.isArray(parsed)
           ? parsed.filter((value): value is string =>
-              ["ar", "en", "fr"].includes(value)
+              ["ar", "en", "fr", "ur"].includes(value)
             )
-          : ["ar", "en", "fr"]
+          : ["ar", "en", "fr", "ur"]
       );
     } catch {
-      setSelected(["ar", "en", "fr"]);
+      setSelected(["ar", "en", "fr", "ur"]);
     }
   }, [query.data?.languagesJson]);
   const toggle = (language: string) =>
@@ -10107,6 +10107,7 @@ function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
     ar: { name: "العربية", detail: "RTL · اللغة الأساسية" },
     en: { name: "English", detail: "LTR · English" },
     fr: { name: "Français", detail: "LTR · Français" },
+    ur: { name: "اردو", detail: "RTL · اردو" },
   };
   return (
     <Card className="mb-6 overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
