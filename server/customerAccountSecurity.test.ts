@@ -21,6 +21,7 @@ describe("customer account security contract", () => {
     expect(routerSource).toContain("setRestaurantCustomerPassword");
     expect(routerSource).toContain("emailChanged: false");
     expect(routerSource).toContain("بريد العميل محمي ولا يُعدّل من الإدارة");
+    expect(routerSource).toContain("لا يمكن لأدمن المطعم تغيير كلمة مرور العميل");
   });
 
   it("does not provide administrative customer deletion", () => {
