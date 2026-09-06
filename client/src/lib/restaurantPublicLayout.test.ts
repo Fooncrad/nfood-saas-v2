@@ -54,7 +54,7 @@ describe("RestaurantPublic menu layout", () => {
 
   it("uses only available product data and keeps optional sections hidden when absent", () => {
     expect(source).toContain("parseProductDetailData");
-    expect(source).toContain("if (language !== \"ar\")");
+    expect(source).toContain("name: entity.name");
     expect(source).toContain("detailData.ingredients?.length ?");
     expect(source).toContain("detailSizeOptions.length > 0 &&");
     expect(source).toContain("detailAddons.length > 0 &&");

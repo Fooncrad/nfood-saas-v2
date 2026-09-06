@@ -55,8 +55,9 @@ describe("translation editor workflow", () => {
     expect(router).toContain("translateMenuDraft");
     expect(autoService).toContain('const languages = ["ar", "en", "fr"]');
     expect(home).toContain("ترجمة آلية لكل الحقول");
-    expect(publicMenu).toContain("Translation pending");
-    expect(publicMenu).toContain("Traduction en attente");
+    expect(publicMenu).not.toContain("Translation pending");
+    expect(publicMenu).not.toContain("Traduction en attente");
+    expect(publicMenu).toContain("description: entity.description ?? null");
   });
 
   it("protects dictionary procedures with the translation editor guard", () => {
