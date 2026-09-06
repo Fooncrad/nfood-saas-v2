@@ -1212,6 +1212,13 @@
       "when": 1788664798033,
       "tag": "0172_tranquil_hammerhead",
       "breakpoints": true
+    },
+    {
+      "idx": 173,
+      "version": "5",
+      "when": 1788673922567,
+      "tag": "0173_lonely_nomad",
+      "breakpoints": true
     }
   ]
 }
