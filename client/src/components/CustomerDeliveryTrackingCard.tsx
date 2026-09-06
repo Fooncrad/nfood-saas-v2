@@ -40,11 +40,21 @@ export function CustomerDeliveryTrackingCard({ orderId }: { orderId: number }) {
     previousStatus.current = status;
   }, [status]);
 
+  const detachMarkers = () => {
+    markers.current.forEach((marker) => {
+      try {
+        marker.map = null;
+      } catch {
+        // Google Maps can reject a stale marker from a previous API instance; discard it safely.
+      }
+    });
+    markers.current = [];
+  };
+
   useEffect(() => {
     const map = driverMap.current;
     if (!mapReady || !map) return;
-    markers.current.forEach((marker) => { marker.map = null; });
-    markers.current = [];
+    detachMarkers();
     const driver = tracking.data?.driver;
     const latitude = Number(driver?.latitude);
     const longitude = Number(driver?.longitude);
@@ -55,7 +65,7 @@ export function CustomerDeliveryTrackingCard({ orderId }: { orderId: number }) {
     map.panTo(position);
   }, [mapReady, tracking.data?.driver?.latitude, tracking.data?.driver?.longitude, tracking.data?.driver?.name]);
 
-  useEffect(() => () => { markers.current.forEach((marker) => { marker.map = null; }); }, []);
+  useEffect(() => () => { detachMarkers(); }, []);
 
   if (tracking.isLoading) return <Card className="rounded-3xl border-sky-100 bg-sky-50/60"><CardContent className="flex items-center gap-2 p-4 text-sm font-bold text-sky-800"><Radio className="h-4 w-4 animate-pulse" />جارٍ تحميل تتبع السائق...</CardContent></Card>;
   if (tracking.isError || !tracking.data) return <Card className="rounded-3xl border-amber-200 bg-amber-50"><CardContent className="p-4 text-sm font-bold text-amber-800">تعذر تحميل التتبع الحي الآن. ستستمر صفحة الطلب في تحديث الحالة تلقائيًا.</CardContent></Card>;
