@@ -38,6 +38,12 @@ describe("display center organization", () => {
     expect(publicDisplaySource).toContain("نعود إليك بعد لحظات");
     expect(publicDisplaySource).toContain('message.type === "display.updated"');
     expect(publicDisplaySource).toContain("playback.refetch()");
+    expect(source).toContain("titleEn");
+    expect(source).toContain("subtitleEn");
+    expect(source).toContain("Title in English");
+    expect(publicDisplaySource).toContain("displayTitleEn");
+    expect(publicDisplaySource).toContain("displaySubtitleEn");
+    expect(publicDisplaySource).toContain("عروض وخصومات ناصر");
   });
 
   it("keeps connection, content, campaign and preview panels scoped to their tabs", () => {

@@ -1240,6 +1240,13 @@
       "when": 1788731584204,
       "tag": "0176_early_mephistopheles",
       "breakpoints": true
+    },
+    {
+      "idx": 177,
+      "version": "5",
+      "when": 1788735833572,
+      "tag": "0177_strange_ricochet",
+      "breakpoints": true
     }
   ]
 }

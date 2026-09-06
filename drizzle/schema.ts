@@ -1514,6 +1514,8 @@ export const restaurantDisplaySlides = mysqlTable("restaurantDisplaySlides", {
   campaignId: int("campaignId").references(() => campaigns.id),
   title: varchar("title", { length: 180 }),
   subtitle: text("subtitle"),
+  titleEn: varchar("titleEn", { length: 180 }),
+  subtitleEn: text("subtitleEn"),
   sortOrder: int("sortOrder").default(0).notNull(),
   durationSeconds: int("durationSeconds").default(8).notNull(),
   transitionEffect: mysqlEnum("transitionEffect", ["fade", "zoom", "slide", "kenburns"]).default("fade").notNull(),

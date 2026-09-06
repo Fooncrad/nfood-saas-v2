@@ -5268,3 +5268,9 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
 @media (max-width: 767px) {
   .nfood-display-copy-panel { max-height: 48vh; }
 }
+
+/* شريط العروض أسفل QR: منطقة مستقلة لا تتداخل مع محتوى الشريحة */
+.nfood-display-promo-ribbon { position: relative; z-index: 2; direction: rtl; line-height: 1.25; }
+@media (min-width: 900px) { .nfood-display-promo-ribbon { min-width: 210px; max-width: 260px; } }
+@media (prefers-reduced-motion: no-preference) { .nfood-display-promo-ribbon { animation: nfood-promo-glow 2.8s ease-in-out infinite; } }
+@keyframes nfood-promo-glow { 0%, 100% { box-shadow: 0 10px 30px rgba(231, 111, 60, .18); } 50% { box-shadow: 0 12px 34px rgba(231, 111, 60, .38); } }
