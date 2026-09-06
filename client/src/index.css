@@ -5013,3 +5013,19 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
 .nfood-menu-shell .nfood-menu-item-card .nfood-menu-price-current {
   color: var(--menu-card-text, var(--menu-ink)) !important;
 }
+
+/* Actual public-menu category rail selector */
+@media (min-width: 768px) {
+  .nfood-menu-shell .nfood-menu-category-bar {
+    width: 100% !important;
+    max-width: none !important;
+    overflow-x: auto !important;
+    white-space: nowrap;
+    scrollbar-width: thin;
+    overscroll-behavior-inline: contain;
+  }
+  .nfood-menu-shell .nfood-menu-category-bar > button { flex: 0 0 auto !important; }
+}
+@media (min-width: 1024px) {
+  .nfood-menu-shell .nfood-menu-header > div { max-width: none !important; }
+}
