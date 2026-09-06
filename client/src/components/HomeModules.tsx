@@ -3193,6 +3193,12 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       headerText: receiptBrandingQuery.data?.headerText,
       footerText: receiptBrandingQuery.data?.footerText,
       logoUrl: receiptBrandingQuery.data?.logoUrl,
+      currencyCode: receiptBrandingQuery.data?.currencyCode,
+      currencyDecimals: receiptBrandingQuery.data?.currencyDecimals,
+      taxNumber: receiptBrandingQuery.data?.taxNumber,
+      address: receiptBrandingQuery.data?.address,
+      city: receiptBrandingQuery.data?.city,
+      locationUrl: receiptBrandingQuery.data?.locationUrl,
     });
     markOrderReceiptPrinted.mutate({ restaurantId, orderId: lastReceipt.orderId });
   };

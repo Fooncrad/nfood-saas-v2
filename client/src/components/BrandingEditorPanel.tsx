@@ -8,6 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { publicMenuUrl } from "@/lib/publicMenuUrl";
 import { toast } from "sonner";
 import { normalizeOptionalUrl } from "@shared/optionalUrl";
+import { AFRICAN_CURRENCIES } from "@shared/africanCurrencies";
 
 const presets = [
   { key: "nfood-sunset", label: "Sunset", color: "#e76f3c" },
@@ -42,6 +43,13 @@ export function BrandingEditorPanel({ restaurantId }: { restaurantId: number }) 
   const [mode, setMode] = useState<"light" | "dark" | "system">("light");
   const [motionEffectsEnabled, setMotionEffectsEnabled] = useState(true);
   const [name, setName] = useState("");
+  const [currencyCode, setCurrencyCode] = useState("SAR");
+  const [taxNumber, setTaxNumber] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [locationUrl, setLocationUrl] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [orderModes, setOrderModes] = useState<string[]>(["dineIn", "takeaway", "delivery", "reservation", "hotel", "selfOrder"]);
   const selfOrderEnabled = !orderModes.includes("selfOrderOff");
   const [reservationEventTypes, setReservationEventTypes] = useState<string[]>(["حفل عيد ميلاد", "فعالية", "اجتماع", "عشاء خاص"]);
@@ -54,6 +62,13 @@ export function BrandingEditorPanel({ restaurantId }: { restaurantId: number }) 
     setMode(query.data.themeMode);
     setMotionEffectsEnabled(query.data.motionEffectsEnabled !== false);
     setName(query.data.brandName);
+    setCurrencyCode(query.data.currencyCode ?? "SAR");
+    setTaxNumber(query.data.taxNumber ?? "");
+    setAddress(query.data.address ?? "");
+    setCity(query.data.city ?? "");
+    setLocationUrl(query.data.locationUrl ?? "");
+    setLatitude(query.data.latitude == null ? "" : String(query.data.latitude));
+    setLongitude(query.data.longitude == null ? "" : String(query.data.longitude));
     try { const parsed = JSON.parse(query.data.orderModesJson || "[]"); setOrderModes(Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : ["dineIn", "takeaway", "delivery", "reservation", "hotel", "selfOrder"]); } catch { setOrderModes(["dineIn", "takeaway", "delivery", "reservation", "hotel", "selfOrder"]); }
     try { const parsed = JSON.parse(query.data.reservationEventTypesJson || "[]"); setReservationEventTypes(Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string" && Boolean(value.trim())).slice(0, 12) : ["حفل عيد ميلاد", "فعالية", "اجتماع", "عشاء خاص"]); } catch { setReservationEventTypes(["حفل عيد ميلاد", "فعالية", "اجتماع", "عشاء خاص"]); }
   }, [query.data]);
@@ -86,7 +101,7 @@ export function BrandingEditorPanel({ restaurantId }: { restaurantId: number }) 
     brandDescription: query.data.brandDescription, homepageContent: query.data.homepageContent, termsOfService: query.data.termsOfService,
     privacyPolicy: query.data.privacyPolicy, refundPolicy: query.data.refundPolicy, phone: query.data.phone, whatsapp: query.data.whatsapp,
     instagramUrl: query.data.instagramUrl, facebookUrl: query.data.facebookUrl, tiktokUrl: query.data.tiktokUrl, websiteUrl: query.data.websiteUrl,
-    address: query.data.address, languagesJson: query.data.languagesJson, reservationEnabled: query.data.reservationEnabled,
+    address, countryCode: query.data.countryCode, currencyCode, currencyDecimals: AFRICAN_CURRENCIES.find((item) => item.code === currencyCode)?.decimals ?? 2, taxNumber, city, locationUrl, latitude: latitude.trim() ? Number(latitude) : null, longitude: longitude.trim() ? Number(longitude) : null, languagesJson: query.data.languagesJson, reservationEnabled: query.data.reservationEnabled,
     cancellationEnabled: query.data.cancellationEnabled, cancellationWindowMinutes: query.data.cancellationWindowMinutes,
     reservationNoShowGraceMinutes: query.data.reservationNoShowGraceMinutes, showBranchesOnMenu: query.data.showBranchesOnMenu, mediaShowcaseEnabled: query.data.mediaShowcaseEnabled, motionEffectsEnabled, orderModesJson: JSON.stringify(orderModes), reservationEventTypesJson: JSON.stringify(reservationEventTypes),
   });
@@ -106,6 +121,19 @@ export function BrandingEditorPanel({ restaurantId }: { restaurantId: number }) 
     <CardContent className="grid gap-4 lg:grid-cols-[1fr_260px]">
       <div className="space-y-3">
         <label className="block text-xs font-bold text-slate-700">اسم العلامة<input value={name} onChange={(event) => setName(event.target.value)} className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" /></label>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <label className="block text-xs font-bold text-slate-700">عملة المطعم<select value={currencyCode} onChange={(event) => setCurrencyCode(event.target.value)} className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm">{AFRICAN_CURRENCIES.map((currency) => <option key={currency.code} value={currency.code}>{currency.nameAr} · {currency.code}</option>)}</select><span className="mt-1 block text-[10px] font-normal text-slate-400">تُستخدم في الأسعار والفواتير والمنيو العام.</span></label>
+          <label className="block text-xs font-bold text-slate-700">الرقم الضريبي<input value={taxNumber} onChange={(event) => setTaxNumber(event.target.value)} placeholder="مثال: الرقم المسجل للمنشأة" className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" dir="ltr" /></label>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <label className="block text-xs font-bold text-slate-700">المدينة<input value={city} onChange={(event) => setCity(event.target.value)} className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" /></label>
+          <label className="block text-xs font-bold text-slate-700">عنوان المطعم<input value={address} onChange={(event) => setAddress(event.target.value)} className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" /></label>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <label className="block text-xs font-bold text-slate-700">رابط الموقع<input value={locationUrl} onChange={(event) => setLocationUrl(event.target.value)} placeholder="https://maps.google.com/..." className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" dir="ltr" /></label>
+          <label className="block text-xs font-bold text-slate-700">خط العرض<input value={latitude} onChange={(event) => setLatitude(event.target.value)} placeholder="24.7136" className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" dir="ltr" /></label>
+          <label className="block text-xs font-bold text-slate-700">خط الطول<input value={longitude} onChange={(event) => setLongitude(event.target.value)} placeholder="46.6753" className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" dir="ltr" /></label>
+        </div>
         <div className="grid gap-2 sm:grid-cols-3">
           {assetCard("logo", "رفع الشعار", "PNG/JPG/WEBP · 5MB", query.data.brandLogoUrl)}
           {assetCard("pwaIcon", "أيقونة PWA", "تظهر في التثبيت والتنبيه", query.data.pwaInstallIconUrl)}
