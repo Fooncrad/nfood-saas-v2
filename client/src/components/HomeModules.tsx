@@ -711,6 +711,9 @@ function MenuImportPanel({ restaurantId }: { restaurantId: number }) {
     }>;
   } | null>(null);
   const [fileName, setFileName] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [urlPreview, setUrlPreview] = useState<{ sourceUrl: string; title?: string; categories: string[]; items: Array<{ category: string; name: string; description?: string; price: string; imageUrl?: string }>; warnings: string[] } | null>(null);
+  const utils = trpc.useUtils();
   const importDraft = trpc.platform.importMenuDraft.useMutation({
     onSuccess: result => {
       setDraft(result.draft as typeof draft);
@@ -718,6 +721,8 @@ function MenuImportPanel({ restaurantId }: { restaurantId: number }) {
     },
     onError: error => toast.error(`تعذر قراءة المنيو: ${error.message}`),
   });
+  const previewMenuUrl = trpc.platform.previewMenuImport.useMutation({ onSuccess: result => { setUrlPreview(result); toast.success(`تمت قراءة ${result.items.length} صنفًا من الرابط`); }, onError: error => toast.error(`تعذر قراءة الرابط: ${error.message}`) });
+  const commitMenuUrl = trpc.platform.commitMenuImport.useMutation({ onSuccess: async result => { await utils.platform.menuCategories.invalidate({ restaurantId }); await utils.platform.menuItems.invalidate({ restaurantId }); toast.success(`تم استيراد ${result.itemsCreated} صنفًا و${result.categoriesCreated} قسمًا؛ تم تجاهل ${result.duplicates} مكرر`); }, onError: error => toast.error(`تعذر استيراد الرابط: ${error.message}`) });
   const readFile = (file: File) => {
     if (file.size > 6 * 1024 * 1024) {
       toast.error("حجم الملف يجب ألا يتجاوز 6 ميجابايت");
@@ -777,6 +782,11 @@ function MenuImportPanel({ restaurantId }: { restaurantId: number }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4 p-5">
+        <div className="rounded-2xl border border-indigo-200 bg-indigo-50/70 p-4">
+          <div className="mb-2 flex items-center justify-between gap-2"><p className="text-sm font-black text-indigo-900">استيراد مباشر من رابط الموقع</p><Badge variant="outline">معاينة قبل الحفظ</Badge></div>
+          <div className="flex flex-col gap-2 sm:flex-row"><Input value={sourceUrl} onChange={event => setSourceUrl(event.target.value)} dir="ltr" placeholder="https://restaurant.example/menu" className="rounded-xl bg-white" /><Button type="button" onClick={() => void previewMenuUrl.mutateAsync({ restaurantId, sourceUrl: sourceUrl.trim() })} disabled={previewMenuUrl.isPending || !sourceUrl.trim()} className="rounded-xl bg-indigo-600 hover:bg-indigo-700">{previewMenuUrl.isPending ? "جارٍ القراءة…" : "قراءة الرابط"}</Button></div>
+          {urlPreview && <div className="mt-3 space-y-3 rounded-xl bg-white p-3"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-black">{urlPreview.title || "منيو مستورد"} · {urlPreview.items.length} صنف · {urlPreview.categories.length} قسم</p><Button type="button" size="sm" onClick={() => void commitMenuUrl.mutateAsync({ restaurantId, sourceUrl: urlPreview.sourceUrl, items: urlPreview.items })} disabled={commitMenuUrl.isPending || !urlPreview.items.length} className="rounded-lg bg-emerald-600 text-xs hover:bg-emerald-700">{commitMenuUrl.isPending ? "جارٍ الاستيراد…" : "تأكيد الاستيراد دفعة واحدة"}</Button></div>{urlPreview.warnings.length > 0 && <p className="rounded-lg bg-amber-50 p-2 text-[11px] text-amber-800">{urlPreview.warnings.join(" · ")}</p>}<div className="max-h-48 overflow-auto rounded-lg border border-slate-100">{urlPreview.items.slice(0, 40).map((item, index) => <div key={`${item.category}-${item.name}-${index}`} className="grid grid-cols-[1fr_1.4fr_80px_32px] items-center gap-2 border-b border-slate-100 p-2 text-[11px] last:border-0"><span className="truncate">{item.category}</span><span className="truncate font-bold">{item.name}</span><span dir="ltr">{item.price}</span>{item.imageUrl ? <img src={item.imageUrl} alt="" className="h-7 w-7 rounded object-cover" /> : <span>—</span>}</div>)}</div><p className="text-[10px] text-slate-500">الأصناف الموجودة مسبقًا بالاسم داخل القسم تُتجاهل، ولا تُحذف بيانات المنيو الحالية.</p></div>}
+        </div>
         <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-orange-200 bg-white/80 text-center transition hover:border-orange-400 hover:bg-white">
           <input
             type="file"
@@ -1430,6 +1440,7 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
           </CardContent>
         </Card>
       )}
+      <MenuImportPanel restaurantId={restaurantId} />
       {menuSection === "categories" ? (
         <CategoryManager
           restaurantId={restaurantId}

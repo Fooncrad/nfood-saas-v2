@@ -1,0 +1,85 @@
+import { URL } from "node:url";
+
+export type ImportedMenuItem = {
+  category: string;
+  name: string;
+  description?: string;
+  price: string;
+  imageUrl?: string;
+};
+
+export type ImportedMenuPreview = {
+  sourceUrl: string;
+  title?: string;
+  categories: string[];
+  items: ImportedMenuItem[];
+  warnings: string[];
+};
+
+function isPrivateHost(hostname: string) {
+  const host = hostname.toLowerCase();
+  return host === "localhost" || host === "127.0.0.1" || host === "::1" || host.endsWith(".local") || /^10\./.test(host) || /^192\.168\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+}
+
+function cleanText(value: unknown) {
+  return String(value ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function absoluteUrl(value: unknown, base: string) {
+  if (!value) return undefined;
+  try {
+    const url = new URL(String(value), base);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : undefined;
+  } catch { return undefined; }
+}
+
+function priceFromOffer(offer: any): string | undefined {
+  const raw = offer?.price ?? offer?.lowPrice ?? offer?.highPrice;
+  const value = Number(String(raw ?? "").replace(/[^\d.]/g, ""));
+  return Number.isFinite(value) && value >= 0 ? value.toFixed(2) : undefined;
+}
+
+function walkJsonLd(value: any, base: string, output: ImportedMenuItem[], categories: Set<string>) {
+  if (!value) return;
+  if (Array.isArray(value)) { value.forEach(item => walkJsonLd(item, base, output, categories)); return; }
+  if (typeof value !== "object") return;
+  const type = String(value["@type"] ?? "").toLowerCase();
+  if (type.includes("menu") && Array.isArray(value.hasMenuSection)) value.hasMenuSection.forEach((section: any) => walkJsonLd(section, base, output, categories));
+  if (type.includes("menusection")) {
+    const category = cleanText(value.name) || "عام";
+    categories.add(category);
+    const entries = Array.isArray(value.hasMenuItem) ? value.hasMenuItem : [];
+    entries.forEach((item: any) => walkJsonLd({ ...item, __category: category }, base, output, categories));
+  }
+  if (type.includes("menuitem") || value.offers) {
+    const name = cleanText(value.name);
+    const price = priceFromOffer(Array.isArray(value.offers) ? value.offers[0] : value.offers);
+    if (name && price) {
+      const category = cleanText(value.__category) || "عام";
+      categories.add(category);
+      output.push({ category, name, description: cleanText(value.description) || undefined, price, imageUrl: absoluteUrl(value.image, base) });
+    }
+  }
+  if (value.itemListElement) walkJsonLd(value.itemListElement, base, output, categories);
+  if (value.mainEntity) walkJsonLd(value.mainEntity, base, output, categories);
+}
+
+export async function previewMenuFromUrl(sourceUrl: string): Promise<ImportedMenuPreview> {
+  const parsed = new URL(sourceUrl);
+  if (!["http:", "https:"].includes(parsed.protocol) || isPrivateHost(parsed.hostname)) throw new Error("رابط المصدر يجب أن يكون موقعًا عامًا صالحًا");
+  const response = await fetch(parsed.toString(), { headers: { accept: "text/html,application/xhtml+xml" }, redirect: "follow", signal: AbortSignal.timeout(15000) });
+  if (!response.ok) throw new Error(`تعذر قراءة الموقع المصدر (${response.status})`);
+  const html = (await response.text()).slice(0, 4_000_000);
+  const items: ImportedMenuItem[] = [];
+  const categories = new Set<string>();
+  const warnings: string[] = [];
+  const jsonLdMatches = html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+  Array.from(jsonLdMatches).forEach(match => {
+    try { walkJsonLd(JSON.parse(match[1]), parsed.toString(), items, categories); } catch { warnings.push("تعذر قراءة جزء JSON-LD من المصدر"); }
+  });
+  const unique = new Map<string, ImportedMenuItem>();
+  for (const item of items) unique.set(`${item.category.toLowerCase()}::${item.name.toLowerCase()}::${item.price}`, item);
+  if (!unique.size) warnings.push("لم يُعثر على عناصر منظمة؛ قد يحتاج الموقع إلى تصدير JSON-LD أو مراجعة يدوية");
+  const title = cleanText(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]);
+  return { sourceUrl: parsed.toString(), title: title || undefined, categories: Array.from(categories).slice(0, 200), items: Array.from(unique.values()).slice(0, 1000), warnings: Array.from(new Set(warnings)) };
+}
