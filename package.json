@@ -8,6 +8,8 @@
     "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
+    "i18n:check": "node scripts/check-i18n.mjs",
+    "i18n:add": "node scripts/add-i18n-key.mjs",
     "format": "prettier --write .",
     "test": "vitest run",
     "e2e": "playwright test",
