@@ -5109,3 +5109,65 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
 @media (prefers-reduced-motion: reduce) {
   .nfood-category-loading, .nfood-cover-social-links a, .nfood-menu-cover-content .nfood-cover-logo, .nfood-menu-cover-content h1, .nfood-menu-cover-content > div > div:last-child > div, .nfood-language-switcher > summary { animation: none !important; }
 }
+
+/* Square desktop product cards: compact two-pane design matching the original menu. */
+@media (min-width: 1024px) {
+  .nfood-menu-shell .category-results {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: .55rem !important;
+    align-items: stretch !important;
+  }
+  .nfood-menu-shell .category-results > .nfood-menu-item-card {
+    aspect-ratio: 1 / 1 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    overflow: hidden !important;
+    gap: 0 !important;
+    align-items: stretch !important;
+  }
+  .nfood-menu-shell .category-results > .nfood-menu-item-card > .nfood-menu-item-image {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: none !important;
+    border-radius: 0 !important;
+  }
+  .nfood-menu-shell .category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    padding: .65rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+  .nfood-menu-shell .category-results > .nfood-menu-item-card .nfood-menu-item-photo {
+    width: 100% !important;
+    height: 100% !important;
+    aspect-ratio: auto !important;
+    object-fit: cover !important;
+  }
+  .nfood-menu-shell .category-results > .nfood-menu-item-card .nfood-menu-card-summary {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+}
+@media (min-width: 1440px) {
+  .nfood-menu-shell .category-results { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
+}
+@media (min-width: 1800px) {
+  .nfood-menu-shell .category-results { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
+}

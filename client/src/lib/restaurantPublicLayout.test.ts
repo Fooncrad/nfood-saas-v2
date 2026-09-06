@@ -201,6 +201,9 @@ describe("RestaurantPublic menu layout", () => {
     expect(css).toContain("grid-template-columns: repeat(2, minmax(0, 1fr)) !important");
     expect(css).toContain("min-height: 8.25rem !important");
     expect(css).toContain("width: 41% !important");
+    expect(css).toContain("aspect-ratio: 1 / 1 !important");
+    expect(css).toContain("grid-template-columns: repeat(7, minmax(0, 1fr)) !important");
+    expect(css).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important");
   });
 });
 
