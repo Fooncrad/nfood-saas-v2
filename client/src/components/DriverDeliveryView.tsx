@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock3, ExternalLink, LogOut, MapPin, Truck, Volume2 } from "lucide-react";
 
 const DRIVER_REFUSAL_REASONS = ["العميل لم يرد", "العميل غير متواجد", "العنوان غير واضح", "تعذر الوصول للموقع", "الطلب غير جاهز من المطعم", "مشكلة في المركبة", "سبب آخر"] as const;
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { actionPalette, getDeliveryStatusPalette } from "@/lib/statusPalette";
 import { SecureDeliveryChat } from "@/components/SecureDeliveryChat";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { playOrderAlertSound, primeOrderAlertAudio } from "@/lib/orderAlertSound";
 
 export function DriverDeliveryView({ restaurantId }: { restaurantId: number }) {
   const { logout } = useAuth();
@@ -32,17 +33,14 @@ export function DriverDeliveryView({ restaurantId }: { restaurantId: number }) {
   useEffect(() => {
     if (newDeliveryCount <= previousNewCount.value) { previousNewCount.value = newDeliveryCount; return; }
     previousNewCount.value = newDeliveryCount;
-    if (localStorage.getItem("nfood-driver-alert-muted") === "true" || !window.AudioContext) return;
-    const audio = new AudioContext();
-    const oscillator = audio.createOscillator();
-    const gain = audio.createGain();
-    oscillator.frequency.value = 880;
-    gain.gain.value = Number(localStorage.getItem("nfood-driver-alert-volume") ?? "0.35");
-    oscillator.connect(gain).connect(audio.destination);
-    oscillator.start();
-    oscillator.stop(audio.currentTime + 0.18);
-    void audio.resume().finally(() => window.setTimeout(() => void audio.close(), 300));
+    if (localStorage.getItem("nfood-driver-alert-muted") === "true") return;
+    void playOrderAlertSound({ volume: Number(localStorage.getItem("nfood-driver-alert-volume") ?? "0.35"), tone: "new" });
   }, [newDeliveryCount, previousNewCount]);
+  const testDriverSound = useCallback(() => {
+    localStorage.setItem("nfood-driver-alert-muted", "false");
+    void primeOrderAlertAudio();
+    void playOrderAlertSound({ volume: Number(localStorage.getItem("nfood-driver-alert-volume") ?? "0.35"), tone: "status" });
+  }, []);
   const selected = deliveryOrders.find((item) => item.id === selectedId);
   const canPickup = selected?.deliveryStatus === "assigned" && selected.status === "ready";
   const canDepart = selected?.deliveryStatus === "picked_up";
@@ -67,7 +65,7 @@ export function DriverDeliveryView({ restaurantId }: { restaurantId: number }) {
   return <div dir="rtl" className="space-y-3">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="text-xl font-black">مركز السائق والتوصيل</h2><p className="mt-1 text-sm text-slate-500">طلباتك المعينة فقط، مع ETA وحالات الفشل والمرتجع.</p></div>
-      <div className="flex flex-wrap items-center gap-2"><Button type="button" variant="outline" onClick={() => setLocationSharing((current) => !current)} className={`rounded-xl text-xs ${locationSharing ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}><MapPin className="ml-1 h-4 w-4" />{locationSharing ? "موقعك قيد المشاركة" : "مشاركة الموقع"}</Button><Badge className="rounded-xl bg-sky-50 px-3 py-2 text-sky-700"><Truck className="ml-1 h-4 w-4" /> تحديث تلقائي</Badge><Badge className="rounded-xl bg-violet-50 px-3 py-2 text-violet-700"><Volume2 className="ml-1 h-4 w-4" /> صوت السائق</Badge>{newDeliveryCount > 0 && <Badge role="status" aria-live="polite" className="rounded-xl bg-orange-100 px-3 py-2 text-orange-800"><span className="ml-1 inline-flex h-2 w-2 animate-pulse rounded-full bg-orange-500" />{newDeliveryCount} طلب جديد</Badge>}<Button type="button" variant="outline" disabled={loggingOut} onClick={async () => { setLoggingOut(true); try { await logout(); window.location.href = "/login"; } finally { setLoggingOut(false); } }} className="rounded-xl border-red-200 bg-white text-xs font-black text-red-700 hover:bg-red-50"><LogOut className="ml-1 h-4 w-4" />{loggingOut ? "جارٍ الخروج..." : "تسجيل الخروج"}</Button></div>
+      <div className="flex flex-wrap items-center gap-2"><Button type="button" variant="outline" onClick={() => setLocationSharing((current) => !current)} className={`rounded-xl text-xs ${locationSharing ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}><MapPin className="ml-1 h-4 w-4" />{locationSharing ? "موقعك قيد المشاركة" : "مشاركة الموقع"}</Button><Badge className="rounded-xl bg-sky-50 px-3 py-2 text-sky-700"><Truck className="ml-1 h-4 w-4" /> تحديث تلقائي</Badge><Button type="button" variant="outline" onClick={testDriverSound} className="rounded-xl border-violet-200 bg-violet-50 text-xs font-bold text-violet-700 hover:bg-violet-100"><Volume2 className="ml-1 h-4 w-4" />تجربة الصوت</Button>{newDeliveryCount > 0 && <Badge role="status" aria-live="polite" className="rounded-xl bg-orange-100 px-3 py-2 text-orange-800"><span className="ml-1 inline-flex h-2 w-2 animate-pulse rounded-full bg-orange-500" />{newDeliveryCount} طلب جديد</Badge>}<Button type="button" variant="outline" disabled={loggingOut} onClick={async () => { setLoggingOut(true); try { await logout(); window.location.href = "/login"; } finally { setLoggingOut(false); } }} className="rounded-xl border-red-200 bg-white text-xs font-black text-red-700 hover:bg-red-50"><LogOut className="ml-1 h-4 w-4" />{loggingOut ? "جارٍ الخروج..." : "تسجيل الخروج"}</Button></div>
     </div>
     <CompactModuleSummary metrics={summary} />
     {orders.isError && <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">تعذر تحميل طلباتك. Request ID: driver-orders-{restaurantId}<Button variant="outline" onClick={() => void orders.refetch()} className="mr-3 rounded-lg">إعادة المحاولة</Button></div>}

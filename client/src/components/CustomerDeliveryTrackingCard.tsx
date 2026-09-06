@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { BellRing, Clock3, MapPin, Navigation, Phone, Radio, Truck } from "lucide-react";
+import { BellRing, Clock3, MapPin, Navigation, Phone, Radio, Truck, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapView } from "@/components/Map";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { playOrderAlertSound, primeOrderAlertAudio } from "@/lib/orderAlertSound";
 
 type DeliveryStatus = "unassigned" | "assigned" | "picked_up" | "out_for_delivery" | "delivered" | "failed" | "returned";
 
@@ -29,6 +30,7 @@ export function CustomerDeliveryTrackingCard({ orderId }: { orderId: number }) {
   const driverMap = useRef<google.maps.Map | null>(null);
   const markers = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const [mapReady, setMapReady] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => typeof window === "undefined" ? true : localStorage.getItem("nfood-customer-alert-sound") !== "off");
   const status = tracking.data?.deliveryStatus as DeliveryStatus | undefined;
   const meta = status ? statusMeta[status] ?? statusMeta.unassigned : statusMeta.unassigned;
 
@@ -36,9 +38,14 @@ export function CustomerDeliveryTrackingCard({ orderId }: { orderId: number }) {
     if (!status) return;
     if (previousStatus.current && previousStatus.current !== status) {
       toast.success(`تحديث التوصيل: ${statusMeta[status]?.label ?? status}`);
+      if (soundEnabled) void playOrderAlertSound({ volume: 0.65, tone: "status" });
     }
     previousStatus.current = status;
-  }, [status]);
+  }, [soundEnabled, status]);
+  const testCustomerSound = () => {
+    void primeOrderAlertAudio();
+    void playOrderAlertSound({ volume: 0.65, tone: "status" });
+  };
 
   const detachMarkers = () => {
     markers.current.forEach((marker) => {
@@ -71,7 +78,7 @@ export function CustomerDeliveryTrackingCard({ orderId }: { orderId: number }) {
   if (tracking.isError || !tracking.data) return <Card className="rounded-3xl border-amber-200 bg-amber-50"><CardContent className="p-4 text-sm font-bold text-amber-800">تعذر تحميل التتبع الحي الآن. ستستمر صفحة الطلب في تحديث الحالة تلقائيًا.</CardContent></Card>;
 
   return <Card className="overflow-hidden rounded-3xl border-sky-100 bg-white shadow-sm" data-delivery-tracking={orderId}>
-    <CardHeader className="border-b border-slate-100 pb-3"><div className="flex flex-wrap items-center justify-between gap-2"><CardTitle className="flex items-center gap-2 text-base font-black"><Navigation className="h-4 w-4 text-sky-600" />تتبع التوصيل الحي</CardTitle><Badge className={`rounded-xl ${meta.className}`}><BellRing className="ml-1 h-3.5 w-3.5" />{meta.label}</Badge></div><p className="mt-1 text-xs leading-5 text-slate-500">{meta.description} آخر مزامنة: {formatLocationTime(tracking.data.updatedAt)}</p></CardHeader>
+    <CardHeader className="border-b border-slate-100 pb-3"><div className="flex flex-wrap items-center justify-between gap-2"><CardTitle className="flex items-center gap-2 text-base font-black"><Navigation className="h-4 w-4 text-sky-600" />تتبع التوصيل الحي</CardTitle><div className="flex items-center gap-2"><button type="button" onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("nfood-customer-alert-sound", next ? "on" : "off"); if (next) testCustomerSound(); }} className="inline-flex min-h-8 items-center gap-1 rounded-xl bg-sky-50 px-2.5 py-1.5 text-[11px] font-bold text-sky-700"><Volume2 className="h-3.5 w-3.5" />{soundEnabled ? "كتم الصوت" : "تشغيل الصوت"}</button><button type="button" onClick={testCustomerSound} className="rounded-xl bg-orange-50 px-2.5 py-1.5 text-[11px] font-bold text-orange-700">تجربة الصوت</button><Badge className={`rounded-xl ${meta.className}`}><BellRing className="ml-1 h-3.5 w-3.5" />{meta.label}</Badge></div></div><p className="mt-1 text-xs leading-5 text-slate-500">{meta.description} آخر مزامنة: {formatLocationTime(tracking.data.updatedAt)}</p></CardHeader>
     <CardContent className="space-y-3 p-4"><div className="grid gap-2 sm:grid-cols-3"><div className="rounded-2xl bg-slate-50 p-3"><p className="text-[11px] font-bold text-slate-500">الوقت المتوقع</p><p className="mt-1 flex items-center gap-1 text-sm font-black text-slate-800"><Clock3 className="h-4 w-4 text-sky-600" />{tracking.data.deliveryEtaMinutes ? `${tracking.data.deliveryEtaMinutes} دقيقة` : "غير محدد"}</p></div><div className="rounded-2xl bg-slate-50 p-3"><p className="text-[11px] font-bold text-slate-500">السائق</p><p className="mt-1 flex items-center gap-1 text-sm font-black text-slate-800"><Truck className="h-4 w-4 text-sky-600" />{tracking.data.driver?.name || "بانتظار الإسناد"}</p>{tracking.data.driver?.phone && status && ["assigned", "picked_up", "out_for_delivery"].includes(status) && <a href={`tel:${tracking.data.driver.phone}`} aria-label={`الاتصال بالسائق ${tracking.data.driver.name || ""}`} className="mt-2 inline-flex min-h-9 items-center gap-1 rounded-xl bg-sky-600 px-3 py-2 text-xs font-black text-white hover:bg-sky-700"><Phone className="h-3.5 w-3.5" />اتصال بالسائق</a>}</div><div className="rounded-2xl bg-slate-50 p-3"><p className="text-[11px] font-bold text-slate-500">آخر موقع</p><p className="mt-1 flex items-center gap-1 text-sm font-black text-slate-800"><MapPin className="h-4 w-4 text-sky-600" />{formatLocationTime(tracking.data.driver?.lastLocationAt)}</p></div></div><div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-100"><MapView className="h-64 w-full" initialCenter={{ lat: Number(tracking.data.driver?.latitude) || Number(tracking.data.deliveryLatitude) || 24.7136, lng: Number(tracking.data.driver?.longitude) || Number(tracking.data.deliveryLongitude) || 46.6753 }} initialZoom={14} onMapReady={(map) => { driverMap.current = map; setMapReady(true); }} />{!tracking.data.driver?.latitude && <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-xl bg-slate-950/75 px-3 py-2 text-center text-xs font-bold text-white">ستظهر حركة السائق بعد تفعيل مشاركة الموقع من جهازه.</div>}</div>{tracking.data.deliveryAddress && <p className="rounded-xl bg-sky-50 px-3 py-2 text-xs font-bold text-sky-800">عنوان التوصيل: {tracking.data.deliveryAddress}</p>}{tracking.data.deliveryFailureReason && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700">ملاحظة: {tracking.data.deliveryFailureReason}</p>}{tracking.data.deliveryNote && <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">ملاحظة السائق: {tracking.data.deliveryNote}</p>}</CardContent>
   </Card>;
 }
