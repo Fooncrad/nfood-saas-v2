@@ -24,6 +24,10 @@ describe("display center organization", () => {
     expect(publicDisplaySource).toContain("Nasser Cafe · شاشة النكهات");
     expect(publicDisplaySource).toContain("نكهة تستحق التوقف");
     expect(publicDisplaySource).toContain("slide?.menuItem?.imageUrl");
+    expect(publicDisplaySource).toContain("displayCacheKey");
+    expect(publicDisplaySource).toContain("nfood-display-slide-enter");
+    expect(publicDisplaySource).toContain("العرض يستعد للحظتك");
+    expect(publicDisplaySource).toContain("نعود إليك بعد لحظات");
   });
 
   it("keeps connection, content, campaign and preview panels scoped to their tabs", () => {
