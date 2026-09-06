@@ -28,6 +28,8 @@ describe("display center organization", () => {
     expect(publicDisplaySource).toContain("nfood-display-slide-enter");
     expect(publicDisplaySource).toContain("العرض يستعد للحظتك");
     expect(publicDisplaySource).toContain("نعود إليك بعد لحظات");
+    expect(publicDisplaySource).toContain('message.type === "display.updated"');
+    expect(publicDisplaySource).toContain("playback.refetch()");
   });
 
   it("keeps connection, content, campaign and preview panels scoped to their tabs", () => {

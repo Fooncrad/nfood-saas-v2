@@ -1,0 +1,2 @@
+ALTER TABLE `restaurantDisplaySlides` ADD `transitionEffect` enum('fade','zoom','slide','kenburns') DEFAULT 'fade' NOT NULL;--> statement-breakpoint
+ALTER TABLE `restaurantDisplaySlides` ADD `badgeText` varchar(64);

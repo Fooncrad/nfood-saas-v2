@@ -1515,6 +1515,8 @@ export const restaurantDisplaySlides = mysqlTable("restaurantDisplaySlides", {
   subtitle: text("subtitle"),
   sortOrder: int("sortOrder").default(0).notNull(),
   durationSeconds: int("durationSeconds").default(8).notNull(),
+  transitionEffect: mysqlEnum("transitionEffect", ["fade", "zoom", "slide", "kenburns"]).default("fade").notNull(),
+  badgeText: varchar("badgeText", { length: 64 }),
   startsAt: timestamp("startsAt"),
   endsAt: timestamp("endsAt"),
   isActive: boolean("isActive").default(true).notNull(),
