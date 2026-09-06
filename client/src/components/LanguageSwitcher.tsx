@@ -13,7 +13,7 @@ export default function LanguageSwitcher({ compact = false, allowedLanguages, mi
     <div className="flex items-center gap-1.5" aria-busy={isLanguageChanging}>
       <details className="nfood-language-switcher relative z-50">
       <summary className={`flex cursor-pointer list-none items-center gap-1.5 text-xs font-bold text-slate-700 transition [&::-webkit-details-marker]:hidden ${minimal ? "h-10 w-10 justify-center rounded-full border-0 bg-transparent p-0 shadow-none hover:bg-slate-100" : `rounded-xl border border-slate-200/80 bg-white/95 px-2 py-2 shadow-sm backdrop-blur hover:border-orange-200 hover:shadow-md ${compact ? "min-h-9 max-w-[7.5rem] sm:max-w-none sm:px-3" : "min-h-10 px-3"}`}`} aria-label={t("navigation.chooseLanguage")}>
-        <Globe2 className={`h-4 w-4 shrink-0 ${minimal ? "text-slate-500" : "text-[#e76f3c]"}`} aria-hidden="true" />
+        <Globe2 className="h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
         <span className={minimal ? "sr-only" : "hidden text-slate-600 sm:inline"}>{t("common.language")}</span>
         <span className={minimal ? "sr-only" : "whitespace-nowrap"}>{languageMeta[language].nativeLabel}</span>
         <ChevronDown className={minimal ? "hidden" : "h-3.5 w-3.5 shrink-0 text-slate-400"} aria-hidden="true" />

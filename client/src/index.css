@@ -4978,3 +4978,38 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
     padding: 0.4rem !important;
   }
 }
+
+/* Desktop menu density and full-width customization */
+@media (min-width: 1024px) {
+  .nfood-menu-shell .category-results {
+    width: 100% !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0.85rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-category-strip,
+  .nfood-menu-shell [data-menu-categories="true"] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    white-space: nowrap;
+  }
+  .nfood-menu-shell .nfood-menu-category-strip > *,
+  .nfood-menu-shell [data-menu-categories="true"] > * { flex: 0 0 auto; }
+}
+@media (min-width: 1600px) {
+  .nfood-menu-shell .category-results { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+}
+.nfood-language-switcher summary svg:first-child { color: #2563eb !important; }
+.nfood-menu-shell .nfood-menu-item-card {
+  background-color: var(--menu-card-background, var(--menu-surface)) !important;
+  border-color: var(--menu-card-border, var(--menu-border)) !important;
+  color: var(--menu-card-text, var(--menu-ink)) !important;
+}
+.nfood-menu-shell .nfood-menu-item-card .nfood-menu-card-summary {
+  color: var(--menu-card-muted-text, var(--menu-muted)) !important;
+}
+.nfood-menu-shell .nfood-menu-item-card .nfood-menu-item-title,
+.nfood-menu-shell .nfood-menu-item-card .nfood-menu-price-current {
+  color: var(--menu-card-text, var(--menu-ink)) !important;
+}

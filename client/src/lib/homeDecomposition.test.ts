@@ -206,7 +206,8 @@ describe("Home decomposition", () => {
     expect(homeSource).toContain('id: "restaurant-people-growth"');
     expect(homeSource).toContain('id: "restaurant-workspace"');
     expect(homeSource).toContain('id: "restaurant-system"');
-    expect(homeSource).toContain('"waiters", "drivers", "printers", "inventory", "reservations"');
+    expect(homeSource).toContain('"waiters", "printers", "inventory", "reservations"');
+    expect(homeSource).toContain('id: "restaurant-drivers"');
     expect(sidebarSource).toContain("aria-expanded={!isGroupCollapsed}");
     expect(sidebarSource).toContain("activeGroupId");
     expect(homeSource).toContain('data-testid="dashboard-center-canvas"');
