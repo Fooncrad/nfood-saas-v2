@@ -5274,3 +5274,35 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
 @media (min-width: 900px) { .nfood-display-promo-ribbon { min-width: 210px; max-width: 260px; } }
 @media (prefers-reduced-motion: no-preference) { .nfood-display-promo-ribbon { animation: nfood-promo-glow 2.8s ease-in-out infinite; } }
 @keyframes nfood-promo-glow { 0%, 100% { box-shadow: 0 10px 30px rgba(231, 111, 60, .18); } 50% { box-shadow: 0 12px 34px rgba(231, 111, 60, .38); } }
+
+/* Display center full-width repair */
+.nfood-display-center {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+.nfood-display-center > * {
+  min-width: 0;
+  max-width: none;
+}
+.nfood-display-center [data-slot="card"],
+.nfood-display-center [data-slot="card-content"],
+.nfood-display-center [data-slot="card-header"] {
+  min-width: 0;
+  max-width: none;
+}
+@media (min-width: 1024px) {
+  .nfood-dashboard-main:has(.nfood-display-center) {
+    width: 100%;
+    max-width: none;
+    padding-inline: 0.75rem;
+  }
+  .nfood-display-center .grid {
+    min-width: 0;
+  }
+}
+@media (max-width: 767px) {
+  .nfood-display-center {
+    width: 100%;
+  }
+}
