@@ -9329,6 +9329,24 @@ function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number
         dashboardAccentColor: brandingQuery.data.brandAccentColor ?? "#f59e0b",
       });
   }, [brandingQuery.data]);
+  const uploadBrandLogo = trpc.media.upload.useMutation();
+  const handleBrandLogoUpload = async (file: File) => {
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
+      toast.error("ارفع شعارًا بصيغة PNG أو JPG أو WebP وبحجم لا يتجاوز 5MB");
+      return;
+    }
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("تعذر قراءة ملف الشعار"));
+        reader.readAsDataURL(file);
+      });
+      const result = await uploadBrandLogo.mutateAsync({ fileName: file.name, contentType: file.type, base64, category: "logo", scope: "restaurant" });
+      setDraft(current => ({ ...current, brandLogoUrl: result.url }));
+      toast.success("تم تحميل الشعار إلى المعاينة؛ اضغط حفظ الهوية لاعتماده");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "تعذر رفع الشعار"); }
+  };
   const updateBranding = trpc.platform.updateBranding.useMutation({
     onSuccess: () => {
       window.localStorage.setItem(`nfood-dashboard-theme-${restaurantId}`, JSON.stringify({ primary: draft.brandColor, accent: draft.brandAccentColor }));
@@ -9608,15 +9626,28 @@ function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number
                     </label>
                   </div>
                   <div className="rounded-xl border border-white bg-white p-3" style={{ fontFamily: draft.brandFontFamily, color: draft.brandTextColor, borderColor: draft.brandAccentColor }}>
-                    <p className="text-[10px] font-bold opacity-60">معاينة الهوية</p>
-                    <p className="mt-1 text-lg font-black" style={{ fontFamily: draft.brandHeadingFontFamily, color: draft.brandColor }}>اسم المطعم</p>
-                    <p className="mt-1 text-xs">نص تعريفي يظهر بنفس الخط والألوان في المنيو.</p>
-                    <span className="mt-3 inline-flex rounded-lg px-3 py-1.5 text-[11px] font-black text-white" style={{ backgroundColor: draft.brandAccentColor }}>زر إجراء</span>
+                    <p className="text-[10px] font-bold opacity-60">معاينة مباشرة قبل الحفظ</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      {draft.brandLogoUrl ? <img src={draft.brandLogoUrl} alt="الشعار في المعاينة" className="h-9 w-9 rounded-lg bg-white/90 object-contain p-1" /> : <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-black/10 text-sm font-black">{draft.brandName.slice(0, 1) || "N"}</span>}
+                      <p className="text-lg font-black" style={{ fontFamily: draft.brandHeadingFontFamily, color: draft.brandColor }}>{draft.brandName || "اسم المطعم"}</p>
+                    </div>
+                    <p className="mt-1 text-xs">تتغير هذه المعاينة فورًا عند تعديل اللون أو الشعار، ولا تُعتمد للزوار حتى تضغط حفظ الهوية.</p>
+                    <div className="mt-3 flex items-center gap-2"><span className="inline-flex rounded-lg px-3 py-1.5 text-[11px] font-black text-white" style={{ backgroundColor: draft.brandAccentColor }}>زر إجراء</span><span className="rounded-lg border px-3 py-1.5 text-[11px] font-bold" style={{ borderColor: draft.brandAccentColor, color: draft.brandColor }}>رابط ثانوي</span></div>
                   </div>
                 </div>
               </div>
-              <label className="space-y-2 text-sm font-semibold sm:col-span-2">
-                رابط الشعار
+              <div className="space-y-3 sm:col-span-2">
+                <p className="text-sm font-semibold">شعار المطعم المخصص</p>
+                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-orange-100 bg-orange-50/50 p-3">
+                  <label className="flex h-10 cursor-pointer items-center rounded-xl bg-orange-500 px-4 text-xs font-black text-white hover:bg-orange-600">
+                    <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={uploadBrandLogo.isPending} onChange={event => { const file = event.target.files?.[0]; if (file) void handleBrandLogoUpload(file); event.currentTarget.value = ""; }} />
+                    {uploadBrandLogo.isPending ? "جارٍ الرفع…" : "رفع شعار"}
+                  </label>
+                  {draft.brandLogoUrl ? <img src={draft.brandLogoUrl} alt="معاينة شعار المطعم" className="h-12 w-12 rounded-xl bg-white object-contain p-1 shadow-sm" /> : <span className="text-xs text-slate-500">لا يوجد شعار مخصص</span>}
+                  <span className="text-[11px] text-slate-500">PNG أو JPG أو WebP · حتى 5MB. التغيير يظهر في المعاينة قبل الحفظ.</span>
+                </div>
+                <label className="space-y-2 text-xs font-semibold text-slate-700">
+                  رابط الشعار
                 <Input
                   value={draft.brandLogoUrl}
                   onChange={event =>
@@ -9626,7 +9657,8 @@ function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number
                   placeholder="https://..."
                   dir="ltr"
                 />
-              </label>
+                </label>
+              </div>
               <label className="space-y-2 text-sm font-semibold">
                 الهاتف
                 <Input
