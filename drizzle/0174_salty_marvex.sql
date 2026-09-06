@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `allowMultipleDriverOrders` boolean DEFAULT true NOT NULL;

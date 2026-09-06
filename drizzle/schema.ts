@@ -154,6 +154,7 @@ export const restaurants = mysqlTable("restaurants", {
   manualPaymentInstructions: varchar("manualPaymentInstructions", { length: 1000 }),
   orderModesJson: varchar("orderModesJson", { length: 255 }).default('["dineIn","takeaway","delivery","reservation","hotel"]').notNull(),
   deliveryManagementMode: mysqlEnum("deliveryManagementMode", ["restaurant", "platform"]).default("restaurant").notNull(),
+  allowMultipleDriverOrders: boolean("allowMultipleDriverOrders").default(true).notNull(),
   platformDeliveryEnabled: boolean("platformDeliveryEnabled").default(false).notNull(),
   reservationEventTypesJson: varchar("reservationEventTypesJson", { length: 1000 }).default('["حفل عيد ميلاد","فعالية","اجتماع","عشاء خاص"]').notNull(),
   waiterCallEnabled: boolean("waiterCallEnabled").default(true).notNull(),
