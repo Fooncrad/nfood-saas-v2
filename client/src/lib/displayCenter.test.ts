@@ -13,6 +13,14 @@ describe("display center organization", () => {
     expect(source).toContain("المعاينة");
   });
 
+  it("adds a one-click demo playlist from real menu items", () => {
+    expect(source).toContain("تعبئة 20 شريحة تجريبية");
+    expect(source).toContain("demoMarketingLines");
+    expect(source).toContain("durationSeconds: 7");
+    expect(source).toContain("menuItemId: item.id");
+    expect(source).toContain("صور أصناف المنيو");
+  });
+
   it("keeps connection, content, campaign and preview panels scoped to their tabs", () => {
     expect(source).toContain('displaySection === "connections"');
     expect(source).toContain('displaySection === "content"');
