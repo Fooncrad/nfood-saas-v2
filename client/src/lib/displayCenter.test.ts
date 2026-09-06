@@ -15,7 +15,12 @@ describe("display center organization", () => {
   });
 
   it("adds a one-click demo playlist from real menu items", () => {
-    expect(source).toContain("تعبئة 30 شريحة تجريبية");
+    expect(source).toContain("تعبئة 50 شريحة تجريبية");
+    expect(source).toContain("seedExternalSlides");
+    expect(source).toContain("35 صورة خارجية");
+    expect(source).toContain("transitionEffect");
+    expect(source).toContain("badgeText");
+    expect(source).toContain("slideDuration");
     expect(source).toContain("demoMarketingLines");
     expect(source).toContain("durationSeconds: 7");
     expect(source).toContain("menuItemId: item.id");
