@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { legacyUiTranslations, modernUiTranslations, translations } from "../contexts/LanguageContext";
+import { createTranslator, legacyUiTranslations, modernUiTranslations, translations } from "../contexts/LanguageContext";
 import { navItems } from "../components/homeNavigation";
 import fs from "node:fs";
 const homeModulesSource = fs.readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
+const dashboardLayoutSource = fs.readFileSync(new URL("../components/DashboardLayout.tsx", import.meta.url), "utf8");
+const homeSidebarSource = fs.readFileSync(new URL("../components/HomeSidebar.tsx", import.meta.url), "utf8");
 
 const criticalMiddlePageLabels = [
   "أدخل بياناتك، وسنوجهك إلى مساحة العمل المناسبة.",
@@ -40,6 +42,23 @@ describe("translation coverage for login and operational modules", () => {
         expect(modernUiTranslations.ur[label], `Missing Urdu modern translation: ${label}`).toBeTruthy();
       }
     }
+  });
+
+  it("resolves dashboard fallback labels instead of returning raw keys", () => {
+    const english = createTranslator("en");
+    const french = createTranslator("fr");
+    expect(english("العملاء")).toBe("Customers");
+    expect(french("العملاء")).toBe("Clients");
+    expect(english("الإعدادات والتشغيل")).toBe("Settings & operations");
+    expect(french("الإعدادات والتشغيل")).toBe("Paramètres et opérations");
+  });
+
+  it("keeps dashboard navigation translated and free from demo labels", () => {
+    expect(dashboardLayoutSource).not.toContain('label: "Page 1"');
+    expect(dashboardLayoutSource).not.toContain('label: "Page 2"');
+    expect(dashboardLayoutSource).toContain('t("navigation.main")');
+    expect(homeSidebarSource).toContain("navTranslationKeys");
+    expect(homeSidebarSource).toContain("labelFor(item)");
   });
 
   it("exposes language and translation settings in navigation", () => {

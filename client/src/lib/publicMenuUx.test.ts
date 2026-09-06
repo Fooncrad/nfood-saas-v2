@@ -129,7 +129,7 @@ describe("public menu UX", () => {
     expect(page).toContain("copy.takeaway");
     expect(page).toContain("copy.delivery");
     expect(page).toContain("fixed inset-x-3 bottom-3");
-    expect(page).toContain("onClick={() => setReservationOpen(true)}");
+    expect(page).toContain("setReservationStep(1), setReservationOpen(true)");
     expect(page).toContain("channel: orderType === \"dineIn\" ? \"dine_in\" : orderType");
   });
 

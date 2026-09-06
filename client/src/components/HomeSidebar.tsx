@@ -27,7 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useLanguage } from "@/contexts/LanguageContext";
-import type { NavKey } from "@/components/homeNavigation";
+import { navTranslationKeys, type NavKey } from "@/components/homeNavigation";
 import {
   formatSidebarCount,
   getSidebarStatusTone,
@@ -124,6 +124,7 @@ export function HomeSidebar({
   printerStatus = "checking",
 }: HomeSidebarProps) {
   const { language, t } = useLanguage();
+  const labelFor = (item: SidebarItem) => t(navTranslationKeys[item.key] ?? item.label);
   const [workspaceQuery, setWorkspaceQuery] = useState("");
   const sidebarCollapsedKey = `nfood:sidebar-collapsed:${String(managerId)}:${roleScope}`;
   const sidebarStorageKey = `nfood:sidebar-groups:${String(managerId)}:${roleScope}`;
@@ -341,7 +342,7 @@ export function HomeSidebar({
               <div className={sidebarCollapsed ? "space-y-1" : "grid grid-cols-2 gap-1"}>
                 {favoriteItems.map(item => {
                   const Icon = item.icon;
-                  return withTooltip(item.label, <button key={item.key} type="button" onClick={() => onNavigate(item.key)} aria-label={item.label} className={`flex items-center rounded-xl text-orange-100 transition hover:bg-orange-300/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "relative h-9 w-full justify-center" : "min-w-0 gap-1.5 px-2 py-1.5 text-start text-[10px]"}`}><Icon className="h-3.5 w-3.5 shrink-0" />{!sidebarCollapsed && <span className="truncate">{item.label}</span>}</button>);
+                  return withTooltip(labelFor(item), <button key={item.key} type="button" onClick={() => onNavigate(item.key)} aria-label={labelFor(item)} className={`flex items-center rounded-xl text-orange-100 transition hover:bg-orange-300/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "relative h-9 w-full justify-center" : "min-w-0 gap-1.5 px-2 py-1.5 text-start text-[10px]"}`}><Icon className="h-3.5 w-3.5 shrink-0" />{!sidebarCollapsed && <span className="truncate">{labelFor(item)}</span>}</button>);
                 })}
               </div>
             </div>
@@ -367,16 +368,16 @@ export function HomeSidebar({
                             const Icon = item.icon;
                             const isActive = item.key === active;
                             const isFavorite = favoriteKeys.includes(item.key);
-                            const itemButton = <button type="button" onClick={() => onNavigate(item.key)} aria-label={item.label} className={`relative flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl text-start transition-[color,background-color,transform] duration-150 active:scale-[.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-10 justify-center px-0" : "px-2 py-2 text-xs"} ${isActive ? "font-bold text-white" : "text-slate-300 hover:bg-white/[.07] hover:text-white"}`}>
+                            const itemButton = <button type="button" onClick={() => onNavigate(item.key)} aria-label={labelFor(item)} className={`relative flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl text-start transition-[color,background-color,transform] duration-150 active:scale-[.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-10 justify-center px-0" : "px-2 py-2 text-xs"} ${isActive ? "font-bold text-white" : "text-slate-300 hover:bg-white/[.07] hover:text-white"}`}>
                               {isActive && <motion.span layoutId="activePill" transition={{ type: "spring", stiffness: 430, damping: 31 }} className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-500/95 to-orange-400/80 shadow-lg shadow-orange-950/30" />}
                               <Icon className={`relative z-10 shrink-0 transition-transform duration-200 ${sidebarCollapsed ? "h-[18px] w-[18px]" : "h-4 w-4"} ${isActive ? "text-white" : "text-slate-400"}`} />
-                              {!sidebarCollapsed && <span className="relative z-10 min-w-0 flex-1 truncate">{item.label}</span>}
+                              {!sidebarCollapsed && <span className="relative z-10 min-w-0 flex-1 truncate">{labelFor(item)}</span>}
                               {item.key === "orders" && <span className={`relative z-10 rounded-full px-1.5 py-0.5 text-[9px] font-black ${isActive ? "bg-white/20 text-white" : "bg-orange-400/15 text-orange-100"}`}>{ordersLoading ? "…" : formatSidebarCount(orderCount)}</span>}
                             </button>;
                             return (
                               <div key={item.key} className="group flex min-w-0 items-center gap-0.5">
-                                {withTooltip(item.label, itemButton)}
-                                {!sidebarCollapsed && <button type="button" onClick={() => toggleFavorite(item.key)} aria-label={isFavorite ? `${copy.unpin}: ${item.label}` : `${copy.pin}: ${item.label}`} title={isFavorite ? copy.unpin : copy.pin} className={`flex h-8 w-7 shrink-0 items-center justify-center rounded-lg transition-[background-color,color,opacity] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${isFavorite ? "text-orange-200 opacity-100" : "text-slate-600 opacity-0 group-hover:opacity-100 hover:bg-white/[.07] hover:text-orange-200"}`}><Star className="h-3.5 w-3.5" fill={isFavorite ? "currentColor" : "none"} /></button>}
+                                {withTooltip(labelFor(item), itemButton)}
+                                {!sidebarCollapsed && <button type="button" onClick={() => toggleFavorite(item.key)} aria-label={isFavorite ? `${copy.unpin}: ${labelFor(item)}` : `${copy.pin}: ${labelFor(item)}`} title={isFavorite ? copy.unpin : copy.pin} className={`flex h-8 w-7 shrink-0 items-center justify-center rounded-lg transition-[background-color,color,opacity] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${isFavorite ? "text-orange-200 opacity-100" : "text-slate-600 opacity-0 group-hover:opacity-100 hover:bg-white/[.07] hover:text-orange-200"}`}><Star className="h-3.5 w-3.5" fill={isFavorite ? "currentColor" : "none"} /></button>}
                               </div>
                             );
                           })}

@@ -469,7 +469,8 @@ export const translations: Record<Language, Record<TranslationKey, string>> = { 
 export function createTranslator(language: Language) {
   return (key: TranslationKey | string, variables?: Record<string, string | number>) => {
     const databaseValue = isUiLanguage(language) ? databaseUiTranslations[language][key] : undefined;
-    const translated = databaseValue ?? resolveStructuredTranslation(language, key) ?? translations[language][key as TranslationKey] ?? key;
+    const direct = databaseValue ?? resolveStructuredTranslation(language, key) ?? translations[language][key as TranslationKey];
+    const translated = direct ?? (language === "ar" ? key : autoTranslateText(key, language));
     return interpolateTranslation(translated, variables);
   };
 }

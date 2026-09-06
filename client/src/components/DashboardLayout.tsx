@@ -31,8 +31,8 @@ import CookieBanner from "./CookieBanner";
 import FloatingSupportActions from "./FloatingSupportActions";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "نظرة عامة", path: "/" },
+  { icon: Users, label: "العملاء", path: "/some-path" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -108,7 +108,7 @@ function DashboardLayoutContent({
   setSidebarWidth,
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
-  const { direction } = useLanguage();
+  const { direction, t } = useLanguage();
   const sidebarSide = direction === "rtl" ? "right" : "left";
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
@@ -175,7 +175,7 @@ function DashboardLayoutContent({
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                    {t("navigation.main")}
                   </span>
                 </div>
               ) : null}
@@ -191,13 +191,13 @@ function DashboardLayoutContent({
                     <SidebarMenuButton
                       isActive={isActive}
                       onClick={() => setLocation(item.path)}
-                      tooltip={item.label}
+                      tooltip={item.path === "/" ? t("overview") : t("customers")}
                       className={`h-10 transition-all duration-200 font-normal`}
                     >
                       <item.icon
                         className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
                       />
-                      <span>{item.label}</span>
+                      <span>{item.path === "/" ? t("overview") : t("customers")}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
