@@ -77,10 +77,11 @@ describe("RestaurantPublic menu layout", () => {
   });
 
   it("keeps restaurant identity in the sticky header and lets it collapse", () => {
-    expect(source).toContain("showHeaderBrand");
+    expect(source).not.toContain("showHeaderBrand");
+    expect(source).toContain("nfood-menu-cover");
     expect(source).toContain("nfood-menu-header sticky top-0");
     expect(source).toContain("{restaurantName}");
-    expect(source).toContain("إخفاء اسم المطعم");
+    expect(source).not.toContain("إخفاء اسم المطعم");
     expect(source).toContain('rawRestaurantBrand.toLowerCase() === "nssercafa"');
     expect(source).toContain('"Nasser Cafe"');
   });

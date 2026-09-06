@@ -197,6 +197,19 @@ describe("public menu UX", () => {
     expect(page).toContain('scrollIntoView({ behavior: "smooth"');
   });
 
+  it("keeps the dark menu readable and adds category search/loading and interaction polish", () => {
+    expect(page).toContain('data-menu-search="true"');
+    expect(page).toContain("categorySwitching");
+    expect(page).toContain("nfood-category-loading");
+    expect(page).not.toContain("setShowHeaderBrand");
+    expect(page).toContain("nfood-cover-social-links");
+    expect(styles).toContain(".nfood-menu-dark .nfood-menu-header");
+    expect(styles).toContain(".nfood-menu-dark .nfood-menu-search");
+    expect(styles).toContain("grid-template-columns: repeat(6, minmax(0, 1fr))");
+    expect(styles).toContain("scale(1.018)");
+    expect(styles).toContain("nfood-language-pulse");
+  });
+
   it("filters synchronized hotel rooms and connects delivery tracking", () => {
     expect(page).toContain("hotelRoomSearch");
     expect(page).toContain("filteredHotelRooms");
