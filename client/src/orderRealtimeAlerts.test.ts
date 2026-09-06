@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 describe("POS and KDS realtime alerts", () => {
   const source = readFileSync(resolve(process.cwd(), "client/src/components/OrderRealtimeAlerts.tsx"), "utf8");
+  const sharedAudio = readFileSync(resolve(process.cwd(), "client/src/lib/orderAlertSound.ts"), "utf8");
   const home = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
   const homeModules = readFileSync(resolve(process.cwd(), "client/src/components/HomeModules.tsx"), "utf8");
   const dashboard = `${home}\n${homeModules}`;
@@ -13,13 +14,14 @@ describe("POS and KDS realtime alerts", () => {
     expect(source).toContain("old.get(order.id) !== order.status");
     expect(source).toContain("لا توجد طلبات نشطة حاليًا");
     expect(source).toContain("soundEnabled");
-    expect(source).toContain("AudioContext");
-    expect(source).toContain("void audioContext.current.resume()");
+    expect(sharedAudio).toContain("AudioContext");
+    expect(sharedAudio).toContain("await context.resume()");
+    expect(source).toContain("playOrderAlertSound");
     expect(source).toContain("localStorage.setItem(`nfood-order-alert-sound-${mode}`");
     expect(source).toContain("nfood-order-alert-volume-${mode}");
     expect(source).toContain('type="range"');
     expect(source).toContain("alertVolume");
-    expect(source).toContain("visual alerts remain the source of truth");
+    expect(source).toContain('role="status"');
   });
 
   it("is wired into both POS and KDS with fast refresh and focus recovery", () => {

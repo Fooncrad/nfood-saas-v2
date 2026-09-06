@@ -89,7 +89,10 @@ describe("UI placeholder audit", () => {
     expect(publicRestaurantSource).not.toContain("guest-track");
     expect(publicRestaurantSource).not.toContain("تتبع طلب سابق");
     expect(publicRestaurantSource).toContain("setCart({});");
-    expect(publicRestaurantSource).toContain("setGuestPhone(\"\")");
+    expect(publicRestaurantSource).toContain("nfood-last-guest-phone");
+    expect(publicRestaurantSource).toContain("nfood-last-delivery-address");
+    expect(publicRestaurantSource).toContain("details.phone");
+    expect(publicRestaurantSource).toContain("setDeliveryAddress");
     expect(publicRestaurantSource).toContain("setReceipt");
     expect(publicRestaurantSource).toContain("checkout.isError");
     expect(publicRestaurantSource).toContain("checkout.isError");
