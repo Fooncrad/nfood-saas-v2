@@ -131,7 +131,10 @@ export function RestaurantDisplayMarketingPanel({ restaurantId, branchId }: Prop
   const liveMatch = (matchModes.data ?? []).find((row) => row.match.status === "live");
 
   return (
-    <div className="space-y-6">
+    <div className="nfood-display-center space-y-5">
+      <div className="nfood-display-hero rounded-3xl border border-orange-100 bg-gradient-to-l from-[#111c2e] via-[#19334a] to-[#e76f3c] p-5 text-white shadow-lg sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-200">NFOOD DISPLAY STUDIO</p><h2 className="mt-2 text-2xl font-black sm:text-3xl">حوّل شاشة كوفي ناصر إلى واجهة بيع حيّة</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200">أدر الصور، العروض، الحركات، والروابط من مكان واحد، وشاهد النتيجة مباشرة على التلفاز.</p></div><div className="flex flex-wrap gap-2"><Button type="button" onClick={() => setDisplaySection("content")} className="rounded-xl bg-white/15 text-xs text-white hover:bg-white/25"><Sparkles className="h-4 w-4" /> صمّم الشرائح</Button><Button type="button" onClick={() => setDisplaySection("campaigns")} className="rounded-xl bg-orange-400 text-xs text-white hover:bg-orange-300"><Megaphone className="h-4 w-4" /> أطلق حملة</Button><Button type="button" onClick={() => setDisplaySection("preview")} className="rounded-xl bg-white/15 text-xs text-white hover:bg-white/25"><Eye className="h-4 w-4" /> شاهد الآن</Button></div></div>
+      </div>
       <div>
         <p className="text-xs font-black uppercase tracking-[0.18em] text-[#e76f3c]">Restaurant Screens & Marketing</p>
         <h2 className="mt-2 text-2xl font-black text-slate-900">مركز شاشات العرض</h2>
