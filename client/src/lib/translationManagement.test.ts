@@ -20,5 +20,11 @@ describe("translation management contracts", () => {
     expect(review).toContain('type: "category" | "item" | "addon"');
     expect(review).toContain("حفظ واعتماد يدوي");
     expect(review).toContain("updateAddon");
+    expect(modules).toContain("TranslationProviderSettings");
+    expect(modules).toContain("لغات المطعم والمنيو");
+    expect(modules).toContain("LIBRETRANSLATE_API_KEY");
+    expect(modules).toContain("MYMEMORY_EMAIL");
+    expect(modules).toContain("GOOGLE_TRANSLATE_API_KEY");
+    expect(modules).toContain("Fallback نشط");
   });
 });

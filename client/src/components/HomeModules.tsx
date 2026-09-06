@@ -1370,7 +1370,6 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
   if (menuSection === "addons")
     return (
       <div className="space-y-5">
-        <TranslationGlossaryPanel restaurantId={restaurantId} />
         <CatalogSwitch active={menuSection} onChange={setMenuSection} />
         <MenuAddonsPanel restaurantId={restaurantId} />
       </div>
@@ -1378,7 +1377,6 @@ function MenuView({ restaurantId }: { restaurantId: number }) {
   return (
     <div className="space-y-6">
       <CatalogSwitch active={menuSection} onChange={setMenuSection} />
-      <TranslationGlossaryPanel restaurantId={restaurantId} />
       <TranslationReviewPanel restaurantId={restaurantId} />
       <div className="flex flex-col gap-4 rounded-[26px] border-0 bg-white p-6 shadow-[0_18px_48px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -10106,6 +10104,25 @@ function BrandingPanel({ restaurantId, section = "all" }: { restaurantId: number
   );
 }
 
+function TranslationProviderSettings() {
+  const [provider, setProvider] = useState<"libretranslate" | "mymemory" | "google">("libretranslate");
+  const [enabled, setEnabled] = useState(true);
+  const providers = {
+    libretranslate: { name: "LibreTranslate", detail: "خيار مجاني أو منخفض التكلفة حسب الخادم · مفتاح اختياري", key: "LIBRETRANSLATE_API_KEY" },
+    mymemory: { name: "MyMemory", detail: "خطة مجانية للترجمة العامة · لا يحتاج مفتاحًا في الوضع الأساسي", key: "MYMEMORY_EMAIL" },
+    google: { name: "Google Cloud Translation", detail: "ترجمة متقدمة · تحتاج مفتاحًا مقيّدًا من أسرار الخادم", key: "GOOGLE_TRANSLATE_API_KEY" },
+  } as const;
+  const selectedProvider = providers[provider];
+  return <Card className="overflow-hidden rounded-2xl border-indigo-100 bg-gradient-to-l from-indigo-50/70 via-white to-white shadow-sm" dir="rtl">
+    <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-base font-black text-slate-900"><Languages className="h-4 w-4 text-indigo-600" /> مزود الترجمة التلقائية</CardTitle><p className="mt-1 text-xs leading-5 text-slate-500">اختر مزودًا مجانيًا أو متقدمًا. عند غياب المفتاح أو فشل المزود يعود النظام تلقائيًا إلى القاموس المحمي والنص اليدوي.</p></CardHeader>
+    <CardContent className="space-y-4 pt-0">
+      <div className="grid gap-3 md:grid-cols-3">{(Object.keys(providers) as Array<keyof typeof providers>).map((key) => <button type="button" key={key} onClick={() => setProvider(key)} className={`rounded-2xl border p-4 text-start transition ${provider === key ? "border-indigo-400 bg-indigo-50 shadow-sm" : "border-slate-200 bg-white hover:border-indigo-200"}`}><div className="flex items-center justify-between gap-2"><span className="text-sm font-black text-slate-900">{providers[key].name}</span><span className={`h-3 w-3 rounded-full ${provider === key ? "bg-indigo-600 ring-4 ring-indigo-100" : "bg-slate-200"}`} /></div><p className="mt-2 text-[11px] leading-5 text-slate-500">{providers[key].detail}</p></button>)}</div>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-white p-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-600" /><div><p className="text-xs font-black text-slate-800">المفتاح الآمن: {selectedProvider.key}</p><p className="mt-1 text-[10px] text-slate-500">يُضاف من أسرار المشروع ولا يُحفظ في المتصفح أو قاعدة بيانات المطعم.</p></div></div><label className="flex items-center gap-2 text-xs font-bold text-slate-600"><input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} className="h-4 w-4 accent-indigo-600" /> تفعيل الترجمة التلقائية</label></div>
+      <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Fallback نشط: القاموس المحمي ← MyMemory/LibreTranslate ← النص الأصلي عند تعذر المزود.</div>
+    </CardContent>
+  </Card>;
+}
+
 function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
   const utils = trpc.useUtils();
@@ -10161,7 +10178,10 @@ function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
     ur: { name: "اردو", detail: "RTL · اردو" },
   };
   return (
-    <Card className="mb-6 overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
+    <>
+      <TranslationGlossaryPanel restaurantId={restaurantId} />
+      <TranslationProviderSettings />
+      <Card className="mb-6 overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
       <CardHeader className="border-b border-slate-100 bg-gradient-to-l from-[#fff7f0] to-white">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -10227,10 +10247,10 @@ function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
           </div>
         </div>
       </CardContent>
-    </Card>
+        </Card>
+    </>
   );
 }
-
 function RestaurantProfilePanel({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
   const restaurantQuery = trpc.platform.restaurantById.useQuery(
