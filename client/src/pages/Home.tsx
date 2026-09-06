@@ -318,7 +318,8 @@ export default function Home() {
   const title = localizedNavItems.find((item) => item.key === active)?.label ?? t("overview");
   const sidebarGroups = [
     { id: "restaurant-overview", label: t("overview"), keys: ["overview", "admin"] as NavKey[] },
-    { id: "restaurant-operations", label: t("operations"), keys: ["operations", "orders", "pos", "kds", "menu", "tables", "waiters", "drivers", "printers", "inventory", "reservations"] as NavKey[] },
+    { id: "restaurant-operations", label: t("operations"), keys: ["operations", "orders", "pos", "kds", "menu", "tables", "waiters", "printers", "inventory", "reservations"] as NavKey[] },
+    { id: "restaurant-drivers", label: language === "ar" ? "السائقون والتوصيل" : language === "fr" ? "Chauffeurs et livraison" : language === "ur" ? "ڈرائیورز اور ڈیلیوری" : "Drivers & delivery", keys: ["drivers"] as NavKey[] },
     { id: "restaurant-people-growth", label: `${t("team")} · ${t("marketing")}`, keys: ["team", "marketing", "remote"] as NavKey[] },
     { id: "restaurant-workspace", label: t("accountPlatform"), keys: ["settings", "branches", "files"] as NavKey[] },
     { id: "restaurant-system", label: t("security"), keys: ["languages", "security", "health"] as NavKey[] },
