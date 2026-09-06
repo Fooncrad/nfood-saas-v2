@@ -5171,3 +5171,64 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
 @media (min-width: 1800px) {
   .nfood-menu-shell .category-results { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
 }
+
+/* Use the full desktop canvas for the catalog while keeping mobile gutters intact. */
+@media (min-width: 1024px) {
+  .nfood-menu-shell {
+    width: 100% !important;
+  }
+  main:has(.nfood-menu-shell) {
+    padding-inline: 1rem !important;
+  }
+  main:has(.nfood-menu-shell) > .mx-auto.max-w-7xl {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .nfood-menu-shell .nfood-menu-section,
+  .nfood-menu-shell .category-results {
+    width: 100% !important;
+  }
+  .nfood-menu-shell .category-results {
+    gap: .5rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-price-block {
+    min-height: 2.05rem !important;
+    flex-wrap: wrap !important;
+    align-content: center !important;
+    align-items: baseline !important;
+    column-gap: .35rem !important;
+    row-gap: .2rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-price-compare {
+    color: #94a3b8 !important;
+    font-size: .78rem !important;
+    font-weight: 900 !important;
+    text-decoration-thickness: 2px !important;
+  }
+  .nfood-menu-shell .nfood-menu-discount {
+    display: inline-flex !important;
+    align-items: center !important;
+    border: 1px solid #fda4af !important;
+    border-radius: 999px !important;
+    background: #ffe4e6 !important;
+    color: #be123c !important;
+    padding: .18rem .38rem !important;
+    font-size: .68rem !important;
+    font-weight: 950 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+  }
+  .nfood-menu-shell .nfood-menu-price-current {
+    display: block !important;
+    margin-top: .12rem !important;
+    color: var(--menu-primary) !important;
+    font-size: 1.02rem !important;
+    font-weight: 950 !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+  }
+  .nfood-menu-shell .nfood-menu-item-title {
+    font-size: .88rem !important;
+    line-height: 1.35 !important;
+  }
+}
