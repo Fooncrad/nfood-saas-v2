@@ -114,6 +114,12 @@ function DashboardLayoutContent({
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
+  const [dashboardTheme] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("nfood-dashboard-theme-active") ?? "null") as { primary?: string; accent?: string } | null;
+      return { primary: /^#[0-9A-Fa-f]{6}$/.test(saved?.primary ?? "") ? saved!.primary! : "#e76f3c", accent: /^#[0-9A-Fa-f]{6}$/.test(saved?.accent ?? "") ? saved!.accent! : "#f59e0b" };
+    } catch { return { primary: "#e76f3c", accent: "#f59e0b" }; }
+  });
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
@@ -161,6 +167,7 @@ function DashboardLayoutContent({
           collapsible="icon"
           side={sidebarSide}
           className="nfood-unified-sidebar border-0"
+          style={{ "--sidebar-primary": dashboardTheme.primary, "--sidebar-ring": dashboardTheme.accent, "--dashboard-primary": dashboardTheme.primary, "--dashboard-accent": dashboardTheme.accent } as CSSProperties}
           disableTransition={isResizing}
         >
           <SidebarHeader className="h-14 justify-center transition-[height,padding] duration-200">
@@ -246,7 +253,7 @@ function DashboardLayoutContent({
         />
       </div>
 
-      <SidebarInset className="nfood-dashboard-inset">
+      <SidebarInset className="nfood-dashboard-inset" style={{ borderTopColor: dashboardTheme.accent, "--dashboard-primary": dashboardTheme.primary, "--dashboard-accent": dashboardTheme.accent } as CSSProperties}>
         {isMobile && (
           <div className="flex border-b h-14 items-center justify-between bg-background/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-2">

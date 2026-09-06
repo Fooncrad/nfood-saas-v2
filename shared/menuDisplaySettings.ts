@@ -48,6 +48,11 @@ export type MenuDisplaySettings = {
   menuBackgroundColor: string;
   cardTextColor: string;
   cartButtonColor: string;
+  darkModeEnabled: boolean;
+  darkBackgroundColor: string;
+  darkSurfaceColor: string;
+  darkTextColor: string;
+  menuBorderColor: string;
   cartButtonStyle: MenuButtonStyle;
   itemLayout: MenuItemLayout;
   detailWindow: MenuDetailWindowSettings;
@@ -74,6 +79,11 @@ export const defaultMenuDisplaySettings: MenuDisplaySettings = {
   menuBackgroundColor: "#fbf7f0",
   cardTextColor: "#172235",
   cartButtonColor: "#e76f3c",
+  darkModeEnabled: true,
+  darkBackgroundColor: "#10151f",
+  darkSurfaceColor: "#1b2432",
+  darkTextColor: "#fff8f2",
+  menuBorderColor: "#eadfce",
   cartButtonStyle: "filled",
   itemLayout: "cardless",
   detailWindow: {
@@ -135,6 +145,11 @@ export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySe
       menuBackgroundColor: isHex(parsed.menuBackgroundColor) ? parsed.menuBackgroundColor : defaultMenuDisplaySettings.menuBackgroundColor,
       cardTextColor: isHex(parsed.cardTextColor) ? parsed.cardTextColor : defaultMenuDisplaySettings.cardTextColor,
       cartButtonColor: isHex(parsed.cartButtonColor) ? parsed.cartButtonColor : defaultMenuDisplaySettings.cartButtonColor,
+      darkModeEnabled: parsed.darkModeEnabled !== false,
+      darkBackgroundColor: isHex(parsed.darkBackgroundColor) ? parsed.darkBackgroundColor : defaultMenuDisplaySettings.darkBackgroundColor,
+      darkSurfaceColor: isHex(parsed.darkSurfaceColor) ? parsed.darkSurfaceColor : defaultMenuDisplaySettings.darkSurfaceColor,
+      darkTextColor: isHex(parsed.darkTextColor) ? parsed.darkTextColor : defaultMenuDisplaySettings.darkTextColor,
+      menuBorderColor: isHex(parsed.menuBorderColor) ? parsed.menuBorderColor : defaultMenuDisplaySettings.menuBorderColor,
       cartButtonStyle,
       itemLayout,
       detailWindow,
