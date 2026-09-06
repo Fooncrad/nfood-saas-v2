@@ -10067,6 +10067,7 @@ function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
     { enabled: Boolean(user), retry: false }
   );
   const [selected, setSelected] = useState<string[]>(["ar", "en", "fr", "ur"]);
+  const [defaultLanguage, setDefaultLanguage] = useState("ar");
   const [notice, setNotice] = useState("");
   const update = trpc.platform.updateBranding.useMutation({
     onSuccess: async () => {
@@ -10079,6 +10080,7 @@ function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
     if (!query.data) return;
     try {
       const parsed = JSON.parse(query.data.languagesJson || '["ar","en","fr"]');
+      if (Array.isArray(parsed) && typeof parsed[0] === "string") setDefaultLanguage(parsed[0]);
       setSelected(
         Array.isArray(parsed)
           ? parsed.filter((value): value is string =>
@@ -10101,7 +10103,9 @@ function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
       setNotice("اختر لغة واحدة على الأقل");
       return;
     }
-    update.mutate({ ...query.data, menuDisplaySettingsJson: query.data.menuDisplaySettingsJson ?? undefined, languagesJson: JSON.stringify(selected) });
+    const effectiveDefault = selected.includes(defaultLanguage) ? defaultLanguage : selected[0];
+    const orderedLanguages = [effectiveDefault, ...selected.filter((language) => language !== effectiveDefault)];
+    update.mutate({ ...query.data, menuDisplaySettingsJson: query.data.menuDisplaySettingsJson ?? undefined, languagesJson: JSON.stringify(orderedLanguages) });
   };
   const labels: Record<string, { name: string; detail: string }> = {
     ar: { name: "العربية", detail: "RTL · اللغة الأساسية" },
@@ -10126,7 +10130,7 @@ function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
       </CardHeader>
       <CardContent className="space-y-4 pt-5">
         <div className="grid gap-3 md:grid-cols-3">
-          {["ar", "en", "fr"].map(language => (
+          {["ar", "en", "fr", "ur"].map(language => (
             <button
               type="button"
               key={language}
@@ -10154,6 +10158,12 @@ function LanguageSettingsPanel({ restaurantId }: { restaurantId: number }) {
             </button>
           ))}
         </div>
+        <label className="grid gap-2 rounded-2xl border border-orange-100 bg-orange-50/60 p-4 text-sm font-black text-slate-800">اللغة الافتراضية للمنيو
+          <select value={selected.includes(defaultLanguage) ? defaultLanguage : selected[0] ?? "ar"} onChange={(event) => setDefaultLanguage(event.target.value)} className="h-11 rounded-xl border border-orange-200 bg-white px-3 text-sm font-bold" aria-label="اللغة الافتراضية للمنيو">
+            {Object.entries(labels).filter(([code]) => selected.includes(code)).map(([code, label]) => <option key={code} value={code}>{label.name} · {code.toUpperCase()}</option>)}
+          </select>
+          <span className="text-xs font-normal text-slate-500">تظهر هذه اللغة تلقائيًا للزائر ما لم يختر لغة أخرى.</span>
+        </label>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-slate-500">
             تظهر الترجمة العامة بعد اعتمادها، مع fallback تلقائي للغة الأساسية.

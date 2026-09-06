@@ -16,6 +16,9 @@ describe("POS and KDS realtime alerts", () => {
     expect(source).toContain("AudioContext");
     expect(source).toContain("void audioContext.current.resume()");
     expect(source).toContain("localStorage.setItem(`nfood-order-alert-sound-${mode}`");
+    expect(source).toContain("nfood-order-alert-volume-${mode}");
+    expect(source).toContain('type="range"');
+    expect(source).toContain("alertVolume");
     expect(source).toContain("visual alerts remain the source of truth");
   });
 
