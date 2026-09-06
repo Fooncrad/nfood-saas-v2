@@ -18,6 +18,9 @@ describe("display center organization", () => {
     expect(source).toContain("تعبئة 50 شريحة تجريبية");
     expect(source).toContain("seedExternalSlides");
     expect(source).toContain("35 صورة خارجية");
+    expect(publicDisplaySource).toContain("nfood-display-copy-panel");
+    expect(source).toContain("تعذر حفظ الصورة الخارجية");
+    expect(source).toContain("/manus-storage/nasser-outside-01");
     expect(source).toContain("transitionEffect");
     expect(source).toContain("badgeText");
     expect(source).toContain("slideDuration");
