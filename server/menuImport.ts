@@ -33,6 +33,34 @@ function absoluteUrl(value: unknown, base: string) {
   } catch { return undefined; }
 }
 
+function parsePriceText(value: unknown): string | undefined {
+  const matches = cleanText(value).match(/\d+(?:[.,]\d{1,2})?/g) ?? [];
+  const parsed = matches.map(entry => Number(entry.replace(",", "."))).filter(entry => Number.isFinite(entry) && entry >= 0);
+  return parsed.length ? parsed[0].toFixed(2) : undefined;
+}
+
+function parseHtmlMenu(html: string, base: string, output: ImportedMenuItem[], categories: Set<string>) {
+  const sectionPattern = /<div[^>]*class=["'][^"']*singleCategoryHeader[^"']*["'][^>]*>[\s\S]*?<h4[^>]*>([\s\S]*?)<\/h4>[\s\S]*?<\/div>/gi;
+  const sectionHeaders: Array<{ index: number; name: string }> = [];
+  for (const match of Array.from(html.matchAll(sectionPattern))) {
+    const name = cleanText(match[1]);
+    if (name) sectionHeaders.push({ index: match.index ?? 0, name });
+  }
+  const cardStarts = Array.from(html.matchAll(/<div[^>]*class=["'][^"']*modern_item_card[^"']*["'][^>]*>/gi));
+  for (let cardIndex = 0; cardIndex < cardStarts.length; cardIndex += 1) {
+    const start = cardStarts[cardIndex].index ?? 0;
+    const end = cardStarts[cardIndex + 1]?.index ?? html.length;
+    const block = html.slice(start, end);
+    const index = start;
+    const category = [...sectionHeaders].reverse().find(section => section.index < index)?.name || "عام";
+    const name = cleanText(block.match(/<h4[^>]*class=["'][^"']*item_title[^"']*["'][^>]*>([\s\S]*?)<\/h4>/i)?.[1]);
+    const description = cleanText(block.match(/<div[^>]*class=["'][^"']*item_desc[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1]);
+    const price = parsePriceText(block.match(/<div[^>]*class=["'][^"']*priceGroup[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1]);
+    const image = block.match(/(?:data-src|data-original|src)=["']([^"']+)["']/i)?.[1];
+    if (name && price) { categories.add(category); output.push({ category, name, description: description || undefined, price, imageUrl: absoluteUrl(image, base) }); }
+  }
+}
+
 function priceFromOffer(offer: any): string | undefined {
   const raw = offer?.price ?? offer?.lowPrice ?? offer?.highPrice;
   const value = Number(String(raw ?? "").replace(/[^\d.]/g, ""));
@@ -77,9 +105,10 @@ export async function previewMenuFromUrl(sourceUrl: string): Promise<ImportedMen
   Array.from(jsonLdMatches).forEach(match => {
     try { walkJsonLd(JSON.parse(match[1]), parsed.toString(), items, categories); } catch { warnings.push("تعذر قراءة جزء JSON-LD من المصدر"); }
   });
+  if (!items.length) parseHtmlMenu(html, parsed.toString(), items, categories);
   const unique = new Map<string, ImportedMenuItem>();
   for (const item of items) unique.set(`${item.category.toLowerCase()}::${item.name.toLowerCase()}::${item.price}`, item);
-  if (!unique.size) warnings.push("لم يُعثر على عناصر منظمة؛ قد يحتاج الموقع إلى تصدير JSON-LD أو مراجعة يدوية");
+  if (!unique.size) warnings.push("لم يُعثر على عناصر قابلة للاستيراد؛ قد يحتاج الموقع إلى مراجعة يدوية");
   const title = cleanText(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]);
   return { sourceUrl: parsed.toString(), title: title || undefined, categories: Array.from(categories).slice(0, 200), items: Array.from(unique.values()).slice(0, 1000), warnings: Array.from(new Set(warnings)) };
 }
