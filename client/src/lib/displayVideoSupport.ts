@@ -19,7 +19,7 @@ export function isSupportedDisplayVideoType(contentType: string): boolean {
   return ["video/mp4", "video/webm", "video/ogg"].includes(contentType.toLowerCase());
 }
 
-export function displayVideoAttributes() {
-  return { autoPlay: true, muted: true, loop: true, playsInline: true } as const;
+export function displayVideoAttributes(loop = true) {
+  return { autoPlay: true, muted: true, loop, playsInline: true } as const;
 }
 

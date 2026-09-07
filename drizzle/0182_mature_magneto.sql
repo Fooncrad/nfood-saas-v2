@@ -1,0 +1,1 @@
+ALTER TABLE `restaurantDisplaySlides` ADD `videoLoop` boolean DEFAULT true NOT NULL;

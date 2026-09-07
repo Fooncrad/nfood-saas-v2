@@ -1275,6 +1275,13 @@
       "when": 1788798096554,
       "tag": "0181_daffy_queen_noir",
       "breakpoints": true
+    },
+    {
+      "idx": 182,
+      "version": "5",
+      "when": 1788800550711,
+      "tag": "0182_mature_magneto",
+      "breakpoints": true
     }
   ]
 }
