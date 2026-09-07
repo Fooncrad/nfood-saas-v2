@@ -5406,3 +5406,20 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   .nfood-display-root .nfood-display-copy-panel,
   .nfood-display-root .nfood-display-ad-bar { animation: none !important; filter: none !important; transform: none !important; }
 }
+
+/* Display identity bar: three explicit zones, independent of RTL text flow. */
+.nfood-display-topbar { position: relative; z-index: 36; display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; width: 100%; min-height: 58px; gap: 1rem; direction: ltr; }
+.nfood-display-brand { justify-self: start; padding-top: .15rem; color: #fed7aa; font-size: clamp(.7rem, 1vw, 1rem); font-weight: 950; letter-spacing: .24em; white-space: nowrap; text-shadow: 0 2px 12px #000; }
+.nfood-display-cafe { justify-self: center; max-width: 35vw; overflow: hidden; padding: .25rem 1.1rem .45rem; border-bottom: 2px solid #fb923c; color: #fff; font-size: clamp(.9rem, 1.5vw, 1.45rem); font-weight: 950; line-height: 1.2; text-align: center; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 2px 12px #000; direction: rtl; }
+.nfood-display-status { justify-self: end; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: .45rem; max-width: 42vw; direction: rtl; }
+.nfood-display-status > * { white-space: nowrap; text-shadow: 0 1px 8px #000; }
+.nfood-display-root .nfood-display-ad-bar { bottom: 0 !important; left: 0 !important; right: 0 !important; border-radius: 1.25rem 1.25rem 0 0 !important; min-height: 64px !important; max-height: 10vh !important; padding-inline: clamp(1rem, 4vw, 4rem) !important; }
+.nfood-display-root > .relative > footer { bottom: 0 !important; z-index: 31 !important; opacity: .95; }
+@media (max-width: 900px), (orientation: portrait) {
+  .nfood-display-topbar { grid-template-columns: 1fr auto; min-height: 52px; gap: .5rem; }
+  .nfood-display-cafe { grid-column: 1 / -1; grid-row: 2; justify-self: center; max-width: 70vw; order: 3; }
+  .nfood-display-brand { grid-column: 1; grid-row: 1; }
+  .nfood-display-status { grid-column: 2; grid-row: 1; max-width: 62vw; gap: .25rem; }
+  .nfood-display-status > * { padding: .35rem .55rem !important; font-size: .65rem !important; }
+  .nfood-display-root .nfood-display-ad-bar { max-height: 13vh !important; min-height: 54px !important; }
+}
