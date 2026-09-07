@@ -5347,3 +5347,24 @@ main > .relative > footer { position: absolute; inset-inline: 4vw; bottom: 1vh; 
   main > .relative { padding: 1rem 5vw 13vh !important; }
 }
 @media (prefers-reduced-motion: reduce) { .nfood-display-copy-panel, .nfood-display-qr, .nfood-display-ad-bar { transition: none !important; animation: none !important; } }
+
+/* Live display motion: soft image crossfade and restrained promo-bar attention cue. */
+.nfood-display-media-fade { animation: nfood-display-image-crossfade 720ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.nfood-display-ad-bar { animation: nfood-display-ad-enter 520ms cubic-bezier(0.23, 1, 0.32, 1) both; transform-origin: center bottom; }
+.nfood-display-ad-bar > div { animation: nfood-display-ad-content 8s ease-in-out infinite; }
+@keyframes nfood-display-image-crossfade {
+  from { opacity: 0; transform: scale(1.025); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes nfood-display-ad-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes nfood-display-ad-content {
+  0%, 100% { transform: translateX(0); }
+  45% { transform: translateX(-4px); }
+  55% { transform: translateX(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nfood-display-media-fade, .nfood-display-ad-bar, .nfood-display-ad-bar > div { animation: none !important; transform: none !important; }
+}
