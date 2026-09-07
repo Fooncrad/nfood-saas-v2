@@ -1,0 +1,1 @@
+ALTER TABLE `restaurantDisplayScreens` ADD `displayLayout` enum('single','double','triple','quad') DEFAULT 'single' NOT NULL;
