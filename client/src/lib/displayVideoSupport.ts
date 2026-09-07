@@ -16,7 +16,8 @@ export function isDisplayVideoUrl(value: string): boolean {
 }
 
 export function isSupportedDisplayVideoType(contentType: string): boolean {
-  return ["video/mp4", "video/webm", "video/ogg"].includes(contentType.toLowerCase());
+  const normalized = contentType.trim().toLowerCase();
+  return normalized.startsWith("video/") || normalized === "application/octet-stream" || normalized === "binary/octet-stream";
 }
 
 export function displayVideoAttributes(loop = true) {

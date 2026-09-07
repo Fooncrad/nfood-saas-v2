@@ -11,6 +11,8 @@ describe("display video support", () => {
   it("supports common browser video types", () => {
     expect(isSupportedDisplayVideoType("video/mp4")).toBe(true);
     expect(isSupportedDisplayVideoType("video/webm")).toBe(true);
+    expect(isSupportedDisplayVideoType("video/quicktime")).toBe(true);
+    expect(isSupportedDisplayVideoType("application/octet-stream")).toBe(true);
     expect(isSupportedDisplayVideoType("image/png")).toBe(false);
   });
 
