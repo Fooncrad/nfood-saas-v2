@@ -5438,3 +5438,17 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   .nfood-display-root .nfood-display-ad-bar > div,
   .nfood-display-root .nfood-display-ad-bar > p { animation: none !important; filter: none !important; transform: none !important; }
 }
+
+/* Calm image reveal: fade + slight scale, no curtain/wipe/clip transition. */
+@keyframes nfood-display-image-reveal {
+  from { opacity: 0; transform: scale(1.035); filter: brightness(.92) saturate(.92); }
+  to { opacity: 1; transform: scale(1); filter: brightness(1.1) saturate(1.125); }
+}
+.nfood-display-root .nfood-display-media-enter,
+.nfood-display-root .nfood-display-media-fade,
+.nfood-display-root .nfood-display-image { animation: nfood-display-image-reveal 680ms cubic-bezier(.23,1,.32,1) both !important; clip-path: none !important; mask-image: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .nfood-display-root .nfood-display-media-enter,
+  .nfood-display-root .nfood-display-media-fade,
+  .nfood-display-root .nfood-display-image { animation: none !important; transform: none !important; filter: brightness(1.1) saturate(1.125) !important; }
+}
