@@ -5423,3 +5423,18 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   .nfood-display-status > * { padding: .35rem .55rem !important; font-size: .65rem !important; }
   .nfood-display-root .nfood-display-ad-bar { max-height: 13vh !important; min-height: 54px !important; }
 }
+
+/* Readability veil for the top identity over bright or dark campaign photography. */
+.nfood-display-topbar::before { content: ""; position: absolute; z-index: -1; inset: -1rem -1.5rem -.75rem; border-radius: 1.35rem; background: linear-gradient(180deg, rgba(3,8,18,.82) 0%, rgba(3,8,18,.46) 62%, rgba(3,8,18,0) 100%); filter: drop-shadow(0 8px 18px rgba(0,0,0,.38)); pointer-events: none; }
+.nfood-display-brand, .nfood-display-cafe, .nfood-display-status { position: relative; z-index: 1; text-shadow: 0 2px 3px rgba(0,0,0,.95), 0 0 16px rgba(0,0,0,.85); }
+@keyframes nfood-display-ad-content-in {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); filter: blur(3px); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }
+}
+.nfood-display-root .nfood-display-ad-bar > div,
+.nfood-display-root .nfood-display-ad-bar > p { animation: nfood-display-ad-content-in 420ms cubic-bezier(.23,1,.32,1) both; }
+.nfood-display-root .nfood-display-ad-bar > p { animation-delay: 60ms; }
+@media (prefers-reduced-motion: reduce) {
+  .nfood-display-root .nfood-display-ad-bar > div,
+  .nfood-display-root .nfood-display-ad-bar > p { animation: none !important; filter: none !important; transform: none !important; }
+}
