@@ -15,6 +15,7 @@ function writeKioskPreference(token: string) {
 }
 
 type CachedDisplayPayload = { screen: any; slides: any[]; match: any };
+type DisplayWakeLock = { released: boolean; release: () => Promise<void>; addEventListener: (type: "release", listener: () => void) => void };
 const displayCacheKey = (token: string) => `nfood-display-playback:${token}`;
 function readCachedDisplay(token: string): CachedDisplayPayload | null {
   if (typeof window === "undefined" || !token) return null;
@@ -78,6 +79,29 @@ export default function PublicDisplay() {
   useEffect(() => { slides.forEach((item) => { const url = item?.externalImageUrl ?? item?.mediaFile?.publicUrl ?? item?.menuItem?.imageUrl; if (url && typeof window !== "undefined") { const image = new Image(); image.decoding = "async"; image.src = url; } }); }, [slides]);
   useEffect(() => { if (!playbackToken || typeof window === "undefined" || !window.WebSocket) { setConnectionState("offline"); return; } let socket: WebSocket | null = null; let retryTimer: number | undefined; let heartbeatTimer: number | undefined; let retryAttempt = 0; let disposed = false; const connect = () => { if (disposed) return; setConnectionState("connecting"); const protocol = window.location.protocol === "https:" ? "wss:" : "ws:"; socket = new WebSocket(`${protocol}//${window.location.host}/api/display-ws?token=${encodeURIComponent(playbackToken)}`); socket.onopen = () => { retryAttempt = 0; setConnectionState("connected"); }; socket.onmessage = (event) => { try { const message = JSON.parse(event.data) as { type?: string }; if (message.type === "display.updated") void playback.refetch(); } catch { /* تجاهل رسالة غير معروفة */ } }; socket.onclose = () => { if (disposed) return; setConnectionState("offline"); const delay = Math.min(30_000, 1_000 * 2 ** Math.min(retryAttempt, 5)); retryAttempt += 1; retryTimer = window.setTimeout(connect, delay); }; socket.onerror = () => socket?.close(); }; const onOnline = () => { retryAttempt = 0; if (socket?.readyState !== WebSocket.OPEN) { socket?.close(); connect(); } }; const onOffline = () => setConnectionState("offline"); window.addEventListener("online", onOnline); window.addEventListener("offline", onOffline); connect(); heartbeatTimer = window.setInterval(() => { if (socket?.readyState === WebSocket.OPEN) socket.send("ping"); }, 15_000); return () => { disposed = true; if (retryTimer) window.clearTimeout(retryTimer); if (heartbeatTimer) window.clearInterval(heartbeatTimer); window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); socket?.close(); }; }, [playbackToken, playback.refetch]);
   useEffect(() => { if (typeof document === "undefined") return; setSupportsFullscreen(typeof document.documentElement.requestFullscreen === "function"); }, []);
+  useEffect(() => {
+    if (!kioskMode || typeof navigator === "undefined" || typeof document === "undefined" || typeof window === "undefined") return;
+    const wakeLockApi = (navigator as Navigator & { wakeLock?: { request: (type: "screen") => Promise<DisplayWakeLock> } }).wakeLock;
+    if (!wakeLockApi) return;
+    let sentinel: DisplayWakeLock | null = null;
+    let disposed = false;
+    let retryTimer: number | undefined;
+    const acquire = async () => {
+      if (disposed || document.visibilityState !== "visible") return;
+      try {
+        sentinel = await wakeLockApi.request("screen");
+        sentinel.addEventListener("release", () => {
+          if (!disposed) retryTimer = window.setTimeout(() => void acquire(), 500);
+        });
+      } catch {
+        // المتصفح أو نظام التشغيل قد يرفض القفل؛ تبقى المزامنة والحركة نشطة.
+      }
+    };
+    const onVisibility = () => { if (document.visibilityState === "visible") void acquire(); };
+    void acquire();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => { disposed = true; if (retryTimer) window.clearTimeout(retryTimer); document.removeEventListener("visibilitychange", onVisibility); if (sentinel && !sentinel.released) void sentinel.release(); };
+  }, [kioskMode]);
   useEffect(() => { if (!kioskMode || typeof document === "undefined") return; const onFullscreen = () => { const active = Boolean(document.fullscreenElement); setFullscreen(active); if (!active) setShowPinPrompt(true); }; document.addEventListener("fullscreenchange", onFullscreen); return () => document.removeEventListener("fullscreenchange", onFullscreen); }, [kioskMode]);
   useEffect(() => { if (!kioskMode || typeof window === "undefined") return; const onKeyDown = (event: KeyboardEvent) => { if (event.key.toLowerCase() === "f" && !event.ctrlKey && !event.metaKey && !event.altKey && supportsFullscreen) enterFullscreen(); }; window.addEventListener("keydown", onKeyDown); return () => window.removeEventListener("keydown", onKeyDown); }, [kioskMode, supportsFullscreen]);
   useEffect(() => { setImageFailed(false); }, [displayImage, index]);
