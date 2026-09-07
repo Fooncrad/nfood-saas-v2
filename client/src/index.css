@@ -5329,21 +5329,21 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
 }
 
 /* NFOOD DISPLAY fixed-zone layout: header, copy, QR and promo never overlap. */
-.nfood-display-copy-panel { position: absolute !important; inset-inline-start: 5vw; inset-inline-end: auto; top: 50%; width: min(54vw, 820px) !important; max-height: 48vh; transform: translateY(-50%); z-index: 12; overflow: hidden; text-wrap: balance; }
-.nfood-display-qr { right: 4vw !important; left: auto !important; top: auto !important; bottom: 17vh !important; z-index: 24 !important; width: clamp(150px, 14vw, 240px); }
+.nfood-display-copy-panel { position: absolute !important; left: 5vw !important; right: auto !important; inset-inline-start: auto !important; inset-inline-end: auto !important; top: 46%; width: min(48vw, 760px) !important; max-height: 42vh; transform: translateY(-50%); z-index: 12; overflow: hidden; text-wrap: balance; }
+.nfood-display-qr { right: 4vw !important; left: auto !important; top: auto !important; bottom: 16vh !important; z-index: 24 !important; width: clamp(150px, 14vw, 240px); max-height: 34vh; overflow: hidden; }
 .nfood-display-qr svg { display: block; width: 100%; height: auto; }
 .nfood-display-qr .nfood-display-promo-ribbon { min-width: 0; max-width: none; width: 100%; }
-.nfood-display-ad-bar { left: 4vw !important; right: 4vw !important; bottom: 4vh !important; min-height: 64px; z-index: 30 !important; padding-inline: clamp(16px, 2vw, 32px) !important; }
+.nfood-display-ad-bar { left: 4vw !important; right: 4vw !important; bottom: 3vh !important; min-height: 64px; max-height: 11vh; z-index: 30 !important; padding-inline: clamp(16px, 2vw, 32px) !important; overflow: hidden; }
 .nfood-display-ad-bar > div, .nfood-display-ad-bar > p { min-width: 0; }
 main > .relative { position: relative; z-index: 18; min-height: 100dvh; padding-bottom: 13vh; }
 main > .relative > header { position: relative; z-index: 36; min-height: 56px; }
 main > .relative > footer { position: absolute; inset-inline: 4vw; bottom: 1vh; z-index: 35; pointer-events: none; }
 @media (max-width: 900px), (orientation: portrait) {
-  .nfood-display-copy-panel { inset-inline: 6vw; top: 46%; width: auto !important; max-height: 42vh; transform: translateY(-50%); padding: 1.25rem !important; }
+  .nfood-display-copy-panel { left: 6vw !important; right: 6vw !important; inset-inline: auto !important; top: 43%; width: auto !important; max-height: 36vh; transform: translateY(-50%); padding: 1.25rem !important; }
   .nfood-display-copy-panel h1 { font-size: clamp(1.8rem, 6vw, 3.5rem); }
   .nfood-display-copy-panel p { font-size: clamp(.85rem, 2.5vw, 1.25rem); line-height: 1.55; }
-  .nfood-display-qr { right: 5vw !important; bottom: 18vh !important; width: clamp(112px, 23vw, 170px); }
-  .nfood-display-ad-bar { left: 5vw !important; right: 5vw !important; bottom: 3vh !important; min-height: 52px; }
+  .nfood-display-qr { right: 5vw !important; bottom: 17vh !important; width: clamp(112px, 20vw, 170px); }
+  .nfood-display-ad-bar { left: 5vw !important; right: 5vw !important; bottom: 2vh !important; min-height: 52px; max-height: 12vh; }
   main > .relative { padding: 1rem 5vw 13vh !important; }
 }
 @media (prefers-reduced-motion: reduce) { .nfood-display-copy-panel, .nfood-display-qr, .nfood-display-ad-bar { transition: none !important; animation: none !important; } }
