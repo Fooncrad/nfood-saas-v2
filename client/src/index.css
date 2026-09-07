@@ -5306,3 +5306,24 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
     width: 100%;
   }
 }
+
+/* Compact display image upload and crop controls */
+.nfood-slide-upload-panel {
+  max-height: 18rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.nfood-slide-upload-panel .nfood-slide-crop-panel {
+  max-height: 13rem;
+  overflow-y: auto;
+}
+.nfood-slide-upload-panel img {
+  object-fit: cover;
+}
+.nfood-display-ad-bar {
+  min-height: 3.25rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nfood-display-ad-bar { animation: nfood-ad-pulse 3.2s ease-in-out infinite; }
+  @keyframes nfood-ad-pulse { 0%, 100% { box-shadow: 0 18px 45px -28px rgba(231,111,60,.55); } 50% { box-shadow: 0 20px 52px -24px rgba(231,111,60,.82); } }
+}
