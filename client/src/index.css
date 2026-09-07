@@ -5235,11 +5235,11 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
 
 /* NFOOD TV display motion system */
 .nfood-display-slide-enter {
-  animation: nfood-display-slide-in 720ms cubic-bezier(.22, .8, .2, 1) both;
+  animation: nfood-display-slide-in 280ms cubic-bezier(.22, .8, .2, 1) both;
   will-change: transform, opacity, filter;
 }
 .nfood-display-media-enter {
-  animation: nfood-display-media-in 900ms cubic-bezier(.22, .8, .2, 1) both;
+  animation: nfood-display-media-in 360ms cubic-bezier(.22, .8, .2, 1) both;
   will-change: transform, opacity, filter;
 }
 @keyframes nfood-display-slide-in {
