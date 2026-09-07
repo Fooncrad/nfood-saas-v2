@@ -1499,7 +1499,7 @@ export const restaurantDisplayScreens = mysqlTable("restaurantDisplayScreens", {
   qrBackground: varchar("qrBackground", { length: 20 }).default("#111c2e").notNull(),
   copyBackground: varchar("copyBackground", { length: 20 }).default("#07111fcc").notNull(),
   adBackground: varchar("adBackground", { length: 20 }).default("#111c2ee6").notNull(),
-  displayLayout: mysqlEnum("displayLayout", ["single", "double", "triple", "quad"]).default("single").notNull(),
+  displayLayout: mysqlEnum("displayLayout", ["single", "double", "triple", "quad", "split"]).default("single").notNull(),
   status: mysqlEnum("status", ["draft", "active", "paused"]).default("draft").notNull(),
   refreshSeconds: int("refreshSeconds").default(30).notNull(),
   createdByUserId: int("createdByUserId").notNull().references(() => users.id),

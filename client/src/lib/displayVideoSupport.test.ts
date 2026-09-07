@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayVideoAttributes, getDisplayLayoutCount, isDisplayVideoUrl, isSupportedDisplayVideoType } from "./displayVideoSupport";
+import { displayVideoAttributes, getDisplayLayoutCount, isDisplayVideoUrl, isSupportedDisplayVideoType, isSplitDisplayLayout } from "./displayVideoSupport";
 
 describe("display video support", () => {
   it("accepts only safe external or NFOOD storage URLs", () => {
@@ -19,6 +19,9 @@ describe("display video support", () => {
     expect(getDisplayLayoutCount("double")).toBe(2);
     expect(getDisplayLayoutCount("triple")).toBe(3);
     expect(getDisplayLayoutCount("quad")).toBe(4);
+    expect(getDisplayLayoutCount("split")).toBe(1);
+    expect(isSplitDisplayLayout("split")).toBe(true);
+    expect(isSplitDisplayLayout("quad")).toBe(false);
   });
 
   it("keeps video playback autoplay-safe for signage", () => {
