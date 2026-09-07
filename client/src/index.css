@@ -5452,3 +5452,18 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   .nfood-display-root .nfood-display-media-fade,
   .nfood-display-root .nfood-display-image { animation: none !important; transform: none !important; filter: brightness(1.1) saturate(1.125) !important; }
 }
+
+/* Free-form ad copy: no panel, only a readable local vignette over the image. */
+.nfood-display-root .nfood-display-copy-overlay { z-index: 15; isolation: isolate; animation: nfood-display-image-reveal 680ms cubic-bezier(.23,1,.32,1) both; }
+.nfood-display-root .nfood-display-copy-overlay::before { content: ""; position: absolute; z-index: -1; inset: -2rem -3rem -2rem -2rem; background: radial-gradient(ellipse at 45% 55%, rgba(0,0,0,.5), rgba(0,0,0,.2) 48%, transparent 76%); filter: blur(12px); pointer-events: none; }
+.nfood-display-root .nfood-display-copy-overlay h1,
+.nfood-display-root .nfood-display-copy-overlay p,
+.nfood-display-root .nfood-display-copy-overlay h2 { position: relative; z-index: 1; }
+@media (max-width: 900px), (orientation: portrait) {
+  .nfood-display-root .nfood-display-copy-overlay { left: 6vw; bottom: 18vh; max-width: 70vw; }
+  .nfood-display-root .nfood-display-copy-overlay h1 { font-size: clamp(2rem, 9vw, 4rem); }
+  .nfood-display-root .nfood-display-copy-overlay p { font-size: clamp(.95rem, 3.8vw, 1.5rem); line-height: 1.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nfood-display-root .nfood-display-copy-overlay { animation: none !important; }
+}
