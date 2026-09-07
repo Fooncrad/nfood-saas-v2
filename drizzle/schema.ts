@@ -1514,6 +1514,7 @@ export const restaurantDisplaySlides = mysqlTable("restaurantDisplaySlides", {
   menuItemId: int("menuItemId").references(() => menuItems.id),
   mediaFileId: int("mediaFileId").references(() => mediaFiles.id),
   externalImageUrl: varchar("externalImageUrl", { length: 500 }),
+  externalVideoUrl: varchar("externalVideoUrl", { length: 700 }),
   campaignId: int("campaignId").references(() => campaigns.id),
   title: varchar("title", { length: 180 }),
   subtitle: text("subtitle"),
