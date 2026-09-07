@@ -1,0 +1,2 @@
+ALTER TABLE `restaurantDisplayScreens` ADD `copyBackground` varchar(20) DEFAULT '#07111fcc' NOT NULL;--> statement-breakpoint
+ALTER TABLE `restaurantDisplayScreens` ADD `adBackground` varchar(20) DEFAULT '#111c2ee6' NOT NULL;

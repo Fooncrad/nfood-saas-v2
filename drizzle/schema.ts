@@ -1497,6 +1497,8 @@ export const restaurantDisplayScreens = mysqlTable("restaurantDisplayScreens", {
   qrSize: int("qrSize").default(180).notNull(),
   qrForeground: varchar("qrForeground", { length: 20 }).default("#ffffff").notNull(),
   qrBackground: varchar("qrBackground", { length: 20 }).default("#111c2e").notNull(),
+  copyBackground: varchar("copyBackground", { length: 20 }).default("#07111fcc").notNull(),
+  adBackground: varchar("adBackground", { length: 20 }).default("#111c2ee6").notNull(),
   status: mysqlEnum("status", ["draft", "active", "paused"]).default("draft").notNull(),
   refreshSeconds: int("refreshSeconds").default(30).notNull(),
   createdByUserId: int("createdByUserId").notNull().references(() => users.id),

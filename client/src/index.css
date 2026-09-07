@@ -5387,3 +5387,22 @@ main > .relative > footer { position: absolute; inset-inline: 4vw; bottom: 1vh; 
 html:has(.nfood-display-root), body:has(.nfood-display-root), #root:has(.nfood-display-root) { width: 100%; height: 100%; min-height: 100%; margin: 0; overflow: hidden !important; }
 main.nfood-display-root { position: fixed !important; inset: 0 !important; display: block !important; width: 100vw !important; height: 100vh !important; min-height: 0 !important; max-height: none !important; }
 main.nfood-display-root .nfood-display-image { display: block !important; position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; min-height: 0 !important; max-height: none !important; object-fit: cover !important; object-position: center center !important; }
+
+/* One timeline per slide: media, copy, and promo enter on the same frame. */
+@keyframes nfood-display-sync-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(1.01); filter: blur(5px); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+}
+.nfood-display-root .nfood-display-image,
+.nfood-display-root .nfood-display-copy-panel,
+.nfood-display-root .nfood-display-ad-bar {
+  animation: nfood-display-sync-in 560ms cubic-bezier(.23, 1, .32, 1) both !important;
+  animation-delay: 0ms !important;
+  will-change: opacity, transform, filter;
+}
+.nfood-display-root .nfood-display-ad-bar > div { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .nfood-display-root .nfood-display-image,
+  .nfood-display-root .nfood-display-copy-panel,
+  .nfood-display-root .nfood-display-ad-bar { animation: none !important; filter: none !important; transform: none !important; }
+}
