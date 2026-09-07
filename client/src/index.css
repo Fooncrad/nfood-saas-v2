@@ -5467,3 +5467,12 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 @media (prefers-reduced-motion: reduce) {
   .nfood-display-root .nfood-display-copy-overlay { animation: none !important; }
 }
+
+/* Final hard-off: no curtain, wipe, frame, vignette, or animated card. */
+.nfood-display-root .nfood-display-image,
+.nfood-display-root .nfood-display-media-enter,
+.nfood-display-root .nfood-display-media-fade,
+.nfood-display-root .nfood-display-copy-overlay,
+.nfood-display-root .nfood-display-copy-panel { animation: none !important; clip-path: none !important; mask-image: none !important; transform: none !important; transition: none !important; }
+.nfood-display-root .nfood-display-copy-overlay { background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; }
+.nfood-display-root .nfood-display-copy-overlay::before { display: none !important; content: none !important; background: none !important; filter: none !important; }
