@@ -15,7 +15,8 @@
     "e2e": "playwright test",
     "e2e:mutations": "E2E_MUTATIONS=1 playwright test",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
-    "postinstall": "node .scripts/postinstall.mjs"
+    "postinstall": "node .scripts/postinstall.mjs",
+    "preinstall": "node .scripts/postinstall.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
@@ -127,11 +128,6 @@
   },
   "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af",
   "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "@tailwindcss/oxide",
-      "core-js"
-    ],
     "patchedDependencies": {
       "wouter@3.7.1": "patches/wouter@3.7.1.patch"
     },
