@@ -947,24 +947,36 @@ export async function listRestaurantDisplaySlides(screenId: number, restaurantId
 export async function listCampaignContents(campaignId: number, restaurantId: number) { const db = await getDb(); if (!db) return []; return db.select({ content: campaignContents, menuItem: menuItems, mediaFile: mediaFiles }).from(campaignContents).leftJoin(menuItems, eq(campaignContents.menuItemId, menuItems.id)).leftJoin(mediaFiles, eq(campaignContents.mediaFileId, mediaFiles.id)).where(and(eq(campaignContents.campaignId, campaignId), eq(campaignContents.restaurantId, restaurantId))).orderBy(campaignContents.sortOrder); }
 
 const UI_TRANSLATION_SEEDS = [
-  ["admin.customer_center.title", "قائمة العملاء والحقوق", "Customer center"],
-  ["admin.customer_center.description", "إدارة آمنة للحسابات والمحتوى والمبيعات والمحفظة من نفس نظرة المنصة.", "Customer center"],
-  ["admin.customer_center.add", "إضافة عميل", "Customer center"],
-  ["admin.customer_center.orders", "طلبات العملاء", "Customer center"],
-  ["admin.customer_center.content_review", "مراجعة محتوى العملاء", "Customer center"],
-  ["admin.customer_center.library", "مكتبة المشتريات", "Customer center"],
-  ["marketplace.title", "سوق المحتوى والوصفات", "Customer portal"],
-  ["marketplace.description", "هذا سوق مستقل عن منيو المطاعم. اكتشف صور الأكل والوصفات المعروضة للمطاعم والحسابات المؤهلة، وراجع مشترياتك الرقمية من مكتبتك.", "Trend Kitchen"],
-  ["studio.upload", "رفع صورة جديدة", "Creator Studio"],
-  ["studio.review_pending", "قيد المراجعة", "Creator Studio"],
+  ["admin.customer_center.title", "قائمة العملاء والحقوق", "Customer center", "Customer & rights list", "Liste des clients et des droits"],
+  ["admin.customer_center.description", "إدارة آمنة للحسابات والمحتوى والمبيعات والمحفظة من نفس نظرة المنصة.", "Customer center", "Securely manage accounts, content, sales, and wallet from the same platform view.", "Gérez de manière sécurisée les comptes, le contenu, les ventes et le portefeuille depuis la même vue de la plateforme."],
+  ["admin.customer_center.add", "إضافة عميل", "Customer center", "Add customer", "Ajouter un client"],
+  ["admin.customer_center.orders", "طلبات العملاء", "Customer center", "Customer orders", "Commandes des clients"],
+  ["admin.customer_center.content_review", "مراجعة محتوى العملاء", "Customer center", "Review customer content", "Examiner le contenu des clients"],
+  ["admin.customer_center.library", "مكتبة المشتريات", "Customer center", "Purchase library", "Bibliothèque d'achats"],
+  ["marketplace.title", "سوق المحتوى والوصفات", "Customer portal", "Content and recipes marketplace", "Marché des contenus et recettes"],
+  ["marketplace.description", "هذا سوق مستقل عن منيو المطاعم. اكتشف صور الأكل والوصفات المعروضة للمطاعم والحسابات المؤهلة، وراجع مشترياتك الرقمية من مكتبتك.", "Trend Kitchen", "This is a marketplace independent of restaurant menus. Discover food photos and recipes offered to restaurants and eligible accounts, and review your digital purchases from your library.", "Ce marché est indépendant des menus des restaurants. Découvrez les photos de plats et recettes proposées aux restaurants et aux comptes éligibles, et consultez vos achats numériques depuis votre bibliothèque."],
+  ["studio.upload", "رفع صورة جديدة", "Creator Studio", "Upload new image", "Téléverser une nouvelle image"],
+  ["studio.review_pending", "قيد المراجعة", "Creator Studio", "Under review", "En cours d'examen"],
 ] as const;
 
 async function ensureUiTranslationSeeds(db: Awaited<ReturnType<typeof getDb>>) {
   if (!db) return;
-  const existing = await db.select({ translationKey: uiTranslationEntries.translationKey, targetLanguage: uiTranslationEntries.targetLanguage }).from(uiTranslationEntries).limit(1000);
-  const existingKeys = new Set(existing.map((entry) => `${entry.translationKey}:${entry.targetLanguage}`));
-  const values = UI_TRANSLATION_SEEDS.flatMap(([translationKey, sourceText, context]) => (["en", "fr"] as const).filter((targetLanguage) => !existingKeys.has(`${translationKey}:${targetLanguage}`)).map((targetLanguage) => ({ translationKey, sourceText, targetLanguage, context, status: "untranslated" as const })));
-  if (values.length) await db.insert(uiTranslationEntries).values(values);
+  const chosen: { translationKey: string; sourceText: string; sourceLanguage: "ar"; targetLanguage: "ar" | "en" | "fr"; translatedText: string; context: string; status: "untranslated" | "draft" | "published" | "ignored" }[] = [];
+  for (const [translationKey, sourceText, context, enText, frText] of UI_TRANSLATION_SEEDS) {
+    for (const targetLanguage of ["en", "fr"] as const) {
+      chosen.push({ translationKey, sourceText, sourceLanguage: "ar", targetLanguage, translatedText: targetLanguage === "en" ? enText : frText, context, status: "published" });
+    }
+  }
+  const existing = await db.select({ id: uiTranslationEntries.id, translationKey: uiTranslationEntries.translationKey, targetLanguage: uiTranslationEntries.targetLanguage, status: uiTranslationEntries.status, translatedText: uiTranslationEntries.translatedText }).from(uiTranslationEntries).where(inArray(uiTranslationEntries.translationKey, chosen.map((entry) => entry.translationKey)));
+  const existingByKey = new Map(existing.map((entry) => [`${entry.translationKey}:${entry.targetLanguage}`, entry]));
+  const toInsert = chosen.filter((entry) => !existingByKey.has(`${entry.translationKey}:${entry.targetLanguage}`));
+  for (const entry of chosen) {
+    const row = existingByKey.get(`${entry.translationKey}:${entry.targetLanguage}`);
+    if (row && row.status === "untranslated" && !row.translatedText?.trim()) {
+      await db.update(uiTranslationEntries).set({ translatedText: entry.translatedText, status: "published", lastSeenAt: new Date() }).where(eq(uiTranslationEntries.id, row.id));
+    }
+  }
+  if (toInsert.length) await db.insert(uiTranslationEntries).values(toInsert);
 }
 
 export async function listPublishedUiTranslations(targetLanguage?: string) {
