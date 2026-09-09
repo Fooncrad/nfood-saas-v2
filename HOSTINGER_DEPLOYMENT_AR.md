@@ -11,8 +11,8 @@
 | الإعداد | القيمة |
 |---|---|
 | Node.js | 22.13.x أو أحدث ضمن 22.x |
-| Install command | `npm install -g pnpm@10.4.1 && pnpm install --frozen-lockfile` |
-| Build command | `pnpm run build` |
+| Install command | `npm install --include=dev --no-audit --no-fund` |
+| Build command | `npm run build` |
 | Start command | `npm run start` |
 | Working directory | مجلد المشروع الذي يحتوي `package.json` |
 | Port | استخدم متغير `PORT` الذي توفره Hostinger؛ لا تثبت رقمًا في الإعدادات |
@@ -20,18 +20,18 @@
 
 ## الخطوات العملية
 
-ارفع المشروع إلى Hostinger مع الملفات الأساسية التالية: `package.json` و`pnpm-lock.yaml` ومجلدات `client` و`server` و`shared` و`drizzle` و`patches` وجميع ملفات الإعداد. لا ترفع `node_modules` من جهازك؛ دع Hostinger يثبت الاعتمادات.
+ارفع المشروع إلى Hostinger مع الملفات الأساسية التالية: `package.json` و`package-lock.json` إن توفر ومجلدات `client` و`server` و`shared` و`drizzle` و`patches` وجميع ملفات الإعداد. لا ترفع `node_modules` من جهازك؛ دع Hostinger يثبت الاعتمادات عبر npm.
 
-في إعداد Node.js App، اختر Node 22، ثم استخدم أمر التثبيت التالي بدل زر التثبيت الذي يستدعي Corepack القديم:
+في إعداد Node.js App، اختر Node 22، واختر **npm** بدل **pnpm**. هذا يتجاوز Corepack الذي يحاول تحميل `pnpm.cjs` المفقود. استخدم أمر التثبيت التالي:
 
 ```bash
-npm install -g pnpm@10.4.1 && pnpm install --frozen-lockfile
+npm install --include=dev --no-audit --no-fund
 ```
 
 بعد نجاح التثبيت شغّل البناء:
 
 ```bash
-pnpm run build
+npm run build
 ```
 
 ثم اجعل أمر بدء التطبيق:
@@ -43,14 +43,13 @@ npm run start
 إذا كانت لوحة Hostinger لا تسمح بأمر تثبيت مخصص، افتح Terminal/SSH الخاص بالتطبيق ونفّذ:
 
 ```bash
-npm install -g pnpm@10.4.1
-pnpm --version
-pnpm install --frozen-lockfile
-pnpm run build
+corepack disable || true
+npm install --include=dev --no-audit --no-fund
+npm run build
 npm run start
 ```
 
-يجب أن يعرض `pnpm --version` الإصدار `10.4.1` أو إصدارًا متوافقًا، لا الإصدار 12.3.4 الذي ظهر في صورة الخطأ.
+لا تستخدم زر pnpm في Hostinger؛ الخطأ الحالي يأتي من Corepack الذي يحاول تشغيل pnpm 12.3.4 من مسار cache ناقص.
 
 ## متغيرات البيئة المطلوبة
 
@@ -85,9 +84,9 @@ npm run start
 
 ```bash
 node --version
-pnpm --version
-pnpm run check
-pnpm test
+npm --version
+npm run check
+npm test
 ```
 
 ثم افتح النطاق وتحقق من تسجيل الدخول، المنيو العام، API، شاشة العرض، ومركز الطلبات. إذا كان التطبيق يعمل على Autoscale أو Reverse Proxy، تأكد أن Hostinger يمرر WebSocket لأن بعض وظائف التزامن الفوري تعتمد عليه.
