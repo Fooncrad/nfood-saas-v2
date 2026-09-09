@@ -14,7 +14,8 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "e2e:mutations": "E2E_MUTATIONS=1 playwright test",
-    "db:push": "drizzle-kit generate && drizzle-kit migrate"
+    "db:push": "drizzle-kit generate && drizzle-kit migrate",
+    "postinstall": "chmod +x node_modules/.pnpm/@esbuild*/*/bin/* 2>/dev/null || true && chmod +x node_modules/.pnpm/@tailwindcss+oxide*/*/lib/* 2>/dev/null || true"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
