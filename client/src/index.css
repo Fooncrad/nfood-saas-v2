@@ -5476,3 +5476,64 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 .nfood-display-root .nfood-display-copy-panel { animation: none !important; clip-path: none !important; mask-image: none !important; transform: none !important; transition: none !important; }
 .nfood-display-root .nfood-display-copy-overlay { background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; }
 .nfood-display-root .nfood-display-copy-overlay::before { display: none !important; content: none !important; background: none !important; filter: none !important; }
+
+/* Responsive day/night menu presentation aligned with the cafe reference. */
+.nfood-menu-shell:not(.nfood-menu-dark) {
+  background: var(--menu-background, #f7f7f5) !important;
+  color: var(--menu-ink, #172033) !important;
+}
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header {
+  background: color-mix(in srgb, var(--menu-surface, #ffffff) 96%, var(--menu-primary, #0f9f76)) !important;
+  color: var(--menu-ink, #172033) !important;
+}
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-item-card {
+  background: var(--menu-card-background, #ffffff) !important;
+  color: var(--menu-card-text, var(--menu-ink, #172033)) !important;
+  border-color: var(--menu-card-border, #e2e8f0) !important;
+  box-shadow: 0 8px 24px -20px rgba(15, 23, 42, .38);
+}
+.nfood-menu-shell.nfood-menu-dark {
+  background: var(--menu-background, #0b1118) !important;
+  color: var(--menu-ink, #f8fafc) !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-card {
+  background: var(--menu-card-background, #141c25) !important;
+  color: var(--menu-card-text, #f8fafc) !important;
+  border-color: var(--menu-card-border, #263544) !important;
+  box-shadow: 0 14px 30px -24px rgba(0, 0, 0, .8);
+}
+.nfood-menu-shell .category-results {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: .65rem !important;
+}
+.nfood-menu-shell .nfood-menu-item-card {
+  min-width: 0 !important;
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .nfood-menu-shell .category-results { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: .8rem !important; }
+}
+@media (min-width: 1024px) {
+  .nfood-menu-shell .category-results { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; gap: .9rem !important; }
+}
+@media (min-width: 1440px) {
+  .nfood-menu-shell .category-results { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; gap: 1rem !important; }
+}
+.nfood-menu-shell .nfood-menu-category-bar {
+  position: sticky;
+  top: 4rem;
+  z-index: 20;
+  backdrop-filter: blur(14px);
+}
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-category-bar {
+  background: color-mix(in srgb, #ffffff 92%, var(--menu-primary, #0f9f76)) !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-category-bar {
+  background: color-mix(in srgb, var(--menu-surface, #101820) 92%, var(--menu-primary, #0f9f76)) !important;
+}
+@media (max-width: 767px) {
+  .nfood-menu-shell .nfood-menu-header { min-height: 3.75rem !important; }
+  .nfood-menu-shell .nfood-menu-item-card { min-height: 0 !important; }
+  .nfood-menu-shell .nfood-menu-item-image,
+  .nfood-menu-shell .nfood-menu-item-photo { width: 100% !important; max-width: none !important; flex-basis: auto !important; }
+}
