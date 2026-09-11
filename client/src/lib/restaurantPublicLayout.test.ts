@@ -185,6 +185,15 @@ describe("RestaurantPublic menu layout", () => {
     expect(css).toContain("scrollbar-width: thin");
   });
 
+  it("keeps the responsive day and night menu treatment readable", () => {
+    expect(css).toContain(".nfood-menu-shell:not(.nfood-menu-dark)");
+    expect(css).toContain(".nfood-menu-shell.nfood-menu-dark");
+    expect(css).toContain("grid-template-columns: repeat(2, minmax(0, 1fr)) !important");
+    expect(css).toContain("@media (min-width: 768px)");
+    expect(css).toContain("grid-template-columns: repeat(4, minmax(0, 1fr)) !important");
+    expect(css).toContain("grid-template-columns: repeat(6, minmax(0, 1fr)) !important");
+  });
+
   it("supports the attached Nasser Cafe reference treatment", () => {
     const css = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
     expect(css).toContain("--menu-page: #fbf7f0 !important");
