@@ -5,6 +5,7 @@ import fs from "node:fs";
 const homeModulesSource = fs.readFileSync(new URL("../components/HomeModules.tsx", import.meta.url), "utf8");
 const dashboardLayoutSource = fs.readFileSync(new URL("../components/DashboardLayout.tsx", import.meta.url), "utf8");
 const homeSidebarSource = fs.readFileSync(new URL("../components/HomeSidebar.tsx", import.meta.url), "utf8");
+const kitchenPrinterSource = fs.readFileSync(new URL("../components/KitchenPrinterSettings.tsx", import.meta.url), "utf8");
 
 const criticalMiddlePageLabels = [
   "أدخل بياناتك، وسنوجهك إلى مساحة العمل المناسبة.",
@@ -51,6 +52,15 @@ describe("translation coverage for login and operational modules", () => {
     expect(french("العملاء")).toBe("Clients");
     expect(english("الإعدادات والتشغيل")).toBe("Settings & operations");
     expect(french("الإعدادات والتشغيل")).toBe("Paramètres et opérations");
+  });
+
+  it("keeps shared dashboard and printer surfaces connected to the active language", () => {
+    expect(dashboardLayoutSource).toContain('t("signInToContinue")');
+    expect(dashboardLayoutSource).toContain('t("signOut")');
+    expect(dashboardLayoutSource).not.toContain('>Sign out</span>');
+    expect(kitchenPrinterSource).toContain("useLanguage");
+    expect(kitchenPrinterSource).toContain("dir={language === \"ar\" ? \"rtl\" : \"ltr\"}");
+    expect(kitchenPrinterSource).toContain("localize(\"قوالب ESC/POS\")");
   });
 
   it("keeps dashboard navigation translated and free from demo labels", () => {

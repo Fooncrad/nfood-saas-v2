@@ -1,0 +1,52 @@
+{
+  "build_command": "pnpm run build",
+  "capabilities": [
+    "db",
+    "server",
+    "user"
+  ],
+  "dev_command": "pnpm run dev",
+  "env_vars": {
+    "DATABASE_URL": "mysql://2dVBVi4Gj4ArbA6.c6a73b8b69a6:a5aG4z6X4rOfqa6joz8z@gateway03.us-east-1.prod.aws.tidbcloud.com:4000/3tqZpsrgcw9NgbodJPtUsL?ssl={\"rejectUnauthorized\":true}",
+    "DRIZZLE_DATABASE_URL": "mysql://2dVBVi4Gj4ArbA6.c6a73b8b69a6:a5aG4z6X4rOfqa6joz8z@gateway03.us-east-1.prod.aws.tidbcloud.com:4000/3tqZpsrgcw9NgbodJPtUsL?ssl={\"rejectUnauthorized\":true}",
+    "MANUS_WEBDEV_PROJECT_ID": "3tqZpsrgcw9NgbodJPtUsL"
+  },
+  "experiments": [
+    "no_db_push"
+  ],
+  "git_remote": {
+    "repo_url": "https://7f0548f6b28a1758d9bf7be630d36cb4.artifacts.cloudflare.net/git/prod/3tqZpsrgcw9NgbodJPtUsL.git",
+    "expiration": "2026-08-23T16:52:23.907Z",
+    "token": "art_v2_x_19ab22580e5420b7f068ea3b60966fcce413ee02?expires=1787503943",
+    "backend": "GIT_BACKEND_ARTIFACTS"
+  },
+  "name": "nfood-restaurant-saas",
+  "path": "/home/ubuntu/nfood-restaurant-saas",
+  "port": 3000,
+  "secrets": {
+    "BUILT_IN_FORGE_API_KEY": "NeqUA37JWBNtFsGpgHTNPX",
+    "BUILT_IN_FORGE_API_URL": "https://forge.manus.ai",
+    "JWT_SECRET": "EruGDtZktzLESXwL999Vca",
+    "OAUTH_SERVER_URL": "https://api.manus.im",
+    "OWNER_NAME": "ناصر",
+    "OWNER_OPEN_ID": "722eBYjTPiu2VBPfxsJBee",
+    "SMTP_FROM_EMAIL": "info@fooncard.com",
+    "SMTP_HOST": "smtp.hostinger.com",
+    "SMTP_PASSWORD": "N1977112025nbw@",
+    "SMTP_PORT": "587",
+    "SMTP_USER": "info@fooncard.com",
+    "VITE_ANALYTICS_ENDPOINT": "https://manus-analytics.com",
+    "VITE_ANALYTICS_WEBSITE_ID": "59ce9a82-2881-4c90-8846-6bccaaa1d8fe",
+    "VITE_APP_ID": "3tqZpsrgcw9NgbodJPtUsL",
+    "VITE_APP_LOGO": "https://files.manuscdn.com/user_upload_by_module/web_dev_logo/310519663294172979/RMzsqPeOCHKjpdiI.png",
+    "VITE_APP_TITLE": "NFOOD Restaurant SaaS",
+    "VITE_FRONTEND_FORGE_API_KEY": "ebWMLN6JG5qbWJpZhVsXqz",
+    "VITE_FRONTEND_FORGE_API_URL": "https://forge.manus.ai",
+    "VITE_OAUTH_PORTAL_URL": "https://manus.im",
+    "WEB_PUSH_PRIVATE_KEY": "1977",
+    "WEB_PUSH_PUBLIC_KEY": "1977",
+    "WEB_PUSH_SUBJECT": "mailto:ops@nfood.local"
+  },
+  "template_id": "web-db-user",
+  "test_command": "pnpm test"
+}
