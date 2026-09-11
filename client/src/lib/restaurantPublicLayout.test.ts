@@ -233,7 +233,7 @@ describe("Product card detail flow refinement", () => {
     expect(source).toContain("tabIndex={0} aria-label={`عرض تفاصيل ${item.name}`}");
     expect(source).toContain("addMenuItemDirectly(item)");
     expect(source).toContain('aria-label={`إضافة ${item.name} إلى السلة`}');
-    expect(source).toContain("nfood-menu-card-summary");
+    expect(source).not.toContain("nfood-menu-card-summary");
     expect(source).toContain("compareAtPrice");
     expect(source).toContain("nfood-menu-item-title");
   });
@@ -265,7 +265,6 @@ describe("Product card detail flow refinement", () => {
     expect(source).toContain("nfood-menu-price-block");
     expect(source).toContain("nfood-menu-price-current");
     expect(source).toContain("text-rose-600");
-    expect(source).toContain("top-0.5 z-20");
     expect(source).toContain("top-1.5 z-20");
     expect(css).toContain("word-break: keep-all !important");
     expect(css).toContain("color: #dc2626 !important");
@@ -345,7 +344,7 @@ describe("Cardless menu experiment", () => {
     expect(source).toContain("item.name");
     expect(source).toContain("nfood-menu-price-current");
     expect(source).toContain("nfood-menu-price-compare");
-    expect(source).toContain("nfood-menu-card-summary");
+    expect(source).not.toContain("nfood-menu-card-summary");
     expect(source).toContain("setSelectedMenuItem(item)");
   });
 
