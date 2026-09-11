@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type LoaderStage = "letters" | "orbit" | "exiting";
 
@@ -13,6 +14,8 @@ function prefersReducedMotion() {
 }
 
 export default function NfoodsLoadingScreen({ onComplete }: NfoodsLoadingScreenProps) {
+  const { language } = useLanguage();
+  const loadingCopy = language === "ar" ? { label: "جارٍ تحميل NFOODS", caption: "تجربة الطعام تبدأ هنا" } : language === "fr" ? { label: "Chargement de NFOODS", caption: "L’expérience culinaire commence ici" } : { label: "Loading NFOODS", caption: "Your food experience starts here" };
   const [stage, setStage] = useState<LoaderStage>("letters");
 
   useEffect(() => {
@@ -38,7 +41,7 @@ export default function NfoodsLoadingScreen({ onComplete }: NfoodsLoadingScreenP
       className={`nfood-global-loader nfood-global-loader--${stage}`}
       role="status"
       aria-live="polite"
-      aria-label="جارٍ تحميل NFOODS"
+      aria-label={loadingCopy.label}
     >
       <div className="nfood-loader-aura" aria-hidden="true" />
       <div className="nfood-loader-content">
@@ -54,7 +57,7 @@ export default function NfoodsLoadingScreen({ onComplete }: NfoodsLoadingScreenP
             </span>
           ))}
         </div>
-        <p className="nfood-loader-caption">تجربة الطعام تبدأ هنا</p>
+        <p className="nfood-loader-caption">{loadingCopy.caption}</p>
       </div>
       <div className="nfood-loader-orbit" aria-hidden="true">
         <span className="nfood-loader-orbit-core" />

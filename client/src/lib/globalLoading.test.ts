@@ -29,7 +29,10 @@ describe("NFOODS global loading screen", () => {
   it("supports accessible status and reduced motion", () => {
     expect(loader).toContain('role="status"');
     expect(loader).toContain('aria-live="polite"');
-    expect(loader).toContain('aria-label="جارٍ تحميل NFOODS"');
+    expect(loader).toContain('label: "جارٍ تحميل NFOODS"');
+    expect(loader).toContain('label: "Chargement de NFOODS"');
+    expect(loader).toContain('label: "Loading NFOODS"');
+    expect(loader).toContain('caption: "Your food experience starts here"');
     expect(styles).toContain("@media (prefers-reduced-motion: reduce)");
   });
 });
