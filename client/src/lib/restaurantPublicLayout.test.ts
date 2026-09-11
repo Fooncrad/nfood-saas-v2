@@ -185,6 +185,16 @@ describe("RestaurantPublic menu layout", () => {
     expect(css).toContain("scrollbar-width: thin");
   });
 
+  it("renders reference product cards vertically with a square image first", () => {
+    expect(css).toContain("FINAL REFERENCE MENU GRID");
+    expect(css).toContain("flex-direction: column !important");
+    expect(css).toContain("aspect-ratio: 1 / 1 !important");
+    expect(css).toContain("grid-template-columns: repeat(2, minmax(0, 1fr)) !important");
+    expect(css).toContain("grid-template-columns: repeat(4, minmax(0, 1fr)) !important");
+    expect(css).toContain("grid-template-columns: repeat(6, minmax(0, 1fr)) !important");
+    expect(css).toContain("-webkit-line-clamp: 2 !important");
+  });
+
   it("keeps the responsive day and night menu treatment readable", () => {
     expect(css).toContain(".nfood-menu-shell:not(.nfood-menu-dark)");
     expect(css).toContain(".nfood-menu-shell.nfood-menu-dark");
