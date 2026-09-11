@@ -6,11 +6,11 @@ type Props = { children: ReactNode };
 type State = { hasError: boolean; error: Error | null; requestId: string };
 
 type ErrorLanguage = "ar" | "en" | "fr" | "ur";
-const errorCopy: Record<ErrorLanguage, { dir: "rtl" | "ltr"; eyebrow: string; title: string; description: string; cause: string; retry: string; home: string; unknown: string; support: string }> = {
-  ar: { dir: "rtl", eyebrow: "NFOOD · تنبيه النظام", title: "حدث عطل غير متوقع", description: "لم تكتمل هذه الصفحة. أعد المحاولة، وإذا استمرت المشكلة أرسل رقم الطلب إلى مسؤول الدعم.", cause: "سبب العطل التقني", retry: "إعادة المحاولة", home: "العودة للرئيسية", unknown: "خطأ غير معروف", support: "أرسل رقم الطلب إلى فريق الدعم عند استمرار المشكلة." },
-  en: { dir: "ltr", eyebrow: "NFOOD · System notice", title: "An unexpected error occurred", description: "This page could not be completed. Try again, and contact support with the request ID if the problem continues.", cause: "Technical cause", retry: "Try again", home: "Back to home", unknown: "Unknown UI error", support: "Share the request ID with support if the problem continues." },
-  fr: { dir: "ltr", eyebrow: "NFOOD · Alerte système", title: "Une erreur inattendue s’est produite", description: "Cette page n’a pas pu être chargée. Réessayez et contactez le support avec l’identifiant si le problème persiste.", cause: "Cause technique", retry: "Réessayer", home: "Retour à l’accueil", unknown: "Erreur d’interface inconnue", support: "Communiquez l’identifiant au support si le problème persiste." },
-  ur: { dir: "rtl", eyebrow: "NFOOD · سسٹم اطلاع", title: "غیر متوقع خرابی پیش آئی", description: "یہ صفحہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں، مسئلہ برقرار رہے تو Request ID کے ساتھ سپورٹ سے رابطہ کریں۔", cause: "تکنیکی وجہ", retry: "دوبارہ کوشش کریں", home: "ہوم پر واپس جائیں", unknown: "نامعلوم انٹرفیس خرابی", support: "مسئلہ برقرار رہے تو Request ID سپورٹ کے ساتھ شیئر کریں۔" },
+const errorCopy: Record<ErrorLanguage, { dir: "rtl" | "ltr"; eyebrow: string; title: string; description: string; cause: string; retry: string; home: string; unknown: string; support: string; requestId: string }> = {
+  ar: { dir: "rtl", eyebrow: "NFOOD · تنبيه النظام", title: "حدث عطل غير متوقع", description: "لم تكتمل هذه الصفحة. أعد المحاولة، وإذا استمرت المشكلة أرسل رقم الطلب إلى مسؤول الدعم.", cause: "سبب العطل التقني", retry: "إعادة المحاولة", home: "العودة للرئيسية", unknown: "خطأ غير معروف", support: "أرسل رقم الطلب إلى فريق الدعم عند استمرار المشكلة.", requestId: "رقم الطلب" },
+  en: { dir: "ltr", eyebrow: "NFOOD · System notice", title: "An unexpected error occurred", description: "This page could not be completed. Try again, and contact support with the request ID if the problem continues.", cause: "Technical cause", retry: "Try again", home: "Back to home", unknown: "Unknown UI error", support: "Share the request ID with support if the problem continues.", requestId: "Request ID" },
+  fr: { dir: "ltr", eyebrow: "NFOOD · Alerte système", title: "Une erreur inattendue s’est produite", description: "Cette page n’a pas pu être chargée. Réessayez et contactez le support avec l’identifiant si le problème persiste.", cause: "Cause technique", retry: "Réessayer", home: "Retour à l’accueil", unknown: "Erreur d’interface inconnue", support: "Communiquez l’identifiant au support si le problème persiste.", requestId: "Identifiant" },
+  ur: { dir: "rtl", eyebrow: "NFOOD · سسٹم اطلاع", title: "غیر متوقع خرابی پیش آئی", description: "یہ صفحہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں، مسئلہ برقرار رہے تو Request ID کے ساتھ سپورٹ سے رابطہ کریں۔", cause: "تکنیکی وجہ", retry: "دوبارہ کوشش کریں", home: "ہوم پر واپس جائیں", unknown: "نامعلوم انٹرفیس خرابی", support: "مسئلہ برقرار رہے تو Request ID سپورٹ کے ساتھ شیئر کریں۔", requestId: "Request ID" },
 };
 
 function getErrorLanguage(): ErrorLanguage {
@@ -42,7 +42,7 @@ class ErrorBoundary extends Component<Props, State> {
           <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-start">
             <p className="text-xs font-bold text-slate-500">{copy.cause}</p>
             <p className="mt-2 break-words text-sm font-semibold text-slate-700" dir="ltr">{this.state.error?.message || copy.unknown}</p>
-            <button type="button" onClick={this.copyRequestId} className="mt-3 inline-flex items-center gap-2 rounded-lg text-xs font-bold text-[#c2410c] hover:underline"><Copy className="h-3.5 w-3.5" />Request ID: {this.state.requestId}</button>
+            <button type="button" onClick={this.copyRequestId} className="mt-3 inline-flex items-center gap-2 rounded-lg text-xs font-bold text-[#c2410c] hover:underline"><Copy className="h-3.5 w-3.5" />{copy.requestId}: {this.state.requestId}</button>
           </div>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <button type="button" onClick={() => window.location.reload()} className={cn("inline-flex items-center gap-2 rounded-xl bg-[#e76f3c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-100 hover:bg-[#d85f2e]")}><RotateCcw className="h-4 w-4" />{copy.retry}</button>
