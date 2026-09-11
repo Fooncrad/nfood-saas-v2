@@ -265,7 +265,7 @@ describe("Product card detail flow refinement", () => {
     expect(source).toContain("nfood-menu-price-block");
     expect(source).toContain("nfood-menu-price-current");
     expect(source).toContain("text-rose-600");
-    expect(source).toContain("top-1.5 z-20");
+    expect(source).toContain("nfood-menu-availability absolute bottom-2 left-2");
     expect(css).toContain("word-break: keep-all !important");
     expect(css).toContain("color: #dc2626 !important");
     expect(css).toContain(".nfood-menu-item-heading");
@@ -351,7 +351,7 @@ describe("Cardless menu experiment", () => {
   it("keeps the image, price, discount, add button, and detail click target in both layouts", () => {
     expect(source).toContain("nfood-menu-item-image");
     expect(source).toContain("nfood-menu-discount");
-    expect(source).toContain("nfood-menu-cart-row");
+    expect(source).toContain("nfood-menu-image-add absolute bottom-2 right-2");
     expect(source).toContain("aria-label={`عرض تفاصيل ${item.name}`}");
     expect(css).toContain(".nfood-menu-shell.nfood-menu-cardless .nfood-menu-item-image");
   });
