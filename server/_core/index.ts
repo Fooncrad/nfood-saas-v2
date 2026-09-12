@@ -62,10 +62,10 @@ function normalizeMenuLanguage(value: unknown): MenuLanguage { const code = type
 function localizeMenuEntity<T extends { name: string; description?: string | null; translationsJson?: string | null }>(entity: T, language: MenuLanguage): T { try { const parsed = entity.translationsJson ? JSON.parse(entity.translationsJson) : []; const entries = Array.isArray(parsed) ? parsed as Array<{ language?: string; name?: string; description?: string; status?: string }> : []; const approved = (entry: { status?: string }) => !entry.status || entry.status === "approved"; const match = entries.find((entry) => entry.language === language && approved(entry)) ?? entries.find((entry) => entry.language === "ar" && approved(entry)); return match?.name ? { ...entity, name: match.name, description: match.description ?? entity.description } : entity; } catch { return entity; } }
 
 async function startServer() {
-  if (process.env.RUN_DB_MIGRATIONS === "false") {
-    console.info("[Database] Automated migrations disabled via RUN_DB_MIGRATIONS=false");
-  } else {
+  if (process.env.RUN_DB_MIGRATIONS === "true") {
     await runDbMigrations();
+  } else {
+    console.info("[Database] Automated migrations skipped; set RUN_DB_MIGRATIONS=true for an explicit migration run");
   }
   const app = express();
   const server = createServer(app);

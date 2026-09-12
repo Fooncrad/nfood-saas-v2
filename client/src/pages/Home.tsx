@@ -327,7 +327,7 @@ export default function Home() {
   const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success(t("logout")), notifyError: (message) => toast.error(message) }); };
   const handleSwitchAccount = async () => { await executeSwitchAccountFlow({ logout, closeMenu: () => setProfileOpen(false), startLogin, redirect: () => undefined, notifyError: (message) => toast.error(message) }); };
   return (
-    <div dir={direction} lang={language} className="h-dvh min-h-0 overflow-hidden bg-[#f6f7f9] nfood-dashboard-shell text-[#182230] transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
+    <div dir={direction} lang={language} className={`h-dvh min-h-0 overflow-hidden bg-[#f6f7f9] nfood-dashboard-shell ${isCentralAdmin ? "nfood-central-admin" : ""} text-[#182230] transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100`}>
       <HomeSidebar
         direction={direction}
         sidebarGroups={sidebarGroups}

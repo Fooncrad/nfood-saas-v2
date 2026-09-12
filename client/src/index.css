@@ -5712,3 +5712,45 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   .nfood-menu-shell .category-results > .nfood-menu-item-card .nfood-menu-item-title { font-size: .82rem !important; }
   .nfood-menu-shell .category-results > .nfood-menu-item-card .nfood-menu-price-current { font-size: 1rem !important; }
 }
+
+/* Central Admin visual layer: preserves all existing modules while matching the supplied light/dark reference. */
+.nfood-central-admin {
+  --admin-orange: #f97316;
+  --admin-navy: #091a2d;
+  background: #f7f9fc;
+}
+.nfood-central-admin .nfood-unified-sidebar {
+  background: linear-gradient(180deg, #0c2239 0%, #081727 100%);
+  border-color: rgba(148, 163, 184, .16);
+}
+.nfood-central-admin main {
+  background: #f7f9fc;
+}
+.nfood-central-admin main > header {
+  background: rgba(247, 249, 252, .94);
+  border-color: #e7edf4;
+}
+.dark .nfood-central-admin {
+  background: #061525;
+}
+.dark .nfood-central-admin main,
+.dark .nfood-central-admin main > header {
+  background: #061525;
+  border-color: rgba(67, 108, 148, .38);
+}
+.nfood-central-admin [data-slot="card"] {
+  border-color: #e6edf5;
+  box-shadow: 0 10px 26px -22px rgba(10, 34, 58, .42);
+}
+.dark .nfood-central-admin [data-slot="card"] {
+  border-color: rgba(71, 128, 176, .34);
+  background: #0a2036;
+  box-shadow: 0 16px 36px -24px rgba(0, 0, 0, .65);
+}
+.nfood-central-admin .nfood-sidebar-nav [aria-current="page"] {
+  background: linear-gradient(90deg, #f97316, #fb923c);
+  color: #fff;
+}
+@media (max-width: 1023px) {
+  .nfood-central-admin main > header { padding-inline-start: 4rem; }
+}
