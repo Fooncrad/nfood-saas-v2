@@ -9,6 +9,16 @@ import { startLogin } from "./const";
 import { queryClientDefaults } from "./lib/queryClientDefaults";
 import "./index.css";
 
+const analyticsEndpoint = import.meta.env.VITE_ANALYTICS_ENDPOINT;
+const analyticsWebsiteId = import.meta.env.VITE_ANALYTICS_WEBSITE_ID;
+if (analyticsEndpoint && analyticsWebsiteId && typeof document !== "undefined") {
+  const script = document.createElement("script");
+  script.defer = true;
+  script.src = `${analyticsEndpoint}/umami`;
+  script.setAttribute("data-website-id", analyticsWebsiteId);
+  document.head.appendChild(script);
+}
+
 const queryClient = new QueryClient({ defaultOptions: queryClientDefaults });
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {

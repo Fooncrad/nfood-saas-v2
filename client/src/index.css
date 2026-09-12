@@ -604,13 +604,19 @@ html[lang="ur"] body {
 }
 
 
-@media (prefers-reduced-motion: reduce), :root[data-nfood-motion="off"] {
+@media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+:root[data-nfood-motion="off"] *, :root[data-nfood-motion="off"] *::before, :root[data-nfood-motion="off"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
 }
 
 @keyframes nfood-content-added {
@@ -619,9 +625,10 @@ html[lang="ur"] body {
   100% { opacity: 1; transform: scale(1); }
 }
 .content-added-feedback { animation: nfood-content-added 240ms cubic-bezier(0.23, 1, 0.32, 1); }
-@media (prefers-reduced-motion: reduce), :root[data-nfood-motion="off"] {
+@media (prefers-reduced-motion: reduce) {
   .content-added-feedback { animation: none !important; }
 }
+:root[data-nfood-motion="off"] .content-added-feedback { animation: none !important; }
 
 
 /* Unified NFOOD dashboard surface: calmer density, clearer hierarchy, one visual language */
