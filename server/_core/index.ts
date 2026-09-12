@@ -1,7 +1,9 @@
 import "dotenv/config";
 import express from "express";
+import { existsSync } from "node:fs";
 import { createServer } from "http";
 import net from "net";
+import path from "node:path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
@@ -34,11 +36,37 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+async function runDbMigrations() {
+  if (!process.env.DATABASE_URL) {
+    console.warn("[Database] DATABASE_URL is not set; skipping automated migrations");
+    return;
+  }
+  const migrationsFolder = existsSync(path.join(process.cwd(), "drizzle"))
+    ? path.join(process.cwd(), "drizzle")
+    : path.join(import.meta.dirname, "..", "drizzle");
+  console.info(`[Database] Running automated migrations from ${migrationsFolder}`);
+  try {
+    const { drizzle } = await import("drizzle-orm/mysql2");
+    const { migrate } = await import("drizzle-orm/mysql2/migrator");
+    const db = drizzle(process.env.DATABASE_URL);
+    await migrate(db, { migrationsFolder });
+    console.info("[Database] Automated migrations completed");
+  } catch (error) {
+    console.error("[Database] Automated migration failed:", error);
+    throw error;
+  }
+}
+
 type MenuLanguage = "ar" | "en" | "fr" | "ur";
 function normalizeMenuLanguage(value: unknown): MenuLanguage { const code = typeof value === "string" ? value.toLowerCase().split("-")[0] : "ar"; return code === "en" || code === "fr" || code === "ur" ? code : "ar"; }
 function localizeMenuEntity<T extends { name: string; description?: string | null; translationsJson?: string | null }>(entity: T, language: MenuLanguage): T { try { const parsed = entity.translationsJson ? JSON.parse(entity.translationsJson) : []; const entries = Array.isArray(parsed) ? parsed as Array<{ language?: string; name?: string; description?: string; status?: string }> : []; const approved = (entry: { status?: string }) => !entry.status || entry.status === "approved"; const match = entries.find((entry) => entry.language === language && approved(entry)) ?? entries.find((entry) => entry.language === "ar" && approved(entry)); return match?.name ? { ...entity, name: match.name, description: match.description ?? entity.description } : entity; } catch { return entity; } }
 
 async function startServer() {
+  if (process.env.RUN_DB_MIGRATIONS === "false") {
+    console.info("[Database] Automated migrations disabled via RUN_DB_MIGRATIONS=false");
+  } else {
+    await runDbMigrations();
+  }
   const app = express();
   const server = createServer(app);
   attachDisplayRealtime(server);
