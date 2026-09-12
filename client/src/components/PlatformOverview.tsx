@@ -217,7 +217,7 @@ export function PlatformOverview({ onNavigate }: { onNavigate: (key: "admin") =>
   const error = restaurantsQuery.isError || subscriptionsQuery.isError;
 
   return (
-    <div className="space-y-5">
+    <div className="nfood-admin-overview space-y-5">
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-950/30 dark:text-red-200">
           {copy.error}
@@ -241,7 +241,7 @@ export function PlatformOverview({ onNavigate }: { onNavigate: (key: "admin") =>
               onClick={() => onNavigate("admin")}
               className="group text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e76f3c] focus-visible:ring-offset-2"
             >
-              <Card className="h-full min-h-[132px] rounded-2xl border-slate-200/80 bg-white text-right shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-lg max-[1100px]:min-h-[118px] max-[900px]:min-h-[104px] dark:border-slate-700/80 dark:bg-slate-900/90">
+              <Card className="nfood-admin-metric-card h-full min-h-[132px] rounded-2xl border-slate-200/80 bg-white text-right shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-lg max-[1100px]:min-h-[118px] max-[900px]:min-h-[104px] dark:border-slate-700/80 dark:bg-slate-900/90">
                 <CardContent className="p-4 md:p-5 max-[1100px]:p-3 max-[900px]:p-2.5">
                   <div className="flex items-start justify-between gap-3">
                     <div

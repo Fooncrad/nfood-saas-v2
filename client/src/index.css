@@ -5754,3 +5754,20 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 @media (max-width: 1023px) {
   .nfood-central-admin main > header { padding-inline-start: 4rem; }
 }
+
+.nfood-central-admin .nfood-admin-overview {
+  --admin-panel-radius: 1rem;
+}
+.nfood-central-admin .nfood-admin-metric-card {
+  border-radius: var(--admin-panel-radius);
+  background: rgba(255, 255, 255, .96);
+}
+.nfood-central-admin .nfood-admin-metric-card svg {
+  shape-rendering: geometricPrecision;
+}
+.dark .nfood-central-admin .nfood-admin-metric-card {
+  background: rgba(9, 32, 54, .92);
+}
+.nfood-central-admin .nfood-admin-overview > .grid {
+  align-items: stretch;
+}
