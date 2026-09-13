@@ -55,7 +55,11 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(overview).not.toContain("نبض المنصة");
     const home = read("pages/Home.tsx");
     const analytics = read("components/OverviewAnalyticsPanel.tsx");
-    expect(home).toContain("isCentralAdmin ? <PlatformOverview");
+    expect(home).toContain("CentralAdminCommandCenter");
+    expect(home).toContain("isCentralAdmin");
+    expect(home).toContain("<CentralAdminCommandCenter");
+    expect(home).toContain("overviewChildren");
+    expect(home).toContain("<PlatformOverview onNavigate");
     expect(home).not.toContain("<SuperAdminRestaurantCatalog");
     expect(analytics).not.toContain(">{copy.overview}</h2>");
     expect(analytics).not.toContain("{copy.subtitle}</p>");

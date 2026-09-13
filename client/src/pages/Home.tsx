@@ -37,6 +37,7 @@ import { RegisterScreen } from "@/components/RegisterScreen";
 import { TestLoginScreen } from "@/components/TestLoginScreen";
 import { PasswordResetScreen } from "@/components/PasswordResetScreen";
 import { PlatformOverview } from "@/components/PlatformOverview";
+import { CentralAdminCommandCenter, type CentralAdminNavKey } from "@/components/CentralAdminCommandCenter";
 import { PendingTransferBanner } from "@/components/PendingTransferBanner";
 import { HomeSidebar } from "@/components/HomeSidebar";
 import { MobileNavigationDrawer } from "@/components/MobileNavigationDrawer";
@@ -292,7 +293,7 @@ export default function Home() {
     if (current) savePreferences.mutate({ language: current.language as "ar" | "en" | "fr" | "ur", themeMode: current.themeMode, themePreset: current.themePreset, notificationPreferencesJson: JSON.stringify(next) });
   };
   const visibleNotifications = useMemo(() => (notificationsQuery.data ?? []).filter((item) => { const text = `${item.title} ${item.body}`.toLowerCase(); return notificationPreferences[item.type] && (notificationFilter === "all" || !item.readAt) && (!notificationPrinterQuery.trim() || text.includes(notificationPrinterQuery.trim().toLowerCase())) && (!notificationRestaurantQuery.trim() || text.includes(notificationRestaurantQuery.trim().toLowerCase())); }), [notificationFilter, notificationPreferences, notificationPrinterQuery, notificationRestaurantQuery, notificationsQuery.data]);
-  const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId, limit: 200 }, { enabled: workspaceReady && user?.role !== "admin" && (user?.testRole as string | undefined) !== "admin", retry: false, refetchInterval: 3000, refetchIntervalInBackground: false, refetchOnWindowFocus: true, staleTime: 1000 });
+  const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId, limit: 200 }, { enabled: workspaceReady, retry: false, refetchInterval: 3000, refetchIntervalInBackground: false, refetchOnWindowFocus: true, staleTime: 1000 });
   const updateOrderStatus = trpc.platform.updateOrderStatus.useMutation({ onSuccess: () => { remoteOrders.refetch(); toast.success("تم حفظ حالة الطلب في قاعدة البيانات"); }, onError: (error) => toast.error(`تعذر تحديث الطلب: ${error.message}`) });
   const [branch, setBranch] = useState("");
   useEffect(() => { const firstBranch = workspaceBranches.data?.[0]; setBranch((current) => current && workspaceBranches.data?.some((item) => item.name === current) ? current : firstBranch?.name ?? ""); }, [workspaceBranches.data]);
@@ -326,6 +327,22 @@ export default function Home() {
   ].map((group) => ({ ...group, items: group.keys.map((key) => visibleNavItems.find((item) => item.key === key)).filter((item): item is (typeof visibleNavItems)[number] => Boolean(item)) })).filter((group) => group.items.length > 0);
   const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success(t("logout")), notifyError: (message) => toast.error(message) }); };
   const handleSwitchAccount = async () => { await executeSwitchAccountFlow({ logout, closeMenu: () => setProfileOpen(false), startLogin, redirect: () => undefined, notifyError: (message) => toast.error(message) }); };
+  if (isCentralAdmin) return (
+    <CentralAdminCommandCenter
+      active={active as CentralAdminNavKey}
+      onNavigate={(key) => setActive(key)}
+      orders={orders}
+      notificationCount={unreadNotificationCount}
+      userName={user.name || user.email || undefined}
+      userEmail={user.email ?? undefined}
+      onLogout={handleLogout}
+      pendingTransferCount={pendingTransferCount}
+      transferBannerDismissed={transferBannerDismissed}
+      onOpenTransfers={() => setActive("admin")}
+      onDismissTransfers={() => setTransferBannerDismissed(true)}
+      overviewChildren={<PlatformOverview onNavigate={() => setActive("admin")} />}
+    />
+  );
   return (
     <div dir={direction} lang={language} className={`h-dvh min-h-0 overflow-hidden bg-[#f6f7f9] nfood-dashboard-shell ${isCentralAdmin ? "nfood-central-admin" : ""} text-[#182230] transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100`}>
       <HomeSidebar
