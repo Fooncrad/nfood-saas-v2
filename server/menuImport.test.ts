@@ -20,4 +20,11 @@ describe("menu import preview", () => {
     await expect(previewMenuFromUrl("http://127.0.0.1/menu")).rejects.toThrow("موقعًا عامًا");
     await expect(previewMenuFromUrl("http://192.168.1.10/menu")).rejects.toThrow("موقعًا عامًا");
   });
+
+  it("extracts layout_1 menu-card HTML when modern_item_card is absent", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(`<div class="singleCategoryHeader"><h4>مشروبات</h4></div><div class="menu-card"><img class="menu-card-img" data-src="/uploads/thumb/cola.jpeg"><h4 class="menu-card-title">كولا</h4><div class="menu-card-sub">مشروب غازي</div><span class="menu-card-price">12.00&nbsp;Fr</span></div>`, { status: 200, headers: { "content-type": "text/html" } })));
+    const result = await previewMenuFromUrl("https://qrfoonmenu.com/some-restaurant?lang=ar");
+    expect(result.categories).toContain("مشروبات");
+    expect(result.items[0]).toMatchObject({ category: "مشروبات", name: "كولا", price: "12.00", imageUrl: "https://qrfoonmenu.com/uploads/thumb/cola.jpeg" });
+  });
 });
