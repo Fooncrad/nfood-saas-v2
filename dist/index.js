@@ -8146,7 +8146,17 @@ var appRouter = router({
       if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const hash = "scrypt$Ke89BlsJJa45L/5mz+r4yg==$7H6Z0FmUuzmpJS8AvEW4zw/z2mYsvIdhEF9ZDJBj6NmHJEzW9g1iz8GUdipDUe+PI60ecQJajl9NmtX4kSiVxg==";
       const seeds2 = [{ email: "fooncards@gmail.com", displayName: "FOON Cards \xB7 Super Admin", role: "admin" }, { email: "nfood@ret.com", displayName: "\u0623\u062F\u0645\u0646 \u0645\u0637\u0639\u0645 NFOOD", role: "restaurant_admin" }, { email: "nfood.waiter@ret.com", displayName: "\u0646\u0627\u062F\u0644 NFOOD", role: "waiter" }, { email: "nfood.kitchen@ret.com", displayName: "\u0645\u0637\u0628\u062E NFOOD", role: "kitchen" }, { email: "nfood.bar@ret.com", displayName: "\u0628\u0627\u0631 NFOOD", role: "bar" }, { email: "nfood.cashier@ret.com", displayName: "\u0643\u0627\u0634\u064A\u0631 NFOOD", role: "cashier" }, { email: "nfood.client@ret.com", displayName: "\u0639\u0645\u064A\u0644 NFOOD", role: "customer" }, { email: "nfood.driver@ret.com", displayName: "\u0633\u0627\u0626\u0642 NFOOD", role: "driver" }];
-      for (const seed of seeds2) await db.insert(testAccounts).values({ ...seed, passwordHash: hash }).onDuplicateKeyUpdate({ set: { displayName: seed.displayName, role: seed.role, passwordHash: hash } });
+      const requestedSeed = seeds2.find((seed) => seed.email === (input.email.trim().toLowerCase() === "admin" ? "fooncards@gmail.com" : input.email.trim().toLowerCase()));
+      if (requestedSeed) {
+        const existingSeed = await getTestAccountByEmail(requestedSeed.email);
+        if (!existingSeed) {
+          try {
+            await db.insert(testAccounts).values({ ...requestedSeed, passwordHash: hash });
+          } catch (error) {
+            throw new TRPCError5({ code: "PRECONDITION_FAILED", message: "\u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u063A\u064A\u0631 \u0645\u062D\u062F\u062B\u0629 \u0644\u0647\u064A\u0643\u0644 \u062D\u0633\u0627\u0628\u0627\u062A \u0627\u0644\u062F\u062E\u0648\u0644. \u0634\u063A\u0651\u0644 migrations \u0642\u0628\u0644 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u062D\u0633\u0627\u0628\u0627\u062A \u0627\u0644\u0627\u062E\u062A\u0628\u0627\u0631.", cause: error });
+          }
+        }
+      }
       const aliases = {
         admin: "fooncards@gmail.com",
         restaurant: "nfood@ret.com",
