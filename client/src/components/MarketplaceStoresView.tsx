@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import AdminBusinessOnboarding from "@/components/AdminBusinessOnboarding";
 
 type AdminStore = {
   id: string;
@@ -86,6 +87,7 @@ export default function MarketplaceStoresView() {
 
   return (
     <section dir="rtl" className="space-y-5">
+      <AdminBusinessOnboarding />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-bold text-[#e76f3c]">سوق نفود · المنشآت</p>
