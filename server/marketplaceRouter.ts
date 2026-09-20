@@ -683,6 +683,41 @@ export const marketplaceRouter = router({
     return { success: true, id: input.id, status: input.status };
   }),
 
+  adminCreateStore: platformAdminProcedure.input(z.object({
+    customerName: z.string().trim().min(2).max(300),
+    email: z.string().trim().email().max(255).transform((value) => value.toLowerCase()),
+    countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()),
+    city: z.string().trim().max(120).optional(),
+    timezone: z.string().trim().min(3).max(64),
+    currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()),
+    primaryLanguage: z.string().trim().min(2).max(10),
+    sector: z.enum(["restaurant","vegetables","grocery","laundry","automotive","beauty_salon","public_works","fashion","sweets"]),
+    plan: z.enum(PLAN_TIERS).default("Basic"),
+    taxId: z.string().trim().max(50).default(""),
+    status: z.boolean().default(true),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const duplicate = (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq(platformEntities.email, input.email)).limit(1))[0];
+    if (duplicate) throw new TRPCError({ code: "CONFLICT", message: "يوجد متجر مرتبط بهذا البريد بالفعل" });
+    const sector = (await db.select({ id: marketplaceSectors.id }).from(marketplaceSectors).where(eq(marketplaceSectors.slug, input.sector)).limit(1))[0];
+    if (!sector) throw new TRPCError({ code: "BAD_REQUEST", message: "النشاط غير مفعّل في كتالوج السوق" });
+    const id = `ent_${nanoid(16)}`;
+    await db.insert(platformEntities).values({
+      id, customerName: input.customerName, email: input.email, countryCode: input.countryCode,
+      city: input.city || null, timezone: input.timezone, currencyCode: input.currencyCode,
+      primaryLanguage: input.primaryLanguage, sector: input.sector, status: input.status,
+      plan: input.plan, taxId: input.taxId || "", licensingFee: "0.00",
+    });
+    await db.insert(marketplaceStorefrontSettings).values({
+      entityId: id, languagesJson: JSON.stringify(Array.from(new Set([input.primaryLanguage, "en"]))),
+      sectorConfigJson: JSON.stringify({ modules: input.sector === "restaurant" ? ["catalog","orders","reservations","restaurant_tables","kitchen","pos","invoicing","inventory"] : ["catalog","orders","pos","invoicing","inventory"] }),
+      isPublished: input.status,
+    });
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "marketplace.store.created", entityType: "platform_entity", entityId: id, outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ countryCode: input.countryCode, currencyCode: input.currencyCode, sector: input.sector, plan: input.plan }) });
+    return { success: true, id };
+  }),
+
   adminStores: platformAdminProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
