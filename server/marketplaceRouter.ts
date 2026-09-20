@@ -30,6 +30,7 @@ import type { TrpcContext } from "./_core/context";
 import { nanoid } from "nanoid";
 import { getDb, getMerchantRestaurantId, getPlatformSettings, insertAuditLog } from "./db";
 import { sendPushToUser } from "./push";
+import { COUNTRIES, CURRENCIES } from "../shared/currencies";
 
 async function getProviderEntity(user: AuthUser) {
   const db = await getDb();
@@ -168,6 +169,29 @@ export const marketplaceRouter = router({
     if (input?.sectorId) conditions.push(eq(marketplaceListings.sectorId, input.sectorId));
     if (input?.featuredOnly) conditions.push(eq(marketplaceListings.isFeatured, true));
     return db.select().from(marketplaceListings).where(and(...conditions)).orderBy(desc(marketplaceListings.isFeatured), desc(marketplaceListings.sortOrder));
+  }),
+
+  // ── Global country/currency registry used by Super Admin onboarding ──
+  adminLocalizationCatalog: platformAdminProcedure.query(async () => {
+    const currencyMap = new Map(CURRENCIES.map((currency) => [currency.code, currency]));
+    return {
+      countries: COUNTRIES.map((country) => {
+        const currency = currencyMap.get(country.currencyCode);
+        const language = country.locale.split("-")[0] || "en";
+        return {
+          code: country.code,
+          name: country.name,
+          nameAr: country.nameAr,
+          currencyCode: country.currencyCode,
+          currencyName: currency?.name ?? country.currencyCode,
+          currencyNameAr: currency?.nameAr ?? country.currencyCode,
+          currencySymbol: currency?.symbol ?? country.currencyCode,
+          locale: country.locale,
+          primaryLanguage: language,
+        };
+      }),
+      currencies: CURRENCIES,
+    };
   }),
 
   // ── Storage quotas: platform plan policy + per-business override ─────
