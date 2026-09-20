@@ -1214,8 +1214,11 @@ export function autoTranslateText(source: string, language: Language): string {
   if (databaseTranslation && !/[\u0600-\u06FF]/.test(databaseTranslation)) return databaseTranslation;
   const entries = getAutoTranslationEntries(language);
   if (!entries) return source;
-  const translated = entries.reduce((text, [re, to]) => text.replace(re, to), source);
-  return applyOperationalFragments(translated, language);
+  const exactTranslation = entries.find(([re]) => { re.lastIndex = 0; const match = re.exec(source); re.lastIndex = 0; return match?.[0] === source; });
+  if (exactTranslation) return exactTranslation[1];
+  // Never compose a sentence from word-by-word replacements. That produced mixed Arabic/English/French UI.
+  // For legacy text, use only a complete dictionary/database match; otherwise keep the original source until translated.
+  return source;
 }
 
 export function findUntranslatedArabic(source: string, language: Language): string[] {
@@ -1311,12 +1314,14 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyLanguageDocumentAttributes(language);
     if (!isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(DASHBOARD_LANGUAGE_STORAGE_KEY, language);
-    applyLegacyUiTranslations(language);
+    // Structured translations are the source of truth. The legacy DOM translator is kept only for Arabic
+    // restoration; non-Arabic screens must not be mutated word-by-word because that mixes languages.
+    if (language === "ar") applyLegacyUiTranslations(language);
     const observer = new MutationObserver((mutations) => mutations.forEach((mutation) => {
       if (mutation.type === "characterData" && mutation.target instanceof CharacterData) {
-        scheduleLegacyUiTranslations(language, mutation.target.parentNode ?? document);
+        if (language === "ar") scheduleLegacyUiTranslations(language, mutation.target.parentNode ?? document);
       } else {
-        mutation.addedNodes.forEach((node) => scheduleLegacyUiTranslations(language, node));
+        if (language === "ar") mutation.addedNodes.forEach((node) => scheduleLegacyUiTranslations(language, node));
       }
     }));
     observer.observe(document.body, { subtree: true, childList: true, characterData: true });
