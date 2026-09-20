@@ -9,6 +9,7 @@ import {
   affiliatePayoutRequests,
   marketplaceListings,
   marketplaceSectors,
+  marketplaceStorefrontSettings,
   platformEntities,
   restaurants,
   storeCampaigns,
@@ -104,6 +105,7 @@ export const marketplaceRouter = router({
       if (searchTerm && !(entity.customerName.toLowerCase().includes(searchTerm) || entity.email.toLowerCase().includes(searchTerm))) continue;
       const entityListings = listings.filter((listing) => listing.entityId === entity.id);
       const restaurantMatch = await db.select({ id: restaurants.id, brandName: restaurants.brandName, brandLogoUrl: restaurants.brandLogoUrl, coverUrl: restaurants.coverUrl, city: restaurants.city, brandColor: restaurants.brandColor, brandAccentColor: restaurants.brandAccentColor }).from(restaurants).where(eq(restaurants.brandName, entity.customerName)).limit(1);
+      const storefront = (await db.select().from(marketplaceStorefrontSettings).where(and(eq(marketplaceStorefrontSettings.entityId, entity.id), eq(marketplaceStorefrontSettings.isPublished, true))).limit(1))[0] ?? null;
       result.push({
         entityId: entity.id,
         customerName: entity.customerName,
@@ -114,6 +116,7 @@ export const marketplaceRouter = router({
         listingCount: entityListings.length,
         minPrice: entityListings.length ? Math.min(...entityListings.map((row) => Number(row.price))) : 0,
         restaurant: restaurantMatch[0] ?? null,
+        storefront,
       });
     }
     return result;
@@ -134,12 +137,18 @@ export const marketplaceRouter = router({
     const now = new Date();
     const coupons = await db.select().from(storeCoupons).where(and(eq(storeCoupons.entityId, input.entityId), eq(storeCoupons.isActive, true), or(isNull(storeCoupons.startsAt), lte(storeCoupons.startsAt, now)), or(isNull(storeCoupons.endsAt), gte(storeCoupons.endsAt, now)))).orderBy(desc(storeCoupons.createdAt));
     const restaurant = (await db.select().from(restaurants).where(eq(restaurants.brandName, entity.customerName)).limit(1))[0] ?? null;
-    return { entity, listings, loyaltySettings, coupons, restaurant };
+    const storefront = (await db.select().from(marketplaceStorefrontSettings).where(and(eq(marketplaceStorefrontSettings.entityId, entity.id), eq(marketplaceStorefrontSettings.isPublished, true))).limit(1))[0] ?? null;
+    return { entity, listings, loyaltySettings, coupons, restaurant, storefront };
   }),
-  publicListings: publicProcedure.input(z.object({ sectorId: z.number().int().positive().optional(), featuredOnly: z.boolean().optional() }).optional()).query(async ({ input }) => {
+  publicListings: publicProcedure.input(z.object({ sectorId: z.number().int().positive().optional(), featuredOnly: z.boolean().optional(), countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional() }).optional()).query(async ({ input }) => {
     const db = await getDb();
     if (!db) return [];
     const conditions = [eq(marketplaceListings.status, "active")];
+    if (input?.countryCode) {
+      const countryEntities = await db.select({ id: platformEntities.id }).from(platformEntities).where(and(eq(platformEntities.status, true), eq(platformEntities.countryCode, input.countryCode)));
+      if (!countryEntities.length) return [];
+      conditions.push(inArray(marketplaceListings.entityId, countryEntities.map((row) => row.id)));
+    }
     if (input?.sectorId) conditions.push(eq(marketplaceListings.sectorId, input.sectorId));
     if (input?.featuredOnly) conditions.push(eq(marketplaceListings.isFeatured, true));
     return db.select().from(marketplaceListings).where(and(...conditions)).orderBy(desc(marketplaceListings.isFeatured), desc(marketplaceListings.sortOrder));
@@ -184,6 +193,7 @@ export const marketplaceRouter = router({
     stockQuantity: z.number().int().nonnegative().optional(),
     isFeatured: z.boolean().optional(),
     tagsJson: z.string().max(2000).optional(),
+    metadataJson: z.string().max(8000).optional(),
   })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
@@ -210,6 +220,7 @@ export const marketplaceRouter = router({
       stockQuantity: input.stockQuantity ?? null,
       isFeatured: input.isFeatured ?? false,
       tagsJson: input.tagsJson ?? null,
+      metadataJson: input.metadataJson ?? null,
       status: "active",
     });
     const id = Number(result[0].insertId);
@@ -231,6 +242,7 @@ export const marketplaceRouter = router({
     isFeatured: z.boolean().optional(),
     status: z.enum(["draft", "active", "paused", "sold_out"]).optional(),
     tagsJson: z.string().max(2000).nullable().optional(),
+    metadataJson: z.string().max(8000).nullable().optional(),
   })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
