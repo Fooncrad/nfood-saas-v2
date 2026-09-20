@@ -75,11 +75,11 @@ export const marketplaceRouter = router({
     const preferred = Array.isArray(appearance.homeFeaturedEntityIds) ? appearance.homeFeaturedEntityIds.filter((id: unknown): id is string => typeof id === "string") : [];
     const entities = await db.select().from(platformEntities).where(eq(platformEntities.status, true));
     const listings = await db.select({ entityId: marketplaceListings.entityId, imageUrl: marketplaceListings.imageUrl, sectorId: marketplaceListings.sectorId }).from(marketplaceListings).where(eq(marketplaceListings.status, "active"));
-    const sectorRows = await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug, nameAr: marketplaceSectors.nameAr, nameEn: marketplaceSectors.nameEn }).from(marketplaceSectors);
+    const sectorRows = await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug, labelAr: marketplaceSectors.labelAr, labelEn: marketplaceSectors.labelEn, labelFr: marketplaceSectors.labelFr }).from(marketplaceSectors).where(eq(marketplaceSectors.isActive, true));
     const sectorMap = new Map(sectorRows.map(s => [s.id, s]));
-    const eligible = entities.filter(e => listings.some(l => l.entityId === e.id));
+    const eligible = entities.filter(e => preferred.includes(e.id) || listings.some(l => l.entityId === e.id));
     const ordered = [...eligible].sort((a,b) => { const ai=preferred.indexOf(a.id), bi=preferred.indexOf(b.id); if(ai>=0||bi>=0) return (ai<0?9999:ai)-(bi<0?9999:bi); return a.customerName.localeCompare(b.customerName); }).slice(0,limit);
-    return ordered.map(entity => { const items=listings.filter(l=>l.entityId===entity.id); const sector=sectorMap.get(items[0]?.sectorId); return { entityId:entity.id, customerName:entity.customerName, sector:entity.sector, sectorLabelAr:sector?.nameAr ?? entity.sector, sectorLabelEn:sector?.nameEn ?? entity.sector, imageUrl:items.find(i=>i.imageUrl)?.imageUrl ?? null, listingCount:items.length, featured:preferred.includes(entity.id) }; });
+    return ordered.map(entity => { const items=listings.filter(l=>l.entityId===entity.id); const sector=sectorMap.get(items[0]?.sectorId); return { entityId:entity.id, customerName:entity.customerName, sector:entity.sector, sectorLabelAr:sector?.labelAr ?? entity.sector, sectorLabelEn:sector?.labelEn ?? entity.sector, sectorLabelFr:sector?.labelFr ?? entity.sector, imageUrl:items.find(i=>i.imageUrl)?.imageUrl ?? null, listingCount:items.length, featured:preferred.includes(entity.id) }; });
   }),
   publicStores: publicProcedure.input(z.object({
     countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional(),
@@ -208,6 +208,11 @@ export const marketplaceRouter = router({
     isFeatured: z.boolean().optional(),
     tagsJson: z.string().max(2000).optional(),
     metadataJson: z.string().max(8000).optional(),
+    actionType: z.enum(["buy", "book", "order", "service", "contact", "visit"]).default("visit"),
+    actionUrl: z.string().trim().url().max(1000).optional(),
+    actionLabelAr: z.string().trim().max(120).optional(),
+    actionLabelEn: z.string().trim().max(120).optional(),
+    actionLabelFr: z.string().trim().max(120).optional(),
   })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
@@ -235,6 +240,11 @@ export const marketplaceRouter = router({
       isFeatured: input.isFeatured ?? false,
       tagsJson: input.tagsJson ?? null,
       metadataJson: input.metadataJson ?? null,
+      actionType: input.actionType,
+      actionUrl: input.actionUrl ?? null,
+      actionLabelAr: input.actionLabelAr ?? null,
+      actionLabelEn: input.actionLabelEn ?? null,
+      actionLabelFr: input.actionLabelFr ?? null,
       status: "active",
     });
     const id = Number(result[0].insertId);
@@ -257,6 +267,11 @@ export const marketplaceRouter = router({
     status: z.enum(["draft", "active", "paused", "sold_out"]).optional(),
     tagsJson: z.string().max(2000).nullable().optional(),
     metadataJson: z.string().max(8000).nullable().optional(),
+    actionType: z.enum(["buy", "book", "order", "service", "contact", "visit"]).optional(),
+    actionUrl: z.string().trim().url().max(1000).nullable().optional(),
+    actionLabelAr: z.string().trim().max(120).nullable().optional(),
+    actionLabelEn: z.string().trim().max(120).nullable().optional(),
+    actionLabelFr: z.string().trim().max(120).nullable().optional(),
   })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
