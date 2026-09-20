@@ -1317,6 +1317,13 @@
       "when": 1790003000000,
       "tag": "0187_business_departments",
       "breakpoints": true
+    },
+    {
+      "idx": 188,
+      "version": "5",
+      "when": 1790004000000,
+      "tag": "0188_scoped_rbac",
+      "breakpoints": true
     }
   ]
 }
