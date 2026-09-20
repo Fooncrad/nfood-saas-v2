@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Car, Check, HardHat, Languages, Lock, Mail, MapPin, Phone, Scissors, ShieldCheck, ShoppingCart, Shirt, Store, Utensils, WalletCards } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Lock, Mail, MapPin, Phone, ShieldCheck, Store, WalletCards } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -8,7 +8,7 @@ import { UI_LANGUAGES, languageMeta, useLanguage } from "@/contexts/LanguageCont
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import "./auth-scroll.css";
 
-const sectors = [{ id: "restaurant", icon: Store }, { id: "vegetables", icon: ShoppingCart }, { id: "grocery", icon: ShoppingCart }, { id: "laundry", icon: Shirt }, { id: "automotive", icon: Car }, { id: "beauty_salon", icon: Scissors }, { id: "public_works", icon: HardHat }, { id: "fashion", icon: Shirt }, { id: "sweets", icon: Utensils }] as const;
+const sectors = [{ id: "restaurant" }, { id: "vegetables" }, { id: "grocery" }, { id: "laundry" }, { id: "automotive" }, { id: "beauty_salon" }, { id: "public_works" }, { id: "fashion" }, { id: "sweets" }] as const;
 const languageOptions = UI_LANGUAGES.map((code) => ({ code, label: languageMeta[code].nativeLabel }));
 
 const registerCopy = {
@@ -193,11 +193,12 @@ export default function RegisterScreen() {
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
   const [sector, setSector] = useState("restaurant");
-  const [languageCode, setLanguageCode] = useState("ar");
+  const [languageCode] = useState(() => language);
   const [form, setForm] = useState({ business: "", email: "", phone: "", city: "" });
   const [countryCode, setCountryCode] = useState("SA");
   const [currencyCode, setCurrencyCode] = useState("SAR");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const registrationCaptcha = trpc.auth.registrationCaptcha.useQuery();
   const register = trpc.auth.registerRestaurant.useMutation({
     onSuccess: () => { setDone(true); toast.success(copy.toastCreated); },
@@ -218,6 +219,7 @@ export default function RegisterScreen() {
     setStep((current) => Math.min(3, current + 1));
   };
   const submit = () => {
+    if (!acceptedLegal) { toast.error(language === "ar" ? "يجب الموافقة على الشروط وسياسة الخصوصية" : language === "fr" ? "Vous devez accepter les conditions et la politique de confidentialité." : "You must accept the Terms and Privacy Policy."); return; }
     if (!registrationCaptcha.data?.challenge || !/^\d{1,2}$/.test(captchaAnswer.trim())) { toast.error(copy.toastCaptcha); return; }
     register.mutate({ restaurantName: form.business.trim(), sector: sector as "restaurant" | "vegetables" | "grocery" | "laundry" | "automotive" | "beauty_salon" | "public_works" | "fashion" | "sweets", countryCode, currencyCode, primaryLanguage: languageCode as "ar" | "en" | "fr" | "ur" | "es" | "de" | "tr", country: country.nameAr, city: form.city.trim(), email: form.email.trim(), phone: form.phone.trim(), plan: "Free", captchaChallenge: registrationCaptcha.data.challenge, captchaAnswer: captchaAnswer.trim() });
   };
@@ -307,22 +309,11 @@ export default function RegisterScreen() {
             {step === 1 ? (
               <section className="space-y-7">
                 <div>
-                  <div className="mb-3 flex items-center gap-2"><Languages className="h-4 w-4 text-orange-500" /><h3 className="font-black">{copy.accountLanguage}</h3></div>
-                  <select value={languageCode} onChange={(event) => setLanguageCode(event.target.value)} className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
-                    {languageOptions.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
-                  </select>
-                  <p className="mt-2 text-[11px] leading-5 text-slate-400">{copy.accountLanguageDesc}</p>
-                </div>
-                <div>
                   <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><Store className="h-4 w-4 text-orange-500" /><h3 className="font-black">{copy.chooseSector}</h3></div><span className="text-[11px] font-bold text-slate-400">{sectors.length} {copy.sectors}</span></div>
-                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-                    {sectors.map(({ id, icon: Icon }) => (
-                      <button key={id} onClick={() => setSector(id)} className={`rounded-2xl border p-4 text-start transition ${sector === id ? "border-orange-400 bg-orange-50 ring-2 ring-orange-100" : "border-slate-200 bg-white hover:border-orange-200"}`}>
-                        <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${sector === id ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-500"}`}><Icon className="h-5 w-5" /></span>
-                        <span className="mt-3 block text-xs font-bold leading-5">{sectorLabel(id)}</span>
-                      </button>
-                    ))}
-                  </div>
+                  <select value={sector} onChange={(event) => setSector(event.target.value)} className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
+                    {sectors.map(({ id }) => <option key={id} value={id}>{sectorLabel(id)}</option>)}
+                  </select>
+                  <p className="mt-2 text-[11px] leading-5 text-slate-400">{copy.accountLanguageLabel}: <strong>{languageLabel}</strong> · {copy.accountLanguageDesc}</p>
                 </div>
                 <button onClick={next} className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#e76f3c] text-base font-bold text-white hover:bg-[#d85f2e]">{copy.continue} <ArrowLeft className={arrow} /></button>
               </section>
@@ -396,6 +387,10 @@ export default function RegisterScreen() {
                   </div>
                   <input value={captchaAnswer} onChange={(event) => setCaptchaAnswer(event.target.value.replace(/\D/g, "").slice(0, 2))} inputMode="numeric" autoComplete="off" required placeholder={copy.answerPlaceholder} aria-label={copy.answerLabel} className="mt-3 h-12 w-full rounded-xl border border-orange-200 bg-white px-4 text-sm outline-none focus:border-orange-400" />
                 </div>
+                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-xs leading-6 text-slate-600">
+                  <input type="checkbox" checked={acceptedLegal} onChange={(event) => setAcceptedLegal(event.target.checked)} className="mt-1 accent-orange-500" />
+                  <span>{language === "ar" ? <>بإنشاء الحساب أوافق على <a href="/terms" target="_blank" className="font-bold text-orange-600">الشروط والأحكام</a> و<a href="/privacy" target="_blank" className="font-bold text-orange-600">سياسة الخصوصية</a>.</> : language === "fr" ? <>En créant le compte, j’accepte les <a href="/terms" target="_blank" className="font-bold text-orange-600">Conditions</a> et la <a href="/privacy" target="_blank" className="font-bold text-orange-600">Politique de confidentialité</a>.</> : <>By creating the account, I agree to the <a href="/terms" target="_blank" className="font-bold text-orange-600">Terms</a> and <a href="/privacy" target="_blank" className="font-bold text-orange-600">Privacy Policy</a>.</>}</span>
+                </label>
                 <div className="flex items-center gap-3">
                   <button type="button" onClick={() => setStep(2)} disabled={register.isPending} className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-500 hover:border-orange-200"><ArrowRight className={arrow} /> {copy.back}</button>
                   <button type="button" onClick={submit} disabled={register.isPending} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#e76f3c] text-base font-bold text-white hover:bg-[#d85f2e] disabled:opacity-60"><Lock className="h-4 w-4" /> {register.isPending ? copy.creating : copy.create}</button>
