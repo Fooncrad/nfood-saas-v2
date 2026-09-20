@@ -8161,17 +8161,6 @@ var appRouter = router({
       if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const hash = "scrypt$Ke89BlsJJa45L/5mz+r4yg==$7H6Z0FmUuzmpJS8AvEW4zw/z2mYsvIdhEF9ZDJBj6NmHJEzW9g1iz8GUdipDUe+PI60ecQJajl9NmtX4kSiVxg==";
       const seeds2 = [{ email: "fooncards@gmail.com", displayName: "FOON Cards \xB7 Super Admin", role: "admin" }, { email: "nfood@ret.com", displayName: "\u0623\u062F\u0645\u0646 \u0645\u0637\u0639\u0645 NFOOD", role: "restaurant_admin" }, { email: "nfood.waiter@ret.com", displayName: "\u0646\u0627\u062F\u0644 NFOOD", role: "waiter" }, { email: "nfood.kitchen@ret.com", displayName: "\u0645\u0637\u0628\u062E NFOOD", role: "kitchen" }, { email: "nfood.bar@ret.com", displayName: "\u0628\u0627\u0631 NFOOD", role: "bar" }, { email: "nfood.cashier@ret.com", displayName: "\u0643\u0627\u0634\u064A\u0631 NFOOD", role: "cashier" }, { email: "nfood.client@ret.com", displayName: "\u0639\u0645\u064A\u0644 NFOOD", role: "customer" }, { email: "nfood.driver@ret.com", displayName: "\u0633\u0627\u0626\u0642 NFOOD", role: "driver" }];
-      const requestedSeed = seeds2.find((seed) => seed.email === (input.email.trim().toLowerCase() === "admin" ? "fooncards@gmail.com" : input.email.trim().toLowerCase()));
-      if (requestedSeed) {
-        const existingSeed = await getTestAccountByEmail(requestedSeed.email);
-        if (!existingSeed) {
-          try {
-            await db.insert(testAccounts).values({ ...requestedSeed, passwordHash: hash });
-          } catch (error) {
-            throw new TRPCError5({ code: "PRECONDITION_FAILED", message: "\u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u063A\u064A\u0631 \u0645\u062D\u062F\u062B\u0629 \u0644\u0647\u064A\u0643\u0644 \u062D\u0633\u0627\u0628\u0627\u062A \u0627\u0644\u062F\u062E\u0648\u0644. \u0634\u063A\u0651\u0644 migrations \u0642\u0628\u0644 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u062D\u0633\u0627\u0628\u0627\u062A \u0627\u0644\u0627\u062E\u062A\u0628\u0627\u0631.", cause: error });
-          }
-        }
-      }
       const aliases = {
         admin: "fooncards@gmail.com",
         restaurant: "nfood@ret.com",
@@ -8348,7 +8337,7 @@ var appRouter = router({
       await db.update(users).set({ emailVerificationToken: null, emailVerificationExpiresAt: null }).where(eq6(users.id, user.id));
       return { success: true, message: "\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631. \u064A\u0645\u0643\u0646\u0643 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0627\u0644\u0622\u0646." };
     }),
-    registerRestaurant: publicProcedure.input(z3.object({ restaurantName: z3.string().trim().min(2).max(160), country: z3.string().trim().min(2).max(120).optional(), countryCode: z3.string().length(2).default("SA"), currencyCode: z3.string().length(3).optional(), primaryLanguage: z3.enum(["ar", "en", "fr", "ur", "es", "de", "tr"]).default("ar"), city: z3.string().trim().min(2).max(120), email: z3.string().trim().email().max(320), phone: z3.string().trim().min(7).max(40), plan: z3.enum(["Free", "Starter", "Growth", "Business", "Enterprise"]).default("Free"), captchaChallenge: z3.string().min(20).max(1e3), captchaAnswer: z3.string().trim().regex(/^\d{1,2}$/) })).mutation(async ({ ctx, input }) => {
+    registerRestaurant: publicProcedure.input(z3.object({ restaurantName: z3.string().trim().min(2).max(160), sector: z3.enum(["restaurant", "vegetables", "grocery", "laundry", "automotive", "beauty_salon", "public_works", "fashion", "sweets"]).default("restaurant"), country: z3.string().trim().min(2).max(120).optional(), countryCode: z3.string().length(2).default("SA"), currencyCode: z3.string().length(3).optional(), primaryLanguage: z3.enum(["ar", "en", "fr", "ur", "es", "de", "tr"]).default("ar"), city: z3.string().trim().min(2).max(120), email: z3.string().trim().email().max(320), phone: z3.string().trim().min(7).max(40), plan: z3.enum(["Free", "Starter", "Growth", "Business", "Enterprise"]).default("Free"), captchaChallenge: z3.string().min(20).max(1e3), captchaAnswer: z3.string().trim().regex(/^\d{1,2}$/) })).mutation(async ({ ctx, input }) => {
       if (!verifyRegistrationCaptcha(input.captchaChallenge, input.captchaAnswer)) throw new TRPCError5({ code: "BAD_REQUEST", message: "\u0623\u0643\u0645\u0644 \u0627\u062E\u062A\u0628\u0627\u0631 \u0627\u0644\u062A\u062D\u0642\u0642 \u0628\u0634\u0643\u0644 \u0635\u062D\u064A\u062D" });
       const db = await getDb();
       if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
@@ -8374,6 +8363,8 @@ var appRouter = router({
       if (!owner) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u0645\u0627\u0644\u0643 \u0627\u0644\u0645\u0637\u0639\u0645" });
       const restaurantResult = await db.insert(restaurants).values({ name: input.restaurantName, slug, barcode: `NFOOD-${nanoid3(10).toUpperCase()}`, status: "trial", plan: input.plan, phone: input.phone, country: input.country ?? countryDef.nameAr, countryCode: countryDef.code, currencyCode: resolvedCurrency.code, currencyDecimals: resolvedCurrency.decimals, primaryLanguage: input.primaryLanguage, languagesJson: JSON.stringify(Array.from(/* @__PURE__ */ new Set([input.primaryLanguage, "ar", "en", "fr"]))), city: input.city, brandName: input.restaurantName });
       const restaurantId = Number(restaurantResult[0].insertId);
+      const entityId = `biz_${nanoid3(18)}`;
+      await db.insert(platformEntities).values({ id: entityId, customerName: input.restaurantName, email, countryCode: countryDef.code, city: input.city, currencyCode: resolvedCurrency.code, primaryLanguage: input.primaryLanguage, sector: input.sector, status: true, plan: input.plan === "Enterprise" ? "Enterprise" : input.plan === "Business" || input.plan === "Growth" ? "Pro" : "Basic", taxId: `PENDING-${restaurantId}`, licensingFee: "0.00" });
       await db.update(users).set({ emailVerified: false, emailVerificationToken, emailVerificationExpiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 24) }).where(eq6(users.id, owner.id));
       const branchResult = await db.insert(branches).values({ restaurantId, name: "\u0627\u0644\u0641\u0631\u0639 \u0627\u0644\u0631\u0626\u064A\u0633\u064A", city: input.city, countryCode: countryDef.code, currencyCode: resolvedCurrency.code, currencyDecimals: resolvedCurrency.decimals, status: "open" });
       await db.insert(subscriptions).values({ restaurantId, plan: input.plan, status: "trial", monthlyPrice: "0" });
@@ -8382,7 +8373,7 @@ var appRouter = router({
       const token = await sdk.signSession({ openId: `test_${accountId}`, appId: `register_${nanoid3(12)}`, name: `\u0645\u062F\u064A\u0631 ${input.restaurantName}` });
       await db.insert(authSessions).values({ userId: owner.id, sessionTokenHash: createHash2("sha256").update(token).digest("hex"), deviceLabel: "\u062A\u0633\u062C\u064A\u0644 \u0645\u0637\u0639\u0645 \u062C\u062F\u064A\u062F", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 12) });
       ctx.res.cookie(TEST_SESSION_COOKIE, token, { ...getSessionCookieOptions(ctx.req), httpOnly: true, maxAge: 1e3 * 60 * 60 * 12 });
-      return { success: true, restaurantId, plan: input.plan, temporaryPassword, emailVerified: false, emailVerificationRequired: true };
+      return { success: true, restaurantId, entityId, sector: input.sector, plan: input.plan, temporaryPassword, emailVerified: false, emailVerificationRequired: true };
     }),
     verifyEmail: publicProcedure.input(z3.object({ token: z3.string().min(20).max(128) })).mutation(async ({ input }) => {
       const db = await getDb();
