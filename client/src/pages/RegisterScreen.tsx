@@ -42,7 +42,7 @@ const registerCopy = {
     continue: "متابعة",
     sectorTitle: "قطاع النشاط",
     businessName: "اسم المنشأة",
-    businessPlaceholder: "مثال: شاورما السدة",
+    businessPlaceholder: "مثال: مقهى ناصر",
     country: "الدولة",
     currency: "العملة",
     autoCurrency: "تُستنتج تلقائيًا من الدولة",
@@ -99,7 +99,7 @@ const registerCopy = {
     continue: "Continue",
     sectorTitle: "Business sector",
     businessName: "Business name",
-    businessPlaceholder: "Example: Al-Sadda Shawarma",
+    businessPlaceholder: "Example: Nasser Café",
     country: "Country",
     currency: "Currency",
     autoCurrency: "Inferred automatically from country",
@@ -156,7 +156,7 @@ const registerCopy = {
     continue: "Continuer",
     sectorTitle: "Secteur d’activité",
     businessName: "Nom de l’établissement",
-    businessPlaceholder: "Exemple : Chawarma Al-Sadda",
+    businessPlaceholder: "Exemple : Café Nasser",
     country: "Pays",
     currency: "Devise",
     autoCurrency: "Déduite automatiquement du pays",
@@ -207,7 +207,6 @@ export default function RegisterScreen() {
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const arrow = direction === "rtl" ? "h-4 w-4" : "h-4 w-4 rotate-180";
   const country = useMemo(() => COUNTRIES.find((item) => item.code === countryCode) ?? COUNTRIES[0], [countryCode]);
-  const autoCurrency = getCurrency(country.currencyCode);
   const selectedCurrency = getCurrency(currencyCode);
   const languageLabel = languageOptions.find((item) => item.code === languageCode)?.label ?? languageOptions[0].label;
   const countryName = (item: { code: string; nameAr: string; name: string }) => language === "ar" ? item.nameAr : item.name;
@@ -338,7 +337,7 @@ export default function RegisterScreen() {
                     <span className="mb-2 flex items-center gap-2 text-xs font-bold text-slate-700"><WalletCards className="h-4 w-4 text-orange-500" /> {copy.currency}</span>
                     <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
                       <p className="text-[11px] font-bold text-emerald-700">{copy.autoCurrency}</p>
-                      <p className="mt-1 text-sm font-black text-emerald-900">{autoCurrency.nameAr} · {autoCurrency.code} ({autoCurrency.symbol})</p>
+                      <p className="mt-1 text-sm font-black text-emerald-900">{currencyName(selectedCurrency)} · {selectedCurrency.code} ({selectedCurrency.symbol})</p>
                     </div>
                     <select value={currencyCode} onChange={(event) => setCurrencyCode(event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400">
                       {CURRENCIES.map((item) => <option key={item.code} value={item.code}>{currencyName(item)} · {item.code} ({item.symbol})</option>)}
