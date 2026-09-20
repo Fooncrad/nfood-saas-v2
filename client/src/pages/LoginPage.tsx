@@ -103,10 +103,15 @@ export default function LoginPage() {
   const copy = language === "fr" ? loginCopy.fr : language === "en" ? loginCopy.en : loginCopy.ar;
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
-  const [email, setEmail] = useState("nfood@ret.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const login = trpc.auth.testLogin.useMutation({ onSuccess: () => { toast.success(copy.toastSignedIn); setLocation("/"); }, onError: (error) => toast.error(error.message || copy.toastInvalid) });
+  const login = trpc.auth.testLogin.useMutation({ onSuccess: (result) => {
+    toast.success(copy.toastSignedIn);
+    const next = new URLSearchParams(window.location.search).get("next");
+    const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : result.role === "admin" ? "/admin" : "/";
+    setLocation(safeNext);
+  }, onError: (error) => toast.error(error.message || copy.toastInvalid) });
   const features = [copy.feat1, copy.feat2, copy.feat3];
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#071525] text-white">{copy.checking}</div>;
