@@ -10,7 +10,7 @@ export const DASHBOARD_LANGUAGE_STORAGE_KEY = "nfood-dashboard-language";
 export const MENU_LANGUAGE_STORAGE_KEY = "nfood-menu-language";
 export const MENU_LANGUAGE_MANUAL_STORAGE_KEY = "nfood-menu-language-manual";
 export function isPublicLanguagePath(pathname: string) { return pathname.startsWith("/menu/") || pathname.startsWith("/restaurant/"); }
-export function languageStorageKey(pathname?: string) { const currentPath = pathname ?? (typeof window !== "undefined" ? window.location.pathname : "/"); return isPublicLanguagePath(currentPath) ? MENU_LANGUAGE_STORAGE_KEY : DASHBOARD_LANGUAGE_STORAGE_KEY; }
+export function languageStorageKey(_pathname?: string) { return LANGUAGE_STORAGE_KEY; }
 export const UI_LANGUAGES = ["ar", "en", "fr"] as const;
 export type UiLanguage = (typeof UI_LANGUAGES)[number];
 export function isUiLanguage(value: unknown): value is UiLanguage { return UI_LANGUAGES.includes(value as UiLanguage); }
@@ -1297,7 +1297,7 @@ export function createTranslator(language: Language) {
 type LanguageContextValue = { language: Language; direction: "rtl" | "ltr"; locale: string; isLanguageChanging: boolean; setLanguage: (language: Language, persist?: boolean) => void; t: (key: TranslationKey | string, variables?: Record<string, string | number>) => string; formatDate: (value: Date | string | number) => string; formatNumber: (value: number) => string };
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
-function readStoredLanguage(): Language { if (typeof window === "undefined") return "ar"; if (isPublicLanguagePath(window.location.pathname)) { const manual = window.localStorage.getItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY); if (isUiLanguage(manual)) return manual; return detectVisitorLanguage(); } const stored = window.localStorage.getItem(DASHBOARD_LANGUAGE_STORAGE_KEY); return isUiLanguage(stored) ? stored : "ar"; }
+function readStoredLanguage(): Language { if (typeof window === "undefined") return "ar"; const unified = window.localStorage.getItem(LANGUAGE_STORAGE_KEY); if (isUiLanguage(unified)) return unified; const legacyManual = window.localStorage.getItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY); if (isUiLanguage(legacyManual)) { window.localStorage.setItem(LANGUAGE_STORAGE_KEY, legacyManual); return legacyManual; } const legacyDashboard = window.localStorage.getItem(DASHBOARD_LANGUAGE_STORAGE_KEY); if (isUiLanguage(legacyDashboard)) { window.localStorage.setItem(LANGUAGE_STORAGE_KEY, legacyDashboard); return legacyDashboard; } const detected = detectVisitorLanguage(); window.localStorage.setItem(LANGUAGE_STORAGE_KEY, detected); return detected; }
 
 export function applyLanguageDocumentAttributes(language: Language, root: Document = document) {
   const meta = languageMeta[language];
@@ -1313,7 +1313,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const meta = languageMeta[language];
   useEffect(() => {
     applyLanguageDocumentAttributes(language);
-    if (!isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(DASHBOARD_LANGUAGE_STORAGE_KEY, language);
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
     // Structured translations are the source of truth. The legacy DOM translator is kept only for Arabic
     // restoration; non-Arabic screens must not be mutated word-by-word because that mixes languages.
     if (language === "ar") applyLegacyUiTranslations(language);
@@ -1327,7 +1327,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     observer.observe(document.body, { subtree: true, childList: true, characterData: true });
     return () => { observer.disconnect(); };
   }, [language, meta.dir]);
-  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, isLanguageChanging, setLanguage: (next, persist = true) => { if (next !== language) { animateLanguageChange(); setIsLanguageChanging(true); if (typeof window !== "undefined") window.setTimeout(() => setIsLanguageChanging(false), 420); } setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(languageStorageKey(), next); if (isPublicLanguagePath(window.location.pathname)) window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: createTranslator(language), formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language)   }), [language, meta.dir, meta.locale, isLanguageChanging]);
+  const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, isLanguageChanging, setLanguage: (next, persist = true) => { if (next !== language) { animateLanguageChange(); setIsLanguageChanging(true); if (typeof window !== "undefined") window.setTimeout(() => setIsLanguageChanging(false), 420); } setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(LANGUAGE_STORAGE_KEY, next); window.localStorage.setItem(DASHBOARD_LANGUAGE_STORAGE_KEY, next); window.localStorage.setItem(MENU_LANGUAGE_STORAGE_KEY, next); window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: createTranslator(language), formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language)   }), [language, meta.dir, meta.locale, isLanguageChanging]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
