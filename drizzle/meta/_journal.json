@@ -1324,6 +1324,13 @@
       "when": 1790004000000,
       "tag": "0188_scoped_rbac",
       "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "5",
+      "when": 1790005000000,
+      "tag": "0189_seed_permission_keys",
+      "breakpoints": true
     }
   ]
 }
