@@ -710,7 +710,7 @@ export const marketplaceRouter = router({
       plan: input.plan, taxId: input.taxId || "", licensingFee: "0.00",
     });
     await db.insert(marketplaceStorefrontSettings).values({
-      entityId: id, displayName: input.customerName, languagesJson: JSON.stringify(Array.from(new Set([input.primaryLanguage, "en"]))),
+      entityId: id, languagesJson: JSON.stringify(Array.from(new Set([input.primaryLanguage, "en"]))),
       sectorConfigJson: JSON.stringify({ modules: input.sector === "restaurant" ? ["catalog","orders","reservations","restaurant_tables","kitchen","pos","invoicing","inventory"] : ["catalog","orders","pos","invoicing","inventory"] }),
       isPublished: input.status,
     });
