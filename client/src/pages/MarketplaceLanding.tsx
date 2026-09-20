@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { marketplaceCopy, marketplaceCountries, sectorMeta } from "@/lib/marketplaceExperience";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { Globe2, Search, Store, Languages, MapPin, Moon, Sun, Heart, ShieldCheck, Truck, Headphones, CreditCard, ArrowLeft } from "lucide-react";
+import { Globe2, Search, Store, MapPin, Moon, Sun, Heart, ShieldCheck, Truck, Headphones, CreditCard, ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 
