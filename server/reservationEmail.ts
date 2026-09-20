@@ -13,6 +13,7 @@ function getTransporter() {
 
 function formatWhen(date: Date) { return date.toLocaleString("ar-SA-u-ca-gregory-nu-latn", { dateStyle: "full", timeStyle: "short" }); }
 
+export async function sendWelcomeEmail(input: { to: string; customerName: string; restaurantName: string; restaurantId?: number | null }) { return sendTemplatedEmail({ to: input.to, restaurantId: input.restaurantId, eventKey: "account.welcome", data: { name: input.customerName, restaurantName: input.restaurantName, siteName: "NFOOD" } }); }
 export async function sendEmailVerificationEmail(input: { to: string; customerName: string; verifyUrl: string; restaurantId?: number | null }) { return sendTemplatedEmail({ to: input.to, restaurantId: input.restaurantId, eventKey: "account.email_verification", data: { name: input.customerName, verifyUrl: input.verifyUrl, siteName: "NFOOD" } }); }
 export async function sendPasswordResetEmail(input: { to: string; customerName: string; resetUrl: string; restaurantId?: number | null }) { return sendTemplatedEmail({ to: input.to, restaurantId: input.restaurantId, eventKey: "account.password_reset", data: { name: input.customerName, resetUrl: input.resetUrl, siteName: "NFOOD" } }); }
 export async function sendGuestClaimOtpEmail(input: { to: string; customerName: string; code: string; restaurantId?: number | null }) { return sendTemplatedEmail({ to: input.to, restaurantId: input.restaurantId, eventKey: "account.otp", data: { name: input.customerName, code: input.code, expiresMinutes: 10, siteName: "NFOOD" } }); }
