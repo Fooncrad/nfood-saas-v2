@@ -26,7 +26,7 @@ import {
 import { publicProcedure, protectedProcedure, adminProcedure, platformAdminProcedure, router } from "./_core/trpc";
 import type { TrpcContext } from "./_core/context";
 import { nanoid } from "nanoid";
-import { getDb, getMerchantRestaurantId, insertAuditLog } from "./db";
+import { getDb, getMerchantRestaurantId, getPlatformSettings, insertAuditLog } from "./db";
 import { sendPushToUser } from "./push";
 
 async function getProviderEntity(user: AuthUser) {
@@ -59,6 +59,7 @@ const entityIdSchema = z.string().trim().min(1).max(30);
 
 export const marketplaceRouter = router({
   // ── Public storefront ────────────────────────────────────────────────
+  publicAppearance: publicProcedure.query(async () => { const settings = await getPlatformSettings(); let appearance: Record<string, unknown> = {}; try { appearance = JSON.parse(settings.marketplaceAppearanceJson || "{}"); } catch {} return { siteName: settings.siteName, siteLogoUrl: settings.siteLogoUrl, socialLinks: settings.socialLinks, appearance }; }),
   publicSectors: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
