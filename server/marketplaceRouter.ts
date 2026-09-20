@@ -788,6 +788,11 @@ export const marketplaceRouter = router({
     customerName: z.string().trim().min(1).max(300).optional(),
     taxId: z.string().trim().min(1).max(50).optional(),
     licensingFee: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+    countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional(),
+    city: z.string().trim().max(120).nullable().optional(),
+    timezone: z.string().trim().min(3).max(64).optional(),
+    currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()).optional(),
+    primaryLanguage: z.string().trim().min(2).max(10).optional(),
   })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
