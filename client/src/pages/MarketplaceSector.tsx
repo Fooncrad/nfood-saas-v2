@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { ArrowRight, Loader2, Search, ShoppingBag, Store, Utensils, type LucideIcon } from "lucide-react";
+import { ArrowRight, Loader2, Search, ShoppingBag, Store, Utensils, Home, ChevronLeft, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "wouter";
 
@@ -19,7 +19,8 @@ export default function MarketplaceSector() {
   const [search, setSearch] = useState("");
   const sectors = trpc.marketplace.publicSectors.useQuery(undefined, { retry: false });
   const sector = (sectors.data ?? []).find((s) => s.slug === slug);
-  const stores = trpc.marketplace.publicStores.useQuery({ sectorSlug: slug, search: search.trim() || undefined }, { retry: false, enabled: Boolean(slug) });
+  const country = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("country") || localStorage.getItem("nfood-market-country") || "SA") : "SA";
+  const stores = trpc.marketplace.publicStores.useQuery({ countryCode: country, sectorSlug: slug, search: search.trim() || undefined }, { retry: false, enabled: Boolean(slug) });
   const featuredListings = trpc.marketplace.publicListings.useQuery({ sectorId: sector?.id, featuredOnly: true }, { retry: false, enabled: Boolean(sector?.id) });
   const Icon = SECTOR_ICONS[sector?.icon ?? ""] ?? Store;
 
@@ -28,7 +29,7 @@ export default function MarketplaceSector() {
       <main dir="rtl" className="min-h-screen bg-[#0b0f17] text-white">
         <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b0f17]/90 px-5 py-4 backdrop-blur-xl md:px-8">
           <div className="mx-auto flex max-w-7xl items-center gap-3">
-            <Link href="/marketplace"><Button type="button" variant="ghost" className="rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"><ArrowRight className="ml-2 h-4 w-4" />العودة للسوق</Button></Link>
+            <Link href={`/marketplace?country=${country}`}><Button type="button" variant="ghost" className="rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"><Home className="ml-2 h-4 w-4" />السوق</Button></Link>
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E76F3C] text-lg font-black text-white">N</span>
             <strong className="text-sm tracking-[.12em]">NFOOD MARKETPLACE</strong>
           </div>
@@ -43,7 +44,7 @@ export default function MarketplaceSector() {
       <main dir="rtl" className="min-h-screen bg-[#0b0f17] text-white">
         <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b0f17]/90 px-5 py-4 backdrop-blur-xl md:px-8">
           <div className="mx-auto flex max-w-7xl items-center gap-3">
-            <Link href="/marketplace"><Button type="button" variant="ghost" className="rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"><ArrowRight className="ml-2 h-4 w-4" />العودة للسوق</Button></Link>
+            <Link href={`/marketplace?country=${country}`}><Button type="button" variant="ghost" className="rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"><Home className="ml-2 h-4 w-4" />السوق</Button></Link>
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E76F3C] text-lg font-black text-white">N</span>
             <strong className="text-sm tracking-[.12em]">NFOOD MARKETPLACE</strong>
           </div>
@@ -60,7 +61,7 @@ export default function MarketplaceSector() {
     <main dir="rtl" className="min-h-screen bg-[#0b0f17] text-white">
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b0f17]/90 px-5 py-4 backdrop-blur-xl md:px-8">
         <div className="mx-auto flex max-w-7xl items-center gap-3">
-          <Link href="/marketplace"><Button type="button" variant="ghost" className="rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"><ArrowRight className="ml-2 h-4 w-4" />العودة للسوق</Button></Link>
+          <Link href={`/marketplace?country=${country}`}><Button type="button" variant="ghost" className="rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"><Home className="ml-2 h-4 w-4" />السوق</Button></Link>
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E76F3C] text-lg font-black text-white">N</span>
           <strong className="text-sm tracking-[.12em]">NFOOD MARKETPLACE</strong>
         </div>
@@ -92,7 +93,7 @@ export default function MarketplaceSector() {
 
       <section className="mx-auto max-w-7xl px-5 pb-16 md:px-8">
         <h2 className="mb-5 text-lg font-black">المتاجر في قطاع {sector.labelAr}</h2>
-        {stores.isLoading ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[1, 2, 3, 4].map((item) => <div key={item} className="h-64 animate-pulse rounded-3xl border border-white/10 bg-white/5" />)}</div> : storeRows.length === 0 ? <div className="rounded-3xl border border-dashed border-white/15 p-14 text-center text-sm text-slate-400">لا توجد متاجر نشطة في هذا القطاع بعد.</div> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{storeRows.map((store) => <Link key={store.entityId} href={`/store/${store.entityId}`} className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 transition hover:-translate-y-1 hover:border-orange-400/40"><div className="relative flex h-24 items-end justify-between gap-2 p-4" style={{ background: `linear-gradient(135deg, ${store.restaurant?.brandColor ?? "#111927"}, ${store.restaurant?.brandAccentColor ?? store.restaurant?.brandColor ?? "#0b1d35"})` }}>{store.restaurant?.brandLogoUrl ? <img src={store.restaurant.brandLogoUrl} alt="" className="h-14 w-14 rounded-2xl bg-white/95 object-cover p-1 shadow-lg" /> : <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-xl font-black text-white">{store.customerName.trim().charAt(0)}</span>}<Badge className="border-white/20 bg-black/40 text-orange-200">{store.sector}</Badge></div><CardContent className="p-4"><div className="flex items-center justify-between gap-2"><h3 className="line-clamp-1 font-black">{store.customerName}</h3></div><p className="mt-1 line-clamp-1 text-xs text-slate-400">{store.restaurant?.city ?? store.email}</p><div className="mt-3 flex items-center justify-between text-xs"><span className="font-bold text-emerald-300">{store.listingCount} منتجًا</span><span className="font-black text-white">{Number(store.minPrice) > 0 ? `من ${store.minPrice.toLocaleString("en-US")} ر.س` : "مجاني"}</span></div></CardContent></Link>)}</div>}
+        {stores.isLoading ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[1, 2, 3, 4].map((item) => <div key={item} className="h-64 animate-pulse rounded-3xl border border-white/10 bg-white/5" />)}</div> : storeRows.length === 0 ? <div className="rounded-3xl border border-dashed border-white/15 p-14 text-center text-sm text-slate-400">لا توجد متاجر نشطة في هذا القطاع بعد.</div> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{storeRows.map((store) => <Link key={store.entityId} href={`/store/${store.entityId}?country=${country}&sector=${slug}`} className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 transition hover:-translate-y-1 hover:border-orange-400/40"><div className="relative flex h-24 items-end justify-between gap-2 p-4" style={{ background: `linear-gradient(135deg, ${store.restaurant?.brandColor ?? "#111927"}, ${store.restaurant?.brandAccentColor ?? store.restaurant?.brandColor ?? "#0b1d35"})` }}>{store.restaurant?.brandLogoUrl ? <img src={store.restaurant.brandLogoUrl} alt="" className="h-14 w-14 rounded-2xl bg-white/95 object-cover p-1 shadow-lg" /> : <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-xl font-black text-white">{store.customerName.trim().charAt(0)}</span>}<Badge className="border-white/20 bg-black/40 text-orange-200">{store.sector}</Badge></div><CardContent className="p-4"><div className="flex items-center justify-between gap-2"><h3 className="line-clamp-1 font-black">{store.customerName}</h3></div><p className="mt-1 line-clamp-1 text-xs text-slate-400">{store.restaurant?.city ?? store.email}</p><div className="mt-3 flex items-center justify-between text-xs"><span className="font-bold text-emerald-300">{store.listingCount} منتجًا</span><span className="font-black text-white">{Number(store.minPrice) > 0 ? `من ${store.minPrice.toLocaleString("en-US")} ر.س` : "مجاني"}</span></div></CardContent></Link>)}</div>}
       </section>
     </main>
   );
