@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { ArrowRight, Copy, Gift, Loader2, MapPin, Package, Sparkles, Tag, TrendingUp } from "lucide-react";
+import { ArrowRight, Copy, Gift, Loader2, MapPin, Package, Sparkles, Tag, TrendingUp, Home, ChevronLeft } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Link, useParams } from "wouter";
@@ -13,7 +13,10 @@ import { Link, useParams } from "wouter";
 export default function MarketplaceStore() {
   const { entityId } = useParams<{ entityId: string }>();
   const { user } = useAuth();
-  const store = trpc.marketplace.publicStore.useQuery({ entityId: entityId! }, { retry: false, enabled: Boolean(entityId) });
+  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const country = params.get("country") || (typeof window !== "undefined" ? localStorage.getItem("nfood-market-country") : null) || "SA";
+  const sectorSlug = params.get("sector");
+  const store = trpc.marketplace.publicStore.useQuery({ entityId: entityId!, countryCode: country }, { retry: false, enabled: Boolean(entityId) });
   const myRewards = trpc.marketplace.myRewards.useQuery(undefined, { retry: false, enabled: Boolean(user) });
   const recordAffiliateClick = trpc.marketplace.recordAffiliateClick.useMutation();
   const claimReferral = trpc.marketplace.claimReferral.useMutation();
@@ -22,9 +25,9 @@ export default function MarketplaceStore() {
   useEffect(() => {
     if (firedRef.current || !entityId) return;
     firedRef.current = true;
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get("ref");
-    const rf = params.get("rf");
+    const trackingParams = new URLSearchParams(window.location.search);
+    const ref = trackingParams.get("ref");
+    const rf = trackingParams.get("rf");
     if (ref) recordAffiliateClick.mutate({ code: ref });
     if (rf) claimReferral.mutate({ code: rf, userId: user?.id ?? undefined });
   }, [entityId, user?.id, recordAffiliateClick, claimReferral]);
@@ -44,7 +47,7 @@ export default function MarketplaceStore() {
     <main dir="rtl" className="min-h-screen bg-[#0b0f17] text-white">
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b0f17]/90 px-5 py-4 backdrop-blur-xl md:px-8">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3">
-          <Link href="/marketplace"><Button type="button" variant="ghost" className="rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"><ArrowRight className="ml-2 h-4 w-4" />العودة للسوق</Button></Link>
+          <Link href={sectorSlug ? `/marketplace/sector/${sectorSlug}?country=${country}` : `/marketplace?country=${country}`}><Button type="button" variant="ghost" className="rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"><ArrowRight className="ml-2 h-4 w-4" />رجوع</Button></Link><Link href={`/marketplace?country=${country}`} className="hidden items-center gap-1 text-xs text-slate-500 hover:text-white sm:flex"><Home className="h-3.5 w-3.5"/>السوق</Link>
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E76F3C] text-lg font-black text-white">N</span>
           <strong className="text-sm tracking-[.12em]">NFOOD MARKETPLACE</strong>
           {entity && <Badge className="border-white/20 bg-white/5 text-orange-200">{entity.sector}</Badge>}
@@ -52,11 +55,11 @@ export default function MarketplaceStore() {
       </header>
 
       {store.isLoading && <div className="mx-auto flex max-w-7xl items-center justify-center py-32"><Loader2 className="h-8 w-8 animate-spin text-orange-400" /></div>}
-      {store.isError && <div className="mx-auto max-w-7xl py-32 text-center"><h1 className="text-2xl font-black">المتجر غير موجود</h1><p className="mt-2 text-sm text-slate-400">قد يكون المعطول أو غير موجود.</p><Link href="/marketplace"><Button type="button" className="mt-6 rounded-xl bg-[#E76F3C]">العودة للسوق</Button></Link></div>}
+      {store.isError && <div className="mx-auto max-w-7xl py-32 text-center"><h1 className="text-2xl font-black">المتجر غير موجود</h1><p className="mt-2 text-sm text-slate-400">قد يكون المعطول أو غير موجود.</p><Link href={`/marketplace?country=${country}`}><Button type="button" className="mt-6 rounded-xl bg-[#E76F3C]">العودة للسوق</Button></Link></div>}
 
       {entity && (
         <div className="mx-auto max-w-7xl space-y-8 px-5 py-8 md:px-8">
-          <div className="flex flex-col gap-6 rounded-3xl border border-white/10 bg-white/5 p-6 md:flex-row md:items-center md:gap-10" style={{ background: `linear-gradient(135deg, ${restaurant?.brandColor ?? "#111927"}, ${restaurant?.brandAccentColor ?? restaurant?.brandColor ?? "#0b1d35"})` }}>
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5"><div className="absolute inset-x-0 top-0 h-32 bg-cover bg-center opacity-35" style={restaurant?.coverUrl ? { backgroundImage: `linear-gradient(to bottom,transparent,#0b0f17),url(${restaurant.coverUrl})` } : { background: `linear-gradient(135deg, ${restaurant?.brandColor ?? "#111927"}, ${restaurant?.brandAccentColor ?? "#0b1d35"})` }} /><div className="relative flex flex-col gap-6 p-6 pt-16 md:flex-row md:items-center md:gap-10">
             <div className="flex shrink-0 items-center gap-4">
               {restaurant?.brandLogoUrl ? <img src={restaurant.brandLogoUrl} alt="" className="h-20 w-20 rounded-3xl bg-white/95 object-cover p-1.5 shadow-lg" /> : <span className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/20 text-2xl font-black text-white">{entity.customerName.trim().charAt(0)}</span>}
               <div>
@@ -67,7 +70,7 @@ export default function MarketplaceStore() {
             {loyaltyAccount && <div className="mt-4 md:mt-0 md:mr-auto md:flex md:items-center md:gap-3"><div className="rounded-2xl border border-white/15 bg-black/20 px-5 py-3 text-center"><p className="text-[11px] font-bold text-orange-200/80">نقاطك</p><p className="mt-1 text-2xl font-black">{loyaltyAccount.pointsBalance.toLocaleString("en-US")}</p></div></div>}
             {user && <Link href={`/store/${entityId}/rewards`}><Button type="button" variant="outline" className="rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/10"><Gift className="ml-2 h-4 w-4" />مكافآتي</Button></Link>}
             {!user && <Button type="button" onClick={() => startLogin()} variant="outline" className="rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/10">سجّل الدخول لتفعيل المكافآت</Button>}
-          </div>
+          </div></div>
 
           {loyaltySettings && loyaltySettings.isActive && (
             <Card className="rounded-3xl border-white/10 bg-white/5">
@@ -88,7 +91,7 @@ export default function MarketplaceStore() {
 
           <section>
             <div className="mb-5 flex items-end justify-between gap-3"><div><h2 className="text-xl font-black">المنتجات والخدمات</h2><p className="mt-1 text-xs text-slate-400">{listings.length} منتجًا معروضًا.</p></div></div>
-            {listings.length === 0 ? <div className="rounded-3xl border border-dashed border-white/15 p-14 text-center text-sm text-slate-400">لا توجد منتجات نشطة في هذا المتجر بعد.</div> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{listings.map((listing) => <Card key={listing.id} className="group overflow-hidden rounded-3xl border-white/10 bg-white/5 transition hover:-translate-y-1 hover:border-orange-400/40"><div className="relative aspect-[4/3] overflow-hidden bg-slate-900">{listing.imageUrl ? <img src={listing.imageUrl} alt={listing.title} loading="lazy" className="h-full w-full object-cover opacity-80 transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-sm text-slate-600"><Package className="h-8 w-8" /></div>}{listing.isFeatured ? <Badge className="absolute right-2 top-2 border-amber-400/30 bg-amber-400/20 text-amber-200"><TrendingUp className="ml-1 h-3 w-3" />مميز</Badge> : null}</div><CardContent className="p-4"><h3 className="line-clamp-1 font-black">{listing.title}</h3>{listing.description ? <p className="mt-1 line-clamp-2 text-xs leading-6 text-slate-400">{listing.description}</p> : null}<div className="mt-3 flex items-center justify-between gap-2"><div className="flex items-baseline gap-2"><span className="font-black text-orange-300">{Number(listing.price).toLocaleString("en-US")} {listing.currencyCode}</span>{listing.compareAtPrice ? <span className="text-[11px] text-slate-500 line-through">{Number(listing.compareAtPrice).toLocaleString("en-US")}</span> : null}</div>{listing.unit ? <Badge variant="outline" className="border-white/10 text-[10px] text-slate-400">{listing.unit}</Badge> : null}</div>{listing.stockQuantity != null ? <p className="mt-2 text-[11px] text-slate-500">{listing.stockQuantity > 0 ? `متوفر: ${listing.stockQuantity}` : "نفد المخزون"}</p> : null}</CardContent></Card>)}</div>}
+            {listings.length === 0 ? <div className="rounded-3xl border border-dashed border-white/15 p-14 text-center text-sm text-slate-400">لا توجد منتجات نشطة في هذا المتجر بعد.</div> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{listings.map((listing) => <Card key={listing.id} className="group overflow-hidden rounded-3xl border-white/10 bg-white/5 transition hover:-translate-y-1 hover:border-orange-400/40"><div className="relative aspect-[4/3] overflow-hidden bg-slate-900">{listing.imageUrl ? <img src={listing.imageUrl} alt={listing.title} loading="lazy" className="h-full w-full object-cover opacity-80 transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-sm text-slate-600"><Package className="h-8 w-8" /></div>}{listing.isFeatured ? <Badge className="absolute right-2 top-2 border-amber-400/30 bg-amber-400/20 text-amber-200"><TrendingUp className="ml-1 h-3 w-3" />مميز</Badge> : null}</div><CardContent className="p-4"><h3 className="line-clamp-1 font-black">{listing.title}</h3>{listing.description ? <p className="mt-1 line-clamp-2 text-xs leading-6 text-slate-400">{listing.description}</p> : null}<div className="mt-3 flex items-center justify-between gap-2"><div className="flex items-baseline gap-2"><span className="font-black text-orange-300">{Number(listing.price).toLocaleString("en-US")} {listing.currencyCode}</span>{listing.compareAtPrice ? <><span className="text-[11px] text-slate-500 line-through">{Number(listing.compareAtPrice).toLocaleString("en-US")} {listing.currencyCode}</span><Badge className="border-rose-400/20 bg-rose-500/15 text-[9px] text-rose-300">-{Math.max(0,Math.round((1-Number(listing.price)/Number(listing.compareAtPrice))*100))}%</Badge></> : null}</div>{listing.unit ? <Badge variant="outline" className="border-white/10 text-[10px] text-slate-400">{listing.unit}</Badge> : null}</div>{listing.stockQuantity != null ? <p className="mt-2 text-[11px] text-slate-500">{listing.stockQuantity > 0 ? `متوفر: ${listing.stockQuantity}` : "نفد المخزون"}</p> : null}</CardContent></Card>)}</div>}
           </section>
 
           <section className="rounded-3xl border border-orange-400/20 bg-orange-400/5 p-6 text-center"><h2 className="text-lg font-black">هل أنت مالك هذا المتجر؟</h2><p className="mt-2 text-sm text-slate-300">ادخل لوحة التاجر لإدارة المنتجات، الكوبونات، الحملات، وبرنامج الولاء.</p><Link href="/store-marketing"><Button type="button" className="mt-4 rounded-xl bg-[#E76F3C] px-6 font-black hover:bg-orange-400">لوحة التاجر</Button></Link></section>
