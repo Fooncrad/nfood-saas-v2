@@ -285,6 +285,21 @@ export const branches = mysqlTable("branches", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const businessDepartments = mysqlTable("business_departments", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  branchId: int("branch_id").notNull().references(() => branches.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 160 }).notNull(),
+  code: varchar("code", { length: 80 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  modulesJson: text("modules_json"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  branchIdx: index("business_departments_branch_idx").on(table.branchId, table.isActive),
+  restaurantIdx: index("business_departments_restaurant_idx").on(table.restaurantId),
+}));
+
 export const hotels = mysqlTable("hotels", {
   id: int("id").autoincrement().primaryKey(),
   restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
