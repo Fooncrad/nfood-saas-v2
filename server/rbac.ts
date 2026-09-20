@@ -13,7 +13,11 @@ export async function getEffectivePermissionKeys(userId: number, scope: Permissi
   const db = await getDb();
   if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
 
+  // Missing scope dimensions must not promote a narrower assignment.
   const scopeConditions = [];
+  if (!scope.restaurantId) scopeConditions.push(isNull(scopedRoleAssignments.restaurantId));
+  if (!scope.branchId) scopeConditions.push(isNull(scopedRoleAssignments.branchId));
+  if (!scope.departmentId) scopeConditions.push(isNull(scopedRoleAssignments.departmentId));
   if (scope.restaurantId) scopeConditions.push(or(eq(scopedRoleAssignments.restaurantId, scope.restaurantId), isNull(scopedRoleAssignments.restaurantId))!);
   if (scope.branchId) scopeConditions.push(or(eq(scopedRoleAssignments.branchId, scope.branchId), isNull(scopedRoleAssignments.branchId))!);
   if (scope.departmentId) scopeConditions.push(or(eq(scopedRoleAssignments.departmentId, scope.departmentId), isNull(scopedRoleAssignments.departmentId))!);
