@@ -781,6 +781,36 @@ export const marketplaceRouter = router({
     });
   }),
 
+  adminStoreOperations: platformAdminProcedure.input(z.object({ id: z.string().trim().min(1).max(30) })).query(async ({ input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const store = (await db.select().from(platformEntities).where(eq(platformEntities.id, input.id)).limit(1))[0];
+    if (!store) throw new TRPCError({ code: "NOT_FOUND", message: "المنشأة غير موجودة" });
+    const settings = (await db.select().from(marketplaceStorefrontSettings).where(eq(marketplaceStorefrontSettings.entityId, input.id)).limit(1))[0];
+    let sectorConfig: { modules?: string[] } = {};
+    try { sectorConfig = settings?.sectorConfigJson ? JSON.parse(settings.sectorConfigJson) : {}; } catch { sectorConfig = {}; }
+    const defaults = store.sector === "restaurant"
+      ? ["catalog","orders","reservations","restaurant_tables","kitchen","pos","invoicing","inventory"]
+      : ["catalog","orders","pos","invoicing","inventory"];
+    return { id: store.id, sector: store.sector, modules: sectorConfig.modules?.length ? sectorConfig.modules : defaults };
+  }),
+
+  adminUpdateStoreModules: platformAdminProcedure.input(z.object({
+    id: z.string().trim().min(1).max(30),
+    modules: z.array(z.enum(["catalog","orders","reservations","restaurant_tables","kitchen","pos","invoicing","inventory","purchasing","delivery","hotel_rooms","room_service","appointments","staff","loyalty","coupons"])).min(1),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const store = (await db.select().from(platformEntities).where(eq(platformEntities.id, input.id)).limit(1))[0];
+    if (!store) throw new TRPCError({ code: "NOT_FOUND", message: "المنشأة غير موجودة" });
+    const existing = (await db.select().from(marketplaceStorefrontSettings).where(eq(marketplaceStorefrontSettings.entityId, input.id)).limit(1))[0];
+    const sectorConfigJson = JSON.stringify({ modules: Array.from(new Set(input.modules)) });
+    if (existing) await db.update(marketplaceStorefrontSettings).set({ sectorConfigJson }).where(eq(marketplaceStorefrontSettings.entityId, input.id));
+    else await db.insert(marketplaceStorefrontSettings).values({ entityId: input.id, sectorConfigJson });
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "marketplace.store.modules.updated", entityType: "platform_entity", entityId: input.id, outcome: "success", requestId: nanoid(12), metadata: sectorConfigJson });
+    return { success: true, id: input.id, modules: input.modules };
+  }),
+
   adminUpdateStore: platformAdminProcedure.input(z.object({
     id: z.string().trim().min(1).max(30),
     status: z.boolean().optional(),
