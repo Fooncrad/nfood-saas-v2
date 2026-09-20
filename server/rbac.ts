@@ -1,4 +1,4 @@
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { permissions, rolePermissions, scopedRoleAssignments } from "../drizzle/schema";
 import { getDb } from "./db";
@@ -14,9 +14,9 @@ export async function getEffectivePermissionKeys(userId: number, scope: Permissi
   if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
 
   const scopeConditions = [];
-  if (scope.restaurantId) scopeConditions.push(or(eq(scopedRoleAssignments.restaurantId, scope.restaurantId), eq(scopedRoleAssignments.restaurantId, null))!);
-  if (scope.branchId) scopeConditions.push(or(eq(scopedRoleAssignments.branchId, scope.branchId), eq(scopedRoleAssignments.branchId, null))!);
-  if (scope.departmentId) scopeConditions.push(or(eq(scopedRoleAssignments.departmentId, scope.departmentId), eq(scopedRoleAssignments.departmentId, null))!);
+  if (scope.restaurantId) scopeConditions.push(or(eq(scopedRoleAssignments.restaurantId, scope.restaurantId), isNull(scopedRoleAssignments.restaurantId))!);
+  if (scope.branchId) scopeConditions.push(or(eq(scopedRoleAssignments.branchId, scope.branchId), isNull(scopedRoleAssignments.branchId))!);
+  if (scope.departmentId) scopeConditions.push(or(eq(scopedRoleAssignments.departmentId, scope.departmentId), isNull(scopedRoleAssignments.departmentId))!);
 
   const assignments = await db.select({ roleId: scopedRoleAssignments.roleId })
     .from(scopedRoleAssignments)
