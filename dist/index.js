@@ -1750,6 +1750,84 @@ var marketplaceListings = mysqlTable("marketplace_listings", {
   marketplaceListingsRestaurantIdx: index("marketplace_listings_restaurant_idx").on(table.restaurantId),
   marketplaceListingsFeaturedIdx: index("marketplace_listings_featured_idx").on(table.isFeatured, table.sortOrder)
 }));
+var marketplaceListingVariants = mysqlTable("marketplace_listing_variants", {
+  id: int("id").autoincrement().primaryKey(),
+  listingId: int("listing_id").notNull().references(() => marketplaceListings.id, { onDelete: "cascade" }),
+  sku: varchar("sku", { length: 120 }),
+  barcode: varchar("barcode", { length: 120 }),
+  option1Name: varchar("option1_name", { length: 80 }),
+  option1Value: varchar("option1_value", { length: 120 }),
+  option2Name: varchar("option2_name", { length: 80 }),
+  option2Value: varchar("option2_value", { length: 120 }),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  compareAtPrice: decimal("compare_at_price", { precision: 10, scale: 2 }),
+  stockQuantity: int("stock_quantity").default(0).notNull(),
+  imageUrl: varchar("image_url", { length: 500 }),
+  metadataJson: text("metadata_json"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull()
+}, (table) => ({
+  listingIdx: index("marketplace_variants_listing_idx").on(table.listingId, table.isActive),
+  skuIdx: index("marketplace_variants_sku_idx").on(table.sku)
+}));
+var marketplaceStorefrontSettings = mysqlTable("marketplace_storefront_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  entityId: varchar("entity_id", { length: 30 }).notNull().unique().references(() => platformEntities.id, { onDelete: "cascade" }),
+  templateKey: varchar("template_key", { length: 80 }).default("auto").notNull(),
+  heroTitle: varchar("hero_title", { length: 220 }),
+  heroSubtitle: varchar("hero_subtitle", { length: 500 }),
+  logoUrl: varchar("logo_url", { length: 500 }),
+  coverUrl: varchar("cover_url", { length: 500 }),
+  primaryColor: varchar("primary_color", { length: 16 }).default("#E76F3C").notNull(),
+  accentColor: varchar("accent_color", { length: 16 }).default("#F59E0B").notNull(),
+  languagesJson: text("languages_json").default('["ar","en","fr"]'),
+  contactJson: text("contact_json"),
+  socialJson: text("social_json"),
+  shippingJson: text("shipping_json"),
+  checkoutJson: text("checkout_json"),
+  sectorConfigJson: text("sector_config_json"),
+  seoJson: text("seo_json"),
+  isPublished: boolean("is_published").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull()
+}, (table) => ({
+  publishedIdx: index("marketplace_storefront_published_idx").on(table.entityId, table.isPublished)
+}));
+var marketplaceQrCodes = mysqlTable("marketplace_qr_codes", {
+  id: int("id").autoincrement().primaryKey(),
+  entityId: varchar("entity_id", { length: 30 }).notNull().references(() => platformEntities.id, { onDelete: "cascade" }),
+  listingId: int("listing_id").references(() => marketplaceListings.id, { onDelete: "cascade" }),
+  purpose: mysqlEnum("purpose", ["store", "listing", "catalog", "booking", "contact", "location"]).default("store").notNull(),
+  code: varchar("code", { length: 96 }).notNull().unique(),
+  targetPath: varchar("target_path", { length: 500 }).notNull(),
+  label: varchar("label", { length: 180 }),
+  styleJson: text("style_json"),
+  scanCount: int("scan_count").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull()
+}, (table) => ({
+  entityIdx: index("marketplace_qr_entity_idx").on(table.entityId, table.purpose),
+  listingIdx: index("marketplace_qr_listing_idx").on(table.listingId)
+}));
+var marketplaceTransferJobs = mysqlTable("marketplace_transfer_jobs", {
+  id: int("id").autoincrement().primaryKey(),
+  entityId: varchar("entity_id", { length: 30 }).notNull().references(() => platformEntities.id, { onDelete: "cascade" }),
+  direction: mysqlEnum("direction", ["import", "export"]).notNull(),
+  format: mysqlEnum("format", ["csv", "xlsx", "json", "xml", "pdf"]).notNull(),
+  scope: mysqlEnum("scope", ["products", "inventory", "prices", "full_catalog"]).default("products").notNull(),
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
+  fileUrl: varchar("file_url", { length: 1e3 }),
+  totalRows: int("total_rows").default(0).notNull(),
+  processedRows: int("processed_rows").default(0).notNull(),
+  errorReportJson: text("error_report_json"),
+  requestedByUserId: int("requested_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at")
+}, (table) => ({
+  entityStatusIdx: index("marketplace_transfer_entity_status_idx").on(table.entityId, table.status)
+}));
 var storeReferralLinks = mysqlTable("store_referral_links", {
   id: int("id").autoincrement().primaryKey(),
   entityId: varchar("entity_id", { length: 30 }).notNull().references(() => platformEntities.id, { onDelete: "cascade" }),
