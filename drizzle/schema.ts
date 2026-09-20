@@ -1030,6 +1030,21 @@ export const rolePermissions = mysqlTable("rolePermissions", {
   permissionId: int("permissionId").notNull().references(() => permissions.id),
 });
 
+export const scopedRoleAssignments = mysqlTable("scoped_role_assignments", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  roleId: int("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
+  restaurantId: int("restaurant_id").references(() => restaurants.id, { onDelete: "cascade" }),
+  branchId: int("branch_id").references(() => branches.id, { onDelete: "cascade" }),
+  departmentId: int("department_id").references(() => businessDepartments.id, { onDelete: "cascade" }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("scoped_role_assignments_user_idx").on(table.userId, table.isActive),
+  scopeIdx: index("scoped_role_assignments_scope_idx").on(table.restaurantId, table.branchId, table.departmentId),
+}));
+
 export const employees = mysqlTable("employees", {
   branchId: int("branchId").references(() => branches.id),
   id: int("id").autoincrement().primaryKey(),

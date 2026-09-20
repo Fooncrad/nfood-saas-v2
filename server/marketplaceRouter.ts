@@ -9,6 +9,9 @@ import {
   affiliatePayoutRequests,
   businessStoragePolicies,
   businessDepartments,
+  scopedRoleAssignments,
+  roles,
+  users,
   branches,
   entityStorageUsage,
   marketplaceListings,
@@ -24,7 +27,6 @@ import {
   storeReferralLinks,
   storeReferralRecords,
   storeRewardTransactions,
-  users,
   walletAccounts,
 } from "../drizzle/schema";
 import { publicProcedure, protectedProcedure, adminProcedure, platformAdminProcedure, router } from "./_core/trpc";
@@ -899,6 +901,64 @@ export const marketplaceRouter = router({
     await db.update(businessDepartments).set(patch).where(eq(businessDepartments.id, input.id));
     await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "department.updated", entityType: "business_department", entityId: String(input.id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(patch) });
     return { success: true, id: input.id };
+  }),
+
+  adminScopedRoles: platformAdminProcedure.input(z.object({
+    restaurantId: z.number().int().positive().optional(),
+    branchId: z.number().int().positive().optional(),
+    departmentId: z.number().int().positive().optional(),
+  })).query(async ({ input }) => {
+    const db = await getDb();
+    if (!db) return [];
+    const conditions = [];
+    if (input.restaurantId) conditions.push(eq(scopedRoleAssignments.restaurantId, input.restaurantId));
+    if (input.branchId) conditions.push(eq(scopedRoleAssignments.branchId, input.branchId));
+    if (input.departmentId) conditions.push(eq(scopedRoleAssignments.departmentId, input.departmentId));
+    return db.select({
+      id: scopedRoleAssignments.id, userId: scopedRoleAssignments.userId, roleId: scopedRoleAssignments.roleId,
+      restaurantId: scopedRoleAssignments.restaurantId, branchId: scopedRoleAssignments.branchId,
+      departmentId: scopedRoleAssignments.departmentId, isActive: scopedRoleAssignments.isActive,
+      roleName: roles.name, userName: users.name, userEmail: users.email,
+    }).from(scopedRoleAssignments)
+      .leftJoin(roles, eq(scopedRoleAssignments.roleId, roles.id))
+      .leftJoin(users, eq(scopedRoleAssignments.userId, users.id))
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(scopedRoleAssignments.createdAt));
+  }),
+
+  adminAssignScopedRole: platformAdminProcedure.input(z.object({
+    userId: z.number().int().positive(),
+    roleId: z.number().int().positive(),
+    restaurantId: z.number().int().positive().optional(),
+    branchId: z.number().int().positive().optional(),
+    departmentId: z.number().int().positive().optional(),
+  }).refine((value) => value.restaurantId || value.branchId || value.departmentId, { message: "يجب تحديد نطاق للصلاحية" })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    if (input.branchId && input.restaurantId) {
+      const branch = (await db.select().from(branches).where(and(eq(branches.id, input.branchId), eq(branches.restaurantId, input.restaurantId))).limit(1))[0];
+      if (!branch) throw new TRPCError({ code: "BAD_REQUEST", message: "الفرع لا يتبع المنشأة المحددة" });
+    }
+    if (input.departmentId) {
+      const department = (await db.select().from(businessDepartments).where(eq(businessDepartments.id, input.departmentId)).limit(1))[0];
+      if (!department) throw new TRPCError({ code: "NOT_FOUND", message: "القسم غير موجود" });
+      if (input.branchId && department.branchId !== input.branchId) throw new TRPCError({ code: "BAD_REQUEST", message: "القسم لا يتبع الفرع المحدد" });
+      if (input.restaurantId && department.restaurantId !== input.restaurantId) throw new TRPCError({ code: "BAD_REQUEST", message: "القسم لا يتبع المنشأة المحددة" });
+    }
+    const result = await db.insert(scopedRoleAssignments).values({ ...input, isActive: true });
+    const id = Number(result[0].insertId);
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "rbac.scope.assigned", entityType: "scoped_role_assignment", entityId: String(id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(input) });
+    return { success: true, id };
+  }),
+
+  adminSetScopedRoleStatus: platformAdminProcedure.input(z.object({ id: z.number().int().positive(), isActive: z.boolean() })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const existing = (await db.select().from(scopedRoleAssignments).where(eq(scopedRoleAssignments.id, input.id)).limit(1))[0];
+    if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "تعيين الصلاحية غير موجود" });
+    await db.update(scopedRoleAssignments).set({ isActive: input.isActive }).where(eq(scopedRoleAssignments.id, input.id));
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: input.isActive ? "rbac.scope.enabled" : "rbac.scope.disabled", entityType: "scoped_role_assignment", entityId: String(input.id), outcome: "success", requestId: nanoid(12) });
+    return { success: true };
   }),
 
   adminUpdateStore: platformAdminProcedure.input(z.object({
