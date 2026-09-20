@@ -10,6 +10,8 @@ import {
   businessStoragePolicies,
   businessDepartments,
   scopedRoleAssignments,
+  permissions,
+  rolePermissions,
   roles,
   users,
   branches,
@@ -959,6 +961,49 @@ export const marketplaceRouter = router({
     await db.update(scopedRoleAssignments).set({ isActive: input.isActive }).where(eq(scopedRoleAssignments.id, input.id));
     await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: input.isActive ? "rbac.scope.enabled" : "rbac.scope.disabled", entityType: "scoped_role_assignment", entityId: String(input.id), outcome: "success", requestId: nanoid(12) });
     return { success: true };
+  }),
+
+  adminPermissions: platformAdminProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select().from(permissions).orderBy(permissions.key);
+  }),
+
+  adminCreatePermission: platformAdminProcedure.input(z.object({
+    key: z.string().trim().min(3).max(120).regex(/^[a-z][a-z0-9_.:-]*$/),
+    label: z.string().trim().min(2).max(160),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const existing = (await db.select().from(permissions).where(eq(permissions.key, input.key)).limit(1))[0];
+    if (existing) throw new TRPCError({ code: "CONFLICT", message: "مفتاح الصلاحية موجود مسبقاً" });
+    const result = await db.insert(permissions).values(input);
+    const id = Number(result[0].insertId);
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "rbac.permission.created", entityType: "permission", entityId: String(id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(input) });
+    return { success: true, id };
+  }),
+
+  adminRolePermissions: platformAdminProcedure.input(z.object({ roleId: z.number().int().positive() })).query(async ({ input }) => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select({ id: permissions.id, key: permissions.key, label: permissions.label })
+      .from(rolePermissions).innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(eq(rolePermissions.roleId, input.roleId)).orderBy(permissions.key);
+  }),
+
+  adminSetRolePermissions: platformAdminProcedure.input(z.object({
+    roleId: z.number().int().positive(),
+    permissionIds: z.array(z.number().int().positive()).max(500),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const role = (await db.select().from(roles).where(eq(roles.id, input.roleId)).limit(1))[0];
+    if (!role) throw new TRPCError({ code: "NOT_FOUND", message: "الدور غير موجود" });
+    const ids = Array.from(new Set(input.permissionIds));
+    await db.delete(rolePermissions).where(eq(rolePermissions.roleId, input.roleId));
+    if (ids.length) await db.insert(rolePermissions).values(ids.map((permissionId) => ({ roleId: input.roleId, permissionId })));
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "rbac.role.permissions.updated", entityType: "role", entityId: String(input.roleId), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ permissionIds: ids }) });
+    return { success: true, roleId: input.roleId, permissionIds: ids };
   }),
 
   adminUpdateStore: platformAdminProcedure.input(z.object({
