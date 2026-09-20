@@ -74,6 +74,7 @@ var users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
   birthDate: timestamp("birthDate"),
   emailVerified: boolean("emailVerified").default(false).notNull(),
+  preferredLanguage: varchar("preferredLanguage", { length: 10 }).default("ar").notNull(),
   emailVerificationToken: varchar("emailVerificationToken", { length: 128 }),
   emailVerificationExpiresAt: timestamp("emailVerificationExpiresAt"),
   deletedAt: timestamp("deletedAt")
@@ -104,9 +105,33 @@ var customerProfiles = mysqlTable("customerProfiles", {
   productsJson: text("productsJson"),
   paymentMethodsJson: text("paymentMethodsJson"),
   qrVisualConfigJson: text("qrVisualConfigJson"),
+  profileVisibility: mysqlEnum("profileVisibility", ["public", "private", "unlisted", "pin"]).default("private").notNull(),
+  profilePinHash: varchar("profilePinHash", { length: 220 }),
+  tiktokUrl: varchar("tiktokUrl", { length: 500 }),
+  snapchatUrl: varchar("snapchatUrl", { length: 500 }),
+  youtubeUrl: varchar("youtubeUrl", { length: 500 }),
+  linksJson: text("linksJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
 });
+var customerBusinessRelationships = mysqlTable("customer_business_relationships", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  entityId: varchar("entity_id", { length: 30 }).notNull().references(() => platformEntities.id, { onDelete: "cascade" }),
+  acquisitionSource: mysqlEnum("acquisition_source", ["order", "reservation", "service", "marketplace", "profile", "other"]).default("other").notNull(),
+  isAcquisitionEntity: boolean("is_acquisition_entity").default(false).notNull(),
+  contactAlias: varchar("contact_alias", { length: 80 }).notNull(),
+  contactConsent: boolean("contact_consent").default(true).notNull(),
+  revealPhoneConsent: boolean("reveal_phone_consent").default(false).notNull(),
+  revealEmailConsent: boolean("reveal_email_consent").default(false).notNull(),
+  firstInteractionAt: timestamp("first_interaction_at").defaultNow().notNull(),
+  lastInteractionAt: timestamp("last_interaction_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull()
+}, (table) => ({
+  customerBusinessUnique: uniqueIndex("customer_business_unique").on(table.userId, table.entityId),
+  entityCustomerIdx: index("entity_customer_idx").on(table.entityId, table.lastInteractionAt)
+}));
 var restaurants = mysqlTable("restaurants", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 160 }).notNull(),
@@ -249,6 +274,18 @@ var supportTickets = mysqlTable("supportTickets", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
 });
+var supportTicketMessages = mysqlTable("support_ticket_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  ticketId: int("ticket_id").notNull().references(() => supportTickets.id, { onDelete: "cascade" }),
+  senderUserId: int("sender_user_id").notNull().references(() => users.id),
+  senderRole: mysqlEnum("sender_role", ["customer", "business", "platform"]).notNull(),
+  body: text("body").notNull(),
+  attachmentUrl: varchar("attachment_url", { length: 1e3 }),
+  isInternal: boolean("is_internal").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+}, (table) => ({
+  ticketCreatedIdx: index("support_ticket_messages_ticket_created_idx").on(table.ticketId, table.createdAt)
+}));
 var apiWebhooks = mysqlTable("apiWebhooks", {
   id: int("id").autoincrement().primaryKey(),
   scope: mysqlEnum("scope", ["platform", "restaurant"]).notNull(),
@@ -1742,6 +1779,11 @@ var marketplaceListings = mysqlTable("marketplace_listings", {
   sortOrder: int("sortOrder").default(0).notNull(),
   tagsJson: text("tagsJson"),
   metadataJson: text("metadataJson"),
+  actionType: mysqlEnum("actionType", ["buy", "book", "order", "service", "contact", "visit"]).default("visit").notNull(),
+  actionUrl: varchar("actionUrl", { length: 1e3 }),
+  actionLabelAr: varchar("actionLabelAr", { length: 120 }),
+  actionLabelEn: varchar("actionLabelEn", { length: 120 }),
+  actionLabelFr: varchar("actionLabelFr", { length: 120 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
 }, (table) => ({
@@ -1827,6 +1869,44 @@ var marketplaceTransferJobs = mysqlTable("marketplace_transfer_jobs", {
   completedAt: timestamp("completed_at")
 }, (table) => ({
   entityStatusIdx: index("marketplace_transfer_entity_status_idx").on(table.entityId, table.status)
+}));
+var businessStoragePolicies = mysqlTable("business_storage_policies", {
+  id: int("id").autoincrement().primaryKey(),
+  plan: mysqlEnum("plan", PLAN_TIERS).notNull().unique(),
+  quotaBytes: decimal("quota_bytes", { precision: 20, scale: 0 }).notNull(),
+  maxFileSizeBytes: decimal("max_file_size_bytes", { precision: 20, scale: 0 }).notNull(),
+  allowedMimePrefixesJson: text("allowed_mime_prefixes_json").default('["image/","video/","application/pdf"]').notNull(),
+  warningPercent: int("warning_percent").default(80).notNull(),
+  criticalPercent: int("critical_percent").default(90).notNull(),
+  updatedByUserId: int("updated_by_user_id").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull()
+});
+var entityStorageUsage = mysqlTable("entity_storage_usage", {
+  id: int("id").autoincrement().primaryKey(),
+  entityId: varchar("entity_id", { length: 30 }).notNull().unique().references(() => platformEntities.id, { onDelete: "cascade" }),
+  usedBytes: decimal("used_bytes", { precision: 20, scale: 0 }).default("0").notNull(),
+  overrideQuotaBytes: decimal("override_quota_bytes", { precision: 20, scale: 0 }),
+  imageBytes: decimal("image_bytes", { precision: 20, scale: 0 }).default("0").notNull(),
+  videoBytes: decimal("video_bytes", { precision: 20, scale: 0 }).default("0").notNull(),
+  documentBytes: decimal("document_bytes", { precision: 20, scale: 0 }).default("0").notNull(),
+  purchasedContentBytes: decimal("purchased_content_bytes", { precision: 20, scale: 0 }).default("0").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull()
+});
+var developerApiKeys = mysqlTable("developer_api_keys", {
+  id: int("id").autoincrement().primaryKey(),
+  entityId: varchar("entity_id", { length: 30 }).notNull().references(() => platformEntities.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 160 }).notNull(),
+  keyPrefix: varchar("key_prefix", { length: 24 }).notNull(),
+  secretHash: varchar("secret_hash", { length: 220 }).notNull(),
+  scopesJson: text("scopes_json").notNull(),
+  status: mysqlEnum("status", ["active", "revoked"]).default("active").notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"),
+  createdByUserId: int("created_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at")
+}, (table) => ({
+  entityStatusIdx: index("developer_api_keys_entity_status_idx").on(table.entityId, table.status)
 }));
 var storeReferralLinks = mysqlTable("store_referral_links", {
   id: int("id").autoincrement().primaryKey(),
@@ -5912,9 +5992,9 @@ var marketplaceRouter = router({
     const preferred = Array.isArray(appearance.homeFeaturedEntityIds) ? appearance.homeFeaturedEntityIds.filter((id) => typeof id === "string") : [];
     const entities = await db.select().from(platformEntities).where(eq3(platformEntities.status, true));
     const listings = await db.select({ entityId: marketplaceListings.entityId, imageUrl: marketplaceListings.imageUrl, sectorId: marketplaceListings.sectorId }).from(marketplaceListings).where(eq3(marketplaceListings.status, "active"));
-    const sectorRows = await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug, nameAr: marketplaceSectors.nameAr, nameEn: marketplaceSectors.nameEn }).from(marketplaceSectors);
+    const sectorRows = await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug, labelAr: marketplaceSectors.labelAr, labelEn: marketplaceSectors.labelEn, labelFr: marketplaceSectors.labelFr }).from(marketplaceSectors).where(eq3(marketplaceSectors.isActive, true));
     const sectorMap = new Map(sectorRows.map((s) => [s.id, s]));
-    const eligible = entities.filter((e) => listings.some((l) => l.entityId === e.id));
+    const eligible = entities.filter((e) => preferred.includes(e.id) || listings.some((l) => l.entityId === e.id));
     const ordered = [...eligible].sort((a, b) => {
       const ai = preferred.indexOf(a.id), bi = preferred.indexOf(b.id);
       if (ai >= 0 || bi >= 0) return (ai < 0 ? 9999 : ai) - (bi < 0 ? 9999 : bi);
@@ -5923,7 +6003,7 @@ var marketplaceRouter = router({
     return ordered.map((entity) => {
       const items = listings.filter((l) => l.entityId === entity.id);
       const sector = sectorMap.get(items[0]?.sectorId);
-      return { entityId: entity.id, customerName: entity.customerName, sector: entity.sector, sectorLabelAr: sector?.nameAr ?? entity.sector, sectorLabelEn: sector?.nameEn ?? entity.sector, imageUrl: items.find((i) => i.imageUrl)?.imageUrl ?? null, listingCount: items.length, featured: preferred.includes(entity.id) };
+      return { entityId: entity.id, customerName: entity.customerName, sector: entity.sector, sectorLabelAr: sector?.labelAr ?? entity.sector, sectorLabelEn: sector?.labelEn ?? entity.sector, sectorLabelFr: sector?.labelFr ?? entity.sector, imageUrl: items.find((i) => i.imageUrl)?.imageUrl ?? null, listingCount: items.length, featured: preferred.includes(entity.id) };
     });
   }),
   publicStores: publicProcedure.input(z2.object({
@@ -6012,6 +6092,46 @@ var marketplaceRouter = router({
     if (input?.featuredOnly) conditions.push(eq3(marketplaceListings.isFeatured, true));
     return db.select().from(marketplaceListings).where(and3(...conditions)).orderBy(desc2(marketplaceListings.isFeatured), desc2(marketplaceListings.sortOrder));
   }),
+  // ── Storage quotas: platform plan policy + per-business override ─────
+  providerStorage: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError3({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const entity = await requireProviderEntity(ctx.user, db);
+    const policy = (await db.select().from(businessStoragePolicies).where(eq3(businessStoragePolicies.plan, entity.plan)).limit(1))[0] ?? null;
+    const usage = (await db.select().from(entityStorageUsage).where(eq3(entityStorageUsage.entityId, entity.id)).limit(1))[0] ?? null;
+    const planQuotaBytes = Number(policy?.quotaBytes ?? 0);
+    const quotaBytes = Number(usage?.overrideQuotaBytes ?? planQuotaBytes);
+    const usedBytes = Number(usage?.usedBytes ?? 0);
+    return { entityId: entity.id, plan: entity.plan, quotaBytes, usedBytes, remainingBytes: Math.max(0, quotaBytes - usedBytes), percentUsed: quotaBytes > 0 ? Math.min(100, Math.round(usedBytes / quotaBytes * 1e4) / 100) : 0, maxFileSizeBytes: Number(policy?.maxFileSizeBytes ?? 0), allowedMimePrefixesJson: policy?.allowedMimePrefixesJson ?? "[]", warningPercent: policy?.warningPercent ?? 80, criticalPercent: policy?.criticalPercent ?? 90, breakdown: { images: Number(usage?.imageBytes ?? 0), videos: Number(usage?.videoBytes ?? 0), documents: Number(usage?.documentBytes ?? 0), purchasedContent: Number(usage?.purchasedContentBytes ?? 0) } };
+  }),
+  adminSetStoragePolicy: platformAdminProcedure.input(z2.object({
+    plan: z2.enum(PLAN_TIERS),
+    quotaBytes: z2.string().regex(/^\d+$/),
+    maxFileSizeBytes: z2.string().regex(/^\d+$/),
+    allowedMimePrefixes: z2.array(z2.string().trim().min(2).max(120)).min(1).max(30),
+    warningPercent: z2.number().int().min(1).max(99).default(80),
+    criticalPercent: z2.number().int().min(1).max(100).default(90)
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError3({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    if (input.criticalPercent <= input.warningPercent) throw new TRPCError3({ code: "BAD_REQUEST", message: "Critical threshold must be greater than warning threshold" });
+    const existing = (await db.select({ id: businessStoragePolicies.id }).from(businessStoragePolicies).where(eq3(businessStoragePolicies.plan, input.plan)).limit(1))[0];
+    const values = { quotaBytes: input.quotaBytes, maxFileSizeBytes: input.maxFileSizeBytes, allowedMimePrefixesJson: JSON.stringify(input.allowedMimePrefixes), warningPercent: input.warningPercent, criticalPercent: input.criticalPercent, updatedByUserId: ctx.user.id };
+    if (existing) await db.update(businessStoragePolicies).set(values).where(eq3(businessStoragePolicies.id, existing.id));
+    else await db.insert(businessStoragePolicies).values({ plan: input.plan, ...values });
+    return { success: true };
+  }),
+  adminSetEntityStorageOverride: platformAdminProcedure.input(z2.object({ entityId: entityIdSchema, quotaBytes: z2.string().regex(/^\d+$/).nullable() })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError3({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const entity = (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq3(platformEntities.id, input.entityId)).limit(1))[0];
+    if (!entity) throw new TRPCError3({ code: "NOT_FOUND", message: "\u0627\u0644\u0646\u0634\u0627\u0637 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
+    const existing = (await db.select({ id: entityStorageUsage.id }).from(entityStorageUsage).where(eq3(entityStorageUsage.entityId, input.entityId)).limit(1))[0];
+    if (existing) await db.update(entityStorageUsage).set({ overrideQuotaBytes: input.quotaBytes }).where(eq3(entityStorageUsage.id, existing.id));
+    else await db.insert(entityStorageUsage).values({ entityId: input.entityId, overrideQuotaBytes: input.quotaBytes });
+    await insertAuditLog({ actorUserId: ctx.user.id, action: "marketplace.storage.override", entityType: "platform_entity", entityId: input.entityId, outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ quotaBytes: input.quotaBytes }) });
+    return { success: true };
+  }),
   // ── Provider store manager ───────────────────────────────────────────
   providerStore: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();
@@ -6050,7 +6170,12 @@ var marketplaceRouter = router({
     stockQuantity: z2.number().int().nonnegative().optional(),
     isFeatured: z2.boolean().optional(),
     tagsJson: z2.string().max(2e3).optional(),
-    metadataJson: z2.string().max(8e3).optional()
+    metadataJson: z2.string().max(8e3).optional(),
+    actionType: z2.enum(["buy", "book", "order", "service", "contact", "visit"]).default("visit"),
+    actionUrl: z2.string().trim().url().max(1e3).optional(),
+    actionLabelAr: z2.string().trim().max(120).optional(),
+    actionLabelEn: z2.string().trim().max(120).optional(),
+    actionLabelFr: z2.string().trim().max(120).optional()
   })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError3({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
@@ -6078,6 +6203,11 @@ var marketplaceRouter = router({
       isFeatured: input.isFeatured ?? false,
       tagsJson: input.tagsJson ?? null,
       metadataJson: input.metadataJson ?? null,
+      actionType: input.actionType,
+      actionUrl: input.actionUrl ?? null,
+      actionLabelAr: input.actionLabelAr ?? null,
+      actionLabelEn: input.actionLabelEn ?? null,
+      actionLabelFr: input.actionLabelFr ?? null,
       status: "active"
     });
     const id = Number(result[0].insertId);
@@ -6099,7 +6229,12 @@ var marketplaceRouter = router({
     isFeatured: z2.boolean().optional(),
     status: z2.enum(["draft", "active", "paused", "sold_out"]).optional(),
     tagsJson: z2.string().max(2e3).nullable().optional(),
-    metadataJson: z2.string().max(8e3).nullable().optional()
+    metadataJson: z2.string().max(8e3).nullable().optional(),
+    actionType: z2.enum(["buy", "book", "order", "service", "contact", "visit"]).optional(),
+    actionUrl: z2.string().trim().url().max(1e3).nullable().optional(),
+    actionLabelAr: z2.string().trim().max(120).nullable().optional(),
+    actionLabelEn: z2.string().trim().max(120).nullable().optional(),
+    actionLabelFr: z2.string().trim().max(120).nullable().optional()
   })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError3({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
