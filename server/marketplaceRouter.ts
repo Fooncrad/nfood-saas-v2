@@ -8,6 +8,7 @@ import {
   affiliateLinks,
   affiliatePayoutRequests,
   businessStoragePolicies,
+  branches,
   entityStorageUsage,
   marketplaceListings,
   marketplaceSectors,
@@ -809,6 +810,50 @@ export const marketplaceRouter = router({
     else await db.insert(marketplaceStorefrontSettings).values({ entityId: input.id, sectorConfigJson });
     await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "marketplace.store.modules.updated", entityType: "platform_entity", entityId: input.id, outcome: "success", requestId: nanoid(12), metadata: sectorConfigJson });
     return { success: true, id: input.id, modules: input.modules };
+  }),
+
+  adminRestaurantBranches: platformAdminProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(async ({ input }) => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select().from(branches).where(eq(branches.restaurantId, input.restaurantId)).orderBy(desc(branches.createdAt));
+  }),
+
+  adminCreateRestaurantBranch: platformAdminProcedure.input(z.object({
+    restaurantId: z.number().int().positive(),
+    name: z.string().trim().min(2).max(160),
+    countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()),
+    currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()),
+    currencyDecimals: z.number().int().min(0).max(4).default(2),
+    city: z.string().trim().max(120).optional(),
+    openingTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/).optional(),
+    closingTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/).optional(),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(eq(restaurants.id, input.restaurantId)).limit(1))[0];
+    if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "المنشأة التشغيلية غير موجودة" });
+    const result = await db.insert(branches).values({ ...input, status: "open" });
+    const id = Number(result[0].insertId);
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "branch.created", entityType: "branch", entityId: String(id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ restaurantId: input.restaurantId, name: input.name, countryCode: input.countryCode, currencyCode: input.currencyCode }) });
+    return { success: true, id };
+  }),
+
+  adminUpdateRestaurantBranch: platformAdminProcedure.input(z.object({
+    id: z.number().int().positive(),
+    name: z.string().trim().min(2).max(160).optional(),
+    status: z.enum(["open","closed"]).optional(),
+    city: z.string().trim().max(120).nullable().optional(),
+    openingTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/).nullable().optional(),
+    closingTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/).nullable().optional(),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const { id, ...patch } = input;
+    const existing = (await db.select().from(branches).where(eq(branches.id, id)).limit(1))[0];
+    if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "الفرع غير موجود" });
+    await db.update(branches).set(patch).where(eq(branches.id, id));
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "branch.updated", entityType: "branch", entityId: String(id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(patch) });
+    return { success: true, id };
   }),
 
   adminUpdateStore: platformAdminProcedure.input(z.object({
