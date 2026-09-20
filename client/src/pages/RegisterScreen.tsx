@@ -284,11 +284,11 @@ export default function RegisterScreen() {
             <p className="flex items-center gap-3"><Check className="h-4 w-4" /> {copy.languageSaved}</p>
           </div>
         </aside>
-        <main className="bg-[#f8fafc] px-5 py-8 sm:px-10 lg:px-16">
+        <main className="min-h-dvh overflow-y-auto bg-[#f8fafc] px-4 py-5 sm:px-10 sm:py-8 lg:px-16">
           <div className="mx-auto max-w-2xl">
             <div className="mb-8 flex items-center justify-between">
               <button onClick={() => setLocation("/login")} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-orange-500"><ArrowRight className={arrow} /> {copy.backToLogin}</button>
-              <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 font-black text-white">N</span><strong className="tracking-[.16em]">NFOOD</strong><LanguageSwitcher compact /></div>
+              <div className="flex min-w-0 items-center gap-2"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-500 font-black text-white">N</span><strong className="hidden tracking-[.16em] sm:block">NFOOD</strong><LanguageSwitcher compact /></div>
             </div>
             <div className="mb-8">
               <div className="mb-4 flex items-center gap-1 text-xs font-bold text-orange-600">
@@ -300,7 +300,7 @@ export default function RegisterScreen() {
                 <span className="text-slate-400">{copy.stepsCount}</span>
               </div>
               <p className="text-sm font-bold text-orange-600">{copy.setUpWorkspace}</p>
-              <h2 className="mt-1 text-3xl font-black tracking-tight">{copy.createAccountTitle}</h2>
+              <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{copy.createAccountTitle}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">{copy.stepDescriptions[step - 1]}</p>
             </div>
             {step === 1 ? (
@@ -314,7 +314,7 @@ export default function RegisterScreen() {
                 </div>
                 <div>
                   <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><Store className="h-4 w-4 text-orange-500" /><h3 className="font-black">{copy.chooseSector}</h3></div><span className="text-[11px] font-bold text-slate-400">{sectors.length} {copy.sectors}</span></div>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
                     {sectors.map(({ id, icon: Icon }) => (
                       <button key={id} onClick={() => setSector(id)} className={`rounded-2xl border p-4 text-start transition ${sector === id ? "border-orange-400 bg-orange-50 ring-2 ring-orange-100" : "border-slate-200 bg-white hover:border-orange-200"}`}>
                         <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${sector === id ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-500"}`}><Icon className="h-5 w-5" /></span>
