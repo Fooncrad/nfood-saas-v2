@@ -32,14 +32,8 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Commit dist
+      - name: Verify production bundle
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f dist
-          if git diff --cached --quiet; then
-            echo "dist is already up to date"
-            exit 0
-          fi
-          git commit -m "build: publish production dist [skip ci]"
-          git push origin HEAD:build/production-dist
+          test -f dist/index.js
+          test -d dist/public
+          echo "Production bundle built successfully"
