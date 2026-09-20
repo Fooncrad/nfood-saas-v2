@@ -113,8 +113,8 @@ export default function LoginPage() {
   if (user) return <Home />;
 
   return (
-    <div dir={direction} className="h-dvh overflow-hidden bg-[#071525] text-white">
-      <div className="grid h-full lg:grid-cols-[1.05fr_.95fr]">
+    <div dir={direction} className="min-h-dvh bg-[#071525] text-white">
+      <div className="grid min-h-dvh lg:grid-cols-[1.05fr_.95fr]">
         <section className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between bg-[#0b1d35] p-12 xl:p-16">
           <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-orange-500/15 blur-3xl" />
           <div className="absolute -bottom-40 right-0 h-[28rem] w-[28rem] rounded-full bg-teal-500/10 blur-3xl" />
@@ -139,13 +139,13 @@ export default function LoginPage() {
           </div>
           <div className="relative flex items-center gap-3 text-xs text-slate-500"><ShieldCheck className="h-4 w-4 text-teal-400" /> {copy.badge}</div>
         </section>
-        <section className="flex items-center justify-center bg-[#f8fafc] px-5 py-10 text-slate-900 sm:px-8">
+        <section className="flex min-h-dvh items-start justify-center overflow-y-auto bg-[#f8fafc] px-4 py-6 text-slate-900 sm:items-center sm:px-8 sm:py-10">
           <div className="w-full max-w-md">
             <div className="mb-8 flex items-center justify-between">
-              <span />
+              <button type="button" onClick={() => setLocation("/")} className="text-xs font-bold text-slate-500 hover:text-orange-600">{copy.backHome}</button>
               <div className="ms-auto"><LanguageSwitcher compact /></div>
             </div>
-            <div className="mb-8 lg:hidden">
+            <div className="mb-5 lg:hidden">
               <div className="flex items-center gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500 text-xl font-black text-white">N</span>
                 <strong className="text-lg tracking-[.15em]">NFOOD</strong>
@@ -153,7 +153,7 @@ export default function LoginPage() {
             </div>
             <div className="mb-8">
               <p className="text-sm font-bold text-orange-500">{copy.welcomeBack}</p>
-              <h2 className="mt-2 text-3xl font-black tracking-tight">{copy.signIn}</h2>
+              <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">{copy.signIn}</h2>
               <p className="mt-3 text-sm leading-7 text-slate-500">{copy.signInDesc}</p>
             </div>
             <form onSubmit={(event) => { event.preventDefault(); if (email && password) login.mutate({ email, password }); }} className="space-y-5">
