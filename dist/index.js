@@ -3814,8 +3814,18 @@ async function deleteAllNotifications(userId) {
 async function getTestAccountByEmail(email) {
   const db = await getDb();
   if (!db) return void 0;
-  const rows = await db.select().from(testAccounts).where(eq2(testAccounts.email, email.toLowerCase())).limit(1);
-  return rows[0];
+  const normalized = email.toLowerCase();
+  try {
+    const rows = await db.select().from(testAccounts).where(eq2(testAccounts.email, normalized)).limit(1);
+    return rows[0];
+  } catch (error) {
+    console.warn("[Auth] testAccounts schema is behind; using legacy-compatible account lookup", error instanceof Error ? error.message : error);
+    const rows = await db.execute(sql`SELECT id, email, displayName, role, passwordHash, createdAt FROM testAccounts WHERE email = ${normalized} LIMIT 1`);
+    const raw = rows?.[0];
+    const row = Array.isArray(raw) ? raw[0] : void 0;
+    if (!row) return void 0;
+    return { ...row, restaurantId: null, phone: null, permissionsJson: null, isActive: true };
+  }
 }
 async function listManagedTestAccounts() {
   const db = await getDb();
