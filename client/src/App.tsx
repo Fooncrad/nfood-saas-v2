@@ -128,13 +128,25 @@ function AppContent() {
 const RESTAURANT_AREA_ROLES = new Set(["restaurant_admin", "waiter", "driver", "cashier", "kitchen", "bar", "restaurant"]);
 function CustomerAreaGuard({ children }: { children: ReactNode }) { const { user, loading } = useAuth(); const [, navigate] = useLocation(); const role = String(user?.testRole ?? user?.role ?? ""); const blocked = Boolean(user && RESTAURANT_AREA_ROLES.has(role)); useEffect(() => { if (blocked) navigate("/restaurant/dashboard"); }, [blocked, navigate]); if (loading || blocked) return <PageLoading />; return <>{children}</>; }
 function RootRoute() { const { user, loading } = useAuth(); if (loading) return <PageLoading />; return user ? <Home /> : <PublicHome />; }
+function SuperAdminRoute() {
+  const { user, loading } = useAuth();
+  const [, navigate] = useLocation();
+  const isAdmin = user?.role === "admin" || user?.testRole === "admin";
+  useEffect(() => {
+    if (loading) return;
+    if (!user) { navigate("/login?next=/admin"); return; }
+    if (!isAdmin) navigate("/");
+  }, [loading, user, isAdmin, navigate]);
+  if (loading || !user || !isAdmin) return <PageLoading />;
+  return <Home />;
+}
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={RootRoute} />
-      <Route path="/admin" component={RootRoute} />
-      <Route path="/admin/account" component={RootRoute} />
+      <Route path="/admin" component={SuperAdminRoute} />
+      <Route path="/admin/account" component={SuperAdminRoute} />
       <Route path="/dashboard" component={RootRoute} />
       <Route path="/restaurant/dashboard" component={RootRoute} />
       <Route path="/restaurant/account" component={RootRoute} />
