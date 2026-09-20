@@ -7,7 +7,7 @@ import { COUNTRIES, CURRENCIES, getCurrency } from "@shared/currencies";
 import { UI_LANGUAGES, languageMeta, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
-const sectors = [{ id: "restaurant", icon: Store }, { id: "fashion", icon: Shirt }, { id: "beauty", icon: Scissors }, { id: "grocery", icon: ShoppingCart }, { id: "auto", icon: Car }, { id: "maintenance", icon: HardHat }] as const;
+const sectors = [{ id: "restaurant", icon: Store }, { id: "vegetables", icon: ShoppingCart }, { id: "grocery", icon: ShoppingCart }, { id: "laundry", icon: Shirt }, { id: "automotive", icon: Car }, { id: "beauty_salon", icon: Scissors }, { id: "public_works", icon: HardHat }, { id: "fashion", icon: Shirt }, { id: "sweets", icon: Utensils }] as const;
 const languageOptions = UI_LANGUAGES.map((code) => ({ code, label: languageMeta[code].nativeLabel }));
 
 const registerCopy = {
@@ -66,7 +66,7 @@ const registerCopy = {
     toastError: "تعذر إنشاء الحساب",
     toastValidation: "أكمل البيانات المطلوبة بصيغة صحيحة",
     toastCaptcha: "أكمل اختبار التحقق أولًا",
-    sectorNames: { restaurant: "مطاعم ومأكولات", fashion: "أزياء وموضة", beauty: "صالونات وتجميل", grocery: "بقالات وتموينات", auto: "خدمات سيارات", maintenance: "صيانة وأشغال عامة" },
+    sectorNames: { restaurant: "مطاعم ومأكولات", vegetables: "خضار وفواكه", grocery: "بقالات وتموينات", laundry: "مغاسل", automotive: "سيارات وخدماتها", beauty_salon: "صالونات وتجميل", public_works: "صيانة وأشغال عامة", fashion: "أزياء وموضة", sweets: "حلويات ومخبوزات" },
   },
   en: {
     gateway: "Commercial businesses gateway",
@@ -123,7 +123,7 @@ const registerCopy = {
     toastError: "Could not create the account",
     toastValidation: "Complete the required fields with valid values.",
     toastCaptcha: "Complete the security check first.",
-    sectorNames: { restaurant: "Restaurants & food", fashion: "Fashion & clothing", beauty: "Salons & beauty", grocery: "Groceries & supplies", auto: "Auto services", maintenance: "Maintenance & general works" },
+    sectorNames: { restaurant: "Restaurants & food", vegetables: "Fruit & vegetables", grocery: "Groceries & supplies", laundry: "Laundry", automotive: "Automotive services", beauty_salon: "Salons & beauty", public_works: "Maintenance & general works", fashion: "Fashion & clothing", sweets: "Sweets & bakery" },
   },
   fr: {
     gateway: "Portail des établissements commerciaux",
@@ -180,7 +180,7 @@ const registerCopy = {
     toastError: "Impossible de créer le compte",
     toastValidation: "Complétez les champs obligatoires avec des valeurs valides.",
     toastCaptcha: "Complétez d’abord le contrôle de sécurité.",
-    sectorNames: { restaurant: "Restaurants et plats", fashion: "Mode et vêtements", beauty: "Salons et beauté", grocery: "Épiceries et provisions", auto: "Services auto", maintenance: "Maintenance et travaux généraux" },
+    sectorNames: { restaurant: "Restaurants et cuisine", vegetables: "Fruits et légumes", grocery: "Épiceries", laundry: "Blanchisserie", automotive: "Services automobiles", beauty_salon: "Salons et beauté", public_works: "Maintenance et travaux", fashion: "Mode et vêtements", sweets: "Pâtisserie et boulangerie" },
   },
 } as const;
 
@@ -218,7 +218,7 @@ export default function RegisterScreen() {
   };
   const submit = () => {
     if (!registrationCaptcha.data?.challenge || !/^\d{1,2}$/.test(captchaAnswer.trim())) { toast.error(copy.toastCaptcha); return; }
-    register.mutate({ restaurantName: form.business.trim(), countryCode, currencyCode, primaryLanguage: languageCode as "ar" | "en" | "fr" | "ur" | "es" | "de" | "tr", country: country.nameAr, city: form.city.trim(), email: form.email.trim(), phone: form.phone.trim(), plan: "Free", captchaChallenge: registrationCaptcha.data.challenge, captchaAnswer: captchaAnswer.trim() });
+    register.mutate({ restaurantName: form.business.trim(), sector: sector as "restaurant" | "vegetables" | "grocery" | "laundry" | "automotive" | "beauty_salon" | "public_works" | "fashion" | "sweets", countryCode, currencyCode, primaryLanguage: languageCode as "ar" | "en" | "fr" | "ur" | "es" | "de" | "tr", country: country.nameAr, city: form.city.trim(), email: form.email.trim(), phone: form.phone.trim(), plan: "Free", captchaChallenge: registrationCaptcha.data.challenge, captchaAnswer: captchaAnswer.trim() });
   };
 
   if (done && register.data) return (
