@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { COUNTRIES, CURRENCIES, getCurrency } from "@shared/currencies";
 import { UI_LANGUAGES, languageMeta, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import "./auth-scroll.css";
 
 const sectors = [{ id: "restaurant", icon: Store }, { id: "vegetables", icon: ShoppingCart }, { id: "grocery", icon: ShoppingCart }, { id: "laundry", icon: Shirt }, { id: "automotive", icon: Car }, { id: "beauty_salon", icon: Scissors }, { id: "public_works", icon: HardHat }, { id: "fashion", icon: Shirt }, { id: "sweets", icon: Utensils }] as const;
 const languageOptions = UI_LANGUAGES.map((code) => ({ code, label: languageMeta[code].nativeLabel }));
@@ -284,7 +285,7 @@ export default function RegisterScreen() {
             <p className="flex items-center gap-3"><Check className="h-4 w-4" /> {copy.languageSaved}</p>
           </div>
         </aside>
-        <main className="min-h-dvh overflow-y-auto bg-[#f8fafc] px-4 py-5 sm:px-10 sm:py-8 lg:px-16">
+        <main className="nfood-auth-scroll min-h-dvh overflow-y-auto bg-[#f8fafc] px-4 py-5 sm:px-10 sm:py-8 lg:px-16">
           <div className="mx-auto max-w-2xl">
             <div className="mb-8 flex items-center justify-between">
               <button onClick={() => setLocation("/login")} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-orange-500"><ArrowRight className={arrow} /> {copy.backToLogin}</button>
