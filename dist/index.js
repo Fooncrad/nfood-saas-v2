@@ -5899,6 +5899,33 @@ var marketplaceRouter = router({
     const countMap = new Map(counts.map((row) => [Number(row.sectorId), Number(row.total)]));
     return sectors.map((sector) => ({ ...sector, listingCount: countMap.get(sector.id) ?? 0 }));
   }),
+  publicFeaturedStores: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    const settings = await getPlatformSettings();
+    let appearance = {};
+    try {
+      appearance = JSON.parse(settings.marketplaceAppearanceJson || "{}");
+    } catch {
+    }
+    const limit = Math.min(20, Math.max(1, Number(appearance.homeFeaturedLimit) || 5));
+    const preferred = Array.isArray(appearance.homeFeaturedEntityIds) ? appearance.homeFeaturedEntityIds.filter((id) => typeof id === "string") : [];
+    const entities = await db.select().from(platformEntities).where(eq3(platformEntities.status, true));
+    const listings = await db.select({ entityId: marketplaceListings.entityId, imageUrl: marketplaceListings.imageUrl, sectorId: marketplaceListings.sectorId }).from(marketplaceListings).where(eq3(marketplaceListings.status, "active"));
+    const sectorRows = await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug, nameAr: marketplaceSectors.nameAr, nameEn: marketplaceSectors.nameEn }).from(marketplaceSectors);
+    const sectorMap = new Map(sectorRows.map((s) => [s.id, s]));
+    const eligible = entities.filter((e) => listings.some((l) => l.entityId === e.id));
+    const ordered = [...eligible].sort((a, b) => {
+      const ai = preferred.indexOf(a.id), bi = preferred.indexOf(b.id);
+      if (ai >= 0 || bi >= 0) return (ai < 0 ? 9999 : ai) - (bi < 0 ? 9999 : bi);
+      return a.customerName.localeCompare(b.customerName);
+    }).slice(0, limit);
+    return ordered.map((entity) => {
+      const items = listings.filter((l) => l.entityId === entity.id);
+      const sector = sectorMap.get(items[0]?.sectorId);
+      return { entityId: entity.id, customerName: entity.customerName, sector: entity.sector, sectorLabelAr: sector?.nameAr ?? entity.sector, sectorLabelEn: sector?.nameEn ?? entity.sector, imageUrl: items.find((i) => i.imageUrl)?.imageUrl ?? null, listingCount: items.length, featured: preferred.includes(entity.id) };
+    });
+  }),
   publicStores: publicProcedure.input(z2.object({
     countryCode: z2.string().trim().length(2).transform((value) => value.toUpperCase()).optional(),
     sectorSlug: z2.string().trim().min(1).max(80).optional(),
