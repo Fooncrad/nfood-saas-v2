@@ -2229,6 +2229,11 @@ function decryptIntegrationSecret(value) {
     return null;
   }
 }
+async function getIntegrationSetting(scope, providerKey, restaurantId) {
+  const db = await getDb();
+  if (!db) return null;
+  return (await db.select({ providerKey: integrationSettings.providerKey, status: integrationSettings.status, keyReference: integrationSettings.keyReference, secretCiphertext: integrationSettings.secretCiphertext }).from(integrationSettings).where(and2(eq2(integrationSettings.scope, scope), eq2(integrationSettings.providerKey, providerKey), scope === "restaurant" ? eq2(integrationSettings.restaurantId, restaurantId ?? 0) : eq2(integrationSettings.scope, "platform"))).limit(1))[0] ?? null;
+}
 async function getIntegrationSecret(scope, providerKey, restaurantId) {
   const db = await getDb();
   if (!db) return null;
@@ -4791,11 +4796,82 @@ function buildCronUser(userInfo) {
 var sdk = new SDKServer();
 
 // server/_core/oauth.ts
+import { nanoid as nanoid2 } from "nanoid";
 function getQueryParam(req, key) {
   const value = req.query[key];
   return typeof value === "string" ? value : void 0;
 }
+async function googleConfiguration(req) {
+  const setting = await getIntegrationSetting("platform", "google_oauth");
+  if (setting?.status === "configured") {
+    let meta = {};
+    try {
+      const parsed = setting.keyReference ? JSON.parse(setting.keyReference) : {};
+      if (parsed && typeof parsed === "object") meta = parsed;
+    } catch {
+      if (setting.keyReference) meta.clientId = setting.keyReference;
+    }
+    const rawSecret = setting.secretCiphertext ? decryptIntegrationSecret(setting.secretCiphertext) : null;
+    let secret2 = {};
+    try {
+      const parsed = rawSecret ? JSON.parse(rawSecret) : {};
+      if (parsed && typeof parsed === "object") secret2 = parsed;
+    } catch {
+      if (rawSecret) secret2.clientSecret = rawSecret;
+    }
+    if (meta.clientId && secret2.clientSecret) return { clientId: meta.clientId, clientSecret: secret2.clientSecret, redirectUri: meta.redirectUri || `${req.protocol}://${req.get("host")}/api/oauth/google/callback` };
+  }
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) return { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, redirectUri: process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get("host")}/api/oauth/google/callback` };
+  return null;
+}
+function oauthNonce(res) {
+  const nonce = nanoid2(32);
+  res.cookie(OAUTH_STATE_COOKIE, nonce, { httpOnly: true, path: "/", maxAge: 6e5, sameSite: "lax", secure: true });
+  return nonce;
+}
+function verifyOauthNonce(req, state) {
+  return Boolean(state && state === parseCookieHeader2(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE]);
+}
 function registerOAuthRoutes(app) {
+  app.get("/api/oauth/google/start", async (req, res) => {
+    const config = await googleConfiguration(req);
+    if (!config) return res.redirect(302, "/login?oauth=google_not_configured");
+    const state = oauthNonce(res);
+    const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    url.searchParams.set("client_id", config.clientId);
+    url.searchParams.set("redirect_uri", config.redirectUri);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("scope", "openid email profile");
+    url.searchParams.set("state", state);
+    url.searchParams.set("prompt", "select_account");
+    return res.redirect(302, url.toString());
+  });
+  app.get("/api/oauth/google/callback", async (req, res) => {
+    const code = getQueryParam(req, "code");
+    const state = getQueryParam(req, "state");
+    if (!code || !state || !verifyOauthNonce(req, state)) return res.redirect(302, "/login?oauth=invalid_state");
+    res.clearCookie(OAUTH_STATE_COOKIE, { path: "/" });
+    try {
+      const config = await googleConfiguration(req);
+      if (!config) return res.redirect(302, "/login?oauth=google_not_configured");
+      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ code, client_id: config.clientId, client_secret: config.clientSecret, redirect_uri: config.redirectUri, grant_type: "authorization_code" }) });
+      if (!tokenResponse.ok) throw new Error("google_token_exchange_failed");
+      const token = await tokenResponse.json();
+      if (!token.access_token) throw new Error("google_access_token_missing");
+      const infoResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { authorization: `Bearer ${token.access_token}` } });
+      if (!infoResponse.ok) throw new Error("google_userinfo_failed");
+      const info = await infoResponse.json();
+      if (!info.sub) throw new Error("google_subject_missing");
+      const openId = `google_${info.sub}`;
+      await upsertUser({ openId, name: info.name ?? null, email: info.email ?? null, loginMethod: "google", lastSignedIn: /* @__PURE__ */ new Date() });
+      const sessionToken = await sdk.createSessionToken(openId, { name: info.name || "", expiresInMs: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, { ...getSessionCookieOptions(req), maxAge: ONE_YEAR_MS });
+      return res.redirect(302, "/");
+    } catch (error) {
+      console.error("[Google OAuth] Callback failed", error);
+      return res.redirect(302, "/login?oauth=google_failed");
+    }
+  });
   app.get("/api/oauth/callback", async (req, res) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
@@ -5780,7 +5856,7 @@ var AFRICAN_CURRENCY_CODES = AFRICAN_CURRENCIES.map((currency) => currency.code)
 import { z as z2 } from "zod";
 import { TRPCError as TRPCError3 } from "@trpc/server";
 import { and as and3, desc as desc2, eq as eq3, gte as gte2, inArray as inArray2, isNull as isNull2, lte as lte2, or as or2, sql as sql2 } from "drizzle-orm";
-import { nanoid as nanoid2 } from "nanoid";
+import { nanoid as nanoid3 } from "nanoid";
 async function getProviderEntity(user) {
   const db = await getDb();
   if (!db) return null;
@@ -6411,7 +6487,7 @@ var marketplaceRouter = router({
     if (input.taxId !== void 0) patch.taxId = input.taxId;
     if (input.licensingFee !== void 0) patch.licensingFee = input.licensingFee;
     await db.update(platformEntities).set(patch).where(eq3(platformEntities.id, input.id));
-    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "marketplace.store.updated", entityType: "platform_entity", entityId: input.id, outcome: "success", requestId: nanoid2(12), metadata: JSON.stringify(patch) });
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "marketplace.store.updated", entityType: "platform_entity", entityId: input.id, outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify(patch) });
     return { success: true, id: input.id };
   }),
   adminSummary: platformAdminProcedure.query(async () => {
@@ -7083,7 +7159,7 @@ function roleHasDefaultPermission(role, permission) {
 }
 
 // server/routers.ts
-import { nanoid as nanoid3 } from "nanoid";
+import { nanoid as nanoid4 } from "nanoid";
 import { createHash as createHash2, randomBytes as randomBytes2, scryptSync as scryptSync2, timingSafeEqual as timingSafeEqual2 } from "node:crypto";
 
 // server/auditCsv.ts
@@ -7699,7 +7775,7 @@ var restaurantContentRouter = router({
     const buffer = Buffer.from(raw, "base64");
     if (!buffer.length || buffer.length > 5 * 1024 * 1024) throw new TRPCError5({ code: "PAYLOAD_TOO_LARGE", message: "\u062D\u062C\u0645 \u0625\u064A\u0635\u0627\u0644 \u0627\u0644\u062A\u062D\u0648\u064A\u0644 \u064A\u062C\u0628 \u0623\u0644\u0627 \u064A\u062A\u062C\u0627\u0648\u0632 5 \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A" });
     const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-100) || "transfer-receipt";
-    const stored = await storagePut(`content-purchases/${order.restaurantId}/receipts/${order.id}/${nanoid3(12)}-${safeName}`, buffer, input.contentType);
+    const stored = await storagePut(`content-purchases/${order.restaurantId}/receipts/${order.id}/${nanoid4(12)}-${safeName}`, buffer, input.contentType);
     const mediaId = await createMediaFile({ scope: "restaurant", restaurantId: order.restaurantId, originalName: input.fileName, storageKey: stored.key, publicUrl: stored.url, contentType: input.contentType, sizeBytes: buffer.length, category: "document", uploadedByUserId: ctx.user.id });
     await updateContentPurchaseOrder({ id: order.id, restaurantId: order.restaurantId, receiptMediaFileId: mediaId, status: "verifying" });
     const managerIds = await listRestaurantManagerUserIds(order.restaurantId);
@@ -7718,7 +7794,7 @@ var restaurantContentRouter = router({
     const allowed = isAdminContext(ctx) || order.buyerUserId === ctx.user.id || order.customerUserId === ctx.user.id || (order.restaurantId ? isMerchantContext(ctx, order.restaurantId) : false);
     if (!allowed) throw new TRPCError5({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0637\u0628\u0627\u0639\u0629 \u0647\u0630\u0647 \u0627\u0644\u0641\u0627\u062A\u0648\u0631\u0629" });
     await updateContentPurchaseOrder({ id: order.id, restaurantId: order.restaurantId ?? 0, invoicePrintStatus: "printed", invoicePrintedAt: /* @__PURE__ */ new Date(), invoicePrintError: null });
-    await insertAuditLog({ actorUserId: ctx.user.id, action: "content.purchase.invoice_printed", entityType: "content_purchase_order", entityId: String(order.id), restaurantId: order.restaurantId ?? null, outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ mode: "manual" }) });
+    await insertAuditLog({ actorUserId: ctx.user.id, action: "content.purchase.invoice_printed", entityType: "content_purchase_order", entityId: String(order.id), restaurantId: order.restaurantId ?? null, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ mode: "manual" }) });
     return { success: true, orderId: order.id, invoicePrintStatus: "printed" };
   }),
   analyzeContentReceipt: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
@@ -7864,7 +7940,7 @@ var restaurantContentRouter = router({
     }
     const actor = ctx.user.id > 0 ? { id: ctx.user.id } : (await db.select({ id: users.id }).from(users).where(eq6(users.email, ctx.user.email ?? "")).limit(1))[0];
     if (!actor) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062A\u062D\u062F\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0634\u0627\u0634\u0629" });
-    const result = await db.insert(restaurantDisplayScreens).values({ restaurantId: input.restaurantId, branchId: input.branchId ?? null, name: input.name, status: input.status, refreshSeconds: input.refreshSeconds, createdByUserId: actor.id, deviceKey: `screen-${input.restaurantId}-${nanoid3(12)}`, publicToken: `display-${input.restaurantId}-${nanoid3(18)}` });
+    const result = await db.insert(restaurantDisplayScreens).values({ restaurantId: input.restaurantId, branchId: input.branchId ?? null, name: input.name, status: input.status, refreshSeconds: input.refreshSeconds, createdByUserId: actor.id, deviceKey: `screen-${input.restaurantId}-${nanoid4(12)}`, publicToken: `display-${input.restaurantId}-${nanoid4(18)}` });
     return { success: true, id: Number(result[0].insertId) };
   }),
   rotatePublicLink: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), screenId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
@@ -7873,7 +7949,7 @@ var restaurantContentRouter = router({
     if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const existing = (await db.select({ id: restaurantDisplayScreens.id, publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and6(eq6(restaurantDisplayScreens.id, input.screenId), eq6(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
     if (!existing) throw new TRPCError5({ code: "NOT_FOUND", message: "\u0627\u0644\u0634\u0627\u0634\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
-    const publicToken = `display-${input.restaurantId}-${nanoid3(24)}`;
+    const publicToken = `display-${input.restaurantId}-${nanoid4(24)}`;
     await db.update(restaurantDisplayScreens).set({ publicToken, publicLinkEnabled: true }).where(eq6(restaurantDisplayScreens.id, input.screenId));
     notifyDisplayChanged(existing.publicToken);
     return { success: true, publicToken };
@@ -8043,7 +8119,7 @@ var appRouter = router({
     const bytes = Buffer.from(input.data, "base64");
     if (bytes.byteLength > 5 * 1024 * 1024) throw new TRPCError5({ code: "BAD_REQUEST", message: "\u062D\u062C\u0645 \u0627\u0644\u0635\u0648\u0631\u0629 \u064A\u062A\u062C\u0627\u0648\u0632 5MB" });
     const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-80) || "brand-image";
-    const upload = await storagePut(`restaurants/${input.restaurantId}/branding/${input.assetType}-${nanoid3(10)}-${safeName}`, bytes, input.mimeType);
+    const upload = await storagePut(`restaurants/${input.restaurantId}/branding/${input.assetType}-${nanoid4(10)}-${safeName}`, bytes, input.mimeType);
     if (input.assetType === "logo") await db.update(restaurants).set({ brandLogoUrl: upload.url }).where(eq6(restaurants.id, input.restaurantId));
     else if (input.assetType === "pwaIcon") await db.update(restaurants).set({ pwaInstallIconUrl: upload.url }).where(eq6(restaurants.id, input.restaurantId));
     else await db.update(restaurants).set({ coverUrl: upload.url }).where(eq6(restaurants.id, input.restaurantId));
@@ -8115,7 +8191,7 @@ var appRouter = router({
         if (usage.usedBytes + buffer.length > limitBytes) throw new TRPCError5({ code: "PAYLOAD_TOO_LARGE", message: "\u064A\u0631\u062C\u0649 \u062A\u0631\u0642\u064A\u0629 \u0645\u0633\u0627\u062D\u062A\u0643 \u0642\u0628\u0644 \u0631\u0641\u0639 \u0635\u0648\u0631 \u062C\u062F\u064A\u062F\u0629" });
       }
       const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const stored = await storagePut(`media/${scope.scope}/${scope.restaurantId ?? scope.ownerUserId ?? "platform"}/${nanoid3(12)}-${safeName}`, buffer, input.contentType || "application/octet-stream");
+      const stored = await storagePut(`media/${scope.scope}/${scope.restaurantId ?? scope.ownerUserId ?? "platform"}/${nanoid4(12)}-${safeName}`, buffer, input.contentType || "application/octet-stream");
       const archiveFolderId = !input.folderId && scope.scope === "restaurant" && input.category === "menu" ? await getOrCreateRestaurantArchiveFolder(scope.restaurantId ?? input.restaurantId ?? 0, ctx.user.id) : input.folderId;
       const id = await createMediaFile({ ...scope, folderId: archiveFolderId, originalName: input.fileName, storageKey: stored.key, publicUrl: stored.url, contentType: input.contentType, sizeBytes: buffer.length, category: input.category, uploadedByUserId: ctx.user.id });
       if (virusScan) await db.update(mediaFiles).set({ virusScanStatus: virusScan.status === "unavailable" ? "unavailable" : "clean", virusScanName: null, virusScanVersion: virusScan.version, virusScannedAt: /* @__PURE__ */ new Date() }).where(eq6(mediaFiles.id, id));
@@ -8191,7 +8267,7 @@ var appRouter = router({
       }
       await upsertUser({ openId: `test_${account.id}`, name: account.displayName, email: account.email, loginMethod: "test", role: account.role === "admin" ? "admin" : "user" });
       const sessionUser = await getUserByOpenId(`test_${account.id}`);
-      const token = await sdk.signSession({ openId: `test_${account.id}`, appId: `test_${nanoid3(12)}`, name: account.displayName });
+      const token = await sdk.signSession({ openId: `test_${account.id}`, appId: `test_${nanoid4(12)}`, name: account.displayName });
       if (sessionUser) await db.insert(authSessions).values({ userId: sessionUser.id, sessionTokenHash: createHash2("sha256").update(token).digest("hex"), deviceLabel: input.deviceLabel ?? "\u062D\u0633\u0627\u0628 \u0627\u062E\u062A\u0628\u0627\u0631", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 12) });
       ctx.res.cookie(TEST_SESSION_COOKIE, token, { ...getSessionCookieOptions(ctx.req), httpOnly: true, maxAge: 1e3 * 60 * 60 * 12 });
       return { success: true, role: account.role, name: account.displayName };
@@ -8204,7 +8280,7 @@ var appRouter = router({
       const buffer = Buffer.from(raw, "base64");
       if (!buffer.length || buffer.length > 6 * 1024 * 1024) throw new TRPCError5({ code: "PAYLOAD_TOO_LARGE", message: "\u062D\u062C\u0645 \u0627\u0644\u0625\u064A\u0635\u0627\u0644 \u064A\u062C\u0628 \u0623\u0644\u0627 \u064A\u062A\u062C\u0627\u0648\u0632 6 \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A" });
       const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const stored = await storagePut(`subscription-receipts/${nanoid3(16)}-${safeName}`, buffer, input.contentType);
+      const stored = await storagePut(`subscription-receipts/${nanoid4(16)}-${safeName}`, buffer, input.contentType);
       const normalizedEmail = input.email.toLowerCase();
       const accountUser = (await db.select({ id: users.id }).from(users).where(eq6(users.email, normalizedEmail)).limit(1))[0];
       const membership = accountUser ? (await db.select({ restaurantId: restaurantMembers.restaurantId }).from(restaurantMembers).where(eq6(restaurantMembers.userId, accountUser.id)).limit(1))[0] : void 0;
@@ -8231,7 +8307,7 @@ var appRouter = router({
       await upsertUser({ openId, name: input.name.trim(), email, loginMethod: "email", lastSignedIn: /* @__PURE__ */ new Date() });
       const user = await getUserByOpenId(openId);
       if (!user) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628 \u0627\u0644\u0639\u0645\u064A\u0644" });
-      await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId ?? null, slug: `customer-${user.id}-${nanoid3(8)}`, isPublic: false, displayName: input.name.trim().slice(0, 160), email });
+      await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId ?? null, slug: `customer-${user.id}-${nanoid4(8)}`, isPublic: false, displayName: input.name.trim().slice(0, 160), email });
       await db.insert(testAccounts).values({ email, displayName: input.name.trim().slice(0, 120), role: "customer", passwordHash });
       const token = await sdk.signSession({ openId, appId: "customer_email", name: user.name || input.name.trim() });
       await db.insert(authSessions).values({ userId: user.id, sessionTokenHash: createHash2("sha256").update(token).digest("hex"), deviceLabel: "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0646 \u0627\u0644\u0645\u0646\u064A\u0648", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 24 * 30) });
@@ -8252,7 +8328,7 @@ var appRouter = router({
       const user = await getUserByOpenId(openId);
       if (!user) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u062C\u0644\u0633\u0629 \u0627\u0644\u0639\u0645\u064A\u0644" });
       const existingProfile = await getCustomerProfile(user.id);
-      if (!existingProfile) await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId ?? null, slug: `customer-${user.id}-${nanoid3(8)}`, isPublic: false, displayName: account.displayName, email });
+      if (!existingProfile) await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId ?? null, slug: `customer-${user.id}-${nanoid4(8)}`, isPublic: false, displayName: account.displayName, email });
       else if (!existingProfile.restaurantId && input.restaurantId) await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId });
       const device = (await db.select({ status: trustedDevices.status }).from(trustedDevices).where(and6(eq6(trustedDevices.userId, user.id), eq6(trustedDevices.fingerprintHash, input.deviceFingerprintHash))).limit(1))[0];
       if (!device || device.status !== "active") throw new TRPCError5({ code: "FORBIDDEN", message: "\u0627\u0644\u062C\u0647\u0627\u0632 \u063A\u064A\u0631 \u0645\u0639\u062A\u0645\u062F \u0644\u0647\u0630\u0627 \u0627\u0644\u062D\u0633\u0627\u0628. \u0627\u0637\u0644\u0628 \u0627\u0639\u062A\u0645\u0627\u062F \u0627\u0644\u062C\u0647\u0627\u0632 \u0645\u0646 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0646\u0635\u0629." });
@@ -8295,7 +8371,7 @@ var appRouter = router({
       const user = await getUserByOpenId(openId);
       if (!user) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u062C\u0644\u0633\u0629 \u0627\u0644\u0639\u0645\u064A\u0644" });
       const existingProfile = await getCustomerProfile(user.id);
-      if (!existingProfile) await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId ?? null, slug: `customer-${user.id}-${nanoid3(8)}`, isPublic: false, displayName: user.name || "\u0639\u0645\u064A\u0644 NFOOD" });
+      if (!existingProfile) await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId ?? null, slug: `customer-${user.id}-${nanoid4(8)}`, isPublic: false, displayName: user.name || "\u0639\u0645\u064A\u0644 NFOOD" });
       else if (!existingProfile.restaurantId && input.restaurantId) await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId });
       const device = (await db.select({ status: trustedDevices.status }).from(trustedDevices).where(and6(eq6(trustedDevices.userId, user.id), eq6(trustedDevices.fingerprintHash, input.deviceFingerprintHash))).limit(1))[0];
       if (!device || device.status !== "active") throw new TRPCError5({ code: "FORBIDDEN", message: "\u0627\u0644\u062C\u0647\u0627\u0632 \u063A\u064A\u0631 \u0645\u0639\u062A\u0645\u062F \u0644\u0647\u0630\u0627 \u0627\u0644\u062D\u0633\u0627\u0628. \u0627\u0637\u0644\u0628 \u0627\u0639\u062A\u0645\u0627\u062F \u0627\u0644\u062C\u0647\u0627\u0632 \u0645\u0646 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0646\u0635\u0629." });
@@ -8348,7 +8424,7 @@ var appRouter = router({
       const email = input.email.toLowerCase();
       const duplicate = await db.select({ id: testAccounts.id }).from(testAccounts).where(eq6(testAccounts.email, email)).limit(1);
       if (duplicate[0]) throw new TRPCError5({ code: "CONFLICT", message: "\u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u0628\u0642\u064B\u0627" });
-      const slugBase = input.restaurantName.toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120) || `restaurant-${nanoid3(6).toLowerCase()}`;
+      const slugBase = input.restaurantName.toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120) || `restaurant-${nanoid4(6).toLowerCase()}`;
       let slug = slugBase;
       let suffix = 2;
       while ((await db.select({ id: restaurants.id }).from(restaurants).where(eq6(restaurants.slug, slug)).limit(1))[0]) slug = `${slugBase}-${suffix++}`;
@@ -8357,20 +8433,20 @@ var appRouter = router({
       const passwordHash = `scrypt$${salt}$${scryptSync2(temporaryPassword, Buffer.from(salt, "base64"), 64).toString("base64")}`;
       const accountResult = await db.insert(testAccounts).values({ email, displayName: `\u0645\u062F\u064A\u0631 ${input.restaurantName}`, role: "restaurant_admin", passwordHash });
       const accountId = Number(accountResult[0].insertId);
-      const emailVerificationToken = nanoid3(48);
+      const emailVerificationToken = nanoid4(48);
       await upsertUser({ openId: `test_${accountId}`, name: `\u0645\u062F\u064A\u0631 ${input.restaurantName}`, email, loginMethod: "local", role: "user" });
       const owner = await getUserByOpenId(`test_${accountId}`);
       if (!owner) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u0645\u0627\u0644\u0643 \u0627\u0644\u0645\u0637\u0639\u0645" });
-      const restaurantResult = await db.insert(restaurants).values({ name: input.restaurantName, slug, barcode: `NFOOD-${nanoid3(10).toUpperCase()}`, status: "trial", plan: input.plan, phone: input.phone, country: input.country ?? countryDef.nameAr, countryCode: countryDef.code, currencyCode: resolvedCurrency.code, currencyDecimals: resolvedCurrency.decimals, primaryLanguage: input.primaryLanguage, languagesJson: JSON.stringify(Array.from(/* @__PURE__ */ new Set([input.primaryLanguage, "ar", "en", "fr"]))), city: input.city, brandName: input.restaurantName });
+      const restaurantResult = await db.insert(restaurants).values({ name: input.restaurantName, slug, barcode: `NFOOD-${nanoid4(10).toUpperCase()}`, status: "trial", plan: input.plan, phone: input.phone, country: input.country ?? countryDef.nameAr, countryCode: countryDef.code, currencyCode: resolvedCurrency.code, currencyDecimals: resolvedCurrency.decimals, primaryLanguage: input.primaryLanguage, languagesJson: JSON.stringify(Array.from(/* @__PURE__ */ new Set([input.primaryLanguage, "ar", "en", "fr"]))), city: input.city, brandName: input.restaurantName });
       const restaurantId = Number(restaurantResult[0].insertId);
-      const entityId = `biz_${nanoid3(18)}`;
+      const entityId = `biz_${nanoid4(18)}`;
       await db.insert(platformEntities).values({ id: entityId, customerName: input.restaurantName, email, countryCode: countryDef.code, city: input.city, currencyCode: resolvedCurrency.code, primaryLanguage: input.primaryLanguage, sector: input.sector, status: true, plan: input.plan === "Enterprise" ? "Enterprise" : input.plan === "Business" || input.plan === "Growth" ? "Pro" : "Basic", taxId: `PENDING-${restaurantId}`, licensingFee: "0.00" });
       await db.update(users).set({ emailVerified: false, emailVerificationToken, emailVerificationExpiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 24) }).where(eq6(users.id, owner.id));
       const branchResult = await db.insert(branches).values({ restaurantId, name: "\u0627\u0644\u0641\u0631\u0639 \u0627\u0644\u0631\u0626\u064A\u0633\u064A", city: input.city, countryCode: countryDef.code, currencyCode: resolvedCurrency.code, currencyDecimals: resolvedCurrency.decimals, status: "open" });
       await db.insert(subscriptions).values({ restaurantId, plan: input.plan, status: "trial", monthlyPrice: "0" });
       await db.insert(restaurantMembers).values({ restaurantId, userId: owner.id, branchId: Number(branchResult[0].insertId) });
       await upsertUserPreferences(owner.id, { language: input.primaryLanguage, themeMode: "system", themePreset: "nfood-sunset" });
-      const token = await sdk.signSession({ openId: `test_${accountId}`, appId: `register_${nanoid3(12)}`, name: `\u0645\u062F\u064A\u0631 ${input.restaurantName}` });
+      const token = await sdk.signSession({ openId: `test_${accountId}`, appId: `register_${nanoid4(12)}`, name: `\u0645\u062F\u064A\u0631 ${input.restaurantName}` });
       await db.insert(authSessions).values({ userId: owner.id, sessionTokenHash: createHash2("sha256").update(token).digest("hex"), deviceLabel: "\u062A\u0633\u062C\u064A\u0644 \u0645\u0637\u0639\u0645 \u062C\u062F\u064A\u062F", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 12) });
       ctx.res.cookie(TEST_SESSION_COOKIE, token, { ...getSessionCookieOptions(ctx.req), httpOnly: true, maxAge: 1e3 * 60 * 60 * 12 });
       return { success: true, restaurantId, entityId, sector: input.sector, plan: input.plan, temporaryPassword, emailVerified: false, emailVerificationRequired: true };
@@ -8389,7 +8465,7 @@ var appRouter = router({
       const buffer = Buffer.from(raw, "base64");
       if (buffer.length > 6 * 1024 * 1024) throw new TRPCError5({ code: "PAYLOAD_TOO_LARGE", message: "\u062D\u062C\u0645 \u0627\u0644\u0645\u0644\u0641 \u064A\u062A\u062C\u0627\u0648\u0632 6 \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A" });
       const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const stored = await storagePut(`driver-applications/${nanoid3(16)}-${safeName}`, buffer, input.contentType || "application/octet-stream");
+      const stored = await storagePut(`driver-applications/${nanoid4(16)}-${safeName}`, buffer, input.contentType || "application/octet-stream");
       return { url: stored.url, key: stored.key };
     }),
     submitDriverApplication: publicProcedure.input(z3.object({ fullName: z3.string().trim().min(2).max(160), email: z3.string().trim().email().max(320), phone: z3.string().trim().min(7).max(40), city: z3.string().trim().min(2).max(120), vehicleType: z3.enum(["bicycle", "motorcycle", "car", "van", "other"]), identityDocumentUrl: z3.string().max(500).optional(), licenseDocumentUrl: z3.string().max(500).optional(), vehicleFrontUrl: z3.string().max(500).optional(), vehicleBackUrl: z3.string().max(500).optional(), vehicleLeftUrl: z3.string().max(500).optional(), vehicleRightUrl: z3.string().max(500).optional(), captchaChallenge: z3.string().min(20).max(1e3), captchaAnswer: z3.string().trim().regex(/^\d{1,2}$/) })).mutation(async ({ input }) => {
@@ -8431,7 +8507,7 @@ var appRouter = router({
       await db.update(customerProfiles).set({ displayName: "\u062D\u0633\u0627\u0628 \u0645\u062D\u0630\u0648\u0641", email: null, phone: null, whatsapp: null, isPublic: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq6(customerProfiles.userId, ctx.user.id));
       if (current?.email) await db.update(testAccounts).set({ isActive: false }).where(eq6(testAccounts.email, current.email.toLowerCase()));
       await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and6(eq6(authSessions.userId, ctx.user.id), isNull3(authSessions.revokedAt)));
-      await insertAuditLog({ restaurantId: profile.restaurantId ?? null, actorUserId: ctx.user.id, actorRole: "customer", action: "customer.account.deleted_by_self", entityType: "customer", entityId: String(ctx.user.id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ retainedOrderHistory: true, emailChanged: true }) });
+      await insertAuditLog({ restaurantId: profile.restaurantId ?? null, actorUserId: ctx.user.id, actorRole: "customer", action: "customer.account.deleted_by_self", entityType: "customer", entityId: String(ctx.user.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ retainedOrderHistory: true, emailChanged: true }) });
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       ctx.res.clearCookie(TEST_SESSION_COOKIE, { ...cookieOptions, maxAge: -1 });
@@ -8457,7 +8533,7 @@ var appRouter = router({
         const session = (await db.select({ createdAt: authSessions.createdAt }).from(authSessions).where(and6(eq6(authSessions.userId, ctx.user.id), eq6(authSessions.sessionTokenHash, tokenHash))).limit(1))[0];
         startedAt = session?.createdAt ?? null;
         await db.update(authSessions).set({ revokedAt: endedAt }).where(and6(eq6(authSessions.userId, ctx.user.id), eq6(authSessions.sessionTokenHash, tokenHash), isNull3(authSessions.revokedAt)));
-        await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "customer", action: "admin.customer.session.ended", entityType: "customer_impersonation_session", entityId: String(ctx.user.id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ startedAt: startedAt?.toISOString() ?? null, endedAt: endedAt.toISOString(), reason: "admin_requested_immediate_end", actions: ["\u0625\u0628\u0637\u0627\u0644 \u062C\u0644\u0633\u0629 \u0627\u0644\u0639\u0645\u064A\u0644", "\u062D\u0641\u0638 \u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062C\u0644\u0633\u0629", "\u0625\u0639\u0627\u062F\u0629 \u062C\u0644\u0633\u0629 \u0627\u0644\u0625\u062F\u0627\u0631\u0629"] }) });
+        await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "customer", action: "admin.customer.session.ended", entityType: "customer_impersonation_session", entityId: String(ctx.user.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ startedAt: startedAt?.toISOString() ?? null, endedAt: endedAt.toISOString(), reason: "admin_requested_immediate_end", actions: ["\u0625\u0628\u0637\u0627\u0644 \u062C\u0644\u0633\u0629 \u0627\u0644\u0639\u0645\u064A\u0644", "\u062D\u0641\u0638 \u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062C\u0644\u0633\u0629", "\u0625\u0639\u0627\u062F\u0629 \u062C\u0644\u0633\u0629 \u0627\u0644\u0625\u062F\u0627\u0631\u0629"] }) });
       }
       const durationMinutes = startedAt ? Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 6e4)) : null;
       const report = { customerUserId: ctx.user?.id ?? null, startedAt: startedAt?.toISOString() ?? null, endedAt: endedAt.toISOString(), durationMinutes, actions: ["\u0625\u0628\u0637\u0627\u0644 \u062C\u0644\u0633\u0629 \u0627\u0644\u0639\u0645\u064A\u0644 \u0641\u0648\u0631\u064B\u0627", "\u062A\u0633\u062C\u064A\u0644 \u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0625\u062C\u0631\u0627\u0621\u0627\u062A", "\u0625\u0639\u0627\u062F\u0629 \u062C\u0644\u0633\u0629 \u0627\u0644\u0625\u062F\u0627\u0631\u0629"], result: "success" };
@@ -8486,7 +8562,7 @@ var appRouter = router({
       const existing = (await db.select({ id: emailTemplates.id }).from(emailTemplates).where(and6(eq6(emailTemplates.restaurantId, input.restaurantId), eq6(emailTemplates.scope, "restaurant"), eq6(emailTemplates.eventKey, input.eventKey), eq6(emailTemplates.locale, input.locale))).limit(1))[0];
       if (existing) await db.update(emailTemplates).set({ subject: input.subject, htmlBody: input.htmlBody, textBody: input.textBody, isEnabled: input.isEnabled, updatedByUserId: ctx.user?.id ?? null, updatedAt: /* @__PURE__ */ new Date() }).where(eq6(emailTemplates.id, existing.id));
       else await db.insert(emailTemplates).values({ scope: "restaurant", restaurantId: input.restaurantId, eventKey: input.eventKey, locale: input.locale, subject: input.subject, htmlBody: input.htmlBody, textBody: input.textBody, isEnabled: input.isEnabled, updatedByUserId: ctx.user?.id ?? null });
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "email.template.updated", entityType: "email_template", entityId: `${input.eventKey}:${input.locale}`, outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ locale: input.locale, enabled: input.isEnabled }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "email.template.updated", entityType: "email_template", entityId: `${input.eventKey}:${input.locale}`, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ locale: input.locale, enabled: input.isEnabled }) });
       return { success: true };
     }),
     emailTemplateDefaults: publicProcedure.query(() => seeds),
@@ -8494,12 +8570,12 @@ var appRouter = router({
     customerBenefits: protectedProcedure.query(async ({ ctx }) => listCustomerBenefits(ctx.user.id)),
     setCustomerBenefitPlan: protectedProcedure.input(z3.object({ planKey: z3.enum(["customer-start", "customer-plus", "customer-pro"]) })).mutation(async ({ ctx, input }) => {
       const result = await setCustomerBenefitPlan(ctx.user.id, input.planKey);
-      await insertAuditLog({ actorUserId: ctx.user.id, action: "customer.benefit_plan.selected", entityType: "customer_benefit_subscription", entityId: String(result.id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ planKey: input.planKey }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, action: "customer.benefit_plan.selected", entityType: "customer_benefit_subscription", entityId: String(result.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ planKey: input.planKey }) });
       return { success: true, ...result };
     }),
     requestCustomerBenefit: protectedProcedure.input(z3.object({ featureKey: z3.string().trim().min(2).max(120), notes: z3.string().trim().max(1e3).nullable().optional() })).mutation(async ({ ctx, input }) => {
       const result = await createCustomerBenefitRequest({ userId: ctx.user.id, featureKey: input.featureKey, notes: input.notes ?? null });
-      await insertAuditLog({ actorUserId: ctx.user.id, action: "customer.benefit.requested", entityType: "customer_benefit_request", entityId: String(result.id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ featureKey: input.featureKey, duplicate: result.duplicate }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, action: "customer.benefit.requested", entityType: "customer_benefit_request", entityId: String(result.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ featureKey: input.featureKey, duplicate: result.duplicate }) });
       return { success: true, ...result };
     }),
     setCustomerNotificationConsent: protectedProcedure.input(z3.object({ marketing: z3.boolean(), restaurantUpdates: z3.boolean(), channels: z3.object({ email: z3.boolean().default(true), push: z3.boolean().default(true), sms: z3.boolean().default(false) }).default({ email: true, push: true, sms: false }) })).mutation(async ({ ctx, input }) => {
@@ -8513,7 +8589,7 @@ var appRouter = router({
       }
       const next = { ...previous, customerConsent: { marketing: input.marketing, restaurantUpdates: input.restaurantUpdates, channels: input.channels, updatedAt: (/* @__PURE__ */ new Date()).toISOString(), source: "customer" } };
       await upsertUserPreferences(ctx.user.id, { language: existing?.language ?? "ar", themeMode: existing?.themeMode ?? "system", themePreset: existing?.themePreset ?? "nfood-sunset", notificationPreferencesJson: JSON.stringify(next) });
-      await insertAuditLog({ actorUserId: ctx.user.id, action: "customer.notification_consent.updated", entityType: "customer_consent", entityId: String(ctx.user.id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ marketing: input.marketing, restaurantUpdates: input.restaurantUpdates, channels: input.channels }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, action: "customer.notification_consent.updated", entityType: "customer_consent", entityId: String(ctx.user.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ marketing: input.marketing, restaurantUpdates: input.restaurantUpdates, channels: input.channels }) });
       return { success: true, consent: next.customerConsent };
     }),
     deliveryMessages: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
@@ -8599,7 +8675,7 @@ var appRouter = router({
       if (!isMerchant || !restaurantPurchaseEnabled) throw new TRPCError5({ code: "FORBIDDEN", message: "\u0627\u0644\u062A\u0635\u0641\u062D \u0645\u062A\u0627\u062D \u0644\u0644\u0639\u0645\u064A\u0644\u060C \u0648\u0627\u0644\u0634\u0631\u0627\u0621 \u0645\u062D\u0635\u0648\u0631 \u0628\u0627\u0644\u0645\u0637\u0627\u0639\u0645 \u0648\u0627\u0644\u062D\u0633\u0627\u0628\u0627\u062A \u0627\u0644\u062A\u062C\u0627\u0631\u064A\u0629 \u0639\u0646\u062F \u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0625\u062F\u0627\u0631\u0629" });
       if (isMerchant && !restaurantId) throw new TRPCError5({ code: "FORBIDDEN", message: "\u0627\u0631\u0628\u0637 \u0627\u0644\u062D\u0633\u0627\u0628 \u0627\u0644\u062A\u062C\u0627\u0631\u064A \u0628\u0645\u0637\u0639\u0645 \u0642\u0628\u0644 \u0634\u0631\u0627\u0621 \u0627\u0644\u0645\u062D\u062A\u0648\u0649" });
       const result = await purchaseContentWithWallet({ listingId: input.listingId, buyerUserId: ctx.user.id, buyerType: isMerchant ? "merchant" : "customer", restaurantId: isMerchant ? restaurantId : null });
-      await insertAuditLog({ actorUserId: ctx.user.id, restaurantId, action: "content.wallet.purchase", entityType: "content_purchase", entityId: String(result.orderId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ listingId: input.listingId, buyerType: isMerchant ? "merchant" : "customer", amount: result.amount, reward: result.reward, deliveredToLibrary: result.deliveredToLibrary }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, restaurantId, action: "content.wallet.purchase", entityType: "content_purchase", entityId: String(result.orderId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ listingId: input.listingId, buyerType: isMerchant ? "merchant" : "customer", amount: result.amount, reward: result.reward, deliveredToLibrary: result.deliveredToLibrary }) });
       return { success: true, ...result };
     }),
     myContentLibrary: protectedProcedure.query(({ ctx }) => listContentLibraryForBuyer(ctx.user.id)),
@@ -8607,13 +8683,13 @@ var appRouter = router({
     contentModerationQueue: platformAdminProcedure.query(() => listPlatformContentReviews()),
     reviewContent: platformAdminProcedure.input(z3.object({ mediaFileId: z3.number().int().positive(), status: z3.enum(["approved", "blocked"]), reason: z3.string().trim().max(500).nullable().optional() })).mutation(async ({ ctx, input }) => {
       const id = await updateContentModerationReview(input);
-      await insertAuditLog({ actorUserId: ctx.user.id, action: input.status === "approved" ? "platform.content.approved" : "platform.content.blocked", entityType: "content_moderation", entityId: String(input.mediaFileId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ reason: input.reason ?? null }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, action: input.status === "approved" ? "platform.content.approved" : "platform.content.blocked", entityType: "content_moderation", entityId: String(input.mediaFileId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ reason: input.reason ?? null }) });
       return { success: true, mediaFileId: id, status: input.status };
     }),
     foodTags: publicProcedure.query(() => listContentFoodTags()),
     upsertFoodTag: platformAdminProcedure.input(z3.object({ id: z3.number().int().positive().optional(), name: z3.string().trim().min(2).max(100), slug: z3.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/), category: z3.string().trim().min(2).max(80), isActive: z3.boolean().default(true) })).mutation(async ({ ctx, input }) => {
       const id = await upsertContentFoodTag({ ...input, createdByUserId: ctx.user.id });
-      await insertAuditLog({ actorUserId: ctx.user.id, action: "platform.content_food_tag.upserted", entityType: "content_food_tag", entityId: String(id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ name: input.name, slug: input.slug, category: input.category, isActive: input.isActive }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, action: "platform.content_food_tag.upserted", entityType: "content_food_tag", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ name: input.name, slug: input.slug, category: input.category, isActive: input.isActive }) });
       return { success: true, id };
     }),
     inviteContentFriend: protectedProcedure.input(z3.object({ listingId: z3.number().int().positive(), invitedUserId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
@@ -8647,7 +8723,7 @@ var appRouter = router({
       const configuredPrice = Number(platformSettings2.contentImagePrice);
       const imagePrice = Number.isFinite(configuredPrice) && configuredPrice >= 0 ? configuredPrice.toFixed(2) : "5.00";
       const result = await db.insert(contentListings).values({ restaurantId: null, mediaFileId: input.mediaFileId, ownerUserId: ctx.user.id, title: input.title.trim(), description: input.description?.trim() || null, contentCategory: input.contentCategory, visibility: input.visibility, foodTagsJson: JSON.stringify(input.foodTags), watermarkEnabled: true, price: imagePrice, currencyCode: "SAR", status: moderation.status === "approved" ? "published" : "draft" });
-      await insertAuditLog({ actorUserId: ctx.user.id, action: "customer.content.listed", entityType: "content_listing", entityId: String(result[0].insertId), restaurantId: null, outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ mediaFileId: input.mediaFileId, watermarkEnabled: true }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, action: "customer.content.listed", entityType: "content_listing", entityId: String(result[0].insertId), restaurantId: null, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ mediaFileId: input.mediaFileId, watermarkEnabled: true }) });
       return { success: true, id: Number(result[0].insertId), status: moderation.status === "approved" ? "published" : "pending_review", watermarkEnabled: true };
     }),
     getCustomerContentOriginal: protectedProcedure.input(z3.object({ listingId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
@@ -8699,7 +8775,7 @@ var appRouter = router({
         const bytes = Buffer.from(raw, "base64");
         if (!bytes.length || bytes.length > 5 * 1024 * 1024) throw new TRPCError5({ code: "PAYLOAD_TOO_LARGE", message: "\u062D\u062C\u0645 \u0625\u064A\u0635\u0627\u0644 \u0627\u0644\u062A\u062D\u0648\u064A\u0644 \u064A\u062C\u0628 \u0623\u0644\u0627 \u064A\u062A\u062C\u0627\u0648\u0632 5 \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A" });
         const safeName = input.receiptFileName.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-100) || "wallet-receipt";
-        const stored = await storagePut(`wallet-topups/${ctx.user.id}/${nanoid3(12)}-${safeName}`, bytes, input.receiptContentType);
+        const stored = await storagePut(`wallet-topups/${ctx.user.id}/${nanoid4(12)}-${safeName}`, bytes, input.receiptContentType);
         receiptUrl = stored.url;
       }
       return createWalletTopup({ customerId: ctx.user.id, amount: input.amount, currencyCode: input.currencyCode, paymentMethod: input.paymentMethod, receiptUrl });
@@ -8723,7 +8799,7 @@ var appRouter = router({
       if (existing) await db.update(testAccounts).set({ restaurantId: input.restaurantId, displayName: profile.name ?? "\u0639\u0645\u064A\u0644", role: "customer", passwordHash, isActive: true }).where(eq6(testAccounts.id, existing.id));
       else await db.insert(testAccounts).values({ restaurantId: input.restaurantId, email: profile.email.toLowerCase(), displayName: profile.name ?? "\u0639\u0645\u064A\u0644", role: "customer", passwordHash, isActive: true });
       await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and6(eq6(authSessions.userId, input.userId), isNull3(authSessions.revokedAt)));
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "customer.password_reset_by_restaurant", entityType: "customer", entityId: String(input.userId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ emailChanged: false }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "customer.password_reset_by_restaurant", entityType: "customer", entityId: String(input.userId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ emailChanged: false }) });
       return { success: true, userId: input.userId };
     }),
     teamAccounts: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
@@ -8749,7 +8825,7 @@ var appRouter = router({
       const result = await db.insert(testAccounts).values({ restaurantId: input.restaurantId, email, displayName: input.displayName.trim(), phone: input.phone?.trim() || null, role: input.role, permissionsJson: input.permissions?.length ? JSON.stringify(Array.from(new Set(input.permissions))) : null, passwordHash, isActive: true });
       const accountId = Number(result[0].insertId);
       await upsertUser({ openId: `test_${accountId}`, name: input.displayName.trim(), email, loginMethod: "test", role: "user", lastSignedIn: /* @__PURE__ */ new Date() });
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "team.account.created", entityType: "team_account", entityId: String(accountId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ email, role: input.role, hasPhone: Boolean(input.phone) }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "team.account.created", entityType: "team_account", entityId: String(accountId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ email, role: input.role, hasPhone: Boolean(input.phone) }) });
       return { success: true, id: accountId, userId: (await getUserByOpenId(`test_${accountId}`))?.id ?? null };
     }),
     updateTeamAccount: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive(), displayName: z3.string().trim().min(2).max(120).optional(), phone: z3.string().trim().min(7).max(40).nullable().optional(), role: z3.enum(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver", "customer"]).optional(), permissions: z3.array(z3.string().trim().min(2).max(80)).max(40).optional(), isActive: z3.boolean().optional(), password: z3.string().min(8).max(128).optional() })).mutation(async ({ ctx, input }) => {
@@ -8773,7 +8849,7 @@ var appRouter = router({
         const linkedUser = (await db.select({ id: users.id }).from(users).where(eq6(users.openId, `test_${input.id}`)).limit(1))[0];
         if (linkedUser) await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and6(eq6(authSessions.userId, linkedUser.id), isNull3(authSessions.revokedAt)));
       }
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "team.account.updated", entityType: "team_account", entityId: String(input.id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ changedFields: Object.keys(changes).filter((key) => key !== "passwordHash"), passwordChanged: Boolean(input.password) }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "team.account.updated", entityType: "team_account", entityId: String(input.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ changedFields: Object.keys(changes).filter((key) => key !== "passwordHash"), passwordChanged: Boolean(input.password) }) });
       return { success: true, id: input.id };
     }),
     changeMyTeamPassword: protectedProcedure.input(z3.object({ currentPassword: z3.string().min(1).max(128), newPassword: z3.string().min(8).max(128) })).mutation(async ({ ctx, input }) => {
@@ -8791,7 +8867,7 @@ var appRouter = router({
       const passwordHash = `scrypt$${nextSalt}$${scryptSync2(input.newPassword, Buffer.from(nextSalt, "base64"), 64).toString("base64")}`;
       await db.update(testAccounts).set({ passwordHash }).where(eq6(testAccounts.id, accountId));
       await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and6(eq6(authSessions.userId, ctx.user.id), isNull3(authSessions.revokedAt)));
-      await insertAuditLog({ restaurantId: account.restaurantId ?? null, actorUserId: ctx.user.id, actorRole: ctx.user.testRole ?? ctx.user.role, action: "team.account.self_password_changed", entityType: "team_account", entityId: String(accountId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ role: account.role }) });
+      await insertAuditLog({ restaurantId: account.restaurantId ?? null, actorUserId: ctx.user.id, actorRole: ctx.user.testRole ?? ctx.user.role, action: "team.account.self_password_changed", entityType: "team_account", entityId: String(accountId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ role: account.role }) });
       return { success: true };
     }),
     uploadBrandAsset: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), assetType: z3.enum(["logo", "pwaIcon", "cover"]), data: z3.string().min(1).max(7e6), mimeType: z3.enum(["image/png", "image/jpeg", "image/webp"]), fileName: z3.string().trim().min(1).max(120) })).mutation(async ({ ctx, input }) => {
@@ -8802,7 +8878,7 @@ var appRouter = router({
       const bytes = Buffer.from(input.data, "base64");
       if (bytes.byteLength > 5 * 1024 * 1024) throw new TRPCError5({ code: "BAD_REQUEST", message: "\u062D\u062C\u0645 \u0627\u0644\u0635\u0648\u0631\u0629 \u064A\u062A\u062C\u0627\u0648\u0632 5MB" });
       const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-80) || "brand-image";
-      const upload = await storagePut(`restaurants/${input.restaurantId}/branding/${input.assetType}-${nanoid3(10)}-${safeName}`, bytes, input.mimeType);
+      const upload = await storagePut(`restaurants/${input.restaurantId}/branding/${input.assetType}-${nanoid4(10)}-${safeName}`, bytes, input.mimeType);
       if (input.assetType === "logo") await db.update(restaurants).set({ brandLogoUrl: upload.url }).where(eq6(restaurants.id, input.restaurantId));
       else if (input.assetType === "pwaIcon") await db.update(restaurants).set({ pwaInstallIconUrl: upload.url }).where(eq6(restaurants.id, input.restaurantId));
       else await db.update(restaurants).set({ coverUrl: upload.url }).where(eq6(restaurants.id, input.restaurantId));
@@ -8824,7 +8900,7 @@ var appRouter = router({
       const after = { defaultDiscountPercent: Number(input.defaultDiscountPercent.toFixed(2)), taxPercent: Number(input.taxPercent.toFixed(2)), countryCode: country.code, currencyCode: currency.code, currencyDecimals: currency.decimals, integrationMode: input.integrationMode ?? existing[0].integrationMode };
       const before = { defaultDiscountPercent: Number(existing[0].defaultDiscountPercent), taxPercent: Number(existing[0].taxPercent), countryCode: existing[0].countryCode, currencyCode: existing[0].currencyCode, currencyDecimals: existing[0].currencyDecimals, integrationMode: existing[0].integrationMode };
       await db.update(restaurants).set({ defaultDiscountPercent: after.defaultDiscountPercent.toFixed(2), taxPercent: after.taxPercent.toFixed(2), countryCode: after.countryCode, currencyCode: after.currencyCode, currencyDecimals: after.currencyDecimals, integrationMode: after.integrationMode }).where(eq6(restaurants.id, input.restaurantId));
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "restaurant.pricing.updated", entityType: "restaurant_pricing", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ before, after }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "restaurant.pricing.updated", entityType: "restaurant_pricing", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ before, after }) });
       return { success: true, restaurantId: input.restaurantId, ...after };
     }),
     receiptTemplate: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
@@ -8850,7 +8926,7 @@ var appRouter = router({
       const before = await getReceiptTemplate(input.restaurantId);
       const after = { headerText: input.headerText.trim(), footerText: input.footerText.trim() || "\u0634\u0643\u0631\u0627\u064B \u0644\u0632\u064A\u0627\u0631\u062A\u0643\u0645", logoUrl: input.logoUrl === void 0 ? before?.logoUrl ?? null : input.logoUrl || null, messageTemplatesJson: input.messageTemplatesJson === void 0 ? before?.messageTemplatesJson ?? null : input.messageTemplatesJson, escPosReceiptTemplate: input.escPosReceiptTemplate === void 0 ? before?.escPosReceiptTemplate ?? null : input.escPosReceiptTemplate, escPosKitchenTemplate: input.escPosKitchenTemplate === void 0 ? before?.escPosKitchenTemplate ?? null : input.escPosKitchenTemplate, escPosInternalTemplate: input.escPosInternalTemplate === void 0 ? before?.escPosInternalTemplate ?? null : input.escPosInternalTemplate, escPosExternalTemplate: input.escPosExternalTemplate === void 0 ? before?.escPosExternalTemplate ?? null : input.escPosExternalTemplate, escPosDeliveryTemplate: input.escPosDeliveryTemplate === void 0 ? before?.escPosDeliveryTemplate ?? null : input.escPosDeliveryTemplate, escPosReceiptLocalesJson: input.escPosReceiptLocalesJson === void 0 ? before?.escPosReceiptLocalesJson ?? null : input.escPosReceiptLocalesJson, escPosKitchenLocalesJson: input.escPosKitchenLocalesJson === void 0 ? before?.escPosKitchenLocalesJson ?? null : input.escPosKitchenLocalesJson };
       const id = await upsertReceiptTemplate({ restaurantId: input.restaurantId, ...after, createdByUserId: ctx.user?.id ?? null });
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "receipt.template.updated", entityType: "receipt_template", entityId: String(id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ before: { headerText: before?.headerText ?? "", footerText: before?.footerText ?? "\u0634\u0643\u0631\u0627\u064B \u0644\u0632\u064A\u0627\u0631\u062A\u0643\u0645", logoUrl: before?.logoUrl ?? null }, after }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "receipt.template.updated", entityType: "receipt_template", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ before: { headerText: before?.headerText ?? "", footerText: before?.footerText ?? "\u0634\u0643\u0631\u0627\u064B \u0644\u0632\u064A\u0627\u0631\u062A\u0643\u0645", logoUrl: before?.logoUrl ?? null }, after }) });
       return { success: true, id, ...after };
     }),
     uploadReceiptLogo: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), fileName: z3.string().trim().min(1).max(160), contentType: z3.enum(["image/png", "image/jpeg", "image/webp"]), base64: z3.string().min(32).max(5e6) })).mutation(async ({ ctx, input }) => {
@@ -8860,10 +8936,10 @@ var appRouter = router({
       const buffer = Buffer.from(raw, "base64");
       if (!buffer.length || buffer.length > 2 * 1024 * 1024) throw new TRPCError5({ code: "PAYLOAD_TOO_LARGE", message: "\u0634\u0639\u0627\u0631 \u0627\u0644\u0625\u064A\u0635\u0627\u0644 \u064A\u062C\u0628 \u0623\u0644\u0627 \u064A\u062A\u062C\u0627\u0648\u0632 2 \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A" });
       const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const stored = await storagePut(`receipt-logos/${input.restaurantId}/${nanoid3(12)}-${safeName}`, buffer, input.contentType);
+      const stored = await storagePut(`receipt-logos/${input.restaurantId}/${nanoid4(12)}-${safeName}`, buffer, input.contentType);
       const before = await getReceiptTemplate(input.restaurantId);
       const id = await upsertReceiptTemplate({ restaurantId: input.restaurantId, headerText: before?.headerText ?? "", footerText: before?.footerText ?? "\u0634\u0643\u0631\u0627\u064B \u0644\u0632\u064A\u0627\u0631\u062A\u0643\u0645", logoUrl: stored.url, messageTemplatesJson: before?.messageTemplatesJson ?? null, createdByUserId: ctx.user?.id ?? null });
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "receipt.logo.updated", entityType: "receipt_template", entityId: String(id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ previousLogoUrl: before?.logoUrl ?? null, fileName: input.fileName, contentType: input.contentType, sizeBytes: buffer.length }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "receipt.logo.updated", entityType: "receipt_template", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ previousLogoUrl: before?.logoUrl ?? null, fileName: input.fileName, contentType: input.contentType, sizeBytes: buffer.length }) });
       return { success: true, id, logoUrl: stored.url };
     }),
     sendReceipt: testRoleProcedure("restaurant_admin", "cashier", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive(), channel: z3.enum(["email", "sms"]), recipient: z3.string().trim().max(320).optional(), locale: z3.enum(["ar", "en", "fr"]).optional() })).mutation(async ({ ctx, input }) => {
@@ -8894,10 +8970,10 @@ var appRouter = router({
         const integrationSecret = await getEffectiveIntegrationSecret(input.restaurantId, input.channel === "email" ? "smtp" : "otp_sms");
         const delivery = input.channel === "email" ? await sendReceiptEmail({ to: target, receipt, secret: integrationSecret }) : await sendReceiptSms({ to: target, receipt, secret: integrationSecret });
         if (!delivery.sent) throw new TRPCError5({ code: "PRECONDITION_FAILED", message: input.channel === "email" ? "\u0627\u0644\u0628\u0631\u064A\u062F \u063A\u064A\u0631 \u0645\u0647\u064A\u0623. \u062A\u062D\u0642\u0642 \u0645\u0646 \u0625\u0639\u062F\u0627\u062F\u0627\u062A SMTP \u0642\u0628\u0644 \u0627\u0644\u0625\u0631\u0633\u0627\u0644" : "\u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0627\u0644\u0642\u0635\u064A\u0631\u0629 \u063A\u064A\u0631 \u0645\u0647\u064A\u0623\u0629. \u0623\u0636\u0641 \u0625\u0639\u062F\u0627\u062F OTP / SMS \u0628\u0635\u064A\u063A\u0629 \u0645\u0632\u0648\u062F Twilio \u0623\u0648\u0644\u0627\u064B" });
-        await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "receipt.delivery.sent", entityType: "receipt_delivery", entityId: String(order.id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ channel: input.channel, locale, recipient: maskedRecipient, retryRecipient: target }) });
+        await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "receipt.delivery.sent", entityType: "receipt_delivery", entityId: String(order.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ channel: input.channel, locale, recipient: maskedRecipient, retryRecipient: target }) });
         return { success: true, channel: input.channel, orderId: order.id };
       } catch (error) {
-        await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "receipt.delivery.failed", entityType: "receipt_delivery", entityId: String(order.id), outcome: "failure", requestId: nanoid3(12), metadata: JSON.stringify({ channel: input.channel, locale, recipient: maskedRecipient, retryRecipient: target }) });
+        await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "receipt.delivery.failed", entityType: "receipt_delivery", entityId: String(order.id), outcome: "failure", requestId: nanoid4(12), metadata: JSON.stringify({ channel: input.channel, locale, recipient: maskedRecipient, retryRecipient: target }) });
         if (error instanceof TRPCError5) throw error;
         const errorMessage = error instanceof Error ? error.message : String(error);
         if (/network|fetch|timeout|ETIMEDOUT|ECONN|ENOTFOUND|socket|اتصال|شبك/i.test(errorMessage)) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: `\u062A\u0639\u0630\u0631 \u0627\u0644\u0627\u062A\u0635\u0627\u0644 \u0628\u0645\u0632\u0648\u062F ${input.channel === "email" ? "\u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A" : "\u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0627\u0644\u0642\u0635\u064A\u0631\u0629"}. \u0623\u0639\u062F \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629 \u0628\u0639\u062F \u0644\u062D\u0638\u0627\u062A` });
@@ -8974,13 +9050,13 @@ var appRouter = router({
     whiteLabelWorkspaces: adminProcedure.query(() => listWhiteLabelWorkspaces()),
     createWhiteLabelWorkspace: adminProcedure.input(z3.object({ name: z3.string().trim().min(2).max(160), slug: z3.string().trim().min(2).max(100), logoUrl: z3.string().url().max(500).nullable().optional(), primaryColor: z3.string().regex(/^#[0-9a-fA-F]{6}$/).optional(), accentColor: z3.string().regex(/^#[0-9a-fA-F]{6}$/).optional(), customDomain: z3.string().trim().max(255).nullable().optional(), defaultLocale: z3.enum(["ar", "en", "fr", "ur"]).default("ar"), enabledModules: z3.array(z3.string().trim().min(1).max(60)).max(40).default([]), status: z3.enum(["draft", "active", "suspended"]).default("draft") })).mutation(async ({ ctx, input }) => {
       const id = await createWhiteLabelWorkspace({ ...input, ownerUserId: ctx.user.id });
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "white_label.workspace.created", entityType: "white_label_workspace", entityId: String(id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ slug: input.slug, status: input.status }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "white_label.workspace.created", entityType: "white_label_workspace", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ slug: input.slug, status: input.status }) });
       return { success: true, id };
     }),
     updateWhiteLabelWorkspace: adminProcedure.input(z3.object({ id: z3.number().int().positive(), name: z3.string().trim().min(2).max(160).optional(), logoUrl: z3.string().url().max(500).nullable().optional(), primaryColor: z3.string().regex(/^#[0-9a-fA-F]{6}$/).optional(), accentColor: z3.string().regex(/^#[0-9a-fA-F]{6}$/).optional(), customDomain: z3.string().trim().max(255).nullable().optional(), defaultLocale: z3.enum(["ar", "en", "fr", "ur"]).optional(), enabledModules: z3.array(z3.string().trim().min(1).max(60)).max(40).optional(), status: z3.enum(["draft", "active", "suspended"]).optional() })).mutation(async ({ ctx, input }) => {
       const { id, ...changes } = input;
       await updateWhiteLabelWorkspace(id, changes);
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "white_label.workspace.updated", entityType: "white_label_workspace", entityId: String(id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ changedFields: Object.keys(changes) }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "white_label.workspace.updated", entityType: "white_label_workspace", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ changedFields: Object.keys(changes) }) });
       return { success: true, id };
     }),
     merchantCommerceFundingAccount: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
@@ -9001,12 +9077,12 @@ var appRouter = router({
       const ticketId = await createSupportTicket({ restaurantId: input.restaurantId, requesterUserId: ctx.user.id, subject: "\u0637\u0644\u0628 \u0634\u062D\u0646 \u062D\u0633\u0627\u0628 \u0645\u0634\u062A\u0631\u064A\u0627\u062A \u0627\u0644\u0645\u062D\u062A\u0648\u0649", description: `\u0627\u0644\u062D\u0633\u0627\u0628 \u0627\u0644\u0645\u0633\u062A\u0642\u0644 \u0631\u0642\u0645 ${funding.account.id} \xB7 \u0627\u0644\u0645\u0628\u0644\u063A \u0627\u0644\u0645\u0637\u0644\u0648\u0628 ${amount.toFixed(2)} ${funding.account.currencyCode}${input.note ? `
 \u0645\u0644\u0627\u062D\u0638\u0629: ${input.note}` : ""}
 \u0644\u0645 \u064A\u062A\u0645 \u0625\u0636\u0627\u0641\u0629 \u0627\u0644\u0631\u0635\u064A\u062F\u061B \u064A\u0646\u062A\u0638\u0631 \u0627\u0644\u0637\u0644\u0628 \u0645\u0631\u0627\u062C\u0639\u0629 \u0627\u0644\u0625\u062F\u0627\u0631\u0629 \u0648\u0625\u062B\u0628\u0627\u062A \u0627\u0644\u062F\u0641\u0639.`, priority: "normal" });
-      await insertAuditLog({ actorUserId: ctx.user.id, restaurantId: input.restaurantId, action: "commerce.funding.topup_requested", entityType: "commerce_funding_account", entityId: String(funding.account.id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ amount: amount.toFixed(2), ticketId }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, restaurantId: input.restaurantId, action: "commerce.funding.topup_requested", entityType: "commerce_funding_account", entityId: String(funding.account.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ amount: amount.toFixed(2), ticketId }) });
       return { success: true, ticketId, accountId: funding.account.id, paymentStatus: "pending" };
     }),
     fundCommercePurchaseAccount: adminProcedure.input(z3.object({ accountId: z3.number().int().positive(), amount: z3.string().regex(/^\\d+(\\.\\d{1,2})?$/), paymentMethod: z3.enum(["manual", "bank_transfer", "card", "online"]), reference: z3.string().trim().max(160).nullable().optional() })).mutation(async ({ ctx, input }) => {
       const result = await fundCommerceFundingAccount({ ...input, reference: input.reference ?? null, createdByUserId: ctx.user.id });
-      await insertAuditLog({ actorUserId: ctx.user.id, action: "commerce.funding_account.deposit", entityType: "commerce_funding_account", entityId: String(input.accountId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ amount: input.amount, paymentMethod: input.paymentMethod, reference: input.reference ?? null }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, action: "commerce.funding_account.deposit", entityType: "commerce_funding_account", entityId: String(input.accountId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ amount: input.amount, paymentMethod: input.paymentMethod, reference: input.reference ?? null }) });
       return result;
     }),
     reviewWalletTopup: adminProcedure.input(z3.object({ id: z3.number().int().positive(), status: z3.enum(["approved", "rejected"]), reviewNote: z3.string().trim().max(500).nullable().optional() })).mutation(async ({ ctx, input }) => {
@@ -9306,7 +9382,7 @@ var appRouter = router({
           if (!table) throw new TRPCError5({ code: "CONFLICT", message: "\u0627\u0644\u0637\u0627\u0648\u0644\u0629 \u0644\u0645 \u062A\u0639\u062F \u0634\u0627\u063A\u0631\u0629\u060C \u0627\u062E\u062A\u0631 \u0637\u0627\u0648\u0644\u0629 \u0623\u062E\u0631\u0649" });
           await tx.update(restaurantTables).set({ status: "occupied" }).where(eq6(restaurantTables.id, table.id));
         }
-        const splitBillGroupId = input.splitBillMode === "friends" ? `sb_${nanoid3(24)}` : null;
+        const splitBillGroupId = input.splitBillMode === "friends" ? `sb_${nanoid4(24)}` : null;
         const [orderResult] = await tx.insert(orders).values({ restaurantId: restaurant.id, customerId, branchId: branch.id, tableName: input.tableName || null, partySize: input.partySize ?? null, childrenCount: input.childrenCount, seatingSectionId: input.seatingSectionId ?? null, policyAcceptedAt: input.policyAccepted ? /* @__PURE__ */ new Date() : null, pickupPoint: input.pickupPoint || null, deliveryAddress: input.deliveryAddress || null, deliveryLatitude: input.deliveryLatitude?.toFixed(7) ?? null, deliveryLongitude: input.deliveryLongitude?.toFixed(7) ?? null, deliveryFee: deliveryFee.toFixed(2), reservationDate: input.reservationDate ?? null, reservationEventType: input.reservationEventType?.trim() || null, hotelId: syncedHotelRoom?.hotelId ?? null, hotelRoomId: syncedHotelRoom?.roomId ?? null, hotelName: syncedHotelRoom?.hotelName ?? null, hotelRoom: syncedHotelRoom?.roomNumber ?? null, hotelFloor: syncedHotelRoom?.floor ?? null, driverId, deliveryStatus, notes: input.notes?.trim() || null, channel: input.channel, splitBillMode: input.splitBillMode, splitBillGroupId, paymentMethod: input.paymentMethod, paymentStatus: "unpaid", receiptPrintStatus: "queued", guestName: input.guestName, guestPhone: input.guestPhone, total: total.toFixed(2), status: "new" });
         const orderId = Number(orderResult.insertId);
         if (input.referralCode) {
@@ -9314,7 +9390,7 @@ var appRouter = router({
           if (referral && referral.referrerCustomerId !== customerId) await tx.update(referralRecords).set({ referredCustomerId: customerId }).where(and6(eq6(referralRecords.id, referral.id), eq6(referralRecords.status, "pending"), isNull3(referralRecords.referredCustomerId)));
         }
         await tx.insert(orderItems).values(authoritativeItems.map((item) => ({ orderId, menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: item.unitPrice, selectedAddonsJson: item.selectedAddonsJson })));
-        await insertAuditLog({ restaurantId: restaurant.id, branchId: branch.id, actorUserId: null, actorRole: "guest", action: "guest.order.create", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid3(12) });
+        await insertAuditLog({ restaurantId: restaurant.id, branchId: branch.id, actorUserId: null, actorRole: "guest", action: "guest.order.create", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid4(12) });
         return { success: true, orderId, total: total.toFixed(2), splitBillGroupId, paymentMethod: input.paymentMethod, paymentStatus: "unpaid", status: "new" };
       });
     }),
@@ -9371,7 +9447,7 @@ var appRouter = router({
         const orderId = inserted[0]?.id;
         if (!orderId) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0645\u0639\u0627\u062F" });
         await tx.insert(orderItems).values(sourceItems.map((item) => ({ orderId, menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: byId.get(item.menuItemId).price })));
-        await insertAuditLog({ restaurantId: restaurant.id, branchId: source.branchId, actorUserId: null, actorRole: "guest", action: "guest.order.reorder", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid3(12) });
+        await insertAuditLog({ restaurantId: restaurant.id, branchId: source.branchId, actorUserId: null, actorRole: "guest", action: "guest.order.reorder", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid4(12) });
         return { success: true, orderId, total: total.toFixed(2), paymentMethod: "cash", paymentStatus: "unpaid", status: "new" };
       });
       return result;
@@ -9533,7 +9609,7 @@ var appRouter = router({
         await updateHeartbeatJob(taskUid, { enable: false }, sessionToken);
       }
       await db.update(restaurants).set({ menuTemplate: schedule.fallbackTemplate, menuTemplateScheduleJson: JSON.stringify(schedule), menuTemplateScheduleTimezone: schedule.timezone, menuTemplateScheduleCronTaskUid: taskUid }).where(eq6(restaurants.id, input.restaurantId));
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "restaurant.menu_template_schedule.updated", entityType: "restaurant_menu_template_schedule", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ enabled: schedule.enabled, timezone: schedule.timezone, rules: schedule.rules, taskUid }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "restaurant.menu_template_schedule.updated", entityType: "restaurant_menu_template_schedule", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ enabled: schedule.enabled, timezone: schedule.timezone, rules: schedule.rules, taskUid }) });
       return { success: true, restaurantId: input.restaurantId, taskUid, schedule };
     }),
     restaurantByBarcode: protectedProcedure.input(z3.object({ barcode: z3.string().min(6).max(64) })).query(async ({ ctx, input }) => {
@@ -9604,7 +9680,7 @@ var appRouter = router({
       const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug, status: restaurants.status }).from(restaurants).where(and6(eq6(restaurants.id, input.restaurantId), eq6(restaurants.status, "active"))).limit(1))[0];
       if (!restaurant) throw new TRPCError5({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       const pending = (await db.select({ code: referralRecords.code }).from(referralRecords).where(and6(eq6(referralRecords.restaurantId, input.restaurantId), eq6(referralRecords.referrerCustomerId, ctx.user.id), eq6(referralRecords.status, "pending"))).orderBy(desc3(referralRecords.createdAt)).limit(1))[0];
-      const code = pending?.code ?? `NF${ctx.user.id}${nanoid3(8)}`;
+      const code = pending?.code ?? `NF${ctx.user.id}${nanoid4(8)}`;
       if (!pending) await db.insert(referralRecords).values({ restaurantId: input.restaurantId, referrerCustomerId: ctx.user.id, code, status: "pending" });
       return { code, link: `/restaurant/${restaurant.slug}?ref=${encodeURIComponent(code)}` };
     }),
@@ -9732,7 +9808,7 @@ var appRouter = router({
       const raw = input.fileBase64.includes(",") ? input.fileBase64.slice(input.fileBase64.indexOf(",") + 1) : input.fileBase64;
       const buffer = Buffer.from(raw, "base64");
       if (!buffer.length || buffer.byteLength > 6 * 1024 * 1024) throw new TRPCError5({ code: "PAYLOAD_TOO_LARGE", message: "\u062D\u062C\u0645 \u0645\u0644\u0641 \u0627\u0644\u0645\u0646\u064A\u0648 \u064A\u062C\u0628 \u0623\u0644\u0627 \u064A\u062A\u062C\u0627\u0648\u0632 6 \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A" });
-      const stored = await storagePut(`restaurants/${input.restaurantId}/menu-imports/${nanoid3(12)}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-")}`, buffer, input.mimeType);
+      const stored = await storagePut(`restaurants/${input.restaurantId}/menu-imports/${nanoid4(12)}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-")}`, buffer, input.mimeType);
       const mediaContent = input.mimeType === "application/pdf" ? { type: "file_url", file_url: { url: stored.url, mime_type: "application/pdf" } } : { type: "image_url", image_url: { url: stored.url, detail: "high" } };
       const response = await invokeLLM({ model: "gemini-3-flash-preview", messages: [{ role: "system", content: "\u0623\u0646\u062A \u0645\u062D\u0631\u0643 \u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0642\u0648\u0627\u0626\u0645 \u0637\u0639\u0627\u0645. \u0627\u0633\u062A\u062E\u0631\u062C \u0641\u0642\u0637 \u0627\u0644\u0641\u0626\u0627\u062A \u0648\u0627\u0644\u0623\u0635\u0646\u0627\u0641 \u0648\u0627\u0644\u0623\u0633\u0639\u0627\u0631 \u0627\u0644\u0638\u0627\u0647\u0631\u0629 \u0641\u064A \u0627\u0644\u0645\u0644\u0641. \u0644\u0627 \u062A\u062E\u0645\u0651\u0646 \u0623\u064A \u0633\u0639\u0631 \u0623\u0648 \u0635\u0646\u0641 \u063A\u064A\u0631 \u0648\u0627\u0636\u062D. \u0623\u0639\u062F JSON \u0645\u0637\u0627\u0628\u0642\u064B\u0627 \u0644\u0644\u0645\u062E\u0637\u0637\u060C \u0648\u0636\u0639 confidence \u0628\u064A\u0646 0 \u06481 \u0644\u0643\u0644 \u0639\u0646\u0635\u0631\u060C \u0648\u0627\u062C\u0639\u0644 needsReview=true \u0639\u0646\u062F\u0645\u0627 \u062A\u0643\u0648\u0646 \u0627\u0644\u0642\u0631\u0627\u0621\u0629 \u063A\u064A\u0631 \u0645\u0624\u0643\u062F\u0629." }, { role: "user", content: [{ type: "text", text: "\u062D\u0648\u0651\u0644 \u0647\u0630\u0627 \u0627\u0644\u0645\u0646\u064A\u0648 \u0627\u0644\u0648\u0631\u0642\u064A \u0625\u0644\u0649 \u0645\u0633\u0648\u062F\u0629 \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u0645\u0631\u0627\u062C\u0639\u0629. \u0627\u0633\u062A\u062E\u0631\u062C \u0627\u0633\u0645 \u0627\u0644\u0641\u0626\u0629\u060C \u0627\u0633\u0645 \u0627\u0644\u0635\u0646\u0641\u060C \u0627\u0644\u0648\u0635\u0641 \u0625\u0646 \u0638\u0647\u0631\u060C \u0627\u0644\u0633\u0639\u0631\u0627\u062A \u0627\u0644\u062D\u0631\u0627\u0631\u064A\u0629 \u0625\u0646 \u0638\u0647\u0631\u062A\u060C \u0627\u0644\u0633\u0639\u0631 \u0627\u0644\u062D\u0627\u0644\u064A\u060C \u0648\u0627\u0644\u0633\u0639\u0631 \u0627\u0644\u0633\u0627\u0628\u0642 \u0625\u0646 \u0638\u0647\u0631. \u0644\u0627 \u062A\u062E\u0645\u0651\u0646 \u0627\u0644\u0633\u0639\u0631\u0627\u062A\u061B \u0627\u0633\u062A\u062E\u062F\u0645 0 \u0639\u0646\u062F\u0645\u0627 \u0644\u0627 \u062A\u0638\u0647\u0631." }, mediaContent] }], response_format: { type: "json_schema", json_schema: { name: "menu_import_draft", strict: true, schema: { type: "object", properties: { categories: { type: "array", items: { type: "object", properties: { name: { type: "string" }, confidence: { type: "number" }, needsReview: { type: "boolean" } }, required: ["name", "confidence", "needsReview"], additionalProperties: false } }, items: { type: "array", items: { type: "object", properties: { categoryName: { type: "string" }, name: { type: "string" }, description: { type: "string" }, calories: { type: "number" }, price: { type: "number" }, compareAtPrice: { type: "number" }, confidence: { type: "number" }, needsReview: { type: "boolean" } }, required: ["categoryName", "name", "description", "calories", "price", "compareAtPrice", "confidence", "needsReview"], additionalProperties: false } } }, required: ["categories", "items"], additionalProperties: false } } } });
       const content = response.choices?.[0]?.message?.content;
@@ -9924,7 +10000,7 @@ var appRouter = router({
         await db.insert(menuItems).values({ restaurantId: input.restaurantId, categoryId, kitchenSectionId: null, name: imported.name.trim(), description: imported.description?.trim() || null, price: imported.price, compareAtPrice: null, imageUrl: imported.imageUrl ?? null, additionalImagesJson: null, translationsJson: null, tagsJson: null, isAvailable: true, prepTimeMinutes: 10, calories: null });
         itemsCreated += 1;
       }
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "menu.import.committed", entityType: "restaurant_menu", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ sourceUrl: input.sourceUrl, categoriesCreated, itemsCreated, duplicates }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "menu.import.committed", entityType: "restaurant_menu", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ sourceUrl: input.sourceUrl, categoriesCreated, itemsCreated, duplicates }) });
       return { success: true, categoriesCreated, itemsCreated, duplicates };
     }),
     createMenuCategory: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), name: z3.string().min(2), sortOrder: z3.number().int().nonnegative().optional(), kitchenSectionId: z3.number().int().positive().nullable().optional(), description: z3.string().optional(), translationsJson: z3.string().max(2e4).optional(), imageUrl: z3.string().trim().min(1).max(1200).optional() })).mutation(async ({ ctx, input }) => {
@@ -10795,7 +10871,7 @@ var appRouter = router({
         const orderId = Number(orderResult.insertId);
         const rows = authoritativeItems.map((item) => ({ orderId, menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: item.unitPrice }));
         await tx.insert(orderItems).values(rows);
-        await insertAuditLog({ restaurantId: input.restaurantId, branchId: input.branchId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "order.create", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid3(12) });
+        await insertAuditLog({ restaurantId: input.restaurantId, branchId: input.branchId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "order.create", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid4(12) });
         return { success: true, orderId, status: "new", paymentStatus: "unpaid", currency: { countryCode: restaurant[0].countryCode, currencyCode: restaurant[0].currencyCode, decimals: restaurant[0].currencyDecimals }, pricing: { subtotal: centsToMoney(pricing.subtotalCents), discountPercent: pricing.discountPercent, discountAmount: centsToMoney(pricing.discountCents), taxPercent: pricing.taxPercent, taxAmount: centsToMoney(pricing.taxCents), serviceFeePercent: pricing.serviceFeePercent, serviceFeeAmount: centsToMoney(pricing.serviceFeeCents), tipPercent: pricing.tipPercent, tipAmount: centsToMoney(pricing.tipCents), total: authoritativeTotal, couponCode: coupon?.code ?? null, discountSource: coupon ? "coupon_or_default" : "default" } };
       });
     }),
@@ -10826,7 +10902,7 @@ var appRouter = router({
       const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, status: orders.status, paymentStatus: orders.paymentStatus }).from(orders).where(eq6(orders.id, input.orderId)).limit(1))[0];
       if (!order || order.restaurantId !== input.restaurantId) throw new TRPCError5({ code: "FORBIDDEN", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       await db.update(orders).set({ receiptPrintStatus: "printed", receiptPrintedAt: /* @__PURE__ */ new Date(), receiptPrintError: null }).where(eq6(orders.id, input.orderId));
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? "staff", action: "orders.receipt_printed", entityType: "order", entityId: String(input.orderId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ paymentStatus: order.paymentStatus, orderStatus: order.status, mode: "manual" }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? "staff", action: "orders.receipt_printed", entityType: "order", entityId: String(input.orderId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ paymentStatus: order.paymentStatus, orderStatus: order.status, mode: "manual" }) });
       return { success: true, orderId: input.orderId, receiptPrintStatus: "printed" };
     }),
     refundOrder: testRoleProcedure("restaurant_admin", "cashier", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive(), pin: z3.string().regex(/^\d{4,8}$/), reason: z3.string().trim().max(500).optional() })).mutation(async ({ ctx, input }) => {
@@ -10841,7 +10917,7 @@ var appRouter = router({
       if (order[0].paymentStatus !== "paid") throw new TRPCError5({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0625\u0631\u062C\u0627\u0639 \u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u062F\u0641\u0648\u0639" });
       await db.update(orders).set({ paymentStatus: "refunded" }).where(eq6(orders.id, input.orderId));
       await createFinancialLedgerEntry({ restaurantId: input.restaurantId, userId: ctx.user?.id ?? null, createdByUserId: ctx.user?.id ?? null, section: "orders", entryType: "refund", direction: "debit", amount: String(order[0].total), currencyCode: "SAR", referenceType: "order", referenceId: input.orderId, idempotencyKey: `order-refund:${input.orderId}`, note: input.reason?.trim() || null });
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? "cashier", action: "orders.refunded", entityType: "order", entityId: String(input.orderId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ reason: input.reason?.trim() || null, total: order[0].total }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? "cashier", action: "orders.refunded", entityType: "order", entityId: String(input.orderId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ reason: input.reason?.trim() || null, total: order[0].total }) });
       return { success: true, orderId: input.orderId, paymentStatus: "refunded" };
     }),
     assignDriver: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive(), driverId: z3.number().int().positive(), etaMinutes: z3.number().int().min(1).max(1440) })).mutation(async ({ ctx, input }) => {
@@ -10927,16 +11003,16 @@ var appRouter = router({
             const productResult = await db.insert(vcardCardProducts).values({ name: "\u0628\u0637\u0627\u0642\u0629 NFOOD \u0627\u0644\u0631\u0642\u0645\u064A\u0629 \u0644\u0644\u0639\u0645\u064A\u0644", description: "\u0625\u0635\u062F\u0627\u0631 \u062A\u0644\u0642\u0627\u0626\u064A \u0628\u0639\u062F \u0623\u0648\u0644 \u0637\u0644\u0628 \u0645\u0643\u062A\u0645\u0644", price: "0.00", currency: "SAR", targetRole: "customer", isActive: true });
             product = { id: Number(productResult[0].insertId) };
           }
-          const rawCode = `NFOOD-${nanoid3(18).toUpperCase()}`;
+          const rawCode = `NFOOD-${nanoid4(18).toUpperCase()}`;
           const codeResult = await db.insert(vcardCardCodes).values({ productId: product.id, codeHash: createHash2("sha256").update(rawCode).digest("hex"), codeLast4: rawCode.slice(-4), status: "bound", boundAt: now });
           await db.insert(vcardCardBindings).values({ codeId: Number(codeResult[0].insertId), userId: existing[0].customerId, customerProfileId: profile.id, targetRole: "customer" });
           automaticCardIssued = true;
-          await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "customer.vcard.auto_issued", entityType: "customer_profile", entityId: String(profile.id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ orderId: input.orderId, codeLast4: rawCode.slice(-4), reason: "first_completed_order" }) });
+          await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "customer.vcard.auto_issued", entityType: "customer_profile", entityId: String(profile.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ orderId: input.orderId, codeLast4: rawCode.slice(-4), reason: "first_completed_order" }) });
         }
       }
       if (input.status === "cancelled") await createFinancialLedgerEntry({ restaurantId: input.restaurantId, userId: ctx.user?.id ?? null, createdByUserId: ctx.user?.id ?? null, section: "orders", entryType: "cancellation", direction: "debit", amount: existing[0].paymentStatus === "paid" ? String(existing[0].total) : "0.00", currencyCode: "SAR", referenceType: "order", referenceId: input.orderId, idempotencyKey: `order-cancellation:${input.orderId}`, note: input.cancellationReason?.trim() || "\u0625\u0644\u063A\u0627\u0621 \u0625\u062F\u0627\u0631\u064A" });
       await recordOrderStatusTransition({ restaurantId: input.restaurantId, orderId: input.orderId, fromStatus: existing[0].status, toStatus: input.status, actorUserId: ctx.user?.id ?? null, at: now });
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "order.status.updated", entityType: "order", entityId: String(input.orderId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ fromStatus: existing[0].status, toStatus: input.status, cancellationReason: input.cancellationReason ?? null }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "order.status.updated", entityType: "order", entityId: String(input.orderId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ fromStatus: existing[0].status, toStatus: input.status, cancellationReason: input.cancellationReason ?? null }) });
       let referralRewarded = false;
       const referralSettings = await getPlatformSettings();
       const referrerRewardPoints = Math.max(0, Math.floor(Number(referralSettings.referralReferrerPoints) || 0));
@@ -11327,7 +11403,7 @@ var appRouter = router({
       const existing = (await listQrCodes(input.restaurantId, input.branchId, "order")).find((code) => code.orderId === order.id && code.status === "active");
       if (existing) return { success: true, id: existing.id, reused: true };
       const expiresAt = new Date(Date.now() + input.expiresHours * 60 * 60 * 1e3);
-      const id = await createQrCode({ restaurantId: input.restaurantId, branchId: input.branchId, type: "order", purpose: "order", token: `order-${order.id}-${nanoid3(14)}`, label: `\u0627\u0644\u0637\u0644\u0628 #${order.id}`, orderId: order.id, amount: String(order.total ?? "0"), expiresAt, createdByUserId: actorId });
+      const id = await createQrCode({ restaurantId: input.restaurantId, branchId: input.branchId, type: "order", purpose: "order", token: `order-${order.id}-${nanoid4(14)}`, label: `\u0627\u0644\u0637\u0644\u0628 #${order.id}`, orderId: order.id, amount: String(order.total ?? "0"), expiresAt, createdByUserId: actorId });
       return { success: true, id, reused: false, amount: String(order.total ?? "0"), expiresAt };
     }),
     disableQrCode: restaurantAdminProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
@@ -11539,7 +11615,7 @@ var appRouter = router({
       const values = { enabled: input.enabled, overrideLimit: input.limit ?? null, overrideValue: input.value ?? null };
       if (existing[0]) await db.update(restaurantFeatures).set(values).where(eq6(restaurantFeatures.id, existing[0].id));
       else await db.insert(restaurantFeatures).values({ restaurantId: input.restaurantId, featureId: input.featureId, ...values });
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "feature.override.update", entityType: "feature", entityId: String(input.featureId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ enabled: input.enabled, limit: input.limit ?? null }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "feature.override.update", entityType: "feature", entityId: String(input.featureId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ enabled: input.enabled, limit: input.limit ?? null }) });
       return { success: true };
     })
   }),
@@ -11561,7 +11637,7 @@ var appRouter = router({
     createRestaurant: platformAdminProcedure.input(z3.object({ name: z3.string().min(2), slug: z3.string().min(2).max(160), plan: z3.string().min(2).default("Growth"), email: z3.string().trim().email().max(320).optional(), password: z3.string().min(6).max(160).optional(), countryCode: z3.string().length(2).default("SA"), currencyCode: z3.string().length(3).optional(), primaryLanguage: z3.enum(["ar", "en", "fr", "ur", "es", "de", "tr"]).default("ar"), timezone: z3.string().trim().min(3).max(64).default("Asia/Riyadh") })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const email = (input.email ?? `restaurant-${nanoid3(10)}@nfood.local`).toLowerCase();
+      const email = (input.email ?? `restaurant-${nanoid4(10)}@nfood.local`).toLowerCase();
       const password = input.password ?? String(randomInt2(1e5, 1e6));
       const duplicate = await db.select({ id: testAccounts.id }).from(testAccounts).where(eq6(testAccounts.email, email)).limit(1);
       if (duplicate[0]) throw new TRPCError5({ code: "CONFLICT", message: "\u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0644\u062D\u0633\u0627\u0628 \u0622\u062E\u0631" });
@@ -11570,7 +11646,7 @@ var appRouter = router({
       if (!country) throw new TRPCError5({ code: "BAD_REQUEST", message: "\u0627\u0644\u062F\u0648\u0644\u0629 \u0627\u0644\u0645\u062D\u062F\u062F\u0629 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645\u0629" });
       const currency = CURRENCIES.find((item) => item.code === country.currencyCode);
       if (!currency) throw new TRPCError5({ code: "BAD_REQUEST", message: "\u0639\u0645\u0644\u0629 \u0627\u0644\u062F\u0648\u0644\u0629 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645\u0629" });
-      const barcode = `NFOOD-${nanoid3(10).toUpperCase()}`;
+      const barcode = `NFOOD-${nanoid4(10).toUpperCase()}`;
       const languagesJson = JSON.stringify(Array.from(/* @__PURE__ */ new Set([input.primaryLanguage, "ar", "en", "fr"])));
       const restaurantResult = await db.insert(restaurants).values({ ...restaurantInput, countryCode: country.code, currencyCode: currency.code, currencyDecimals: currency.decimals, languagesJson, barcode, status: "trial" });
       const restaurantId = Number(restaurantResult[0].insertId);
@@ -11619,7 +11695,7 @@ var appRouter = router({
       const after = { defaultDiscountPercent: Number(input.defaultDiscountPercent.toFixed(2)), taxPercent: Number(input.taxPercent.toFixed(2)), countryCode: country.code, currencyCode: currency.code, currencyDecimals: currency.decimals, integrationMode: input.integrationMode ?? existing[0].integrationMode };
       const before = { defaultDiscountPercent: Number(existing[0].defaultDiscountPercent), taxPercent: Number(existing[0].taxPercent), countryCode: existing[0].countryCode, currencyCode: existing[0].currencyCode, currencyDecimals: existing[0].currencyDecimals, integrationMode: existing[0].integrationMode };
       await db.update(restaurants).set({ defaultDiscountPercent: after.defaultDiscountPercent.toFixed(2), taxPercent: after.taxPercent.toFixed(2), countryCode: after.countryCode, currencyCode: after.currencyCode, currencyDecimals: after.currencyDecimals, integrationMode: after.integrationMode }).where(eq6(restaurants.id, input.restaurantId));
-      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "restaurant.pricing.updated", entityType: "restaurant_pricing", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ before, after }) });
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "restaurant.pricing.updated", entityType: "restaurant_pricing", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ before, after }) });
       return { success: true, restaurantId: input.restaurantId, ...after };
     }),
     updateRestaurant: adminProcedure.input(z3.object({ id: z3.number().int().positive(), name: z3.string().min(2).max(160).optional(), slug: z3.string().min(2).max(160).optional(), plan: z3.string().min(2).optional(), status: z3.enum(["active", "trial", "suspended"]).optional() })).mutation(async ({ ctx, input }) => {
@@ -11633,7 +11709,7 @@ var appRouter = router({
         const branches2 = await listBranches(input.id);
         for (const branch of branches2) await ensureMenuQrCode({ restaurantId: input.id, branchId: branch.id, createdByUserId: ctx.user.id, label: `\u0645\u0646\u064A\u0648 ${existing[0].name.trim()}` });
       }
-      await insertAuditLog({ actorUserId: ctx.user?.id ?? null, actorRole: "admin", action: "admin.restaurant.updated", entityType: "restaurant", entityId: String(input.id), restaurantId: input.id, outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ name: existing[0].name, before: { status: existing[0].status }, after: { status: input.status ?? existing[0].status } }) });
+      await insertAuditLog({ actorUserId: ctx.user?.id ?? null, actorRole: "admin", action: "admin.restaurant.updated", entityType: "restaurant", entityId: String(input.id), restaurantId: input.id, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ name: existing[0].name, before: { status: existing[0].status }, after: { status: input.status ?? existing[0].status } }) });
       return { success: true, id: input.id };
     }),
     deleteRestaurant: adminProcedure.input(z3.object({ id: z3.number().int().positive() })).mutation(async ({ input }) => {
@@ -11702,7 +11778,7 @@ var appRouter = router({
         const duplicate = await db.select({ id: users.id }).from(users).where(eq6(users.email, input.email.trim().toLowerCase())).limit(1);
         if (duplicate[0]) throw new TRPCError5({ code: "CONFLICT", message: "\u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u0628\u0642\u064B\u0627" });
       }
-      const result = await db.insert(users).values({ openId: `manual_${nanoid3(24)}`, name: input.name.trim(), email: input.email?.trim().toLowerCase() || null, loginMethod: "admin_created", role: "user" });
+      const result = await db.insert(users).values({ openId: `manual_${nanoid4(24)}`, name: input.name.trim(), email: input.email?.trim().toLowerCase() || null, loginMethod: "admin_created", role: "user" });
       return { success: true, id: Number(result[0].insertId) };
     }),
     deleteCustomer: adminProcedure.input(z3.object({ id: z3.number().int().positive() })).mutation(async () => {
@@ -11762,7 +11838,7 @@ var appRouter = router({
       if (!sourceToken) throw new TRPCError5({ code: "BAD_REQUEST", message: "\u062A\u0639\u0630\u0631 \u062D\u0641\u0638 \u062C\u0644\u0633\u0629 Admin \u0627\u0644\u062D\u0627\u0644\u064A\u0629" });
       const cookieOptions = getSessionCookieOptions(ctx.req);
       const returnPayload = Buffer.from(JSON.stringify({ cookieName: sourceCookieName, token: sourceToken }), "utf8").toString("base64url");
-      const targetToken = await sdk.signSession({ openId: `test_${target.id}`, appId: `admin_restaurant_${nanoid3(12)}`, name: target.displayName });
+      const targetToken = await sdk.signSession({ openId: `test_${target.id}`, appId: `admin_restaurant_${nanoid4(12)}`, name: target.displayName });
       ctx.res.cookie(ADMIN_RETURN_COOKIE, returnPayload, { ...cookieOptions, httpOnly: true, maxAge: 1e3 * 60 * 30 });
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       ctx.res.clearCookie(TEST_SESSION_COOKIE, { ...cookieOptions, maxAge: -1 });
@@ -11781,7 +11857,7 @@ var appRouter = router({
       if (!sourceToken) throw new TRPCError5({ code: "BAD_REQUEST", message: "\u062A\u0639\u0630\u0631 \u062D\u0641\u0638 \u062C\u0644\u0633\u0629 \u0627\u0644\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u062D\u0627\u0644\u064A\u0629" });
       const cookieOptions = getSessionCookieOptions(ctx.req);
       const returnPayload = Buffer.from(JSON.stringify({ cookieName: sourceCookieName, token: sourceToken }), "utf8").toString("base64url");
-      const targetToken = await sdk.signSession({ openId: target.openId, appId: `admin_customer_${nanoid3(12)}`, name: target.name ?? target.email ?? "Customer" });
+      const targetToken = await sdk.signSession({ openId: target.openId, appId: `admin_customer_${nanoid4(12)}`, name: target.name ?? target.email ?? "Customer" });
       await db.insert(authSessions).values({ userId: target.id, sessionTokenHash: createHash2("sha256").update(targetToken).digest("hex"), deviceLabel: "\u062F\u062E\u0648\u0644 Admin \u0645\u0624\u0642\u062A \u0644\u0644\u0639\u0645\u064A\u0644", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60) });
       ctx.res.cookie(ADMIN_RETURN_COOKIE, returnPayload, { ...cookieOptions, httpOnly: true, maxAge: 1e3 * 60 * 30 });
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -11802,7 +11878,7 @@ var appRouter = router({
       const returnPayload = Buffer.from(JSON.stringify({ cookieName: sourceCookieName, token: sourceToken }), "utf8").toString("base64url");
       await upsertUser({ openId: `test_${target.id}`, name: target.displayName, email: target.email, loginMethod: "admin_impersonation", role: target.role === "admin" ? "admin" : "user" });
       const targetUser = await getUserByOpenId(`test_${target.id}`);
-      const targetToken = await sdk.signSession({ openId: `test_${target.id}`, appId: `admin_impersonation_${nanoid3(12)}`, name: target.displayName });
+      const targetToken = await sdk.signSession({ openId: `test_${target.id}`, appId: `admin_impersonation_${nanoid4(12)}`, name: target.displayName });
       if (targetUser) await db.insert(authSessions).values({ userId: targetUser.id, sessionTokenHash: createHash2("sha256").update(targetToken).digest("hex"), deviceLabel: "\u062F\u062E\u0648\u0644 Admin \u0645\u0624\u0642\u062A", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60) });
       ctx.res.cookie(ADMIN_RETURN_COOKIE, returnPayload, { ...cookieOptions, httpOnly: true, maxAge: 1e3 * 60 * 30 });
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -11830,7 +11906,7 @@ var appRouter = router({
       const duplicate = await db.select({ id: packagePlans.id }).from(packagePlans).where(eq6(packagePlans.key, input.key)).limit(1);
       if (duplicate[0]) throw new TRPCError5({ code: "CONFLICT", message: "\u0645\u0641\u062A\u0627\u062D \u0627\u0644\u0628\u0627\u0642\u0629 \u0645\u0633\u062A\u062E\u062F\u0645" });
       const result = await db.insert(packagePlans).values(input);
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "package.plan.create", entityType: "package_plan", entityId: String(result[0].insertId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ key: input.key, name: input.name }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "package.plan.create", entityType: "package_plan", entityId: String(result[0].insertId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ key: input.key, name: input.name }) });
       return { success: true, id: Number(result[0].insertId) };
     }),
     updatePackagePlan: adminProcedure.input(z3.object({ id: z3.number().int().positive(), name: z3.string().trim().min(2).max(120).optional(), description: z3.string().trim().max(500).nullable().optional(), planType: z3.enum(["free", "monthly", "yearly", "trial", "enterprise"]).optional(), monthlyPrice: z3.string().regex(/^\\d+(\\.\\d{1,2})?$/).optional(), yearlyPrice: z3.string().regex(/^\\d+(\\.\\d{1,2})?$/).optional(), isActive: z3.boolean().optional() })).mutation(async ({ ctx, input }) => {
@@ -11841,7 +11917,7 @@ var appRouter = router({
       const { id, ...inputChanges } = input;
       const changes = Object.fromEntries(Object.entries(inputChanges).filter(([, value]) => value !== void 0));
       if (Object.keys(changes).length > 0) await db.update(packagePlans).set(changes).where(eq6(packagePlans.id, id));
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "package.plan.update", entityType: "package_plan", entityId: String(id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify(changes) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "package.plan.update", entityType: "package_plan", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify(changes) });
       return { success: true, id };
     }),
     setPackagePlanFeature: adminProcedure.input(z3.object({ planId: z3.number().int().positive(), featureId: z3.number().int().positive(), enabled: z3.boolean(), featureLimit: z3.number().int().nonnegative().nullable().optional() })).mutation(async ({ ctx, input }) => {
@@ -11854,7 +11930,7 @@ var appRouter = router({
       const values = { enabled: input.enabled, featureLimit: input.featureLimit ?? null };
       if (existing[0]) await db.update(packagePlanFeatures).set(values).where(eq6(packagePlanFeatures.id, existing[0].id));
       else await db.insert(packagePlanFeatures).values({ planId: input.planId, featureId: input.featureId, ...values });
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "package.feature.update", entityType: "package_plan_feature", entityId: `${input.planId}:${input.featureId}`, outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify(values) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "package.feature.update", entityType: "package_plan_feature", entityId: `${input.planId}:${input.featureId}`, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify(values) });
       return { success: true };
     }),
     updateFeatureDefinition: adminProcedure.input(z3.object({ id: z3.number().int().positive(), label: z3.string().trim().min(2).max(160).optional(), category: z3.string().trim().min(2).max(80).optional(), description: z3.string().trim().max(1e3).nullable().optional(), status: z3.enum(["ON", "OFF", "LIMITED", "ADD_ON", "ENTERPRISE_ONLY"]).optional(), dependencyKey: z3.string().trim().max(120).nullable().optional(), defaultLimit: z3.number().int().nonnegative().nullable().optional(), isAddOn: z3.boolean().optional(), addonPrice: z3.string().regex(/^\\d+(\\.\\d{1,2})?$/).nullable().optional() })).mutation(async ({ ctx, input }) => {
@@ -11865,7 +11941,7 @@ var appRouter = router({
       const { id, ...inputChanges } = input;
       const changes = Object.fromEntries(Object.entries(inputChanges).filter(([, value]) => value !== void 0));
       if (Object.keys(changes).length > 0) await db.update(featureDefinitions).set(changes).where(eq6(featureDefinitions.id, id));
-      await insertAuditLog({ restaurantId: null, actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "feature.definition.update", entityType: "feature_definition", entityId: String(id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify(changes) });
+      await insertAuditLog({ restaurantId: null, actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "feature.definition.update", entityType: "feature_definition", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify(changes) });
       return { success: true, id };
     }),
     subscriptionTransferReceipts: adminProcedure.query(async () => {
@@ -11900,7 +11976,7 @@ var appRouter = router({
       const existing = await db.select({ id: subscriptionTransferReceipts.id }).from(subscriptionTransferReceipts).where(eq6(subscriptionTransferReceipts.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError5({ code: "NOT_FOUND", message: "\u0625\u064A\u0635\u0627\u0644 \u0627\u0644\u062A\u062D\u0648\u064A\u0644 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       await db.update(subscriptionTransferReceipts).set({ status: input.status, reviewNote: input.reviewNote?.trim() || null, reviewedByUserId: ctx.user.id, reviewedAt: /* @__PURE__ */ new Date() }).where(eq6(subscriptionTransferReceipts.id, input.id));
-      await insertAuditLog({ restaurantId: null, actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "subscription.transfer.reviewed", entityType: "subscription_transfer_receipt", entityId: String(input.id), outcome: input.status === "approved" ? "success" : "denied", requestId: nanoid3(12), metadata: JSON.stringify({ status: input.status }) });
+      await insertAuditLog({ restaurantId: null, actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "subscription.transfer.reviewed", entityType: "subscription_transfer_receipt", entityId: String(input.id), outcome: input.status === "approved" ? "success" : "denied", requestId: nanoid4(12), metadata: JSON.stringify({ status: input.status }) });
       return { success: true, id: input.id, status: input.status };
     }),
     featureUsageMetrics: adminProcedure.query(async () => {
@@ -11921,7 +11997,7 @@ var appRouter = router({
     uiTranslationEntries: translationEditorProcedure.input(z3.object({ targetLanguage: z3.enum(["ar", "en", "fr"]).optional(), status: z3.enum(["untranslated", "draft", "published", "ignored"]).optional(), query: z3.string().trim().max(220).optional() }).optional()).query(async ({ input }) => listUiTranslationEntries(input)),
     saveUiTranslation: translationEditorProcedure.input(z3.object({ id: z3.number().int().positive().optional(), translationKey: z3.string().trim().min(2).max(220), sourceText: z3.string().trim().min(1).max(4e3), sourceLanguage: z3.enum(["ar", "en", "fr"]).default("ar"), targetLanguage: z3.enum(["ar", "en", "fr"]), translatedText: z3.string().trim().max(4e3).nullable().optional(), context: z3.string().trim().max(180).nullable().optional(), status: z3.enum(["untranslated", "draft", "published", "ignored"]).optional() })).mutation(async ({ ctx, input }) => {
       const id = await upsertUiTranslationEntry({ ...input, userId: ctx.user.id });
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "translation.ui.updated", entityType: "ui_translation", entityId: String(id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ translationKey: input.translationKey, targetLanguage: input.targetLanguage, status: input.status ?? (input.translatedText ? "draft" : "untranslated") }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "translation.ui.updated", entityType: "ui_translation", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ translationKey: input.translationKey, targetLanguage: input.targetLanguage, status: input.status ?? (input.translatedText ? "draft" : "untranslated") }) });
       return { success: true, id };
     }),
     autoTranslateUiEntries: translationEditorProcedure.input(z3.object({ targetLanguage: z3.enum(["en", "fr"]), ids: z3.array(z3.number().int().positive()).max(50).optional() })).mutation(async ({ ctx, input }) => {
@@ -11946,13 +12022,13 @@ var appRouter = router({
         await upsertUiTranslationEntry({ id: row.id, translationKey: row.translationKey, sourceText: row.sourceText, sourceLanguage: row.sourceLanguage, targetLanguage: row.targetLanguage, translatedText: draft.translatedText.trim().slice(0, 4e3), context: row.context, status: "draft", userId: ctx.user.id });
         translated += 1;
       }
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "translation.ui.auto_drafted", entityType: "ui_translation_batch", entityId: input.targetLanguage, outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ selected: selected.length, translated }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "translation.ui.auto_drafted", entityType: "ui_translation_batch", entityId: input.targetLanguage, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ selected: selected.length, translated }) });
       return { success: true, translated, skipped: selected.length - translated };
     }),
     uiTranslationHistory: translationEditorProcedure.input(z3.object({ entryId: z3.number().int().positive().optional() }).optional()).query(({ input }) => listUiTranslationHistory(input?.entryId)),
     publishUiTranslationsBulk: translationEditorProcedure.input(z3.object({ ids: z3.array(z3.number().int().positive()).min(1).max(200) })).mutation(async ({ ctx, input }) => {
       const published = await publishUiTranslationEntries(input.ids, ctx.user.id);
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "translation.ui.bulk_published", entityType: "ui_translation_batch", entityId: "bulk", outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ requested: input.ids.length, published }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "translation.ui.bulk_published", entityType: "ui_translation_batch", entityId: "bulk", outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ requested: input.ids.length, published }) });
       return { success: true, published };
     }),
     exportUiTranslationsCsv: translationEditorProcedure.query(async () => {
@@ -11977,7 +12053,7 @@ var appRouter = router({
         return { translationKey, sourceText, sourceLanguage, targetLanguage, translatedText: translatedText || null, context: context || null, status };
       });
       for (const record of records) await upsertUiTranslationEntry({ ...record, userId: ctx.user.id });
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "translation.ui.csv_imported", entityType: "ui_translation_batch", entityId: "csv", outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ rows: records.length }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "translation.ui.csv_imported", entityType: "ui_translation_batch", entityId: "csv", outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ rows: records.length }) });
       return { success: true, imported: records.length };
     }),
     saasMetrics: adminProcedure.query(async () => {
@@ -12028,7 +12104,7 @@ var appRouter = router({
       const values = [["profileCustomerEnabled", String(input.profileCustomerEnabled)], ["profileRestaurantEnabled", String(input.profileRestaurantEnabled)], ["profileDriverEnabled", String(input.profileDriverEnabled)], ["profilePlansJson", JSON.stringify(input.profilePlans)], ["profileAccountOverridesJson", JSON.stringify(Object.fromEntries(input.profileAccountOverrides.map((item) => [String(item.userId), { role: item.role, enabled: item.enabled }])))]];
       for (const [key, value] of values) {
         await setPlatformSetting(key, value, ctx.user.id);
-        await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "profile.governance.updated", entityType: "platform_setting", entityId: key, outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ key, value: key === "profilePlansJson" ? "redacted-plan-definition" : value }) });
+        await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "profile.governance.updated", entityType: "platform_setting", entityId: key, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ key, value: key === "profilePlansJson" ? "redacted-plan-definition" : value }) });
       }
       return { success: true };
     }),
@@ -12043,7 +12119,7 @@ var appRouter = router({
       const rawCode = `NF-${randomBytes2(18).toString("base64url")}`;
       const result = await db.insert(vcardCardCodes).values({ productId: product.id, codeHash: createHash2("sha256").update(rawCode).digest("hex"), codeLast4: rawCode.slice(-4), status: "available" });
       const id = Number(result[0].insertId);
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "profile.key.generated", entityType: "vcard_card_code", entityId: String(id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ targetRole: input.targetRole, codeLast4: rawCode.slice(-4) }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "profile.key.generated", entityType: "vcard_card_code", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ targetRole: input.targetRole, codeLast4: rawCode.slice(-4) }) });
       return { success: true, id, targetRole: input.targetRole, rawCode, codeLast4: rawCode.slice(-4), status: "available" };
     }),
     bindProfileKey: platformAdminProcedure.input(z3.object({ code: z3.string().trim().min(8).max(160), userId: z3.number().int().positive(), targetRole: z3.enum(["customer", "restaurant", "driver"]), customerProfileId: z3.number().int().positive().optional(), restaurantId: z3.number().int().positive().optional() })).mutation(async ({ ctx, input }) => {
@@ -12058,13 +12134,13 @@ var appRouter = router({
       }
       if (input.targetRole === "restaurant" && !input.restaurantId) throw new TRPCError5({ code: "BAD_REQUEST", message: "\u0627\u062E\u062A\u0631 \u0627\u0644\u0645\u0637\u0639\u0645 \u0642\u0628\u0644 \u0627\u0644\u0631\u0628\u0637" });
       const bindingId = await bindVcardCode({ codeHash: createHash2("sha256").update(input.code).digest("hex"), userId: input.userId, targetRole: input.targetRole, customerProfileId: input.customerProfileId, restaurantId: input.restaurantId });
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "profile.key.bound", entityType: "vcard_card_binding", entityId: String(bindingId), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ userId: input.userId, customerProfileId: input.customerProfileId ?? null, restaurantId: input.restaurantId ?? null, targetRole: input.targetRole, codeLast4: input.code.slice(-4) }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "profile.key.bound", entityType: "vcard_card_binding", entityId: String(bindingId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ userId: input.userId, customerProfileId: input.customerProfileId ?? null, restaurantId: input.restaurantId ?? null, targetRole: input.targetRole, codeLast4: input.code.slice(-4) }) });
       return { success: true, bindingId, targetRole: input.targetRole, userId: input.userId, customerProfileId: input.customerProfileId ?? null, restaurantId: input.restaurantId ?? null };
     }),
     reviewCustomerBenefitRequest: platformAdminProcedure.input(z3.object({ id: z3.number().int().positive(), status: z3.enum(["approved", "rejected"]) })).mutation(async ({ ctx, input }) => {
       const result = await reviewCustomerBenefitRequest({ id: input.id, status: input.status, reviewedByUserId: ctx.user.id });
       if (!result) throw new TRPCError5({ code: "NOT_FOUND", message: "\u0637\u0644\u0628 \u0627\u0644\u0645\u064A\u0632\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      await insertAuditLog({ actorUserId: ctx.user.id, action: "customer.benefit.request.reviewed", entityType: "customer_benefit_request", entityId: String(input.id), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ status: input.status, userId: result.userId }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, action: "customer.benefit.request.reviewed", entityType: "customer_benefit_request", entityId: String(input.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ status: input.status, userId: result.userId }) });
       return { success: true, result };
     }),
     contentPurchaseFinanceSummary: platformAdminProcedure.query(async () => {
@@ -12289,7 +12365,7 @@ var appRouter = router({
       if (input.targetLimitMb <= previousLimitMb) throw new TRPCError5({ code: "BAD_REQUEST", message: "\u0627\u0644\u062D\u062F \u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u064A\u062C\u0628 \u0623\u0646 \u064A\u0632\u064A\u062F \u0639\u0646 \u0627\u0644\u062D\u062F \u0627\u0644\u062D\u0627\u0644\u064A \u0644\u0644\u062A\u0631\u0642\u064A\u0629" });
       const extraMb = input.targetLimitMb - previousLimitMb;
       const fee = Number((extraMb / 1024 * 20).toFixed(2));
-      const invoiceNumber = `NFOOD-STORAGE-${Date.now()}-${nanoid3(6).toUpperCase()}`;
+      const invoiceNumber = `NFOOD-STORAGE-${Date.now()}-${nanoid4(6).toUpperCase()}`;
       await db.update(digitalCatalogs).set({ storageLimit: input.targetLimitMb }).where(eq6(digitalCatalogs.id, catalog.id));
       await db.insert(governanceAuditLogs).values({ adminId: String(ctx.user.id), entityId: input.entityId, actionType: "storage.limit_upgraded", previousState: JSON.stringify({ storageLimit: previousLimitMb, storageUsed: catalog.storageUsed, catalogEnabled: catalog.catalogEnabled }), nextState: JSON.stringify({ storageLimit: input.targetLimitMb, isFreelancer: catalog.isFreelancer, isPhotographer: catalog.isPhotographer, hidden: false, invoiceNumber, fee, currency: "SAR", extraMb, locked: input.targetLimitMb <= catalog.storageUsed }) });
       return { success: true, entityId: input.entityId, previousLimitMb, nextLimitMb: input.targetLimitMb, extraMb, fee, currency: "SAR", invoiceNumber };
@@ -12349,7 +12425,7 @@ var appRouter = router({
       const previous = governance[input.sectorKey] ?? null;
       governance[input.sectorKey] = { labelAr: input.labelAr, labelEn: input.labelEn, labelFr: input.labelFr, active: input.active };
       await setPlatformSetting("sectorGovernanceJson", JSON.stringify(governance), ctx.user.id);
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? ctx.user.testRole ?? "admin", action: "sector.meta.updated", entityType: "sector", entityId: input.sectorKey, outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ previous, next: { labelAr: input.labelAr, labelEn: input.labelEn, labelFr: input.labelFr, active: input.active } }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? ctx.user.testRole ?? "admin", action: "sector.meta.updated", entityType: "sector", entityId: input.sectorKey, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ previous, next: { labelAr: input.labelAr, labelEn: input.labelEn, labelFr: input.labelFr, active: input.active } }) });
       return { success: true, sectorKey: input.sectorKey };
     }),
     notifySector: adminProcedure.input(z3.object({ sectorKey: z3.string().trim().min(1).max(40), title: z3.string().trim().min(1).max(180), body: z3.string().trim().min(1).max(2e3), type: z3.enum(["task", "message", "payment", "system"]).default("system") })).mutation(async ({ ctx, input }) => {
@@ -12377,7 +12453,7 @@ var appRouter = router({
         const result = await sendPushToUser(userId, { title: input.title.trim(), body: input.body.trim(), url: "/" });
         pushSent += result.sent;
       }
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? ctx.user.testRole ?? "admin", action: "sector.notified", entityType: "sector", entityId: alias, outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ notified: recipientUserIds.length, pushSent }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? ctx.user.testRole ?? "admin", action: "sector.notified", entityType: "sector", entityId: alias, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ notified: recipientUserIds.length, pushSent }) });
       return { success: true, notified: recipientUserIds.length, recipients: recipientUserIds.length, pushSent };
     }),
     notifyEntities: adminProcedure.input(z3.object({ entityIds: z3.array(z3.string().trim().min(1).max(30)).min(1).max(200), title: z3.string().trim().min(1).max(180), body: z3.string().trim().min(1).max(2e3), type: z3.enum(["task", "message", "payment", "system"]).default("system") })).mutation(async ({ ctx, input }) => {
@@ -12400,7 +12476,7 @@ var appRouter = router({
         const result = await sendPushToUser(userId, { title: input.title.trim(), body: input.body.trim(), url: "/" });
         pushSent += result.sent;
       }
-      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? ctx.user.testRole ?? "admin", action: "sector.entities.notified", entityType: "platform_entity", entityId: ids.join(","), outcome: "success", requestId: nanoid3(12), metadata: JSON.stringify({ entityIds: ids, notified: recipientUserIds.length, pushSent }) });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? ctx.user.testRole ?? "admin", action: "sector.entities.notified", entityType: "platform_entity", entityId: ids.join(","), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ entityIds: ids, notified: recipientUserIds.length, pushSent }) });
       return { success: true, notified: recipientUserIds.length, recipients: recipientUserIds.length, pushSent };
     })
   }),
@@ -12568,7 +12644,7 @@ function registerMenuTemplateScheduleHeartbeat(app) {
 // server/_core/vite.ts
 import express from "express";
 import fs2 from "fs";
-import { nanoid as nanoid4 } from "nanoid";
+import { nanoid as nanoid5 } from "nanoid";
 import path2 from "path";
 import { createServer as createViteServer } from "vite";
 
@@ -12753,7 +12829,7 @@ var vite_config_default = defineConfig({
 
 // server/_core/vite.ts
 function prepareDevTemplate(template, analyticsEndpoint = process.env.VITE_ANALYTICS_ENDPOINT?.trim(), analyticsId = process.env.VITE_ANALYTICS_WEBSITE_ID?.trim()) {
-  const withEntryVersion = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid4()}"`);
+  const withEntryVersion = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid5()}"`);
   return analyticsEndpoint && analyticsId ? withEntryVersion.replaceAll("%VITE_ANALYTICS_ENDPOINT%", analyticsEndpoint).replaceAll("%VITE_ANALYTICS_WEBSITE_ID%", analyticsId) : withEntryVersion.replace(/\s*<script defer src="%VITE_ANALYTICS_ENDPOINT%\/umami" data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"><\/script>/, "");
 }
 async function setupVite(app, server) {
