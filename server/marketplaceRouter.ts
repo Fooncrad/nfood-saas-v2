@@ -27,7 +27,6 @@ import {
   storeReferralLinks,
   storeReferralRecords,
   storeRewardTransactions,
-  users,
   walletAccounts,
 } from "../drizzle/schema";
 import { publicProcedure, protectedProcedure, adminProcedure, platformAdminProcedure, router } from "./_core/trpc";
