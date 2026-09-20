@@ -2,9 +2,9 @@ name: NFOOD Verify
 
 on:
   push:
-    branches: [main]
+    branches: [main, build/production-dist]
   pull_request:
-    branches: [main]
+    branches: [main, build/production-dist]
 
 jobs:
   verify:
