@@ -760,6 +760,11 @@ export const marketplaceRouter = router({
         id: store.id,
         customerName: store.customerName,
         email: store.email,
+        countryCode: store.countryCode,
+        city: store.city,
+        timezone: store.timezone,
+        currencyCode: store.currencyCode,
+        primaryLanguage: store.primaryLanguage,
         sector: store.sector,
         sectorLabelAr: sector?.labelAr ?? store.sector,
         sectorLabelEn: sector?.labelEn ?? store.sector,
@@ -783,17 +788,27 @@ export const marketplaceRouter = router({
     customerName: z.string().trim().min(1).max(300).optional(),
     taxId: z.string().trim().min(1).max(50).optional(),
     licensingFee: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+    countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional(),
+    city: z.string().trim().max(120).nullable().optional(),
+    timezone: z.string().trim().min(3).max(64).optional(),
+    currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()).optional(),
+    primaryLanguage: z.string().trim().min(2).max(10).optional(),
   })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const existing = (await db.select().from(platformEntities).where(eq(platformEntities.id, input.id)).limit(1))[0];
     if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "المنشأة غير موجودة" });
-    const patch: { status?: boolean; plan?: (typeof PLAN_TIERS)[number]; customerName?: string; taxId?: string; licensingFee?: string } = {};
+    const patch: { status?: boolean; plan?: (typeof PLAN_TIERS)[number]; customerName?: string; taxId?: string; licensingFee?: string; countryCode?: string; city?: string | null; timezone?: string; currencyCode?: string; primaryLanguage?: string } = {};
     if (input.status !== undefined) patch.status = input.status;
     if (input.plan !== undefined) patch.plan = input.plan;
     if (input.customerName !== undefined) patch.customerName = input.customerName;
     if (input.taxId !== undefined) patch.taxId = input.taxId;
     if (input.licensingFee !== undefined) patch.licensingFee = input.licensingFee;
+    if (input.countryCode !== undefined) patch.countryCode = input.countryCode;
+    if (input.city !== undefined) patch.city = input.city;
+    if (input.timezone !== undefined) patch.timezone = input.timezone;
+    if (input.currencyCode !== undefined) patch.currencyCode = input.currencyCode;
+    if (input.primaryLanguage !== undefined) patch.primaryLanguage = input.primaryLanguage;
     await db.update(platformEntities).set(patch).where(eq(platformEntities.id, input.id));
     await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "marketplace.store.updated", entityType: "platform_entity", entityId: input.id, outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(patch) });
     return { success: true, id: input.id };

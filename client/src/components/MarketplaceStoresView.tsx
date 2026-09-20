@@ -11,6 +11,11 @@ type AdminStore = {
   id: string;
   customerName: string;
   email: string;
+  countryCode: string;
+  city: string | null;
+  timezone: string;
+  currencyCode: string;
+  primaryLanguage: string;
   sector: string;
   sectorLabelAr: string;
   sectorLabelEn: string;
@@ -157,6 +162,8 @@ export default function MarketplaceStoresView() {
                         <span>·</span>
                         <span>{store.sectorLabelAr || store.sector}</span>
                         <span>·</span>
+                        <span>{store.countryCode} / {store.currencyCode}</span>
+                        <span>·</span>
                         <span>{store.listings.toLocaleString("en-US", { maximumFractionDigits: 0 })} منتجات</span>
                         <span>·</span>
                         <span>{store.coupons.toLocaleString("en-US", { maximumFractionDigits: 0 })} كوبونات</span>
@@ -186,7 +193,7 @@ export default function MarketplaceStoresView() {
         <DialogContent dir="rtl" className="rounded-3xl sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>تعديل المتجر</DialogTitle>
-            <DialogDescription>تعديل مباشر من Admin: الاسم، الباقة، السجل الضريبي، رسوم الترخيص، وحالة التفعيل.</DialogDescription>
+            <DialogDescription>تعديل مباشر من Admin لبيانات المنشأة التشغيلية والاشتراك. الدولة والعملة الحالية: {selected?.countryCode ?? "—"} / {selected?.currencyCode ?? "—"}.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <label className="block text-sm font-semibold">
