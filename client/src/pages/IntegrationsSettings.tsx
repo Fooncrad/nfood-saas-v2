@@ -117,7 +117,8 @@ function IntegrationCard({
 }) {
   const [secret, setSecret] = useState("");
   const [keyReference, setKeyReference] = useState(setting?.keyReference ?? "");
-  const [fields, setFields] = useState<Record<string,string>>({});
+  const parseReference = () => { try { const parsed = setting?.keyReference ? JSON.parse(setting.keyReference) : {}; return parsed && typeof parsed === "object" ? parsed as Record<string,string> : {}; } catch { return setting?.keyReference ? { clientId: setting.keyReference } : {}; } };
+  const [fields, setFields] = useState<Record<string,string>>(parseReference);
   const providerFields = platformFieldMap[provider.providerKey] ?? platformFieldMap[provider.label] ?? [];
   const [status, setStatus] = useState<
     "not_configured" | "configured" | "disabled"
@@ -202,7 +203,7 @@ function IntegrationCard({
                   providerKey: provider.providerKey,
                   category: provider.category,
                   status,
-                  keyReference: keyReference || undefined,
+                  keyReference: providerFields.length ? JSON.stringify(Object.fromEntries(providerFields.filter(f=>!f.secret && (fields[f.key]?.trim() || (f.key==="clientId" && keyReference.trim()))).map(f=>[f.key,(fields[f.key] || (f.key==="clientId" ? keyReference : "")).trim()]))) : (keyReference || undefined),
                   secret: providerFields.length ? (Object.keys(fields).some(k => providerFields.find(f=>f.key===k)?.secret && fields[k]?.trim()) ? JSON.stringify(Object.fromEntries(providerFields.filter(f=>f.secret && fields[f.key]?.trim()).map(f=>[f.key,fields[f.key].trim()]))) : undefined) : (secret || undefined),
                 })
               }
