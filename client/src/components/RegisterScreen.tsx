@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChevronLeft, Building2, Sparkles, Store, UserRound, Utensils, WalletCards } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,14 @@ export function RegisterScreen({ onBack, onOAuth }: { onBack: () => void; onOAut
   const [driverDialogOpen, setDriverDialogOpen] = useState(false);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const registrationCaptcha = trpc.auth.registrationCaptcha.useQuery();
+  const verifyEmail = trpc.auth.verifyEmail.useMutation({
+    onSuccess: () => toast.success(language === "en" ? "Email verified successfully." : language === "fr" ? "E-mail confirmé avec succès." : "تم تأكيد البريد الإلكتروني بنجاح."),
+    onError: (error) => toast.error(error.message || (language === "en" ? "Could not verify email." : language === "fr" ? "Impossible de confirmer l’e-mail." : "تعذر تأكيد البريد الإلكتروني.")),
+  });
+  useEffect(() => {
+    const verificationToken = new URLSearchParams(window.location.search).get("verify");
+    if (verificationToken && !verifyEmail.isPending && !verifyEmail.isSuccess) verifyEmail.mutate({ token: verificationToken });
+  }, []);
   const restaurantRegister = trpc.auth.registerRestaurant.useMutation({ onSuccess: (result) => { setTemporaryPassword(result.temporaryPassword); toast.success(language === "en" ? "Account created. Save the password and verify your email later." : language === "fr" ? "Compte créé. Enregistrez le mot de passe et confirmez votre e-mail plus tard." : "تم إنشاء الحساب. احفظ كلمة المرور وأكمل تأكيد البريد لاحقًا."); }, onError: (error) => toast.error(error.message || (language === "en" ? "Could not create the account" : language === "fr" ? "Impossible de créer le compte" : "تعذر إنشاء الحساب")) });
   const driverRegister = trpc.auth.submitDriverApplication.useMutation({ onSuccess: (result) => { setApplicationId(result.applicationId); toast.success(result.message); }, onError: (error) => toast.error(error.message || (language === "en" ? "Could not submit the driver application" : language === "fr" ? "Impossible d’envoyer la demande chauffeur" : "تعذر إرسال طلب السائق")) });
   const uploadDriverFile = trpc.auth.uploadDriverFile.useMutation();
