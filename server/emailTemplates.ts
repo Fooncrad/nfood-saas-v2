@@ -23,7 +23,7 @@ const seeds: EmailTemplateSeed[] = [
   { eventKey: "driver.assignment", locale: "ar", subject: "تم إسناد طلب توصيل جديد #{{orderNumber}}", htmlBody: "<div dir=\"rtl\" style=\"font-family:Arial;line-height:1.8\"><h2>طلب توصيل جديد</h2><p>تم إسناد الطلب {{orderNumber}} إليك من {{restaurantName}}. العنوان: {{deliveryAddress}}.</p></div>", textBody: "تم إسناد الطلب {{orderNumber}} إليك من {{restaurantName}}. العنوان: {{deliveryAddress}}." },
 ];
 
-function transporter() { const host = process.env.SMTP_HOST; const user = process.env.SMTP_USER; const pass = process.env.SMTP_PASSWORD; if (!host || !user || !pass) return null; const port = Number(process.env.SMTP_PORT || 587); return nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } }); }
+function transporter() { const host = process.env.SMTP_HOST || process.env.MAIL_HOST; const user = process.env.SMTP_USER || process.env.MAIL_USERNAME; const pass = process.env.SMTP_PASSWORD || process.env.MAIL_PASSWORD; if (!host || !user || !pass) return null; const port = Number(process.env.SMTP_PORT || process.env.MAIL_PORT || 587); return nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } }); }
 function escape(value: unknown) { return String(value ?? "").replace(/[&<>\"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" })[character] ?? character); }
 export function renderEmailTemplate(template: string, data: Record<string, unknown>) { return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) => escape(data[key])); }
 
@@ -50,7 +50,7 @@ export async function sendTemplatedEmail(input: { to?: string | null; restaurant
   if (!mailer) return { sent: false as const, skipped: "smtp-not-configured" as const };
   const template = await getEffectiveEmailTemplate(input);
   if (!template || ("isEnabled" in template && template.isEnabled === false)) return { sent: false as const, skipped: "template-disabled" as const };
-  await mailer.sendMail({ from: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER, to: input.to, subject: renderEmailTemplate(template.subject, input.data), text: renderEmailTemplate(template.textBody, input.data), html: renderEmailTemplate(template.htmlBody, input.data) });
+  await mailer.sendMail({ from: process.env.SMTP_FROM_EMAIL || process.env.MAIL_FROM_ADDRESS || process.env.SMTP_USER || process.env.MAIL_USERNAME || process.env.MAIL_USERNAME, to: input.to, subject: renderEmailTemplate(template.subject, input.data), text: renderEmailTemplate(template.textBody, input.data), html: renderEmailTemplate(template.htmlBody, input.data) });
   return { sent: true as const };
 }
 export { seeds as emailTemplateSeeds };
