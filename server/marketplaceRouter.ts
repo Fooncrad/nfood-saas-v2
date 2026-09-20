@@ -8,6 +8,7 @@ import {
   affiliateLinks,
   affiliatePayoutRequests,
   businessStoragePolicies,
+  businessDepartments,
   branches,
   entityStorageUsage,
   marketplaceListings,
@@ -854,6 +855,50 @@ export const marketplaceRouter = router({
     await db.update(branches).set(patch).where(eq(branches.id, id));
     await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "branch.updated", entityType: "branch", entityId: String(id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(patch) });
     return { success: true, id };
+  }),
+
+  adminDepartments: platformAdminProcedure.input(z.object({ branchId: z.number().int().positive() })).query(async ({ input }) => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select().from(businessDepartments).where(eq(businessDepartments.branchId, input.branchId)).orderBy(desc(businessDepartments.createdAt));
+  }),
+
+  adminCreateDepartment: platformAdminProcedure.input(z.object({
+    restaurantId: z.number().int().positive(),
+    branchId: z.number().int().positive(),
+    name: z.string().trim().min(2).max(160),
+    code: z.string().trim().max(80).optional(),
+    modules: z.array(z.string().trim().min(1).max(80)).default([]),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const branch = (await db.select().from(branches).where(and(eq(branches.id, input.branchId), eq(branches.restaurantId, input.restaurantId))).limit(1))[0];
+    if (!branch) throw new TRPCError({ code: "NOT_FOUND", message: "الفرع غير موجود أو لا يتبع المنشأة" });
+    const result = await db.insert(businessDepartments).values({ restaurantId: input.restaurantId, branchId: input.branchId, name: input.name, code: input.code, modulesJson: JSON.stringify(Array.from(new Set(input.modules))), isActive: true });
+    const id = Number(result[0].insertId);
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "department.created", entityType: "business_department", entityId: String(id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ branchId: input.branchId, name: input.name, modules: input.modules }) });
+    return { success: true, id };
+  }),
+
+  adminUpdateDepartment: platformAdminProcedure.input(z.object({
+    id: z.number().int().positive(),
+    name: z.string().trim().min(2).max(160).optional(),
+    code: z.string().trim().max(80).nullable().optional(),
+    isActive: z.boolean().optional(),
+    modules: z.array(z.string().trim().min(1).max(80)).optional(),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const existing = (await db.select().from(businessDepartments).where(eq(businessDepartments.id, input.id)).limit(1))[0];
+    if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "القسم غير موجود" });
+    const patch: { name?: string; code?: string | null; isActive?: boolean; modulesJson?: string } = {};
+    if (input.name !== undefined) patch.name = input.name;
+    if (input.code !== undefined) patch.code = input.code;
+    if (input.isActive !== undefined) patch.isActive = input.isActive;
+    if (input.modules !== undefined) patch.modulesJson = JSON.stringify(Array.from(new Set(input.modules)));
+    await db.update(businessDepartments).set(patch).where(eq(businessDepartments.id, input.id));
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "department.updated", entityType: "business_department", entityId: String(input.id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(patch) });
+    return { success: true, id: input.id };
   }),
 
   adminUpdateStore: platformAdminProcedure.input(z.object({
