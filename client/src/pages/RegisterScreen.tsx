@@ -8,7 +8,7 @@ import { UI_LANGUAGES, languageMeta, useLanguage } from "@/contexts/LanguageCont
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import "./auth-scroll.css";
 
-const sectors = [{ id: "restaurant", icon: Store }, { id: "vegetables", icon: ShoppingCart }, { id: "grocery", icon: ShoppingCart }, { id: "laundry", icon: Shirt }, { id: "automotive", icon: Car }, { id: "beauty_salon", icon: Scissors }, { id: "public_works", icon: HardHat }, { id: "fashion", icon: Shirt }, { id: "sweets", icon: Utensils }] as const;
+const sectors = [{ id: "restaurant" }, { id: "vegetables" }, { id: "grocery" }, { id: "laundry" }, { id: "automotive" }, { id: "beauty_salon" }, { id: "public_works" }, { id: "fashion" }, { id: "sweets" }] as const;
 const languageOptions = UI_LANGUAGES.map((code) => ({ code, label: languageMeta[code].nativeLabel }));
 
 const registerCopy = {
