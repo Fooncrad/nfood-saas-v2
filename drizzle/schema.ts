@@ -1727,6 +1727,12 @@ export const platformEntities = mysqlTable("platform_entities", {
   id: varchar("id", { length: 30 }).primaryKey(),
   customerName: text("customer_name").notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
+  // Global tenant boundary: every marketplace business belongs to exactly one country.
+  countryCode: varchar("country_code", { length: 2 }).default("SA").notNull(),
+  city: varchar("city", { length: 120 }),
+  timezone: varchar("timezone", { length: 64 }).default("Asia/Riyadh").notNull(),
+  currencyCode: varchar("currency_code", { length: 3 }).default("SAR").notNull(),
+  primaryLanguage: varchar("primary_language", { length: 10 }).default("ar").notNull(),
   sector: mysqlEnum("sector", PLATFORM_SECTOR_KEYS).default("restaurant").notNull(),
   status: boolean("status").default(true).notNull(),
   plan: mysqlEnum("plan", PLAN_TIERS).default("Basic").notNull(),
@@ -1736,6 +1742,8 @@ export const platformEntities = mysqlTable("platform_entities", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
   platformEntitiesSectorIdx: index("platform_entities_sector_idx").on(table.sector, table.status),
+  platformEntitiesCountryIdx: index("platform_entities_country_idx").on(table.countryCode, table.status),
+  platformEntitiesCountrySectorIdx: index("platform_entities_country_sector_idx").on(table.countryCode, table.sector, table.status),
   platformEntitiesEmailIdx: index("platform_entities_email_idx").on(table.email),
 }));
 

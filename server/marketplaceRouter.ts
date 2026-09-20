@@ -66,7 +66,11 @@ export const marketplaceRouter = router({
     const countMap = new Map(counts.map((row) => [Number(row.sectorId), Number(row.total)]));
     return sectors.map((sector) => ({ ...sector, listingCount: countMap.get(sector.id) ?? 0 }));
   }),
-  publicStores: publicProcedure.input(z.object({ sectorSlug: z.string().trim().min(1).max(80).optional(), search: z.string().trim().max(120).optional() })).query(async ({ input }) => {
+  publicStores: publicProcedure.input(z.object({
+    countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional(),
+    sectorSlug: z.string().trim().min(1).max(80).optional(),
+    search: z.string().trim().max(120).optional(),
+  })).query(async ({ input }) => {
     const db = await getDb();
     if (!db) return [];
     let sectorIdsBySlug = new Map<number, number>();
@@ -91,7 +95,9 @@ export const marketplaceRouter = router({
       for (const listing of listings) matchingEntityIds.add(listing.entityId);
     }
     if (!matchingEntityIds.size) return [];
-    const entityRows = await db.select().from(platformEntities).where(and(eq(platformEntities.status, true), inArray(platformEntities.id, Array.from(matchingEntityIds))));
+    const entityConditions = [eq(platformEntities.status, true), inArray(platformEntities.id, Array.from(matchingEntityIds))];
+    if (input.countryCode) entityConditions.push(eq(platformEntities.countryCode, input.countryCode));
+    const entityRows = await db.select().from(platformEntities).where(and(...entityConditions));
     const searchTerm = input.search?.trim().toLowerCase();
     const result = [];
     for (const entity of entityRows) {
@@ -112,11 +118,17 @@ export const marketplaceRouter = router({
     }
     return result;
   }),
-  publicStore: publicProcedure.input(z.object({ entityId: entityIdSchema })).query(async ({ input }) => {
+  publicStore: publicProcedure.input(z.object({
+    entityId: entityIdSchema,
+    countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional(),
+  })).query(async ({ input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const entity = (await db.select().from(platformEntities).where(and(eq(platformEntities.id, input.entityId), eq(platformEntities.status, true))).limit(1))[0];
     if (!entity) throw new TRPCError({ code: "NOT_FOUND", message: "المتجر غير موجود" });
+    if (input.countryCode && entity.countryCode !== input.countryCode) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "المتجر غير متاح في هذه الدولة" });
+    }
     const listings = await db.select().from(marketplaceListings).where(and(eq(marketplaceListings.entityId, input.entityId), eq(marketplaceListings.status, "active"))).orderBy(desc(marketplaceListings.isFeatured), desc(marketplaceListings.createdAt));
     const loyaltySettings = (await db.select().from(storeLoyaltySettings).where(eq(storeLoyaltySettings.entityId, input.entityId)).limit(1))[0] ?? null;
     const now = new Date();
@@ -177,8 +189,12 @@ export const marketplaceRouter = router({
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const entity = await requireProviderEntity(ctx.user, db);
     if (entity.id !== input.entityId) throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك صلاحية هذا المتجر" });
-    const sector = (await db.select({ id: marketplaceSectors.id }).from(marketplaceSectors).where(eq(marketplaceSectors.id, input.sectorId)).limit(1))[0];
+    const sector = (await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug }).from(marketplaceSectors).where(eq(marketplaceSectors.id, input.sectorId)).limit(1))[0];
     if (!sector) throw new TRPCError({ code: "BAD_REQUEST", message: "القطاع غير معروف" });
+    const normalizedSector = sector.slug === "restaurants" ? "restaurant" : sector.slug;
+    if (entity.sector !== normalizedSector) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "لا يمكن إضافة منتج لنشاط مختلف عن نشاط المتجر" });
+    }
     const result = await db.insert(marketplaceListings).values({
       entityId: entity.id,
       sectorId: input.sectorId,
