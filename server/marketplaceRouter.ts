@@ -189,8 +189,12 @@ export const marketplaceRouter = router({
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const entity = await requireProviderEntity(ctx.user, db);
     if (entity.id !== input.entityId) throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك صلاحية هذا المتجر" });
-    const sector = (await db.select({ id: marketplaceSectors.id }).from(marketplaceSectors).where(eq(marketplaceSectors.id, input.sectorId)).limit(1))[0];
+    const sector = (await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug }).from(marketplaceSectors).where(eq(marketplaceSectors.id, input.sectorId)).limit(1))[0];
     if (!sector) throw new TRPCError({ code: "BAD_REQUEST", message: "القطاع غير معروف" });
+    const normalizedSector = sector.slug === "restaurants" ? "restaurant" : sector.slug;
+    if (entity.sector !== normalizedSector) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "لا يمكن إضافة منتج لنشاط مختلف عن نشاط المتجر" });
+    }
     const result = await db.insert(marketplaceListings).values({
       entityId: entity.id,
       sectorId: input.sectorId,
