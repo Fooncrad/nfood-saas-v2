@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { marketplaceCopy, marketplaceCountries, sectorMeta } from "@/lib/marketplaceExperience";
 import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Globe2, Search, Store, Languages, MapPin, Moon, Sun, Heart, ShieldCheck, Truck, Headphones, CreditCard, ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
@@ -10,7 +11,7 @@ import { Link } from "wouter";
 const fallbackHero="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1800&q=85";
 
 export default function MarketplaceLanding(){
- const {language,setLanguage,direction}=useLanguage(); const lang=language==="fr"?"fr":language==="en"?"en":"ar"; const copy=marketplaceCopy(lang);
+ const {language,direction}=useLanguage(); const lang=language==="fr"?"fr":language==="en"?"en":"ar"; const copy=marketplaceCopy(lang);
  const [country,setCountry]=useState(()=>localStorage.getItem("nfood-market-country")||"SA"); const [search,setSearch]=useState(""); const [theme,setTheme]=useState<"light"|"dark">(()=>localStorage.getItem("nfood-market-theme")==="light"?"light":"dark");
  const appearanceQuery=trpc.marketplace.publicAppearance.useQuery(undefined,{retry:false}); const sectors=trpc.marketplace.publicSectors.useQuery(undefined,{retry:false}); const stores=trpc.marketplace.publicStores.useQuery({countryCode:country,search:search.trim()||undefined},{retry:false});
  const appearance=(appearanceQuery.data?.appearance||{}) as Record<string,any>; const primary=appearance.primaryColor||"#f97316"; const radius=`${appearance.cardRadius||24}px`; const countryInfo=marketplaceCountries.find(x=>x.code===country)??marketplaceCountries[0]; const sectorRows=sectors.data??[]; const storeRows=stores.data??[];
@@ -23,7 +24,7 @@ export default function MarketplaceLanding(){
   <header className={`sticky top-0 z-50 border-b backdrop-blur-xl ${dark?"border-white/10 bg-[#08111d]/90":"border-slate-200 bg-white/90"}`}><div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
    <Link href="/marketplace" className="flex items-center gap-2">{appearanceQuery.data?.siteLogoUrl?<img src={appearanceQuery.data.siteLogoUrl} className="h-10 w-10 rounded-xl object-contain"/>:<span className="grid h-10 w-10 place-items-center rounded-xl text-xl font-black text-white" style={{background:primary}}>N</span>}<span><b className="block text-lg tracking-wide">{appearanceQuery.data?.siteName||"NFOOD"}</b><small className="opacity-50">{lang==="ar"?"مطاعم • مقاهي • متاجر":"Restaurants • Cafés • Stores"}</small></span></Link>
    <nav className="hidden items-center gap-7 text-sm font-bold lg:flex"><Link href="/">{lang==="ar"?"الرئيسية":"Home"}</Link><a href="#categories">{lang==="ar"?"التصنيفات":"Categories"}</a><a href="#stores">{lang==="ar"?"المتاجر":"Stores"}</a><a href="#offers">{lang==="ar"?"العروض":"Offers"}</a></nav>
-   <div className="flex items-center gap-2"><button onClick={toggleTheme} className={`grid h-10 w-10 place-items-center rounded-xl border ${dark?"border-white/10 bg-white/5":"border-slate-200 bg-white"}`} aria-label="Theme">{dark?<Sun className="h-4 w-4"/>:<Moon className="h-4 w-4"/>}</button><button onClick={()=>setLanguage(lang==="ar"?"en":lang==="en"?"fr":"ar")} className={`flex h-10 items-center gap-1 rounded-xl border px-3 text-xs font-bold ${dark?"border-white/10":"border-slate-200"}`}><Languages className="h-4 w-4"/>{lang.toUpperCase()}</button><Link href="/login"><Button variant="ghost">{copy.login}</Button></Link></div>
+   <div className="flex items-center gap-2"><button onClick={toggleTheme} className={`grid h-10 w-10 place-items-center rounded-xl border ${dark?"border-white/10 bg-white/5":"border-slate-200 bg-white"}`} aria-label="Theme">{dark?<Sun className="h-4 w-4"/>:<Moon className="h-4 w-4"/>}</button><LanguageSwitcher compact /><Link href="/login"><Button variant="ghost">{copy.login}</Button></Link></div>
   </div></header>
 
   <section className="relative min-h-[500px] overflow-hidden"><img src={appearance.heroImageUrl||fallbackHero} className="absolute inset-0 h-full w-full object-cover" alt=""/><div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/65 to-black/35"/><div className="relative mx-auto flex min-h-[500px] max-w-7xl items-center px-4 py-16 md:px-8"><div className="w-full max-w-3xl text-white">
