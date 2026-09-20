@@ -7,6 +7,8 @@ import {
   affiliateCommissions,
   affiliateLinks,
   affiliatePayoutRequests,
+  businessStoragePolicies,
+  entityStorageUsage,
   marketplaceListings,
   marketplaceSectors,
   marketplaceStorefrontSettings,
@@ -166,6 +168,43 @@ export const marketplaceRouter = router({
     if (input?.sectorId) conditions.push(eq(marketplaceListings.sectorId, input.sectorId));
     if (input?.featuredOnly) conditions.push(eq(marketplaceListings.isFeatured, true));
     return db.select().from(marketplaceListings).where(and(...conditions)).orderBy(desc(marketplaceListings.isFeatured), desc(marketplaceListings.sortOrder));
+  }),
+
+  // ── Storage quotas: platform plan policy + per-business override ─────
+  providerStorage: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const entity = await requireProviderEntity(ctx.user, db);
+    const policy = (await db.select().from(businessStoragePolicies).where(eq(businessStoragePolicies.plan, entity.plan)).limit(1))[0] ?? null;
+    const usage = (await db.select().from(entityStorageUsage).where(eq(entityStorageUsage.entityId, entity.id)).limit(1))[0] ?? null;
+    const planQuotaBytes = Number(policy?.quotaBytes ?? 0);
+    const quotaBytes = Number(usage?.overrideQuotaBytes ?? planQuotaBytes);
+    const usedBytes = Number(usage?.usedBytes ?? 0);
+    return { entityId: entity.id, plan: entity.plan, quotaBytes, usedBytes, remainingBytes: Math.max(0, quotaBytes - usedBytes), percentUsed: quotaBytes > 0 ? Math.min(100, Math.round((usedBytes / quotaBytes) * 10000) / 100) : 0, maxFileSizeBytes: Number(policy?.maxFileSizeBytes ?? 0), allowedMimePrefixesJson: policy?.allowedMimePrefixesJson ?? "[]", warningPercent: policy?.warningPercent ?? 80, criticalPercent: policy?.criticalPercent ?? 90, breakdown: { images: Number(usage?.imageBytes ?? 0), videos: Number(usage?.videoBytes ?? 0), documents: Number(usage?.documentBytes ?? 0), purchasedContent: Number(usage?.purchasedContentBytes ?? 0) } };
+  }),
+  adminSetStoragePolicy: platformAdminProcedure.input(z.object({
+    plan: z.enum(PLAN_TIERS),
+    quotaBytes: z.string().regex(/^\d+$/),
+    maxFileSizeBytes: z.string().regex(/^\d+$/),
+    allowedMimePrefixes: z.array(z.string().trim().min(2).max(120)).min(1).max(30),
+    warningPercent: z.number().int().min(1).max(99).default(80),
+    criticalPercent: z.number().int().min(1).max(100).default(90),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    if (input.criticalPercent <= input.warningPercent) throw new TRPCError({ code: "BAD_REQUEST", message: "Critical threshold must be greater than warning threshold" });
+    const existing = (await db.select({ id: businessStoragePolicies.id }).from(businessStoragePolicies).where(eq(businessStoragePolicies.plan, input.plan)).limit(1))[0];
+    const values = { quotaBytes: input.quotaBytes, maxFileSizeBytes: input.maxFileSizeBytes, allowedMimePrefixesJson: JSON.stringify(input.allowedMimePrefixes), warningPercent: input.warningPercent, criticalPercent: input.criticalPercent, updatedByUserId: ctx.user.id };
+    if (existing) await db.update(businessStoragePolicies).set(values).where(eq(businessStoragePolicies.id, existing.id)); else await db.insert(businessStoragePolicies).values({ plan: input.plan, ...values });
+    return { success: true };
+  }),
+  adminSetEntityStorageOverride: platformAdminProcedure.input(z.object({ entityId: entityIdSchema, quotaBytes: z.string().regex(/^\d+$/).nullable() })).mutation(async ({ ctx, input }) => {
+    const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const entity = (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq(platformEntities.id, input.entityId)).limit(1))[0];
+    if (!entity) throw new TRPCError({ code: "NOT_FOUND", message: "النشاط غير موجود" });
+    const existing = (await db.select({ id: entityStorageUsage.id }).from(entityStorageUsage).where(eq(entityStorageUsage.entityId, input.entityId)).limit(1))[0];
+    if (existing) await db.update(entityStorageUsage).set({ overrideQuotaBytes: input.quotaBytes }).where(eq(entityStorageUsage.id, existing.id)); else await db.insert(entityStorageUsage).values({ entityId: input.entityId, overrideQuotaBytes: input.quotaBytes });
+    await insertAuditLog({ actorUserId: ctx.user.id, action: "marketplace.storage.override", entityType: "platform_entity", entityId: input.entityId, outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ quotaBytes: input.quotaBytes }) });
+    return { success: true };
   }),
 
   // ── Provider store manager ───────────────────────────────────────────
