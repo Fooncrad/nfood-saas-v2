@@ -53,8 +53,8 @@ export default function MarketplaceStore() {
   };
   const categories = useMemo(() => ["الكل", ...Array.from(new Set(listings.map(listingCategory)))], [listings]);
   const visibleListings = activeCategory === "الكل" ? listings : listings.filter((listing) => listingCategory(listing) === activeCategory);
-  const productImageRatio = entity?.sector === "restaurant" ? "aspect-square" : entity?.sector === "fashion" || entity?.sector === "clothing" ? "aspect-[3/4]" : entity?.sector === "cars" || entity?.sector === "automotive" || entity?.sector === "real-estate" ? "aspect-[16/10]" : entity?.sector === "services" ? "aspect-[4/3]" : "aspect-square";
-  const productImageFit = entity?.sector === "fashion" || entity?.sector === "clothing" ? "object-cover object-top" : "object-cover";
+  const productImageRatio = entity?.sector === "restaurant" ? "aspect-square" : entity?.sector === "fashion" ? "aspect-[3/4]" : entity?.sector === "automotive" ? "aspect-[16/10]" : entity?.sector === "beauty_salon" || entity?.sector === "public_works" || entity?.sector === "laundry" ? "aspect-[4/3]" : "aspect-square";
+  const productImageFit = entity?.sector === "fashion" ? "object-cover object-top" : "object-cover";
   const galleryImages = useMemo(() => {
     const images = [restaurant?.coverUrl, restaurant?.brandLogoUrl, ...listings.map((item) => item.imageUrl)].filter((value): value is string => Boolean(value));
     return Array.from(new Set(images)).slice(0, 4);
