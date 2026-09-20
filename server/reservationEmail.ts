@@ -3,10 +3,10 @@ import { sendTemplatedEmail } from "./emailTemplates";
 import { getEffectiveIntegrationSecret } from "./db";
 
 function getTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 587);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASSWORD;
+  const host = process.env.SMTP_HOST || process.env.MAIL_HOST;
+  const port = Number(process.env.SMTP_PORT || process.env.MAIL_PORT || 587);
+  const user = process.env.SMTP_USER || process.env.MAIL_USERNAME;
+  const pass = process.env.SMTP_PASSWORD || process.env.MAIL_PASSWORD;
   if (!host || !user || !pass) return null;
   return nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
 }
