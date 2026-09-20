@@ -34,6 +34,7 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
   birthDate: timestamp("birthDate"),
   emailVerified: boolean("emailVerified").default(false).notNull(),
+  preferredLanguage: varchar("preferredLanguage", { length: 10 }).default("ar").notNull(),
   emailVerificationToken: varchar("emailVerificationToken", { length: 128 }),
   emailVerificationExpiresAt: timestamp("emailVerificationExpiresAt"),
   deletedAt: timestamp("deletedAt"),
@@ -65,9 +66,34 @@ export const customerProfiles = mysqlTable("customerProfiles", {
   productsJson: text("productsJson"),
   paymentMethodsJson: text("paymentMethodsJson"),
   qrVisualConfigJson: text("qrVisualConfigJson"),
+  profileVisibility: mysqlEnum("profileVisibility", ["public", "private", "unlisted", "pin"]).default("private").notNull(),
+  profilePinHash: varchar("profilePinHash", { length: 220 }),
+  tiktokUrl: varchar("tiktokUrl", { length: 500 }),
+  snapchatUrl: varchar("snapchatUrl", { length: 500 }),
+  youtubeUrl: varchar("youtubeUrl", { length: 500 }),
+  linksJson: text("linksJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+export const customerBusinessRelationships = mysqlTable("customer_business_relationships", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  entityId: varchar("entity_id", { length: 30 }).notNull().references(() => platformEntities.id, { onDelete: "cascade" }),
+  acquisitionSource: mysqlEnum("acquisition_source", ["order", "reservation", "service", "marketplace", "profile", "other"]).default("other").notNull(),
+  isAcquisitionEntity: boolean("is_acquisition_entity").default(false).notNull(),
+  contactAlias: varchar("contact_alias", { length: 80 }).notNull(),
+  contactConsent: boolean("contact_consent").default(true).notNull(),
+  revealPhoneConsent: boolean("reveal_phone_consent").default(false).notNull(),
+  revealEmailConsent: boolean("reveal_email_consent").default(false).notNull(),
+  firstInteractionAt: timestamp("first_interaction_at").defaultNow().notNull(),
+  lastInteractionAt: timestamp("last_interaction_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  customerBusinessUnique: uniqueIndex("customer_business_unique").on(table.userId, table.entityId),
+  entityCustomerIdx: index("entity_customer_idx").on(table.entityId, table.lastInteractionAt),
+}));
 
 export const restaurants = mysqlTable("restaurants", {
   id: int("id").autoincrement().primaryKey(),
@@ -214,6 +240,19 @@ export const supportTickets = mysqlTable("supportTickets", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+export const supportTicketMessages = mysqlTable("support_ticket_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  ticketId: int("ticket_id").notNull().references(() => supportTickets.id, { onDelete: "cascade" }),
+  senderUserId: int("sender_user_id").notNull().references(() => users.id),
+  senderRole: mysqlEnum("sender_role", ["customer", "business", "platform"]).notNull(),
+  body: text("body").notNull(),
+  attachmentUrl: varchar("attachment_url", { length: 1000 }),
+  isInternal: boolean("is_internal").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  ticketCreatedIdx: index("support_ticket_messages_ticket_created_idx").on(table.ticketId, table.createdAt),
+}));
+
 export const apiWebhooks = mysqlTable("apiWebhooks", {
   id: int("id").autoincrement().primaryKey(),
   scope: mysqlEnum("scope", ["platform", "restaurant"]).notNull(),
@@ -1819,6 +1858,11 @@ export const marketplaceListings = mysqlTable("marketplace_listings", {
   sortOrder: int("sortOrder").default(0).notNull(),
   tagsJson: text("tagsJson"),
   metadataJson: text("metadataJson"),
+  actionType: mysqlEnum("actionType", ["buy", "book", "order", "service", "contact", "visit"]).default("visit").notNull(),
+  actionUrl: varchar("actionUrl", { length: 1000 }),
+  actionLabelAr: varchar("actionLabelAr", { length: 120 }),
+  actionLabelEn: varchar("actionLabelEn", { length: 120 }),
+  actionLabelFr: varchar("actionLabelFr", { length: 120 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
@@ -1909,6 +1953,47 @@ export const marketplaceTransferJobs = mysqlTable("marketplace_transfer_jobs", {
   completedAt: timestamp("completed_at"),
 }, (table) => ({
   entityStatusIdx: index("marketplace_transfer_entity_status_idx").on(table.entityId, table.status),
+}));
+
+export const businessStoragePolicies = mysqlTable("business_storage_policies", {
+  id: int("id").autoincrement().primaryKey(),
+  plan: mysqlEnum("plan", PLAN_TIERS).notNull().unique(),
+  quotaBytes: decimal("quota_bytes", { precision: 20, scale: 0 }).notNull(),
+  maxFileSizeBytes: decimal("max_file_size_bytes", { precision: 20, scale: 0 }).notNull(),
+  allowedMimePrefixesJson: text("allowed_mime_prefixes_json").default('["image/","video/","application/pdf"]').notNull(),
+  warningPercent: int("warning_percent").default(80).notNull(),
+  criticalPercent: int("critical_percent").default(90).notNull(),
+  updatedByUserId: int("updated_by_user_id").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export const entityStorageUsage = mysqlTable("entity_storage_usage", {
+  id: int("id").autoincrement().primaryKey(),
+  entityId: varchar("entity_id", { length: 30 }).notNull().unique().references(() => platformEntities.id, { onDelete: "cascade" }),
+  usedBytes: decimal("used_bytes", { precision: 20, scale: 0 }).default("0").notNull(),
+  overrideQuotaBytes: decimal("override_quota_bytes", { precision: 20, scale: 0 }),
+  imageBytes: decimal("image_bytes", { precision: 20, scale: 0 }).default("0").notNull(),
+  videoBytes: decimal("video_bytes", { precision: 20, scale: 0 }).default("0").notNull(),
+  documentBytes: decimal("document_bytes", { precision: 20, scale: 0 }).default("0").notNull(),
+  purchasedContentBytes: decimal("purchased_content_bytes", { precision: 20, scale: 0 }).default("0").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export const developerApiKeys = mysqlTable("developer_api_keys", {
+  id: int("id").autoincrement().primaryKey(),
+  entityId: varchar("entity_id", { length: 30 }).notNull().references(() => platformEntities.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 160 }).notNull(),
+  keyPrefix: varchar("key_prefix", { length: 24 }).notNull(),
+  secretHash: varchar("secret_hash", { length: 220 }).notNull(),
+  scopesJson: text("scopes_json").notNull(),
+  status: mysqlEnum("status", ["active", "revoked"]).default("active").notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"),
+  createdByUserId: int("created_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at"),
+}, (table) => ({
+  entityStatusIdx: index("developer_api_keys_entity_status_idx").on(table.entityId, table.status),
 }));
 
 // ── Store Referral Links ─────────────────────────────────────────────────
