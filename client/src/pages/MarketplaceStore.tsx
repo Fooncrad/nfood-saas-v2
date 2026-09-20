@@ -6,7 +6,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { ArrowRight, Copy, Gift, Loader2, MapPin, Package, Sparkles, Tag, TrendingUp, Home, ChevronLeft } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link, useParams } from "wouter";
 
@@ -21,6 +21,7 @@ export default function MarketplaceStore() {
   const recordAffiliateClick = trpc.marketplace.recordAffiliateClick.useMutation();
   const claimReferral = trpc.marketplace.claimReferral.useMutation();
   const firedRef = useRef(false);
+  const [activeGalleryImage, setActiveGalleryImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (firedRef.current || !entityId) return;
@@ -38,6 +39,10 @@ export default function MarketplaceStore() {
   const coupons = store.data?.coupons ?? [];
   const loyaltySettings = store.data?.loyaltySettings;
   const loyaltyAccount = (myRewards.data?.loyalty ?? []).find((row) => row.entityId === entityId);
+  const galleryImages = useMemo(() => {
+    const images = [restaurant?.coverUrl, restaurant?.brandLogoUrl, ...listings.map((item) => item.imageUrl)].filter((value): value is string => Boolean(value));
+    return Array.from(new Set(images)).slice(0, 4);
+  }, [restaurant?.coverUrl, restaurant?.brandLogoUrl, listings]);
 
   const handleCopyCode = async (code: string) => {
     try { await navigator.clipboard.writeText(code); toast.success("تم نسخ الرمز"); } catch { toast.error("تعذر نسخ الرمز"); }
@@ -72,6 +77,15 @@ export default function MarketplaceStore() {
             {!user && <Button type="button" onClick={() => startLogin()} variant="outline" className="rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/10">سجّل الدخول لتفعيل المكافآت</Button>}
           </div></div>
 
+          {galleryImages.length > 0 && (
+            <section aria-label="صور المتجر">
+              <div className="mb-3 flex items-center justify-between"><div><h2 className="text-base font-black">صور المتجر</h2><p className="mt-0.5 text-[11px] text-slate-500">اضغط على الصورة لعرضها بحجم أكبر</p></div><span className="text-[10px] text-slate-600">{galleryImages.length}/4</span></div>
+              <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:grid md:grid-cols-4 md:overflow-visible">
+                {galleryImages.map((image,index)=><button key={image} type="button" onClick={()=>setActiveGalleryImage(image)} className="group relative aspect-[4/3] w-32 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900 md:w-auto"><img src={image} alt={`صورة ${index+1} من المتجر`} loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-105"/><span className="absolute inset-0 bg-black/0 transition group-hover:bg-black/10"/></button>)}
+              </div>
+            </section>
+          )}
+
           {loyaltySettings && loyaltySettings.isActive && (
             <Card className="rounded-3xl border-white/10 bg-white/5">
               <CardContent className="flex flex-wrap items-center gap-6 p-5">
@@ -97,6 +111,7 @@ export default function MarketplaceStore() {
           <section className="rounded-3xl border border-orange-400/20 bg-orange-400/5 p-6 text-center"><h2 className="text-lg font-black">هل أنت مالك هذا المتجر؟</h2><p className="mt-2 text-sm text-slate-300">ادخل لوحة التاجر لإدارة المنتجات، الكوبونات، الحملات، وبرنامج الولاء.</p><Link href="/store-marketing"><Button type="button" className="mt-4 rounded-xl bg-[#E76F3C] px-6 font-black hover:bg-orange-400">لوحة التاجر</Button></Link></section>
         </div>
       )}
+      {activeGalleryImage && <div role="dialog" aria-modal="true" aria-label="عرض صورة المتجر" onClick={()=>setActiveGalleryImage(null)} className="fixed inset-0 z-[80] grid place-items-center bg-black/90 p-4 backdrop-blur-sm"><button type="button" onClick={()=>setActiveGalleryImage(null)} className="absolute end-4 top-4 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white">إغلاق</button><img src={activeGalleryImage} alt="صورة المتجر" onClick={e=>e.stopPropagation()} className="max-h-[86vh] max-w-[94vw] rounded-2xl object-contain shadow-2xl"/></div>}
     </main>
   );
 }
