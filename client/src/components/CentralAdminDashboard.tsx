@@ -434,6 +434,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                           )}
                         </div>
                         {!sector.active && !isTrend && <p className="text-[9px] text-slate-400 dark:text-slate-500">{lang === 'ar' ? 'القطاع موقوف — لا يستقبل طلبات جديدة' : lang === 'en' ? 'Sector inactive — not accepting new orders' : 'Secteur inactif — n\'accepte pas les nouvelles commandes'}</p>}
+                        </div>
                       </div>
                     );
                   })}
