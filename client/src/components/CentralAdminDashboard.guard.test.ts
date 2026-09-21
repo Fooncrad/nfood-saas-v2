@@ -24,4 +24,15 @@ describe('Super Admin production guardrails', () => {
   it('keeps the approved five-card KPI layout', () => {
     expect(dashboardSource).toContain('xl:grid-cols-5');
   });
+
+  it('does not present unprobed services as healthy', () => {
+    expect(dashboardSource).toContain("'غير مفحوص'");
+    expect(dashboardSource).toContain("'Not checked'");
+    expect(dashboardSource).not.toContain("'All systems operational'");
+  });
+
+  it('does not restore the old hard-coded demo activity chart', () => {
+    expect(dashboardSource).not.toContain('[38,52,45,66,58,73,62,84,70,91,76,88]');
+    expect(dashboardSource).toContain('no demo figures are shown');
+  });
 });
