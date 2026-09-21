@@ -21,6 +21,7 @@ import Barcode from "react-barcode";
 import { ReservationsView } from "@/pages/ReservationsView";
 import { PlatformSettingsPanel } from "@/components/PlatformSettingsPanel";
 import { CentralAdminCommandCenter, type CentralAdminNavKey } from "@/components/CentralAdminCommandCenter";
+import { PlatformOverview } from "@/components/PlatformOverview";
 import { RestaurantCommandCenter } from "@/components/RestaurantCommandCenter";
 import AccountManagementPanel from "@/components/AccountManagementPanel";
 import MarketplaceStoresView from "@/components/MarketplaceStoresView";
@@ -29,7 +30,6 @@ import { MediaLibraryPanel } from "@/components/MediaLibraryPanel";
 import ContentMarketplace from "@/pages/ContentMarketplace";
 import VcardCardsAdmin from "@/pages/VcardCardsAdmin";
 import { StorefrontCustomizationPanel } from "@/components/StorefrontCustomizationPanel";
-import { CentralAdminDashboard } from "@/components/CentralAdminDashboard";
 
 type OrderStatus = "new" | "preparing" | "ready" | "completed";
 type NavKey = "overview" | "admin" | "activities" | "nfc" | "site" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "storefront" | "reservations" | "remote" | "security" | "health" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend";
@@ -76,7 +76,7 @@ export default function Home() {
   const adminPanelChildren = useMemo(() => {
     switch (active as CentralAdminNavKey) {
       case "admin": return <SuperAdminView />;
-      case "activities": return <CentralAdminDashboard currentTheme="dark" embedded />;
+      case "activities": return <PlatformOverview onNavigate={() => setActive("admin")} />;
       case "accounts": return <AccountManagementPanel />;
       case "settings": return <PlatformSettingsPanel />;
       case "site": return <PlatformSettingsPanel />;
