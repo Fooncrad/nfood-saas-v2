@@ -6,7 +6,6 @@ const source = fs.readFileSync("client/src/components/SuperAdminRestaurantCatalo
 describe("super admin restaurant catalog safety layout", () => {
   it("keeps the essential restaurant actions visible and hides secondary card actions", () => {
     expect(source).toContain("data-testid=\"super-admin-restaurant-catalog\"");
-    expect(source).toContain("فتح Menu");
     expect(source).toContain("enterRestaurant.mutate({ id: restaurant.id })");
     expect(source).toContain("ui.resetPassword");
     expect(source).not.toContain("ui.editPlan");
@@ -21,5 +20,12 @@ describe("super admin restaurant catalog safety layout", () => {
     expect(source).toContain("disabled");
     expect(source).toContain("الحذف معطل");
     expect(source).not.toContain("deleteRestaurant.mutate({ id: restaurant.id })");
+  });
+
+  it("does not couple safety tests to one translated menu label", () => {
+    expect(source).toContain('language === "ar"');
+    expect(source).toContain('language === "fr"');
+    expect(source).toContain('language === "ur"');
+    expect(source).toContain('language === "ar" || language === "ur" ? "rtl" : "ltr"');
   });
 });
