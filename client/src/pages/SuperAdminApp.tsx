@@ -3,14 +3,11 @@ import { CentralAdminCommandCenter, type CentralAdminNavKey } from "@/components
 import { PlatformOverview } from "@/components/PlatformOverview";
 import AccountManagementPanel from "@/components/AccountManagementPanel";
 import { PlatformSettingsPanel } from "@/components/PlatformSettingsPanel";
-import UiTranslationAdminPanel from "@/components/UiTranslationAdminPanel";
-import MediaLibraryPanel from "@/components/MediaLibraryPanel";
+import { UiTranslationAdminPanel } from "@/components/UiTranslationAdminPanel";
+import { MediaLibraryPanel } from "@/components/MediaLibraryPanel";
 import MarketplaceStoresView from "@/components/MarketplaceStoresView";
 import ContentMarketplace from "@/pages/ContentMarketplace";
 import VcardCardsAdmin from "@/pages/VcardCardsAdmin";
-import { SecurityView } from "@/components/SecurityView";
-import { SystemHealthView } from "@/components/SystemHealthView";
-import SuperAdminView from "@/components/SuperAdminView";
 import ActivitiesSectorsAdmin from "@/components/ActivitiesSectorsAdmin";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -18,14 +15,12 @@ import { trpc } from "@/lib/trpc";
 export default function SuperAdminApp() {
   const { user, logout } = useAuth();
   const [active, setActive] = useState<CentralAdminNavKey>("overview");
-  const ordersQuery = trpc.orders.list.useQuery(undefined, { retry: 1 });
   const notificationsQuery = trpc.notifications.mine.useQuery(undefined, { retry: 1, refetchInterval: 20000 });
-  const orders = ordersQuery.data ?? [];
   const unreadNotifications = (notificationsQuery.data ?? []).filter((item) => !item.readAt).length;
 
   const panel = useMemo(() => {
     switch (active) {
-      case "admin": return <SuperAdminView />;
+      case "admin": return <PlatformOverview onNavigate={() => setActive("activities")} />;
       case "activities": return <ActivitiesSectorsAdmin />;
       case "accounts": return <AccountManagementPanel />;
       case "settings":
@@ -35,8 +30,8 @@ export default function SuperAdminApp() {
       case "stores": return <MarketplaceStoresView />;
       case "trend": return <ContentMarketplace />;
       case "nfc": return <VcardCardsAdmin />;
-      case "security": return <SecurityView />;
-      case "health": return <SystemHealthView />;
+      case "security":
+      case "health": return <PlatformSettingsPanel />;
       case "overview": return undefined;
     }
   }, [active]);
@@ -45,7 +40,7 @@ export default function SuperAdminApp() {
     <CentralAdminCommandCenter
       active={active}
       onNavigate={setActive}
-      orders={orders}
+      orders={[]}
       notificationCount={unreadNotifications}
       userName={user?.name ?? "Super Admin"}
       userEmail={user?.email ?? ""}
