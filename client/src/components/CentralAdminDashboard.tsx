@@ -9,6 +9,7 @@ import {
   Cookie, Megaphone, Send, Pencil, Store,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { ActivitiesSectorsView } from "@/components/ActivitiesSectorsView";
 import { toast } from "sonner";
 
 const translations = {
@@ -423,71 +424,16 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme, embedded = 
 
           <main className="flex-1 space-y-5 overflow-y-auto bg-slate-50 p-4 sm:p-5 dark:bg-[#08121f]">
             {currentSection === 'sectors' ? (
-              <>
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h2 className="text-base font-black">{t.sectors_title}</h2>
-                      <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{t.sectors_subtitle}</p>
-                    </div>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-black text-orange-600 ring-1 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/30">
-                      <Store size={12} />
-                      {sectors.length} {lang === 'ar' ? 'قطاعات' : lang === 'en' ? 'Sectors' : 'Secteurs'}
-                    </span>
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-                  {sectors.map((sector) => {
-                    const NavIcon = sector.key === 'trend' ? Sparkles : (SECTOR_NAV.find((n) => n.key === (sector.alias || sector.key))?.icon ?? ShieldAlert);
-                    const label = getSectorLabel(sector);
-                    const isTrend = sector.source === 'contentCreators';
-                    return (
-                      <div key={sector.key} className={`flex min-h-[330px] flex-col overflow-hidden rounded-2xl border shadow-sm transition ${sector.active ? 'border-slate-200 bg-white dark:border-slate-700/60 dark:bg-[#1e293b]' : 'border-dashed border-slate-300 bg-slate-50/60 opacity-75 dark:border-slate-700 dark:bg-[#1e293b]/60'}`}>
-                        <div className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
-                          {sector.coverUrl ? <img src={sector.coverUrl} alt={label} className="h-full w-full object-cover object-center" /> : <div className="flex h-full items-center justify-center text-slate-400"><NavIcon size={42} /></div>}
-                        </div>
-                        <div className="flex flex-1 flex-col gap-3 p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${sector.active ? 'bg-orange-50 text-orange-500 dark:bg-orange-500/10 dark:text-orange-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'}`}>
-                              <NavIcon size={20} />
-                            </span>
-                            <div>
-                              <p className="text-sm font-black text-slate-900 dark:text-white">{label}</p>
-                              <p className="mt-0.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500">{sector.entityCount} {sector.entityCount === 1 ? t.sector_entities : t.sector_entities}</p>
-                            </div>
-                          </div>
-                          <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[9px] font-black ring-1 ${sector.active ? 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30' : 'bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700'}`}>
-                            {sector.active ? t.sector_status_active : t.sector_status_inactive}
-                          </span>
-                        </div>
-                        {isTrend && (
-                          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-black text-amber-600 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30">
-                            <Sparkles size={9} />
-                            {lang === 'ar' ? 'سوق المبدعين' : lang === 'en' ? 'Creators Marketplace' : 'Marché des Créateurs'}
-                          </span>
-                        )}
-                        <div className="mt-auto flex flex-wrap gap-1.5">
-                          <button type="button" onClick={() => openEditModal(sector)} className="flex cursor-pointer items-center gap-1 rounded-lg bg-slate-50 px-2 py-1.5 text-[10px] font-black text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-700">
-                            <Pencil size={11} />{t.btn_edit_labels}
-                          </button>
-                          <button type="button" onClick={() => openNotifyModal(sector)} disabled={notifySectorMutation.isPending || notifyEntitiesMutation.isPending} className="flex cursor-pointer items-center gap-1 rounded-lg bg-orange-50 px-2 py-1.5 text-[10px] font-black text-orange-600 ring-1 ring-orange-200 transition hover:bg-orange-100 disabled:opacity-50 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/30 dark:hover:bg-orange-500/20">
-                            <Megaphone size={11} />{t.btn_notify}
-                          </button>
-                          {!isTrend && (
-                            <button type="button" onClick={() => toggleSectorActive(sector)} disabled={updateSectorMutation.isPending} className={`flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black ring-1 ring-inset transition disabled:opacity-50 ${sector.active ? 'bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/30 dark:hover:bg-rose-500/20' : 'bg-emerald-50 text-emerald-600 ring-emerald-200 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30 dark:hover:bg-emerald-500/20'}`}>
-                              {sector.active ? <ToggleLeft size={12} /> : <ToggleRight size={12} />}
-                              {sector.active ? t.btn_deactivate : t.btn_activate}
-                            </button>
-                          )}
-                        </div>
-                        {!sector.active && !isTrend && <p className="text-[9px] text-slate-400 dark:text-slate-500">{lang === 'ar' ? 'القطاع موقوف — لا يستقبل طلبات جديدة' : lang === 'en' ? 'Sector inactive — not accepting new orders' : 'Secteur inactif — n\'accepte pas les nouvelles commandes'}</p>}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
+              <ActivitiesSectorsView
+                sectors={sectors}
+                lang={lang}
+                getSectorLabel={getSectorLabel}
+                onEdit={openEditModal}
+                onNotify={openNotifyModal}
+                onToggle={toggleSectorActive}
+                updatePending={updateSectorMutation.isPending}
+                notifyPending={notifySectorMutation.isPending || notifyEntitiesMutation.isPending}
+              />
             ) : showEntityTable ? (
               <>
                 {isSectorSection && (() => {
