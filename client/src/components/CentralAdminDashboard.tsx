@@ -264,12 +264,11 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
   const showEntityTable = currentSection === 'overview' || isSectorSection;
 
   const kpis = [
-    { label: t.card_restaurants, value: String(summary?.active ?? 0), trend: String(liveData?.entities.filter((row) => row.status).length ?? 0), up: true, icon: TrendingUp },
-    { label: t.card_accounts, value: String(summary?.total ?? 0), trend: String(summary?.suspended ?? 0), up: false, icon: Users },
-    { label: t.card_subscriptions, value: String(liveData?.byPlan['Enterprise'] ?? 0), trend: String(liveData?.byPlan['Pro'] ?? 0), up: true, icon: ShieldCheck },
-    { label: t.card_notifications, value: String(liveData?.recentGovernance?.length ?? 0), trend: String(summary?.suspended ?? 0), up: false, icon: Bell },
-    { label: t.card_transfers, value: String(summary?.catalogs ?? 0), trend: String(liveData?.byPlan['Basic'] ?? 0), up: false, icon: FileText },
-    { label: t.card_files, value: String((liveData?.entities.filter((row) => row.catalog?.totalItems).length ?? 0)), trend: '∞', up: true, icon: FolderOpen },
+    { label: t.card_restaurants, value: String(summary?.active ?? 0), detail: lang === 'ar' ? 'منشآت مفعلة' : 'active entities', icon: Store },
+    { label: t.card_accounts, value: String(summary?.total ?? 0), detail: lang === 'ar' ? `${summary?.suspended ?? 0} موقوف` : `${summary?.suspended ?? 0} suspended`, icon: Users },
+    { label: t.card_subscriptions, value: String((liveData?.byPlan['Enterprise'] ?? 0) + (liveData?.byPlan['Pro'] ?? 0)), detail: lang === 'ar' ? 'Pro + Enterprise' : 'Pro + Enterprise', icon: ShieldCheck },
+    { label: lang === 'ar' ? 'الكتالوجات النشطة' : 'Active catalogs', value: String(summary?.catalogs ?? 0), detail: lang === 'ar' ? 'بيانات حية' : 'live data', icon: FolderOpen },
+    { label: t.card_notifications, value: String(liveData?.recentGovernance?.length ?? 0), detail: lang === 'ar' ? 'سجل الحوكمة الأخير' : 'recent governance', icon: Bell },
   ];
 
   const planCls: Record<'Basic' | 'Pro' | 'Enterprise', string> = {
@@ -461,26 +460,28 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                     {currentSection === 'overview' && (
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,.7fr)]">
                     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <h3 className="text-sm font-black">{lang === 'ar' ? 'نظرة عامة على النشاط' : lang === 'en' ? 'Activity overview' : 'Aperçu de l’activité'}</h3>
-                          <p className="mt-1 text-[11px] text-slate-400">{lang === 'ar' ? 'ملخص حي للمنشآت والاشتراكات والعمليات' : lang === 'en' ? 'Live summary of entities, subscriptions and operations' : 'Résumé en direct des entités, abonnements et opérations'}</p>
+                          <p className="text-[11px] font-bold text-orange-500">{new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                          <h2 className="mt-1 text-xl font-black">{lang === 'ar' ? 'مرحباً بعودتك 👋' : lang === 'fr' ? 'Bon retour 👋' : 'Welcome back 👋'}</h2>
+                          <p className="mt-1 text-[11px] text-slate-400">{lang === 'ar' ? 'هذه نظرة مباشرة على حالة المنصة والأنشطة.' : 'Live platform and business overview.'}</p>
                         </div>
-                        <div className="flex gap-1 rounded-xl bg-slate-100 p-1 text-[10px] font-black dark:bg-white/5">
-                          {['اليوم','الأسبوع','الشهر'].map((period, index) => <span key={period} className={`rounded-lg px-3 py-1.5 ${index === 2 ? 'bg-sky-500 text-white' : 'text-slate-400'}`}>{period}</span>)}
-                        </div>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black text-slate-500 dark:bg-white/5 dark:text-slate-300">{lang === 'ar' ? 'بيانات مباشرة' : 'Live data'}</span>
                       </div>
-                      <div className="mt-5 grid h-44 grid-cols-12 items-end gap-2 rounded-xl border border-slate-100 bg-slate-50/70 px-4 pb-4 pt-8 dark:border-white/5 dark:bg-[#07111f]">
-                        {[38,52,45,66,58,73,62,84,70,91,76,88].map((height, index) => (
-                          <div key={index} className="flex h-full items-end gap-1">
-                            <span className="w-1/2 rounded-t bg-emerald-400/80" style={{height: `${height}%`}} />
-                            <span className="w-1/2 rounded-t bg-sky-500/80" style={{height: `${Math.max(24, height - 18)}%`}} />
-                          </div>
-                        ))}
+                      <div className="mt-5 grid grid-cols-3 gap-3">
+                        {[
+                          [lang === 'ar' ? 'Basic' : 'Basic', liveData?.byPlan['Basic'] ?? 0],
+                          ['Pro', liveData?.byPlan['Pro'] ?? 0],
+                          ['Enterprise', liveData?.byPlan['Enterprise'] ?? 0],
+                        ].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-center dark:border-white/5 dark:bg-[#07111f]"><p className="text-xl font-black">{String(value)}</p><p className="mt-1 text-[10px] font-bold text-slate-400">{String(label)}</p></div>)}
+                      </div>
+                      <div className="mt-4 rounded-xl border border-dashed border-slate-200 p-3 text-[11px] text-slate-500 dark:border-white/10 dark:text-slate-400">
+                        {lang === 'ar' ? 'الرسم المالي سيظهر عند توفر مصدر إيرادات/طلبات موثوق من الخادم — لن تُعرض أرقام تجريبية.' : 'Financial chart will appear when a trusted revenue/orders source is available — no demo figures are shown.'}
                       </div>
                     </section>
                     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
-                      <h3 className="text-sm font-black">{lang === 'ar' ? 'الحالة النظامية' : lang === 'en' ? 'System status' : 'État du système'}</h3>
+                      <h3 className="text-sm font-black">{lang === 'ar' ? 'الحالة النظامية' : lang === 'fr' ? 'État du système' : 'System status'}</h3>
+                      <p className="mt-1 text-[10px] text-slate-400">{lang === 'ar' ? 'لا نفترض أن الخدمة متصلة بدون فحص فعلي.' : 'No service is marked online without a real health check.'}</p>
                       <div className="mt-5 space-y-3 text-xs">
                         {[
                           lang === 'ar' ? 'الخادم' : 'Server',
@@ -488,11 +489,9 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                           lang === 'ar' ? 'بوابة الدفع' : 'Payment gateway',
                           lang === 'ar' ? 'إرسال الرسائل' : 'Messaging',
                           lang === 'ar' ? 'التخزين السحابي' : 'Cloud storage',
-                        ].map((service) => <div key={service} className="flex items-center justify-between"><span className="font-bold text-slate-500 dark:text-slate-300">{service}</span><span className="flex items-center gap-2 font-black text-emerald-500"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />{lang === 'ar' ? 'متصل' : 'Online'}</span></div>)}
+                        ].map((service) => <div key={service} className="flex items-center justify-between"><span className="font-bold text-slate-500 dark:text-slate-300">{service}</span><span className="flex items-center gap-2 font-black text-amber-500"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" />{lang === 'ar' ? 'غير مفحوص' : 'Not checked'}</span></div>)}
                       </div>
-                      <div className="mt-5 rounded-xl bg-emerald-500/10 px-3 py-2 text-center text-[10px] font-black text-emerald-500">{lang === 'ar' ? 'جميع الأنظمة تعمل بشكل طبيعي' : 'All systems operational'}</div>
-                    </section>
-                  </div>
+                    </section>                  </div>
                 )}
 
                 {currentSection === 'overview' && (
@@ -523,10 +522,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-orange-500 dark:bg-orange-500/10 dark:text-orange-400">
                             <Icon size={17} />
                           </span>
-                          <span className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-black ${kpi.up ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400'}`}>
-                            {kpi.up ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
-                            {kpi.trend}
-                          </span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black text-slate-500 dark:bg-white/5 dark:text-slate-300">{kpi.detail}</span>
                         </div>
                         <p className="mt-3 text-2xl font-black tracking-tight">{kpi.value}</p>
                         <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">{kpi.label}</p>
