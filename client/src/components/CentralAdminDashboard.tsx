@@ -479,7 +479,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                     <div className="grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(260px,1fr)]">
                       <section className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-5">
                         <div className="flex items-center justify-between"><h2 className="text-sm font-black">{lang === 'ar' ? 'نظرة عامة على المبيعات' : 'Sales overview'}</h2><span className="rounded-lg border border-slate-700 px-2 py-1 text-[10px] text-slate-400">{lang === 'ar' ? 'بيانات مباشرة فقط' : 'Live data only'}</span></div>
-                        <div className="mt-4 flex h-44 items-center justify-center rounded-lg border border-dashed border-slate-700 bg-[#08111d] px-5 text-center text-xs text-slate-500">{lang === 'ar' ? 'سيظهر الرسم البياني فور ربط مصدر الإيرادات والطلبات الموثوق — لا توجد أرقام تجريبية.' : 'The chart appears when trusted revenue/order aggregates are connected — no demo figures.'}</div>
+                        <div className="mt-4 flex h-44 items-center justify-center rounded-lg border border-dashed border-slate-700 bg-[#08111d] px-5 text-center text-xs text-slate-500">{lang === 'ar' ? 'سيظهر الرسم البياني فور ربط مصدر الإيرادات والطلبات الموثوق — لا توجد أرقام تجريبية. الحالة الحالية: غير مفحوص.' : 'Financial chart will appear when a trusted revenue/orders source is available — no demo figures are shown.'}</div>
                       </section>
                       <section className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-5">
                         <h2 className="text-sm font-black">{lang === 'ar' ? 'توزيع الفئات' : 'Category distribution'}</h2>
