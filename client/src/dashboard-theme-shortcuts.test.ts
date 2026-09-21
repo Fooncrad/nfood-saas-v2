@@ -5,13 +5,12 @@ import { resolve } from "node:path";
 const read = (relativePath: string) => readFileSync(resolve(process.cwd(), "client/src", relativePath), "utf8");
 
 describe("dashboard theme, notifications, and shortcuts", () => {
-  it("exposes a persistent dark-mode control in the header", () => {
-    const home = read("pages/Home.tsx");
-    expect(home).toContain("useTheme");
-    expect(home).toContain("toggleTheme");
-    expect(home).toContain("dark:border-slate-700");
-    expect(home).toContain("Sun");
-    expect(home).toContain("Moon");
+  it("exposes theme controls in the active admin command center", () => {
+    const admin = read("components/CentralAdminCommandCenter.tsx");
+    expect(admin).toContain("useTheme");
+    expect(admin).toContain("Sun");
+    expect(admin).toContain("Moon");
+    expect(admin).toContain("setTheme");
   });
 
   it("keeps the active admin command center wired to navigation and notifications", () => {
