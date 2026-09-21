@@ -35,7 +35,7 @@ import type { Order } from "@/components/homeNavigation";
 
 export type CentralAdminNavKey = "overview" | "admin" | "activities" | "nfc" | "site" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend" | "security" | "health";
 
-const NAV_ORDER: CentralAdminNavKey[] = ["overview", "admin", "activities", "stores", "site", "nfc", "trend", "settings", "languages", "files", "security", "health"];
+const NAV_ORDER: CentralAdminNavKey[] = ["overview", "activities", "stores", "site", "nfc", "trend", "settings", "languages", "files", "security", "health"];
 
 const NAV_LABELS: Record<CentralAdminNavKey, { ar: string; en: string }> = {
   overview: { ar: "نظرة عامة", en: "Overview" },
