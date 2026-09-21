@@ -76,7 +76,7 @@ export default function Home() {
   const adminPanelChildren = useMemo(() => {
     switch (active as CentralAdminNavKey) {
       case "admin": return <SuperAdminView />;
-      case "activities": return <CentralAdminDashboard currentTheme="dark" />;
+      case "activities": return <CentralAdminDashboard currentTheme="dark" embedded />;
       case "accounts": return <AccountManagementPanel />;
       case "settings": return <PlatformSettingsPanel />;
       case "site": return <PlatformSettingsPanel />;
