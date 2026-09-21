@@ -12,10 +12,15 @@ import { SecurityView } from "@/components/SecurityView";
 import { SystemHealthView } from "@/components/SystemHealthView";
 import SuperAdminView from "@/components/SuperAdminView";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 
 export default function SuperAdminApp() {
   const { user, logout } = useAuth();
   const [active, setActive] = useState<CentralAdminNavKey>("overview");
+  const ordersQuery = trpc.orders.list.useQuery(undefined, { retry: 1 });
+  const notificationsQuery = trpc.notifications.mine.useQuery(undefined, { retry: 1, refetchInterval: 20000 });
+  const orders = ordersQuery.data ?? [];
+  const unreadNotifications = (notificationsQuery.data ?? []).filter((item) => !item.readAt).length;
 
   const panel = useMemo(() => {
     switch (active) {
@@ -39,7 +44,8 @@ export default function SuperAdminApp() {
     <CentralAdminCommandCenter
       active={active}
       onNavigate={setActive}
-      orders={[]}
+      orders={orders}
+      notificationCount={unreadNotifications}
       userName={user?.name ?? "Super Admin"}
       userEmail={user?.email ?? ""}
       onLogout={() => void logout()}
