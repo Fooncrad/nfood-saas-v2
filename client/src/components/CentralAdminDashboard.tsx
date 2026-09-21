@@ -464,79 +464,33 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                     </div>
                   );
                 })()}
-                    {currentSection === 'overview' && (
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,.7fr)]">
-                    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="text-[11px] font-bold text-orange-500">{new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                          <h2 className="mt-1 text-xl font-black">{lang === 'ar' ? 'مرحباً بعودتك 👋' : lang === 'fr' ? 'Bon retour 👋' : 'Welcome back 👋'}</h2>
-                          <p className="mt-1 text-[11px] text-slate-400">{lang === 'ar' ? 'هذه نظرة مباشرة على حالة المنصة والأنشطة.' : 'Live platform and business overview.'}</p>
-                        </div>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black text-slate-500 dark:bg-white/5 dark:text-slate-300">{lang === 'ar' ? 'بيانات مباشرة' : 'Live data'}</span>
-                      </div>
-                      <div className="mt-5 grid grid-cols-3 gap-3">
-                        {[
-                          [lang === 'ar' ? 'Basic' : 'Basic', liveData?.byPlan['Basic'] ?? 0],
-                          ['Pro', liveData?.byPlan['Pro'] ?? 0],
-                          ['Enterprise', liveData?.byPlan['Enterprise'] ?? 0],
-                        ].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-center dark:border-white/5 dark:bg-[#07111f]"><p className="text-xl font-black">{String(value)}</p><p className="mt-1 text-[10px] font-bold text-slate-400">{String(label)}</p></div>)}
-                      </div>
-                      <div className="mt-4 rounded-xl border border-dashed border-slate-200 p-3 text-[11px] text-slate-500 dark:border-white/10 dark:text-slate-400">
-                        {lang === 'ar' ? 'الرسم المالي سيظهر عند توفر مصدر إيرادات/طلبات موثوق من الخادم — لن تُعرض أرقام تجريبية.' : 'Financial chart will appear when a trusted revenue/orders source is available — no demo figures are shown.'}
-                      </div>
-                    </section>
-                    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
-                      <h3 className="text-sm font-black">{lang === 'ar' ? 'الحالة النظامية' : lang === 'fr' ? 'État du système' : 'System status'}</h3>
-                      <p className="mt-1 text-[10px] text-slate-400">{lang === 'ar' ? 'لا نفترض أن الخدمة متصلة بدون فحص فعلي.' : 'No service is marked online without a real health check.'}</p>
-                      <div className="mt-5 space-y-3 text-xs">
-                        {[
-                          lang === 'ar' ? 'الخادم' : 'Server',
-                          lang === 'ar' ? 'قاعدة البيانات' : 'Database',
-                          lang === 'ar' ? 'بوابة الدفع' : 'Payment gateway',
-                          lang === 'ar' ? 'إرسال الرسائل' : 'Messaging',
-                          lang === 'ar' ? 'التخزين السحابي' : 'Cloud storage',
-                        ].map((service) => <div key={service} className="flex items-center justify-between"><span className="font-bold text-slate-500 dark:text-slate-300">{service}</span><span className="flex items-center gap-2 font-black text-amber-500"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" />{lang === 'ar' ? 'غير مفحوص' : 'Not checked'}</span></div>)}
-                      </div>
-                    </section>                  </div>
-                )}
-
                 {currentSection === 'overview' && (
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                    {[
-                      [Settings, lang === 'ar' ? 'التحكم في الميزات' : 'Feature controls', lang === 'ar' ? 'إدارة الميزات' : 'Manage'],
-                      [ShieldCheck, lang === 'ar' ? 'باقات الاشتراك' : 'Subscription plans', lang === 'ar' ? 'إدارة الباقات' : 'Manage plans'],
-                      [Send, lang === 'ar' ? 'قوالب الرسائل' : 'Message templates', lang === 'ar' ? 'البريد · الرسائل · الإشعارات' : 'Email · SMS · notifications'],
-                      [Store, lang === 'ar' ? 'إدارة المتاجر' : 'Store management', lang === 'ar' ? 'عرض وتفعيل وتعديل' : 'View, enable and edit'],
-                      [Sparkles, lang === 'ar' ? 'تخصيص موقعك' : 'Site customization', lang === 'ar' ? 'الهوية والمظهر العام' : 'Branding & appearance'],
-                    ].map(([Icon, title, subtitle], index) => {
-                      const QuickIcon = Icon as typeof Settings;
-                      return <button key={String(title)} type="button" onClick={() => setCurrentSection(index === 2 ? 'settings' : index === 3 ? 'admin' : index === 4 ? 'files' : index === 0 ? 'settings' : 'admin')} className="group rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400/50 dark:border-white/10 dark:bg-[#0c1828]">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500"><QuickIcon size={19} /></span>
-                        <p className="mt-3 text-sm font-black">{String(title)}</p>
-                        <p className="mt-1 text-[10px] font-semibold text-slate-400">{String(subtitle)}</p>
-                      </button>;
-                    })}
-                  </div>
-                )}
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                  {kpis.map((kpi) => {
-                    const Icon = kpi.icon;
-                    return (
-                      <div key={kpi.label} className="rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-orange-500 dark:bg-orange-500/10 dark:text-orange-400">
-                            <Icon size={17} />
-                          </span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black text-slate-500 dark:bg-white/5 dark:text-slate-300">{kpi.detail}</span>
-                        </div>
-                        <p className="mt-3 text-2xl font-black tracking-tight">{kpi.value}</p>
-                        <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">{kpi.label}</p>
+                  <>
+                    <section className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h1 className="text-2xl font-black">{lang === 'ar' ? 'مرحباً بعودتك 👋' : lang === 'fr' ? 'Bon retour 👋' : 'Welcome back 👋'}</h1>
+                        <p className="mt-1 text-xs text-slate-400">{lang === 'ar' ? 'إليك نظرة شاملة على أداء منصتك اليوم' : 'A live overview of your platform today'}</p>
                       </div>
-                    );
-                  })}
-                </div>
-
+                      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-500 dark:border-white/10 dark:bg-[#0c1828] dark:text-slate-300">{new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                    </section>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                      {kpis.map((kpi) => { const Icon = kpi.icon; return <div key={kpi.label} className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-4 shadow-sm"><div className="flex items-center justify-between"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400"><Icon size={19}/></span><span className="text-[10px] font-black text-emerald-400">{kpi.detail}</span></div><p className="mt-3 text-2xl font-black">{kpi.value}</p><p className="mt-1 text-[11px] text-slate-400">{kpi.label}</p></div>})}
+                    </div>
+                    <div className="grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(260px,1fr)]">
+                      <section className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-5">
+                        <div className="flex items-center justify-between"><h2 className="text-sm font-black">{lang === 'ar' ? 'نظرة عامة على المبيعات' : 'Sales overview'}</h2><span className="rounded-lg border border-slate-700 px-2 py-1 text-[10px] text-slate-400">{lang === 'ar' ? 'بيانات مباشرة فقط' : 'Live data only'}</span></div>
+                        <div className="mt-4 flex h-44 items-center justify-center rounded-lg border border-dashed border-slate-700 bg-[#08111d] px-5 text-center text-xs text-slate-500">{lang === 'ar' ? 'سيظهر الرسم البياني فور ربط مصدر الإيرادات والطلبات الموثوق — لا توجد أرقام تجريبية.' : 'The chart appears when trusted revenue/order aggregates are connected — no demo figures.'}</div>
+                      </section>
+                      <section className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-5">
+                        <h2 className="text-sm font-black">{lang === 'ar' ? 'توزيع الفئات' : 'Category distribution'}</h2>
+                        <div className="mt-5 space-y-3">{Object.entries(liveData?.byPlan ?? {}).map(([label,value]) => <div key={label}><div className="mb-1 flex justify-between text-[11px]"><span>{label}</span><span className="font-black">{String(value)}</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-orange-500" style={{width: `${Math.min(100, Number(value || 0) * 10)}%`}} /></div></div>)}</div>
+                      </section>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                      {[[Settings,'التحكم في الميزات','إدارة الميزات'],[ShieldCheck,'باقات الاشتراك','إدارة الباقات'],[Send,'قوالب الرسائل','البريد والرسائل والإشعارات'],[Store,'إدارة المتاجر','عرض وتفعيل وتعديل'],[Sparkles,'تخصيص موقعك','الهوية والمظهر العام']].map(([Icon,title,subtitle],index)=>{const QuickIcon=Icon as typeof Settings; return <button key={String(title)} type="button" onClick={()=>setCurrentSection(index===2?'settings':index===3?'admin':index===4?'files':index===0?'settings':'admin')} className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-4 text-start transition hover:border-orange-500/60"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400"><QuickIcon size={19}/></span><p className="mt-3 text-sm font-black">{lang==='ar'?String(title):String(title)}</p><p className="mt-1 text-[10px] text-slate-400">{String(subtitle)}</p></button>})}
+                    </div>
+                  </>
+                )}
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
                   <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
                     <button type="button" onClick={() => setActiveTab('orders')} className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-black transition ${activeTab === 'orders' ? 'bg-white text-orange-600 shadow-sm dark:bg-slate-700 dark:text-orange-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>
