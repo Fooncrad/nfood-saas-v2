@@ -10,6 +10,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_STORAGE_KEY, LanguageProvider, languageStorageKey, isUiLanguage, useLanguage, type Language } from "./contexts/LanguageContext";
 const routeLoaders = {
   Home: () => import("./pages/Home"),
+  SuperAdminApp: () => import("./pages/SuperAdminApp"),
   RestaurantPublic: () => import("./pages/RestaurantPublic"),
   RestaurantsDirectory: () => import("./pages/RestaurantsDirectory"),
   CustomerDisplay: () => import("./pages/CustomerDisplay"),
@@ -44,6 +45,7 @@ const routeLoaders = {
   AffiliateView: () => import("./pages/AffiliateView"),
 };
 const Home = lazy(routeLoaders.Home);
+const SuperAdminApp = lazy(routeLoaders.SuperAdminApp);
 const RestaurantPublic = lazy(routeLoaders.RestaurantPublic);
 const RestaurantsDirectory = lazy(routeLoaders.RestaurantsDirectory);
 const CustomerDisplay = lazy(routeLoaders.CustomerDisplay);
@@ -138,7 +140,7 @@ function SuperAdminRoute() {
     if (!isAdmin) navigate("/");
   }, [loading, user, isAdmin, navigate]);
   if (loading || !user || !isAdmin) return <PageLoading />;
-  return <Home />;
+  return <SuperAdminApp />;
 }
 
 function Router() {
