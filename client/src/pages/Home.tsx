@@ -31,7 +31,7 @@ import VcardCardsAdmin from "@/pages/VcardCardsAdmin";
 import { StorefrontCustomizationPanel } from "@/components/StorefrontCustomizationPanel";
 
 type OrderStatus = "new" | "preparing" | "ready" | "completed";
-type NavKey = "overview" | "admin" | "nfc" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "storefront" | "reservations" | "remote" | "security" | "health" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend";
+type NavKey = "overview" | "admin" | "nfc" | "site" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "storefront" | "reservations" | "remote" | "security" | "health" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend";
 
 type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string };
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
@@ -77,6 +77,7 @@ export default function Home() {
       case "admin": return <SuperAdminView />;
       case "accounts": return <AccountManagementPanel />;
       case "settings": return <PlatformSettingsPanel />;
+      case "site": return <PlatformSettingsPanel />;
       case "languages": return <UiTranslationAdminPanel />;
       case "files": return <MediaLibraryPanel isCentralAdmin />;
       case "stores": return <MarketplaceStoresView />;
