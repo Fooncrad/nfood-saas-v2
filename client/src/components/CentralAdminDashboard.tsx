@@ -286,7 +286,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
           <div className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden" onClick={() => setIsSidebarOpen(false)} />
         )}
 
-        <aside className={`fixed inset-y-0 start-0 z-40 flex w-64 flex-col border-e border-white/10 bg-[#07111f] text-white shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 dark:bg-[#07111f] ${isSidebarOpen ? 'translate-x-0' : t.dir === 'rtl' ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <aside className={`fixed inset-y-0 end-0 z-40 flex w-64 flex-col border-e border-white/10 bg-[#07111f] text-white shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 dark:bg-[#07111f] ${isSidebarOpen ? 'translate-x-0' : t.dir === 'rtl' ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
           <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-400/30 bg-orange-500/10 font-black text-orange-400">NF</div>
@@ -300,23 +300,23 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
             </button>
           </div>
 
-          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-            <SidebarLink icon={<LayoutDashboard size={18} />} label={t.nav_overview} active={currentSection === 'overview'} onClick={() => setCurrentSection('overview')} />
-            <SidebarLink icon={<ShieldAlert size={18} />} label={t.nav_superAdmin} active={currentSection === 'admin'} onClick={() => setCurrentSection('admin')} />
-            <SidebarLink icon={<Users size={18} />} label={t.nav_accounts} active={currentSection === 'accounts'} onClick={() => setCurrentSection('accounts')} />
-            <SectionGroupLabel>{t.settingsGroup ?? 'الإعدادات والتخصيص'}</SectionGroupLabel>
-            <SidebarLink icon={<Settings size={18} />} label={t.nav_settings} active={currentSection === 'settings'} onClick={() => setCurrentSection('settings')} />
-            <SidebarLink icon={<Languages size={18} />} label={t.nav_languages} active={currentSection === 'languages'} onClick={() => setCurrentSection('languages')} />
-            <SidebarLink icon={<FolderOpen size={18} />} label={t.nav_files} active={currentSection === 'files'} onClick={() => setCurrentSection('files')} />
-            <SidebarLink icon={<TrendingUp size={18} />} label={t.nav_trend} active={currentSection === 'trend'} onClick={() => { setCurrentSection('trend'); window.location.assign('/marketplace'); }} />
-            <SidebarLink icon={<ShieldCheck size={18} />} label={t.nav_security} active={currentSection === 'security'} onClick={() => setCurrentSection('security')} />
-            <SidebarLink icon={<HeartPulse size={18} />} label={t.nav_health} active={currentSection === 'health'} onClick={() => setCurrentSection('health')} />
-            <SectionGroupLabel>{t.nav_future_modules}</SectionGroupLabel>
-            <SidebarLink icon={<Store size={18} />} label={t.nav_sectors} active={currentSection === 'sectors'} onClick={() => setCurrentSection('sectors')} />
-            {SECTOR_NAV.map((sector) => {
-              const Icon = sector.icon;
-              return <SidebarLink key={sector.key} icon={<Icon size={18} />} label={sector.label(t)} active={currentSection === sector.key} onClick={() => setCurrentSection(sector.key)} />;
-            })}
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 text-[13px]">
+            <SidebarLink icon={<LayoutDashboard size={18} />} label={lang === 'ar' ? 'الرئيسية' : t.nav_overview} active={currentSection === 'overview'} onClick={() => setCurrentSection('overview')} />
+            <SectionGroupLabel>{lang === 'ar' ? 'المتاجر والمطاعم' : 'Stores & Restaurants'}</SectionGroupLabel>
+            <SidebarLink icon={<Store size={18} />} label={lang === 'ar' ? 'جميع المتاجر' : 'All stores'} active={currentSection === 'admin'} onClick={() => setCurrentSection('admin')} />
+            <SidebarLink icon={<Users size={18} />} label={lang === 'ar' ? 'إدارة المستخدمين' : t.nav_accounts} active={currentSection === 'accounts'} onClick={() => setCurrentSection('accounts')} />
+            <SidebarLink icon={<ShieldCheck size={18} />} label={lang === 'ar' ? 'الاشتراكات والباقات' : 'Subscriptions & plans'} active={currentSection === 'sectors'} onClick={() => setCurrentSection('sectors')} />
+            <SidebarLink icon={<FileText size={18} />} label={lang === 'ar' ? 'الطلبات والحجوزات' : 'Orders & reservations'} active={false} onClick={() => setCurrentSection('admin')} />
+            <SidebarLink icon={<Megaphone size={18} />} label={lang === 'ar' ? 'التسويق والعروض' : 'Marketing & offers'} active={false} onClick={() => setCurrentSection('admin')} />
+            <SidebarLink icon={<Send size={18} />} label={lang === 'ar' ? 'الرسائل والإشعارات' : 'Messages & notifications'} active={currentSection === 'settings'} onClick={() => setCurrentSection('settings')} />
+            <SidebarLink icon={<TrendingUp size={18} />} label={lang === 'ar' ? 'التحليلات والتقارير' : 'Analytics & reports'} active={false} onClick={() => setCurrentSection('overview')} />
+            <SidebarLink icon={<Sparkles size={18} />} label={lang === 'ar' ? 'المظهر والهوية' : 'Appearance & identity'} active={currentSection === 'files'} onClick={() => setCurrentSection('files')} />
+            <SidebarLink icon={<Settings size={18} />} label={lang === 'ar' ? 'الإعدادات العامة' : t.nav_settings} active={currentSection === 'settings'} onClick={() => setCurrentSection('settings')} />
+            <SidebarLink icon={<FolderOpen size={18} />} label={lang === 'ar' ? 'المحتوى والصفحات' : 'Content & pages'} active={currentSection === 'files'} onClick={() => setCurrentSection('files')} />
+            <SidebarLink icon={<Languages size={18} />} label={lang === 'ar' ? 'اللغات والترجمة' : t.nav_languages} active={currentSection === 'languages'} onClick={() => setCurrentSection('languages')} />
+            <SidebarLink icon={<ShieldCheck size={18} />} label={lang === 'ar' ? 'النظام والأمان' : t.nav_security} active={currentSection === 'security'} onClick={() => setCurrentSection('security')} />
+            <SectionGroupLabel>{lang === 'ar' ? 'NFOOD' : 'NFOOD'}</SectionGroupLabel>
+            <SidebarLink icon={<TrendingUp size={18} />} label={lang === 'ar' ? 'سوق NFOOD' : 'NFOOD Marketplace'} active={false} onClick={() => window.location.assign('/marketplace')} />
           </nav>
 
           <div className="border-t border-slate-700/50 p-4">
