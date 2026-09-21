@@ -22,9 +22,11 @@ type Props = {
   onToggle: (sector: Sector) => void;
   updatePending: boolean;
   notifyPending: boolean;
+  loading?: boolean;
+  usingFallback?: boolean;
 };
 
-export function ActivitiesSectorsView({ sectors, lang, getSectorLabel, onEdit, onNotify, onToggle, updatePending, notifyPending }: Props) {
+export function ActivitiesSectorsView({ sectors, lang, getSectorLabel, onEdit, onNotify, onToggle, updatePending, notifyPending, loading = false, usingFallback = false }: Props) {
   const active = sectors.filter((sector) => sector.active).length;
   const inactive = sectors.length - active;
   const registered = sectors.reduce((sum, sector) => sum + Number(sector.entityCount || 0), 0);
@@ -34,16 +36,17 @@ export function ActivitiesSectorsView({ sectors, lang, getSectorLabel, onEdit, o
     search: "بحث عن نشاط...", all: "كل الحالات", newest: "ترتيب حسب: الأحدث",
     add: "إضافة نشاط جديد", edit: "تعديل", preview: "معاينة", registeredLabel: "مسجل",
     tip: "نصيحة", tipText: "يمكنك تخصيص صورة الغلاف لكل نشاط ليظهر بشكل جميل في صفحات الموقع وتطبيقات الجوال.",
-    noResults: "لا توجد أنشطة مطابقة للبحث.", statusActive: "نشط", statusInactive: "غير نشط"
+    noResults: "لا توجد أنشطة مطابقة للبحث.", statusActive: "نشط", statusInactive: "غير نشط", loading: "جارٍ تحميل بيانات القطاعات الحية...", fallback: "تعذر تحميل البيانات الحية مؤقتًا — تظهر القطاعات الرسمية بدون أرقام مسجلين حتى عودة الاتصال."
   } : {
     title: "Activities & Sectors", subtitle: "Manage platform activities and sectors, visibility and customization",
     total: "Total activities", active: "Active", inactive: "Inactive", registered: "Total registered",
     search: "Search activities...", all: "All statuses", newest: "Sort: newest",
     add: "Add new activity", edit: "Edit", preview: "Preview", registeredLabel: "registered",
     tip: "Tip", tipText: "Customize each activity cover image for a polished appearance across the website and mobile apps.",
-    noResults: "No activities match your search.", statusActive: "Active", statusInactive: "Inactive"
+    noResults: "No activities match your search.", statusActive: "Active", statusInactive: "Inactive", loading: "Loading live sector data...", fallback: "Live data is temporarily unavailable — canonical sectors are shown without registration counts until the connection returns."
   };
   const [query, setQuery] = React.useState("");
+  const dataNotice = loading ? copy.loading : usingFallback ? copy.fallback : null;
   const [status, setStatus] = React.useState<"all"|"active"|"inactive">("all");
   const rows = sectors.filter((sector) => {
     const matchesText = getSectorLabel(sector).toLowerCase().includes(query.trim().toLowerCase());
@@ -59,6 +62,8 @@ export function ActivitiesSectorsView({ sectors, lang, getSectorLabel, onEdit, o
       </div>
       <button type="button" onClick={() => document.getElementById("sector-grid")?.scrollIntoView({behavior:"smooth"})} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-gradient-to-l from-orange-500 to-orange-600 px-5 text-xs font-black text-white shadow-lg shadow-orange-500/20"><Plus size={17}/>{copy.add}</button>
     </section>
+
+    {dataNotice && <div className={`rounded-xl border px-4 py-3 text-xs font-bold ${usingFallback ? "border-amber-500/30 bg-amber-500/10 text-amber-300" : "border-sky-500/20 bg-sky-500/10 text-sky-300"}`}>{dataNotice}</div>}
 
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {[
