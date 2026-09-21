@@ -279,46 +279,17 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme, embedded = 
 
   if (embedded) {
     return (
-      <div className="space-y-5 p-1">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-base font-black">{t.sectors_title}</h2>
-              <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{t.sectors_subtitle}</p>
-            </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-black text-orange-600 ring-1 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/30">
-              <Store size={12} />{sectors.length} {lang === 'ar' ? 'قطاعات' : lang === 'en' ? 'Sectors' : 'Secteurs'}
-            </span>
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-          {sectors.map((sector) => {
-            const NavIcon = sector.key === 'trend' ? Sparkles : (SECTOR_NAV.find((n) => n.key === (sector.alias || sector.key))?.icon ?? ShieldAlert);
-            const label = getSectorLabel(sector);
-            const isTrend = sector.source === 'contentCreators';
-            return (
-              <div key={sector.key} className={`flex min-h-[330px] flex-col overflow-hidden rounded-2xl border shadow-sm transition ${sector.active ? 'border-slate-200 bg-white dark:border-slate-700/60 dark:bg-[#1e293b]' : 'border-dashed border-slate-300 bg-slate-50/60 opacity-75 dark:border-slate-700 dark:bg-[#1e293b]/60'}`}>
-                <div className="relative aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
-                  {sector.coverUrl ? <img src={sector.coverUrl} alt={label} className="h-full w-full object-cover object-center" /> : <div className="flex h-full items-center justify-center text-slate-400"><NavIcon size={42} /></div>}
-                  <button type="button" onClick={() => openEditModal(sector)} className="absolute bottom-2 end-2 rounded-lg bg-slate-950/75 px-2.5 py-1.5 text-[10px] font-black text-white backdrop-blur transition hover:bg-orange-500">
-                    <Camera size={11} className="me-1 inline" />{lang === 'ar' ? 'إضافة / تغيير الكفر' : 'Add / change cover'}
-                  </button>
-                </div>
-                <div className="flex flex-1 flex-col gap-3 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${sector.active ? 'bg-orange-50 text-orange-500 dark:bg-orange-500/10 dark:text-orange-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'}`}><NavIcon size={20}/></span><div><p className="text-sm font-black">{label}</p><p className="mt-0.5 text-[10px] text-slate-400">{sector.entityCount} {t.sector_entities}</p></div></div>
-                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ring-1 ${sector.active ? 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400'}`}>{sector.active ? t.sector_status_active : t.sector_status_inactive}</span>
-                  </div>
-                  <div className="mt-auto flex flex-wrap gap-1.5">
-                    <button type="button" onClick={() => openEditModal(sector)} className="rounded-lg bg-slate-50 px-2 py-1.5 text-[10px] font-black text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300"><Pencil size={11} className="me-1 inline"/>{t.btn_edit_labels}</button>
-                    <button type="button" onClick={() => openNotifyModal(sector)} className="rounded-lg bg-orange-50 px-2 py-1.5 text-[10px] font-black text-orange-600 ring-1 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-400"><Megaphone size={11} className="me-1 inline"/>{t.btn_notify}</button>
-                    {!isTrend && <button type="button" onClick={() => toggleSectorActive(sector)} disabled={updateSectorMutation.isPending} className="rounded-lg bg-slate-50 px-2 py-1.5 text-[10px] font-black text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300">{sector.active ? <ToggleLeft size={12} className="me-1 inline"/> : <ToggleRight size={12} className="me-1 inline"/>}{sector.active ? t.btn_deactivate : t.btn_activate}</button>}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      <div className="min-h-full bg-[#08121f] p-1 text-slate-100">
+        <ActivitiesSectorsView
+          sectors={sectors}
+          lang={lang}
+          getSectorLabel={getSectorLabel}
+          onEdit={openEditModal}
+          onNotify={openNotifyModal}
+          onToggle={toggleSectorActive}
+          updatePending={updateSectorMutation.isPending}
+          notifyPending={notifySectorMutation.isPending || notifyEntitiesMutation.isPending}
+        />
       </div>
     );
   }
