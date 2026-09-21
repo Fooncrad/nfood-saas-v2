@@ -436,7 +436,63 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                   if (!sec) return null;
                   const label = getSectorLabel(sec);
                   return (
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
+                    {currentSection === 'overview' && (
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,.7fr)]">
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <h3 className="text-sm font-black">{lang === 'ar' ? 'نظرة عامة على النشاط' : lang === 'en' ? 'Activity overview' : 'Aperçu de l’activité'}</h3>
+                          <p className="mt-1 text-[11px] text-slate-400">{lang === 'ar' ? 'ملخص حي للمنشآت والاشتراكات والعمليات' : lang === 'en' ? 'Live summary of entities, subscriptions and operations' : 'Résumé en direct des entités, abonnements et opérations'}</p>
+                        </div>
+                        <div className="flex gap-1 rounded-xl bg-slate-100 p-1 text-[10px] font-black dark:bg-white/5">
+                          {['اليوم','الأسبوع','الشهر'].map((period, index) => <span key={period} className={`rounded-lg px-3 py-1.5 ${index === 2 ? 'bg-sky-500 text-white' : 'text-slate-400'}`}>{period}</span>)}
+                        </div>
+                      </div>
+                      <div className="mt-5 grid h-44 grid-cols-12 items-end gap-2 rounded-xl border border-slate-100 bg-slate-50/70 px-4 pb-4 pt-8 dark:border-white/5 dark:bg-[#07111f]">
+                        {[38,52,45,66,58,73,62,84,70,91,76,88].map((height, index) => (
+                          <div key={index} className="flex h-full items-end gap-1">
+                            <span className="w-1/2 rounded-t bg-emerald-400/80" style={{height: `${height}%`}} />
+                            <span className="w-1/2 rounded-t bg-sky-500/80" style={{height: `${Math.max(24, height - 18)}%`}} />
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
+                      <h3 className="text-sm font-black">{lang === 'ar' ? 'الحالة النظامية' : lang === 'en' ? 'System status' : 'État du système'}</h3>
+                      <div className="mt-5 space-y-3 text-xs">
+                        {[
+                          lang === 'ar' ? 'الخادم' : 'Server',
+                          lang === 'ar' ? 'قاعدة البيانات' : 'Database',
+                          lang === 'ar' ? 'بوابة الدفع' : 'Payment gateway',
+                          lang === 'ar' ? 'إرسال الرسائل' : 'Messaging',
+                          lang === 'ar' ? 'التخزين السحابي' : 'Cloud storage',
+                        ].map((service) => <div key={service} className="flex items-center justify-between"><span className="font-bold text-slate-500 dark:text-slate-300">{service}</span><span className="flex items-center gap-2 font-black text-emerald-500"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />{lang === 'ar' ? 'متصل' : 'Online'}</span></div>)}
+                      </div>
+                      <div className="mt-5 rounded-xl bg-emerald-500/10 px-3 py-2 text-center text-[10px] font-black text-emerald-500">{lang === 'ar' ? 'جميع الأنظمة تعمل بشكل طبيعي' : 'All systems operational'}</div>
+                    </section>
+                  </div>
+                )}
+
+                {currentSection === 'overview' && (
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    {[
+                      [Settings, lang === 'ar' ? 'التحكم في الميزات' : 'Feature controls', lang === 'ar' ? 'إدارة الميزات' : 'Manage'],
+                      [ShieldCheck, lang === 'ar' ? 'باقات الاشتراك' : 'Subscription plans', lang === 'ar' ? 'إدارة الباقات' : 'Manage plans'],
+                      [Send, lang === 'ar' ? 'قوالب الرسائل' : 'Message templates', lang === 'ar' ? 'البريد · الرسائل · الإشعارات' : 'Email · SMS · notifications'],
+                      [Store, lang === 'ar' ? 'إدارة المتاجر' : 'Store management', lang === 'ar' ? 'عرض وتفعيل وتعديل' : 'View, enable and edit'],
+                      [TrendingUp, lang === 'ar' ? 'سوق NFOOD' : 'NFOOD Marketplace', lang === 'ar' ? 'فتح السوق مباشرة' : 'Open marketplace'],
+                    ].map(([Icon, title, subtitle], index) => {
+                      const QuickIcon = Icon as typeof Settings;
+                      return <button key={String(title)} type="button" onClick={() => index === 4 ? window.location.assign('/marketplace') : setCurrentSection(index === 2 ? 'settings' : index === 3 ? 'admin' : index === 0 ? 'settings' : 'admin')} className="group rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400/50 dark:border-white/10 dark:bg-[#0c1828]">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500"><QuickIcon size={19} /></span>
+                        <p className="mt-3 text-sm font-black">{String(title)}</p>
+                        <p className="mt-1 text-[10px] font-semibold text-slate-400">{String(subtitle)}</p>
+                      </button>;
+                    })}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
                       <div className="flex items-center gap-3">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black ring-1 ${sec.active ? 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30' : 'bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700'}`}>
                           {sec.active ? t.sector_status_active : t.sector_status_inactive}
