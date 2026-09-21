@@ -9,6 +9,8 @@ import MarketplaceStoresView from "@/components/MarketplaceStoresView";
 import ContentMarketplace from "@/pages/ContentMarketplace";
 import VcardCardsAdmin from "@/pages/VcardCardsAdmin";
 import ActivitiesSectorsAdmin from "@/components/ActivitiesSectorsAdmin";
+import { SecurityView } from "@/components/SecurityView";
+import { SystemHealthView } from "@/components/SystemHealthView";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 
@@ -30,8 +32,8 @@ export default function SuperAdminApp() {
       case "stores": return <MarketplaceStoresView />;
       case "trend": return <ContentMarketplace />;
       case "nfc": return <VcardCardsAdmin />;
-      case "security":
-      case "health": return <PlatformSettingsPanel />;
+      case "security": return <SecurityView />;
+      case "health": return <SystemHealthView />;
       case "overview": return undefined;
     }
   }, [active]);
