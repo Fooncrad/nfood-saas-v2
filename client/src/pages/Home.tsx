@@ -29,9 +29,10 @@ import { MediaLibraryPanel } from "@/components/MediaLibraryPanel";
 import ContentMarketplace from "@/pages/ContentMarketplace";
 import VcardCardsAdmin from "@/pages/VcardCardsAdmin";
 import { StorefrontCustomizationPanel } from "@/components/StorefrontCustomizationPanel";
+import { CentralAdminDashboard } from "@/components/CentralAdminDashboard";
 
 type OrderStatus = "new" | "preparing" | "ready" | "completed";
-type NavKey = "overview" | "admin" | "nfc" | "site" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "storefront" | "reservations" | "remote" | "security" | "health" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend";
+type NavKey = "overview" | "admin" | "activities" | "nfc" | "site" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "storefront" | "reservations" | "remote" | "security" | "health" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend";
 
 type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string };
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
@@ -75,6 +76,7 @@ export default function Home() {
   const adminPanelChildren = useMemo(() => {
     switch (active as CentralAdminNavKey) {
       case "admin": return <SuperAdminView />;
+      case "activities": return <CentralAdminDashboard currentTheme="dark" />;
       case "accounts": return <AccountManagementPanel />;
       case "settings": return <PlatformSettingsPanel />;
       case "site": return <PlatformSettingsPanel />;
