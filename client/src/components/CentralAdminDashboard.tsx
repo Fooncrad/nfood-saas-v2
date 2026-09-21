@@ -436,13 +436,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                   if (!sec) return null;
                   const label = getSectorLabel(sec);
                   return (
-                    {currentSection === 'overview' && (
-                  <section className="grid gap-3 rounded-xl border border-slate-700/60 bg-[#0c1828] p-4 sm:grid-cols-5">
-                    <div><p className="text-sm font-black">{lang === 'ar' ? 'الحالة النظامية' : 'System status'}</p><p className="mt-1 text-[10px] text-slate-500">{lang === 'ar' ? 'لا نعرض حالة خضراء دون فحص فعلي' : 'No healthy status is shown without a real probe'}</p></div>
-                    {['API / Server','Database','Payment gateway','Messaging','Cloud storage'].map((service) => <div key={service} className="rounded-lg border border-slate-700 bg-[#08111d] px-3 py-2"><p className="text-[10px] text-slate-400">{service}</p><p className="mt-1 text-xs font-black text-amber-400">{lang === 'ar' ? 'غير مفحوص' : 'Not checked'}</p></div>)}
-                  </section>
-                )}
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
                       <div className="flex items-center gap-3">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black ring-1 ${sec.active ? 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30' : 'bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700'}`}>
                           {sec.active ? t.sector_status_active : t.sector_status_inactive}
@@ -497,6 +491,12 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
 ].map(([Icon,title,subtitle],index)=>{const QuickIcon=Icon as typeof Settings; return <button key={String(title)} type="button" onClick={()=>setCurrentSection(index===2?'settings':index===3?'admin':index===4?'files':index===0?'settings':'sectors')} className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-4 text-start transition hover:border-orange-500/60"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400"><QuickIcon size={19}/></span><p className="mt-3 text-sm font-black">{String(title)}</p><p className="mt-1 text-[10px] text-slate-400">{String(subtitle)}</p></button>})}
                     </div>
                   </>
+                )}
+                {currentSection === 'overview' && (
+                  <section className="grid gap-3 rounded-xl border border-slate-700/60 bg-[#0c1828] p-4 sm:grid-cols-5">
+                    <div><p className="text-sm font-black">{lang === 'ar' ? 'الحالة النظامية' : 'System status'}</p><p className="mt-1 text-[10px] text-slate-500">{lang === 'ar' ? 'لا نعرض حالة خضراء دون فحص فعلي' : 'No healthy status is shown without a real probe'}</p></div>
+                    {['API / Server','Database','Payment gateway','Messaging','Cloud storage'].map((service) => <div key={service} className="rounded-lg border border-slate-700 bg-[#08111d] px-3 py-2"><p className="text-[10px] text-slate-400">{service}</p><p className="mt-1 text-xs font-black text-amber-400">{lang === 'ar' ? 'غير مفحوص' : 'Not checked'}</p></div>)}
+                  </section>
                 )}
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
                   <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
