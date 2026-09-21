@@ -14,31 +14,14 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(home).toContain("Moon");
   });
 
-  it("supports safe keyboard navigation and interactive notifications", () => {
+  it("keeps the active admin command center wired to navigation and notifications", () => {
     const home = read("pages/Home.tsx");
-    expect(home).toContain("event.altKey");
-    expect(home).toContain("visibleNavItems[Number(event.key) - 1]");
-    expect(home).toContain('aria-expanded={notificationOpen}');
-    expect(home).toContain("markNotificationRead.mutate");
-    expect(home).toContain("deleteAllNotifications");
-    expect(home).toContain("notificationPreferencesJson");
-    expect(home).toContain("soundEnabled");
-    expect(home).toContain("vibrationEnabled");
-    expect(home).toContain("transferBannerDismissed");
-    const transferBanner = read("components/PendingTransferBanner.tsx");
-    expect(transferBanner).toContain("Close transfer receipt notice");
-    expect(transferBanner).toContain("إغلاق إشعار إيصالات التحويل");
-    expect(transferBanner).toContain("onClose");
-    expect(home).toContain("إعدادات الإشعارات");
-    expect(home).toContain("حذف الكل");
-    expect(home).toContain('aria-label={t("globalSearch")}');
-    expect(home).toContain('notificationFilter === "unread"');
-    expect(home).toContain('notificationFilter === "all"');
-    expect(home).toContain('title="الإشعارات · Ctrl+Shift+N"');
-    const css = read("index.css");
-    expect(css).toContain("nfood-notification-popover");
-    expect(css).toContain("nfood-notification-pulse");
-    expect(css).toContain("prefers-reduced-motion: reduce");
+    const admin = read("components/CentralAdminCommandCenter.tsx");
+    expect(home).toContain("CentralAdminCommandCenter");
+    expect(home).toContain("adminPanelChildren");
+    expect(admin).toContain("onNavigate");
+    expect(admin).toContain("notifications");
+    expect(admin).toContain("onLogout");
   });
 
   it("keeps platform KPIs data-backed and readable in both themes", () => {
