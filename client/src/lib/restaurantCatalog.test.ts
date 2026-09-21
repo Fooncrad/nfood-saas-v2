@@ -3,9 +3,9 @@ import { filterRestaurantRows, formatCatalogMoney } from "./restaurantCatalog";
 
 describe("restaurant catalog filters", () => {
   const restaurants = [
-    { id: 1, name: "Nasser Cafe", slug: "nssercafa", plan: "All Features", status: "active" },
-    { id: 2, name: "Demo Bistro", slug: "demo-bistro", plan: "growth", status: "trial" },
-    { id: 3, name: "Legacy Shop", slug: "legacy", plan: null, status: "suspended" },
+    { id: 1, name: "Nasser Cafe", slug: "nssercafa", plan: "All Features", status: "active", createdAt: "2026-09-18T08:00:00Z" },
+    { id: 2, name: "Demo Bistro", slug: "demo-bistro", plan: "growth", status: "trial", createdAt: "2026-09-20T08:00:00Z" },
+    { id: 3, name: "Legacy Shop", slug: "legacy", plan: null, status: "suspended", createdAt: "2026-09-19T08:00:00Z" },
   ];
   const plans = [{ key: "growth", name: "Growth" }, { key: "all_features", name: "All Features" }];
 
@@ -22,6 +22,15 @@ describe("restaurant catalog filters", () => {
   it("combines query, status, and plan filters", () => {
     expect(filterRestaurantRows(restaurants, "nasser", "نشط", "All Features", plans).map((item) => item.id)).toEqual([1]);
     expect(filterRestaurantRows(restaurants, "nasser", "تجربة", "All Features", plans)).toEqual([]);
+  });
+
+  it("shows latest stores first using persisted creation time", () => {
+    expect(filterRestaurantRows(restaurants, "", "الكل", "الكل", plans).map((item) => item.id)).toEqual([2, 3, 1]);
+  });
+
+  it("falls back to newest persisted id when creation time is unavailable", () => {
+    const rows = restaurants.map(({ createdAt: _createdAt, ...restaurant }) => restaurant);
+    expect(filterRestaurantRows(rows, "", "الكل", "الكل", plans).map((item) => item.id)).toEqual([3, 2, 1]);
   });
 
   it("formats catalog amounts with English digits and integer rounding", () => {
