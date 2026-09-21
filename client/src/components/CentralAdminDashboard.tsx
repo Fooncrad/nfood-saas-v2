@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 const translations = {
   ar: {
-    dir: 'rtl', projectName: 'NFOOD', panelTitle: 'لوحة الإدارة العليا', panelSubtitle: 'إدارة المطاعم والمتاجر والاشتراكات والعمليات من مركز واحد', systemReady: 'النظام حي ومستقر', searchPlaceholder: 'ابحث عن متجر، مستخدم، إعداد... (Ctrl + K)', adminCenter: 'مركز التحكم', adminBadge: 'بوابة التحكم العليا',
+    dir: 'rtl', projectName: 'NFOOD', panelTitle: 'لوحة الإدارة العليا', panelSubtitle: 'إدارة المنصة والمستخدمين والمتاجر والاشتراكات والإعدادات من مركز واحد', systemReady: 'النظام حي ومستقر', searchPlaceholder: 'ابحث عن متجر، مستخدم، إعداد... (Ctrl + K)', adminCenter: 'مركز التحكم', adminBadge: 'بوابة التحكم العليا',
     nav_overview: 'نظرة عامة والعمليات', nav_superAdmin: 'Super Admin', nav_admin: 'الإدارة المركزية', nav_accounts: 'إدارة الحسابات والأدوار', nav_settings: 'الإعدادات العامة', settingsGroup: 'الإعدادات والتخصيص', nav_languages: 'اللغة والترجمة', nav_files: 'مكتبة الملفات المركزية', nav_trend: 'سوق NFOOD / Trend Kitchen', nav_security: 'أمان الحساب والجلسات', nav_health: 'صحة النظام والـ Logs',
     nav_future_modules: 'حوكمة القطاعات والوحدات الشاملة (8 وحدات)', nav_veg: 'وحدة الخضار والفواكه', nav_grocery: 'وحدة البقالات والتموينات', nav_laundry: 'وحدة مغاسل الملابس', nav_auto: 'وحدة خدمات السيارات', nav_barber: 'وحدة الصالونات ومراكز التجميل', nav_public: 'وحدة الأشغال العامة والصيانة', nav_fashion: 'وحدة الموضة والأزياء والملبوسات', nav_sweets: 'وحدة الحلويات والمخبوزات والتحلية',
     nav_sectors: 'حوكمة القطاعات',
@@ -30,7 +30,7 @@ const translations = {
     loading: 'جارٍ تحميل البيانات الحية...', empty: 'لا توجد منشآت ضمن النطاق المحدد', plan_now: 'الأعلى', plan_upgrade: 'ترقية الحزمة الآن', toggling: 'تبديل الحالة...', upgrading: 'ترقية...', actionToggle: 'تفعيل / إيقاف', planLook: 'الحزمة الحالية',
   },
   en: {
-    dir: 'ltr', projectName: 'NFOOD Ecosystem', panelTitle: 'Central & Enterprise Admin', panelSubtitle: 'Instant feature toggles, business sector activation & subscription plan upgrades', systemReady: 'System Live & Stable', searchPlaceholder: 'Search stores, users, settings... (Ctrl + K)', adminCenter: 'Control Center', adminBadge: 'Master Control Gateway',
+    dir: 'ltr', projectName: 'NFOOD Ecosystem', panelTitle: 'Central & Enterprise Admin', panelSubtitle: 'Manage the platform, users, stores, subscriptions and settings from one control center', systemReady: 'System Live & Stable', searchPlaceholder: 'Search stores, users, settings... (Ctrl + K)', adminCenter: 'Control Center', adminBadge: 'Master Control Gateway',
     nav_overview: 'Overview & Ops', nav_superAdmin: 'Super Admin', nav_admin: 'Central Admin', nav_accounts: 'Accounts & Roles', nav_settings: 'General Settings', settingsGroup: 'Settings & Customization', nav_languages: 'Languages & Local', nav_files: 'Central File Library', nav_trend: 'NFOOD Market / Trend Kitchen', nav_security: 'Security & Sessions', nav_health: 'System Health & Logs',
     nav_future_modules: 'Ecosystem Modules & Governance (8 Units)', nav_veg: 'Vegetables & Fruits Unit', nav_grocery: 'Grocery & Supermarkets', nav_laundry: 'Laundries Unit', nav_auto: 'Automotive Services', nav_barber: 'Beauty Salons & Barbers', nav_public: 'Public Works & Maintenance', nav_fashion: 'Fashion & Apparel Unit', nav_sweets: 'Sweets, Bakery & Desserts Unit',
     nav_sectors: 'Sector Governance',
@@ -47,7 +47,7 @@ const translations = {
     loading: 'Loading live data...', empty: 'No entities in the current scope', plan_now: 'Top', plan_upgrade: 'Upgrade Plan Now', toggling: 'Toggling status...', upgrading: 'Upgrading...', actionToggle: 'Toggle Status', planLook: 'Current Plan',
   },
   fr: {
-    dir: 'ltr', projectName: 'Écosystème NFOOD', panelTitle: 'Admin Central & Entreprise', panelSubtitle: 'Activation instantanée des fonctionnalités, des secteurs et mise à niveau des forfaits', systemReady: 'Système En Ligne', searchPlaceholder: 'Rechercher magasins, utilisateurs, paramètres... (Ctrl + K)', adminCenter: 'Centre de Contrôle', adminBadge: 'Passerelle de Contrôle Maître',
+    dir: 'ltr', projectName: 'Écosystème NFOOD', panelTitle: 'Admin Central & Entreprise', panelSubtitle: 'Gérez la plateforme, les utilisateurs, les magasins, les abonnements et les paramètres', systemReady: 'Système En Ligne', searchPlaceholder: 'Rechercher magasins, utilisateurs, paramètres... (Ctrl + K)', adminCenter: 'Centre de Contrôle', adminBadge: 'Passerelle de Contrôle Maître',
     nav_overview: 'Vue d\'ensemble', nav_superAdmin: 'Super Admin', nav_admin: 'Admin Central', nav_accounts: 'Comptes & Rôles', nav_settings: 'Paramètres Généraux', settingsGroup: 'Paramètres & Personnalisation', nav_languages: 'Langues & Dictionnaire', nav_files: 'Bibliothèque Centrale', nav_trend: 'Marché NFOOD / Trend Kitchen', nav_security: 'Sécurité & Sessions', nav_health: 'Santé du Système & Logs',
     nav_future_modules: 'Modules Écosystème & Gouvernance (8 Unités)', nav_veg: 'Secteur Fruits & Légumes', nav_grocery: 'Épiceries & Supermarchés', nav_laundry: 'Secteur Blanchisserie', nav_auto: 'Services Automobiles', nav_barber: 'Salons de Beauté & Coiffure', nav_public: 'Travaux Publics & Maintenance', nav_fashion: 'Secteur de la Mode', nav_sweets: 'Secteur Douceurs & Boulangerie',
     nav_sectors: 'Gouvernance des Secteurs',
