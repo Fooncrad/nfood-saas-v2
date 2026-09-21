@@ -436,8 +436,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                   if (!sec) return null;
                   const label = getSectorLabel(sec);
                   return (
-
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
                       <div className="flex items-center gap-3">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black ring-1 ${sec.active ? 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30' : 'bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700'}`}>
                           {sec.active ? t.sector_status_active : t.sector_status_inactive}
