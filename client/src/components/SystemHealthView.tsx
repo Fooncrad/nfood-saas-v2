@@ -10,7 +10,7 @@ export function SystemHealthView() {
     query.isLoading ? <div className="h-32 animate-pulse rounded-2xl bg-slate-900/50" /> :
     <div className="grid gap-3 md:grid-cols-3">
       <HealthCard icon={Server} label="API" value={String(data?.api ?? data?.status ?? "غير متاح")} />
-      <HealthCard icon={Database} label="Database" value={String(data?.database ?? data?.db ?? "غير متاح")} />
+      <HealthCard icon={Database} label="Database" value={String(data?.database ?? "غير متاح")} />
       <HealthCard icon={Activity} label="آخر فحص" value={new Date().toLocaleTimeString("ar-SA")} />
     </div>}
   </section>;
