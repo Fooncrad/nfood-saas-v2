@@ -10,7 +10,7 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(admin).toContain("useTheme");
     expect(admin).toContain("Sun");
     expect(admin).toContain("Moon");
-    expect(admin).toContain("setTheme");
+    expect(admin).toContain("toggleTheme");
   });
 
   it("keeps the active admin command center wired to navigation and notifications", () => {
