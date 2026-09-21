@@ -436,6 +436,30 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                   if (!sec) return null;
                   const label = getSectorLabel(sec);
                   return (
+
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
+                      <div className="flex items-center gap-3">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black ring-1 ${sec.active ? 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30' : 'bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700'}`}>
+                          {sec.active ? t.sector_status_active : t.sector_status_inactive}
+                        </span>
+                        <p className="text-sm font-black text-slate-900 dark:text-white">{label}</p>
+                        <span className="text-[10px] text-slate-400">{sec.entityCount} {t.sector_entities}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button type="button" onClick={() => openEditModal(sec)} className="flex cursor-pointer items-center gap-1 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[11px] font-black text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-700">
+                          <Pencil size={12} />{t.btn_edit_labels}
+                        </button>
+                        <button type="button" onClick={() => openNotifyModal(sec)} disabled={notifySectorMutation.isPending || notifyEntitiesMutation.isPending} className="flex cursor-pointer items-center gap-1 rounded-lg bg-orange-50 px-2.5 py-1.5 text-[11px] font-black text-orange-600 ring-1 ring-orange-200 transition hover:bg-orange-100 disabled:opacity-50 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/30 dark:hover:bg-orange-500/20">
+                          <Megaphone size={12} />{t.btn_broadcast}
+                        </button>
+                        <button type="button" onClick={() => toggleSectorActive(sec)} disabled={updateSectorMutation.isPending} className={`flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-black ring-1 ring-inset transition disabled:opacity-50 ${sec.active ? 'bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/30 dark:hover:bg-rose-500/20' : 'bg-emerald-50 text-emerald-600 ring-emerald-200 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30 dark:hover:bg-emerald-500/20'}`}>
+                          {sec.active ? <ToggleLeft size={13} /> : <ToggleRight size={13} />}
+                          {sec.active ? t.btn_deactivate : t.btn_activate}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
                     {currentSection === 'overview' && (
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,.7fr)]">
                     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
@@ -491,30 +515,6 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                     })}
                   </div>
                 )}
-
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
-                      <div className="flex items-center gap-3">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black ring-1 ${sec.active ? 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30' : 'bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700'}`}>
-                          {sec.active ? t.sector_status_active : t.sector_status_inactive}
-                        </span>
-                        <p className="text-sm font-black text-slate-900 dark:text-white">{label}</p>
-                        <span className="text-[10px] text-slate-400">{sec.entityCount} {t.sector_entities}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        <button type="button" onClick={() => openEditModal(sec)} className="flex cursor-pointer items-center gap-1 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[11px] font-black text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-700">
-                          <Pencil size={12} />{t.btn_edit_labels}
-                        </button>
-                        <button type="button" onClick={() => openNotifyModal(sec)} disabled={notifySectorMutation.isPending || notifyEntitiesMutation.isPending} className="flex cursor-pointer items-center gap-1 rounded-lg bg-orange-50 px-2.5 py-1.5 text-[11px] font-black text-orange-600 ring-1 ring-orange-200 transition hover:bg-orange-100 disabled:opacity-50 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/30 dark:hover:bg-orange-500/20">
-                          <Megaphone size={12} />{t.btn_broadcast}
-                        </button>
-                        <button type="button" onClick={() => toggleSectorActive(sec)} disabled={updateSectorMutation.isPending} className={`flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-black ring-1 ring-inset transition disabled:opacity-50 ${sec.active ? 'bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/30 dark:hover:bg-rose-500/20' : 'bg-emerald-50 text-emerald-600 ring-emerald-200 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30 dark:hover:bg-emerald-500/20'}`}>
-                          {sec.active ? <ToggleLeft size={13} /> : <ToggleRight size={13} />}
-                          {sec.active ? t.btn_deactivate : t.btn_activate}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })()}
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
                   {kpis.map((kpi) => {
                     const Icon = kpi.icon;
