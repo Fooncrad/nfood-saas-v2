@@ -58,7 +58,7 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(home).toContain("CentralAdminCommandCenter");
     expect(home).toContain("isCentralAdmin");
     expect(home).toContain("<CentralAdminCommandCenter");
-    expect(home).toContain("overviewChildren");
+    expect(home).toContain("adminPanelChildren");
     expect(home).toContain("<PlatformOverview onNavigate");
     expect(home).not.toContain("<SuperAdminRestaurantCatalog");
     expect(analytics).not.toContain(">{copy.overview}</h2>");
