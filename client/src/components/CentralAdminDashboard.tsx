@@ -264,12 +264,11 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
   const showEntityTable = currentSection === 'overview' || isSectorSection;
 
   const kpis = [
-    { label: t.card_restaurants, value: String(summary?.active ?? 0), trend: String(liveData?.entities.filter((row) => row.status).length ?? 0), up: true, icon: TrendingUp },
-    { label: t.card_accounts, value: String(summary?.total ?? 0), trend: String(summary?.suspended ?? 0), up: false, icon: Users },
-    { label: t.card_subscriptions, value: String(liveData?.byPlan['Enterprise'] ?? 0), trend: String(liveData?.byPlan['Pro'] ?? 0), up: true, icon: ShieldCheck },
-    { label: t.card_notifications, value: String(liveData?.recentGovernance?.length ?? 0), trend: String(summary?.suspended ?? 0), up: false, icon: Bell },
-    { label: t.card_transfers, value: String(summary?.catalogs ?? 0), trend: String(liveData?.byPlan['Basic'] ?? 0), up: false, icon: FileText },
-    { label: t.card_files, value: String((liveData?.entities.filter((row) => row.catalog?.totalItems).length ?? 0)), trend: '∞', up: true, icon: FolderOpen },
+    { label: t.card_restaurants, value: String(summary?.active ?? 0), detail: lang === 'ar' ? 'منشآت مفعلة' : 'active entities', icon: Store },
+    { label: t.card_accounts, value: String(summary?.total ?? 0), detail: lang === 'ar' ? `${summary?.suspended ?? 0} موقوف` : `${summary?.suspended ?? 0} suspended`, icon: Users },
+    { label: t.card_subscriptions, value: String((liveData?.byPlan['Enterprise'] ?? 0) + (liveData?.byPlan['Pro'] ?? 0)), detail: lang === 'ar' ? 'Pro + Enterprise' : 'Pro + Enterprise', icon: ShieldCheck },
+    { label: lang === 'ar' ? 'الكتالوجات النشطة' : 'Active catalogs', value: String(summary?.catalogs ?? 0), detail: lang === 'ar' ? 'بيانات حية' : 'live data', icon: FolderOpen },
+    { label: t.card_notifications, value: String(liveData?.recentGovernance?.length ?? 0), detail: lang === 'ar' ? 'سجل الحوكمة الأخير' : 'recent governance', icon: Bell },
   ];
 
   const planCls: Record<'Basic' | 'Pro' | 'Enterprise', string> = {
@@ -286,7 +285,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
           <div className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden" onClick={() => setIsSidebarOpen(false)} />
         )}
 
-        <aside className={`fixed inset-y-0 start-0 z-40 flex w-64 flex-col border-e border-white/10 bg-[#07111f] text-white shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 dark:bg-[#07111f] ${isSidebarOpen ? 'translate-x-0' : t.dir === 'rtl' ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <aside className={`fixed inset-y-0 end-0 z-40 flex w-64 flex-col border-e border-white/10 bg-[#07111f] text-white shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 dark:bg-[#07111f] ${isSidebarOpen ? 'translate-x-0' : t.dir === 'rtl' ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
           <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-400/30 bg-orange-500/10 font-black text-orange-400">NF</div>
@@ -300,23 +299,26 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
             </button>
           </div>
 
-          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-            <SidebarLink icon={<LayoutDashboard size={18} />} label={t.nav_overview} active={currentSection === 'overview'} onClick={() => setCurrentSection('overview')} />
-            <SidebarLink icon={<ShieldAlert size={18} />} label={t.nav_superAdmin} active={currentSection === 'admin'} onClick={() => setCurrentSection('admin')} />
-            <SidebarLink icon={<Users size={18} />} label={t.nav_accounts} active={currentSection === 'accounts'} onClick={() => setCurrentSection('accounts')} />
-            <SectionGroupLabel>{t.settingsGroup ?? 'الإعدادات والتخصيص'}</SectionGroupLabel>
-            <SidebarLink icon={<Settings size={18} />} label={t.nav_settings} active={currentSection === 'settings'} onClick={() => setCurrentSection('settings')} />
-            <SidebarLink icon={<Languages size={18} />} label={t.nav_languages} active={currentSection === 'languages'} onClick={() => setCurrentSection('languages')} />
-            <SidebarLink icon={<FolderOpen size={18} />} label={t.nav_files} active={currentSection === 'files'} onClick={() => setCurrentSection('files')} />
-            <SidebarLink icon={<TrendingUp size={18} />} label={t.nav_trend} active={currentSection === 'trend'} onClick={() => { setCurrentSection('trend'); window.location.assign('/marketplace'); }} />
-            <SidebarLink icon={<ShieldCheck size={18} />} label={t.nav_security} active={currentSection === 'security'} onClick={() => setCurrentSection('security')} />
-            <SidebarLink icon={<HeartPulse size={18} />} label={t.nav_health} active={currentSection === 'health'} onClick={() => setCurrentSection('health')} />
-            <SectionGroupLabel>{t.nav_future_modules}</SectionGroupLabel>
-            <SidebarLink icon={<Store size={18} />} label={t.nav_sectors} active={currentSection === 'sectors'} onClick={() => setCurrentSection('sectors')} />
-            {SECTOR_NAV.map((sector) => {
-              const Icon = sector.icon;
-              return <SidebarLink key={sector.key} icon={<Icon size={18} />} label={sector.label(t)} active={currentSection === sector.key} onClick={() => setCurrentSection(sector.key)} />;
-            })}
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 text-[13px]">
+            <SidebarLink icon={<LayoutDashboard size={18} />} label={lang === 'ar' ? 'الرئيسية' : t.nav_overview} active={currentSection === 'overview'} onClick={() => setCurrentSection('overview')} />
+            <SectionGroupLabel>{lang === 'ar' ? 'المتاجر والمطاعم' : 'Stores & Restaurants'}</SectionGroupLabel>
+            <SidebarLink icon={<Store size={18} />} label={lang === 'ar' ? 'جميع المتاجر' : lang === 'fr' ? 'Toutes les entreprises' : 'All stores'} active={currentSection === 'admin'} onClick={() => setCurrentSection('admin')} />
+            <SidebarLink icon={<Plus size={18} />} label={lang === 'ar' ? 'إضافة متجر جديد' : lang === 'fr' ? 'Ajouter une entreprise' : 'Add new store'} active={false} onClick={() => setCurrentSection('admin')} />
+            <SidebarLink icon={<FolderOpen size={18} />} label={lang === 'ar' ? 'الفئات والتصنيفات' : lang === 'fr' ? 'Catégories' : 'Categories'} active={false} onClick={() => setCurrentSection('sectors')} />
+            <SidebarLink icon={<UserCheck size={18} />} label={lang === 'ar' ? 'مراجعة طلبات الانضمام' : lang === 'fr' ? 'Demandes d’adhésion' : 'Join requests'} active={false} onClick={() => setCurrentSection('admin')} />
+            <SectionGroupLabel>{lang === 'ar' ? 'إدارة المنصة' : lang === 'fr' ? 'Gestion de la plateforme' : 'Platform management'}</SectionGroupLabel>
+            <SidebarLink icon={<Users size={18} />} label={lang === 'ar' ? 'إدارة المستخدمين' : t.nav_accounts} active={currentSection === 'accounts'} onClick={() => setCurrentSection('accounts')} />
+            <SidebarLink icon={<ShieldCheck size={18} />} label={lang === 'ar' ? 'الاشتراكات والباقات' : 'Subscriptions & plans'} active={currentSection === 'sectors'} onClick={() => setCurrentSection('sectors')} />
+            <SidebarLink icon={<Megaphone size={18} />} label={lang === 'ar' ? 'التسويق والعروض' : 'Marketing & offers'} active={false} onClick={() => setCurrentSection('admin')} />
+            <SidebarLink icon={<Send size={18} />} label={lang === 'ar' ? 'الرسائل والإشعارات' : 'Messages & notifications'} active={currentSection === 'settings'} onClick={() => setCurrentSection('settings')} />
+            <SidebarLink icon={<TrendingUp size={18} />} label={lang === 'ar' ? 'التحليلات والتقارير' : 'Analytics & reports'} active={false} onClick={() => setCurrentSection('overview')} />
+            <SidebarLink icon={<Sparkles size={18} />} label={lang === 'ar' ? 'المظهر والهوية' : 'Appearance & identity'} active={currentSection === 'files'} onClick={() => setCurrentSection('files')} />
+            <SidebarLink icon={<Settings size={18} />} label={lang === 'ar' ? 'الإعدادات العامة' : t.nav_settings} active={currentSection === 'settings'} onClick={() => setCurrentSection('settings')} />
+            <SidebarLink icon={<FolderOpen size={18} />} label={lang === 'ar' ? 'المحتوى والصفحات' : 'Content & pages'} active={currentSection === 'files'} onClick={() => setCurrentSection('files')} />
+            <SidebarLink icon={<Languages size={18} />} label={lang === 'ar' ? 'اللغات والترجمة' : t.nav_languages} active={currentSection === 'languages'} onClick={() => setCurrentSection('languages')} />
+            <SidebarLink icon={<ShieldCheck size={18} />} label={lang === 'ar' ? 'النظام والأمان' : t.nav_security} active={currentSection === 'security'} onClick={() => setCurrentSection('security')} />
+            <SectionGroupLabel>{lang === 'ar' ? 'NFOOD' : 'NFOOD'}</SectionGroupLabel>
+            <SidebarLink icon={<TrendingUp size={18} />} label={lang === 'ar' ? 'سوق NFOOD' : 'NFOOD Marketplace'} active={false} onClick={() => window.location.assign('/marketplace')} />
           </nav>
 
           <div className="border-t border-slate-700/50 p-4">
@@ -357,13 +359,20 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
               <button type="button" onClick={() => onToggleTheme?.()} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800" aria-label="theme">
                 {dark ? <Sun size={17} /> : <Moon size={17} />}
               </button>
-              <button type="button" onClick={cycleLanguage} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800" aria-label="language">
-                <Globe size={17} />
-              </button>
+              <div className="relative hidden md:block">
+                <Globe size={14} className="pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <select value={lang} onChange={(event) => setLang(event.target.value as Language)} className="h-9 appearance-none rounded-xl border border-slate-200 bg-white ps-8 pe-7 text-[11px] font-black text-slate-600 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300" aria-label="language">
+                  <option value="ar">العربية</option><option value="en">English</option><option value="fr">Français</option>
+                </select>
+              </div>
               <button type="button" className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800" aria-label="notifications">
                 <Bell size={17} />
-                <span className="absolute -end-0.5 -top-0.5 h-2 w-2 rounded-full bg-orange-500 ring-2 ring-white dark:ring-[#0f172a]" />
+                {(liveData?.recentGovernance?.length ?? 0) > 0 && <span className="absolute -end-1 -top-1 min-w-4 rounded-full bg-orange-500 px-1 text-center text-[9px] font-black leading-4 text-white">{Math.min(liveData?.recentGovernance?.length ?? 0, 99)}</span>}
               </button>
+              <div className="hidden items-center gap-2 border-s border-slate-200 ps-3 lg:flex dark:border-white/10">
+                <div className="text-end leading-tight"><p className="text-[11px] font-black">FOON Cards</p><p className="text-[9px] font-bold text-orange-500">Super Admin</p></div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-amber-600 text-xs font-black text-white">FC</div>
+              </div>
             </div>
           </header>
 
@@ -462,26 +471,28 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                     {currentSection === 'overview' && (
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,.7fr)]">
                     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <h3 className="text-sm font-black">{lang === 'ar' ? 'نظرة عامة على النشاط' : lang === 'en' ? 'Activity overview' : 'Aperçu de l’activité'}</h3>
-                          <p className="mt-1 text-[11px] text-slate-400">{lang === 'ar' ? 'ملخص حي للمنشآت والاشتراكات والعمليات' : lang === 'en' ? 'Live summary of entities, subscriptions and operations' : 'Résumé en direct des entités, abonnements et opérations'}</p>
+                          <p className="text-[11px] font-bold text-orange-500">{new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                          <h2 className="mt-1 text-xl font-black">{lang === 'ar' ? 'مرحباً بعودتك 👋' : lang === 'fr' ? 'Bon retour 👋' : 'Welcome back 👋'}</h2>
+                          <p className="mt-1 text-[11px] text-slate-400">{lang === 'ar' ? 'هذه نظرة مباشرة على حالة المنصة والأنشطة.' : 'Live platform and business overview.'}</p>
                         </div>
-                        <div className="flex gap-1 rounded-xl bg-slate-100 p-1 text-[10px] font-black dark:bg-white/5">
-                          {['اليوم','الأسبوع','الشهر'].map((period, index) => <span key={period} className={`rounded-lg px-3 py-1.5 ${index === 2 ? 'bg-sky-500 text-white' : 'text-slate-400'}`}>{period}</span>)}
-                        </div>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black text-slate-500 dark:bg-white/5 dark:text-slate-300">{lang === 'ar' ? 'بيانات مباشرة' : 'Live data'}</span>
                       </div>
-                      <div className="mt-5 grid h-44 grid-cols-12 items-end gap-2 rounded-xl border border-slate-100 bg-slate-50/70 px-4 pb-4 pt-8 dark:border-white/5 dark:bg-[#07111f]">
-                        {[38,52,45,66,58,73,62,84,70,91,76,88].map((height, index) => (
-                          <div key={index} className="flex h-full items-end gap-1">
-                            <span className="w-1/2 rounded-t bg-emerald-400/80" style={{height: `${height}%`}} />
-                            <span className="w-1/2 rounded-t bg-sky-500/80" style={{height: `${Math.max(24, height - 18)}%`}} />
-                          </div>
-                        ))}
+                      <div className="mt-5 grid grid-cols-3 gap-3">
+                        {[
+                          [lang === 'ar' ? 'Basic' : 'Basic', liveData?.byPlan['Basic'] ?? 0],
+                          ['Pro', liveData?.byPlan['Pro'] ?? 0],
+                          ['Enterprise', liveData?.byPlan['Enterprise'] ?? 0],
+                        ].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-center dark:border-white/5 dark:bg-[#07111f]"><p className="text-xl font-black">{String(value)}</p><p className="mt-1 text-[10px] font-bold text-slate-400">{String(label)}</p></div>)}
+                      </div>
+                      <div className="mt-4 rounded-xl border border-dashed border-slate-200 p-3 text-[11px] text-slate-500 dark:border-white/10 dark:text-slate-400">
+                        {lang === 'ar' ? 'الرسم المالي سيظهر عند توفر مصدر إيرادات/طلبات موثوق من الخادم — لن تُعرض أرقام تجريبية.' : 'Financial chart will appear when a trusted revenue/orders source is available — no demo figures are shown.'}
                       </div>
                     </section>
                     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
-                      <h3 className="text-sm font-black">{lang === 'ar' ? 'الحالة النظامية' : lang === 'en' ? 'System status' : 'État du système'}</h3>
+                      <h3 className="text-sm font-black">{lang === 'ar' ? 'الحالة النظامية' : lang === 'fr' ? 'État du système' : 'System status'}</h3>
+                      <p className="mt-1 text-[10px] text-slate-400">{lang === 'ar' ? 'لا نفترض أن الخدمة متصلة بدون فحص فعلي.' : 'No service is marked online without a real health check.'}</p>
                       <div className="mt-5 space-y-3 text-xs">
                         {[
                           lang === 'ar' ? 'الخادم' : 'Server',
@@ -489,13 +500,17 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                           lang === 'ar' ? 'بوابة الدفع' : 'Payment gateway',
                           lang === 'ar' ? 'إرسال الرسائل' : 'Messaging',
                           lang === 'ar' ? 'التخزين السحابي' : 'Cloud storage',
-                        ].map((service) => <div key={service} className="flex items-center justify-between"><span className="font-bold text-slate-500 dark:text-slate-300">{service}</span><span className="flex items-center gap-2 font-black text-emerald-500"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />{lang === 'ar' ? 'متصل' : 'Online'}</span></div>)}
+                        ].map((service) => <div key={service} className="flex items-center justify-between"><span className="font-bold text-slate-500 dark:text-slate-300">{service}</span><span className="flex items-center gap-2 font-black text-amber-500"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" />{lang === 'ar' ? 'غير مفحوص' : 'Not checked'}</span></div>)}
                       </div>
-                      <div className="mt-5 rounded-xl bg-emerald-500/10 px-3 py-2 text-center text-[10px] font-black text-emerald-500">{lang === 'ar' ? 'جميع الأنظمة تعمل بشكل طبيعي' : 'All systems operational'}</div>
-                    </section>
-                  </div>
+                    </section>                  </div>
                 )}
 
+                {currentSection === 'overview' && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
+                    <div><h1 className="text-xl font-black">{lang === 'ar' ? 'مرحباً بعودتك 👋' : lang === 'fr' ? 'Bon retour 👋' : 'Welcome back 👋'}</h1><p className="mt-1 text-[11px] text-slate-400">{new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
+                    <div className="flex gap-2"><a href="/" target="_blank" rel="noopener noreferrer" className="rounded-xl bg-orange-500 px-3 py-2 text-[11px] font-black text-white hover:bg-orange-600">{lang === 'ar' ? 'عرض الموقع' : 'View site'}</a><a href="/marketplace" className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black dark:border-white/10">{lang === 'ar' ? 'السوق' : 'Marketplace'}</a></div>
+                  </div>
+                )}
                 {currentSection === 'overview' && (
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                     {[
@@ -503,10 +518,11 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                       [ShieldCheck, lang === 'ar' ? 'باقات الاشتراك' : 'Subscription plans', lang === 'ar' ? 'إدارة الباقات' : 'Manage plans'],
                       [Send, lang === 'ar' ? 'قوالب الرسائل' : 'Message templates', lang === 'ar' ? 'البريد · الرسائل · الإشعارات' : 'Email · SMS · notifications'],
                       [Store, lang === 'ar' ? 'إدارة المتاجر' : 'Store management', lang === 'ar' ? 'عرض وتفعيل وتعديل' : 'View, enable and edit'],
+                      [Sparkles, lang === 'ar' ? 'تخصيص موقعك' : 'Site customization', lang === 'ar' ? 'الهوية والمظهر العام' : 'Branding & appearance'],
                       [TrendingUp, lang === 'ar' ? 'سوق NFOOD' : 'NFOOD Marketplace', lang === 'ar' ? 'فتح السوق مباشرة' : 'Open marketplace'],
                     ].map(([Icon, title, subtitle], index) => {
                       const QuickIcon = Icon as typeof Settings;
-                      return <button key={String(title)} type="button" onClick={() => index === 4 ? window.location.assign('/marketplace') : setCurrentSection(index === 2 ? 'settings' : index === 3 ? 'admin' : index === 0 ? 'settings' : 'admin')} className="group rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400/50 dark:border-white/10 dark:bg-[#0c1828]">
+                      return <button key={String(title)} type="button" onClick={() => index === 5 ? window.location.assign('/marketplace') : setCurrentSection(index === 2 ? 'settings' : index === 3 ? 'admin' : index === 4 ? 'files' : index === 0 ? 'settings' : 'admin')} className="group rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400/50 dark:border-white/10 dark:bg-[#0c1828]">
                         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500"><QuickIcon size={19} /></span>
                         <p className="mt-3 text-sm font-black">{String(title)}</p>
                         <p className="mt-1 text-[10px] font-semibold text-slate-400">{String(subtitle)}</p>
@@ -514,7 +530,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                     })}
                   </div>
                 )}
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                   {kpis.map((kpi) => {
                     const Icon = kpi.icon;
                     return (
@@ -523,10 +539,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-orange-500 dark:bg-orange-500/10 dark:text-orange-400">
                             <Icon size={17} />
                           </span>
-                          <span className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-black ${kpi.up ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400'}`}>
-                            {kpi.up ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
-                            {kpi.trend}
-                          </span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black text-slate-500 dark:bg-white/5 dark:text-slate-300">{kpi.detail}</span>
                         </div>
                         <p className="mt-3 text-2xl font-black tracking-tight">{kpi.value}</p>
                         <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">{kpi.label}</p>
@@ -555,8 +568,8 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
                   <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/50">
                     <div>
-                      <h2 className="text-base font-black">{t.table_title}</h2>
-                      <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{t.table_subtitle}</p>
+                      <h2 className="text-base font-black">{currentSection === 'overview' ? (lang === 'ar' ? 'أحدث المتاجر والمنشآت' : lang === 'fr' ? 'Dernières entreprises' : 'Latest stores & businesses') : t.table_title}</h2>
+                      <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{currentSection === 'overview' ? (lang === 'ar' ? 'أحدث البيانات الحقيقية المسجلة في المنصة' : 'Latest live records registered on the platform') : t.table_subtitle}</p>
                     </div>
                     <button type="button" onClick={() => handleOpenModal(orders[0])} disabled={!orders.length} className="flex cursor-pointer items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-black text-orange-600 transition hover:bg-orange-100 disabled:cursor-default disabled:opacity-40 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20">
                       <ShieldCheck size={11} />
