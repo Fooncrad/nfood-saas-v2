@@ -306,7 +306,6 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
             <SidebarLink icon={<Store size={18} />} label={lang === 'ar' ? 'جميع المتاجر' : 'All stores'} active={currentSection === 'admin'} onClick={() => setCurrentSection('admin')} />
             <SidebarLink icon={<Users size={18} />} label={lang === 'ar' ? 'إدارة المستخدمين' : t.nav_accounts} active={currentSection === 'accounts'} onClick={() => setCurrentSection('accounts')} />
             <SidebarLink icon={<ShieldCheck size={18} />} label={lang === 'ar' ? 'الاشتراكات والباقات' : 'Subscriptions & plans'} active={currentSection === 'sectors'} onClick={() => setCurrentSection('sectors')} />
-            <SidebarLink icon={<FileText size={18} />} label={lang === 'ar' ? 'الطلبات والحجوزات' : 'Orders & reservations'} active={false} onClick={() => setCurrentSection('admin')} />
             <SidebarLink icon={<Megaphone size={18} />} label={lang === 'ar' ? 'التسويق والعروض' : 'Marketing & offers'} active={false} onClick={() => setCurrentSection('admin')} />
             <SidebarLink icon={<Send size={18} />} label={lang === 'ar' ? 'الرسائل والإشعارات' : 'Messages & notifications'} active={currentSection === 'settings'} onClick={() => setCurrentSection('settings')} />
             <SidebarLink icon={<TrendingUp size={18} />} label={lang === 'ar' ? 'التحليلات والتقارير' : 'Analytics & reports'} active={false} onClick={() => setCurrentSection('overview')} />
@@ -503,10 +502,11 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                       [ShieldCheck, lang === 'ar' ? 'باقات الاشتراك' : 'Subscription plans', lang === 'ar' ? 'إدارة الباقات' : 'Manage plans'],
                       [Send, lang === 'ar' ? 'قوالب الرسائل' : 'Message templates', lang === 'ar' ? 'البريد · الرسائل · الإشعارات' : 'Email · SMS · notifications'],
                       [Store, lang === 'ar' ? 'إدارة المتاجر' : 'Store management', lang === 'ar' ? 'عرض وتفعيل وتعديل' : 'View, enable and edit'],
+                      [Sparkles, lang === 'ar' ? 'تخصيص موقعك' : 'Site customization', lang === 'ar' ? 'الهوية والمظهر العام' : 'Branding & appearance'],
                       [TrendingUp, lang === 'ar' ? 'سوق NFOOD' : 'NFOOD Marketplace', lang === 'ar' ? 'فتح السوق مباشرة' : 'Open marketplace'],
                     ].map(([Icon, title, subtitle], index) => {
                       const QuickIcon = Icon as typeof Settings;
-                      return <button key={String(title)} type="button" onClick={() => index === 4 ? window.location.assign('/marketplace') : setCurrentSection(index === 2 ? 'settings' : index === 3 ? 'admin' : index === 0 ? 'settings' : 'admin')} className="group rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400/50 dark:border-white/10 dark:bg-[#0c1828]">
+                      return <button key={String(title)} type="button" onClick={() => index === 5 ? window.location.assign('/marketplace') : setCurrentSection(index === 2 ? 'settings' : index === 3 ? 'admin' : index === 4 ? 'files' : index === 0 ? 'settings' : 'admin')} className="group rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400/50 dark:border-white/10 dark:bg-[#0c1828]">
                         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500"><QuickIcon size={19} /></span>
                         <p className="mt-3 text-sm font-black">{String(title)}</p>
                         <p className="mt-1 text-[10px] font-semibold text-slate-400">{String(subtitle)}</p>
@@ -514,7 +514,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                     })}
                   </div>
                 )}
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                   {kpis.map((kpi) => {
                     const Icon = kpi.icon;
                     return (
