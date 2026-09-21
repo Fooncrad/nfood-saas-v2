@@ -255,10 +255,6 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
     setIsModalOpen(true);
   };
 
-  const cycleLanguage = () => {
-    const order: Language[] = ['ar', 'en', 'fr'];
-    setLang((current) => order[(order.indexOf(current) + 1) % order.length]);
-  };
 
   const isSectorSection = ALL_SECTORS.has(currentSection);
   const showEntityTable = currentSection === 'overview' || isSectorSection;
@@ -506,12 +502,6 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                 )}
 
                 {currentSection === 'overview' && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
-                    <div><h1 className="text-xl font-black">{lang === 'ar' ? 'مرحباً بعودتك 👋' : lang === 'fr' ? 'Bon retour 👋' : 'Welcome back 👋'}</h1><p className="mt-1 text-[11px] text-slate-400">{new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
-                    <div className="flex gap-2"><a href="/" target="_blank" rel="noopener noreferrer" className="rounded-xl bg-orange-500 px-3 py-2 text-[11px] font-black text-white hover:bg-orange-600">{lang === 'ar' ? 'عرض الموقع' : 'View site'}</a><a href="/marketplace" className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black dark:border-white/10">{lang === 'ar' ? 'السوق' : 'Marketplace'}</a></div>
-                  </div>
-                )}
-                {currentSection === 'overview' && (
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                     {[
                       [Settings, lang === 'ar' ? 'التحكم في الميزات' : 'Feature controls', lang === 'ar' ? 'إدارة الميزات' : 'Manage'],
@@ -519,10 +509,9 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                       [Send, lang === 'ar' ? 'قوالب الرسائل' : 'Message templates', lang === 'ar' ? 'البريد · الرسائل · الإشعارات' : 'Email · SMS · notifications'],
                       [Store, lang === 'ar' ? 'إدارة المتاجر' : 'Store management', lang === 'ar' ? 'عرض وتفعيل وتعديل' : 'View, enable and edit'],
                       [Sparkles, lang === 'ar' ? 'تخصيص موقعك' : 'Site customization', lang === 'ar' ? 'الهوية والمظهر العام' : 'Branding & appearance'],
-                      [TrendingUp, lang === 'ar' ? 'سوق NFOOD' : 'NFOOD Marketplace', lang === 'ar' ? 'فتح السوق مباشرة' : 'Open marketplace'],
                     ].map(([Icon, title, subtitle], index) => {
                       const QuickIcon = Icon as typeof Settings;
-                      return <button key={String(title)} type="button" onClick={() => index === 5 ? window.location.assign('/marketplace') : setCurrentSection(index === 2 ? 'settings' : index === 3 ? 'admin' : index === 4 ? 'files' : index === 0 ? 'settings' : 'admin')} className="group rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400/50 dark:border-white/10 dark:bg-[#0c1828]">
+                      return <button key={String(title)} type="button" onClick={() => setCurrentSection(index === 2 ? 'settings' : index === 3 ? 'admin' : index === 4 ? 'files' : index === 0 ? 'settings' : 'admin')} className="group rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400/50 dark:border-white/10 dark:bg-[#0c1828]">
                         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500"><QuickIcon size={19} /></span>
                         <p className="mt-3 text-sm font-black">{String(title)}</p>
                         <p className="mt-1 text-[10px] font-semibold text-slate-400">{String(subtitle)}</p>
@@ -559,10 +548,6 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                       {t.tab_creators}
                     </button>
                   </div>
-                  <button type="button" onClick={() => seedDemoMutation.mutate()} disabled={seedDemoMutation.isPending} className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[11px] font-black text-violet-600 transition hover:bg-violet-100 disabled:cursor-default disabled:opacity-50 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-400 dark:hover:bg-violet-500/20">
-                    <Sparkles size={13} />
-                    {seedDemoMutation.isPending ? t.loading : t.btn_seed_data}
-                  </button>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
