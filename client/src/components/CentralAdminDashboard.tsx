@@ -13,8 +13,8 @@ import { toast } from "sonner";
 
 const translations = {
   ar: {
-    dir: 'rtl', projectName: 'نفود المشتركة', panelTitle: 'الأدمن المركزي والمؤسسي', panelSubtitle: 'إدارة أفرع الخدمات، القدرات، القطاعات وتعديل حزم الاشتراكات البينية', systemReady: 'النظام حي ومستقر', searchPlaceholder: 'ابحث عن منشأة، طلب، عميل... (Ctrl + K)', adminCenter: 'مركز التحكم', adminBadge: 'بوابة التحكم العليا',
-    nav_overview: 'نظرة عامة والعمليات', nav_superAdmin: 'Super Admin', nav_admin: 'الإدارة المركزية', nav_accounts: 'إدارة الحسابات والأدوار', nav_settings: 'الإعدادات العامة', settingsGroup: 'الإعدادات والتخصيص', nav_languages: 'اللغة والترجمة', nav_files: 'مكتبة الملفات المركزية', nav_trend: 'سوق نفود / Trend Kitchen', nav_security: 'أمان الحساب والجلسات', nav_health: 'صحة النظام والـ Logs',
+    dir: 'rtl', projectName: 'NFOOD', panelTitle: 'لوحة الإدارة العليا', panelSubtitle: 'إدارة المطاعم والمتاجر والاشتراكات والعمليات من مركز واحد', systemReady: 'النظام حي ومستقر', searchPlaceholder: 'ابحث عن منشأة، طلب، عميل... (Ctrl + K)', adminCenter: 'مركز التحكم', adminBadge: 'بوابة التحكم العليا',
+    nav_overview: 'نظرة عامة والعمليات', nav_superAdmin: 'Super Admin', nav_admin: 'الإدارة المركزية', nav_accounts: 'إدارة الحسابات والأدوار', nav_settings: 'الإعدادات العامة', settingsGroup: 'الإعدادات والتخصيص', nav_languages: 'اللغة والترجمة', nav_files: 'مكتبة الملفات المركزية', nav_trend: 'سوق NFOOD / Trend Kitchen', nav_security: 'أمان الحساب والجلسات', nav_health: 'صحة النظام والـ Logs',
     nav_future_modules: 'حوكمة القطاعات والوحدات الشاملة (8 وحدات)', nav_veg: 'وحدة الخضار والفواكه', nav_grocery: 'وحدة البقالات والتموينات', nav_laundry: 'وحدة مغاسل الملابس', nav_auto: 'وحدة خدمات السيارات', nav_barber: 'وحدة الصالونات ومراكز التجميل', nav_public: 'وحدة الأشغال العامة والصيانة', nav_fashion: 'وحدة الموضة والأزياء والملبوسات', nav_sweets: 'وحدة الحلويات والمخبوزات والتحلية',
     nav_sectors: 'حوكمة القطاعات',
     sectors_title: 'لوحة حوكمة القطاعات الشاملة', sectors_subtitle: 'تعديل تسميات القطاعات، التفعيل والإيقاف، والتبليغ الجماعي أو المستهدف للمنشآت والعملاء', sector_status_active: 'مفعّل', sector_status_inactive: 'موقوف', sector_entities: 'منشأة', sector_restaurants: 'مطاعم',
@@ -286,10 +286,10 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
           <div className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden" onClick={() => setIsSidebarOpen(false)} />
         )}
 
-        <aside className={`fixed inset-y-0 start-0 z-40 flex w-72 flex-col border-e bg-[#0f172a] text-white transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 dark:bg-[#1e293b] ${isSidebarOpen ? 'translate-x-0' : t.dir === 'rtl' ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-          <div className="flex items-center justify-between border-b border-slate-700/50 p-6">
+        <aside className={`fixed inset-y-0 start-0 z-40 flex w-64 flex-col border-e border-white/10 bg-[#07111f] text-white shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 dark:bg-[#07111f] ${isSidebarOpen ? 'translate-x-0' : t.dir === 'rtl' ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-orange-500 to-amber-400 font-black text-white">NF</div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-400/30 bg-orange-500/10 font-black text-orange-400">NF</div>
               <div>
                 <h1 className="text-lg font-black tracking-wider text-white">{t.projectName}</h1>
                 <p className="text-xs text-slate-400">{t.adminBadge ?? t.adminCenter}</p>
@@ -300,7 +300,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
             </button>
           </div>
 
-          <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
             <SidebarLink icon={<LayoutDashboard size={18} />} label={t.nav_overview} active={currentSection === 'overview'} onClick={() => setCurrentSection('overview')} />
             <SidebarLink icon={<ShieldAlert size={18} />} label={t.nav_superAdmin} active={currentSection === 'admin'} onClick={() => setCurrentSection('admin')} />
             <SidebarLink icon={<Users size={18} />} label={t.nav_accounts} active={currentSection === 'accounts'} onClick={() => setCurrentSection('accounts')} />
@@ -308,7 +308,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
             <SidebarLink icon={<Settings size={18} />} label={t.nav_settings} active={currentSection === 'settings'} onClick={() => setCurrentSection('settings')} />
             <SidebarLink icon={<Languages size={18} />} label={t.nav_languages} active={currentSection === 'languages'} onClick={() => setCurrentSection('languages')} />
             <SidebarLink icon={<FolderOpen size={18} />} label={t.nav_files} active={currentSection === 'files'} onClick={() => setCurrentSection('files')} />
-            <SidebarLink icon={<TrendingUp size={18} />} label={t.nav_trend} active={currentSection === 'trend'} onClick={() => setCurrentSection('trend')} />
+            <SidebarLink icon={<TrendingUp size={18} />} label={t.nav_trend} active={currentSection === 'trend'} onClick={() => { setCurrentSection('trend'); window.location.assign('/marketplace'); }} />
             <SidebarLink icon={<ShieldCheck size={18} />} label={t.nav_security} active={currentSection === 'security'} onClick={() => setCurrentSection('security')} />
             <SidebarLink icon={<HeartPulse size={18} />} label={t.nav_health} active={currentSection === 'health'} onClick={() => setCurrentSection('health')} />
             <SectionGroupLabel>{t.nav_future_modules}</SectionGroupLabel>
@@ -328,7 +328,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="sticky top-0 z-20 flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur dark:border-slate-700/60 dark:bg-[#0f172a]/90">
+          <header className="sticky top-0 z-20 flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-xl dark:border-white/10 dark:bg-[#07111f]/95">
             <div className="flex min-w-0 items-center gap-3">
               <button onClick={() => setIsSidebarOpen(true)} className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden" aria-label="menu">
                 <Menu size={18} />
@@ -343,6 +343,8 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
               </span>
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              <a href="/" target="_blank" rel="noopener noreferrer" className="hidden h-9 items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 text-xs font-black text-emerald-600 transition hover:bg-emerald-500/20 md:flex dark:text-emerald-400"><ExternalLink size={14} />{lang === 'ar' ? 'عرض الموقع' : lang === 'en' ? 'View site' : 'Voir le site'}</a>
+              <a href="/marketplace" className="hidden h-9 items-center gap-1.5 rounded-xl border border-orange-500/40 bg-orange-500/10 px-3 text-xs font-black text-orange-600 transition hover:bg-orange-500/20 lg:flex dark:text-orange-400"><TrendingUp size={14} />{lang === 'ar' ? 'السوق' : lang === 'en' ? 'Marketplace' : 'Marché'}</a>
               <div className="relative hidden sm:block">
                 <Search size={15} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -365,7 +367,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
             </div>
           </header>
 
-          <main className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
+          <main className="flex-1 space-y-5 overflow-y-auto bg-slate-50 p-4 sm:p-5 dark:bg-[#08121f]">
             {currentSection === 'sectors' ? (
               <>
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
