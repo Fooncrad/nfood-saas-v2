@@ -11,6 +11,7 @@ import VcardCardsAdmin from "@/pages/VcardCardsAdmin";
 import { SecurityView } from "@/components/SecurityView";
 import { SystemHealthView } from "@/components/SystemHealthView";
 import SuperAdminView from "@/components/SuperAdminView";
+import ActivitiesSectorsAdmin from "@/components/ActivitiesSectorsAdmin";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 
@@ -25,7 +26,7 @@ export default function SuperAdminApp() {
   const panel = useMemo(() => {
     switch (active) {
       case "admin": return <SuperAdminView />;
-      case "activities": return <PlatformOverview onNavigate={() => setActive("admin")} />;
+      case "activities": return <ActivitiesSectorsAdmin />;
       case "accounts": return <AccountManagementPanel />;
       case "settings":
       case "site": return <PlatformSettingsPanel />;
