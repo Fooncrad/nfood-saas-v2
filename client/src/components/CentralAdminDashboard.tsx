@@ -302,7 +302,11 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
           <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 text-[13px]">
             <SidebarLink icon={<LayoutDashboard size={18} />} label={lang === 'ar' ? 'الرئيسية' : t.nav_overview} active={currentSection === 'overview'} onClick={() => setCurrentSection('overview')} />
             <SectionGroupLabel>{lang === 'ar' ? 'المتاجر والمطاعم' : 'Stores & Restaurants'}</SectionGroupLabel>
-            <SidebarLink icon={<Store size={18} />} label={lang === 'ar' ? 'جميع المتاجر' : 'All stores'} active={currentSection === 'admin'} onClick={() => setCurrentSection('admin')} />
+            <SidebarLink icon={<Store size={18} />} label={lang === 'ar' ? 'جميع المتاجر' : lang === 'fr' ? 'Toutes les entreprises' : 'All stores'} active={currentSection === 'admin'} onClick={() => setCurrentSection('admin')} />
+            <SidebarLink icon={<Plus size={18} />} label={lang === 'ar' ? 'إضافة متجر جديد' : lang === 'fr' ? 'Ajouter une entreprise' : 'Add new store'} active={false} onClick={() => setCurrentSection('admin')} />
+            <SidebarLink icon={<FolderOpen size={18} />} label={lang === 'ar' ? 'الفئات والتصنيفات' : lang === 'fr' ? 'Catégories' : 'Categories'} active={false} onClick={() => setCurrentSection('sectors')} />
+            <SidebarLink icon={<UserCheck size={18} />} label={lang === 'ar' ? 'مراجعة طلبات الانضمام' : lang === 'fr' ? 'Demandes d’adhésion' : 'Join requests'} active={false} onClick={() => setCurrentSection('admin')} />
+            <SectionGroupLabel>{lang === 'ar' ? 'إدارة المنصة' : lang === 'fr' ? 'Gestion de la plateforme' : 'Platform management'}</SectionGroupLabel>
             <SidebarLink icon={<Users size={18} />} label={lang === 'ar' ? 'إدارة المستخدمين' : t.nav_accounts} active={currentSection === 'accounts'} onClick={() => setCurrentSection('accounts')} />
             <SidebarLink icon={<ShieldCheck size={18} />} label={lang === 'ar' ? 'الاشتراكات والباقات' : 'Subscriptions & plans'} active={currentSection === 'sectors'} onClick={() => setCurrentSection('sectors')} />
             <SidebarLink icon={<Megaphone size={18} />} label={lang === 'ar' ? 'التسويق والعروض' : 'Marketing & offers'} active={false} onClick={() => setCurrentSection('admin')} />
@@ -501,6 +505,12 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                     </section>                  </div>
                 )}
 
+                {currentSection === 'overview' && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-white/10 dark:bg-[#0c1828]">
+                    <div><h1 className="text-xl font-black">{lang === 'ar' ? 'مرحباً بعودتك 👋' : lang === 'fr' ? 'Bon retour 👋' : 'Welcome back 👋'}</h1><p className="mt-1 text-[11px] text-slate-400">{new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
+                    <div className="flex gap-2"><a href="/" target="_blank" rel="noopener noreferrer" className="rounded-xl bg-orange-500 px-3 py-2 text-[11px] font-black text-white hover:bg-orange-600">{lang === 'ar' ? 'عرض الموقع' : 'View site'}</a><a href="/marketplace" className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black dark:border-white/10">{lang === 'ar' ? 'السوق' : 'Marketplace'}</a></div>
+                  </div>
+                )}
                 {currentSection === 'overview' && (
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                     {[
