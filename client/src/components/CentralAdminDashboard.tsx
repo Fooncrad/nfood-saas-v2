@@ -96,6 +96,7 @@ type SectorGovernance = {
   labelFr: string;
   active: boolean;
   entityCount: number;
+  coverUrl: string;
   source: 'platformEntity' | 'contentCreators';
 };
 
@@ -162,6 +163,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
   const [editSectorKey, setEditSectorKey] = useState<string | null>(null);
   const [editLabels, setEditLabels] = useState({ labelAr: '', labelEn: '', labelFr: '' });
   const [editActive, setEditActive] = useState(true);
+  const [editCoverUrl, setEditCoverUrl] = useState('');
 
   const updateSectorMutation = trpc.admin.updateSectorMeta.useMutation({
     onSuccess: () => { toast.success(t.label_updated); sectorCatalogQuery.refetch(); setEditSectorKey(null); },
@@ -194,11 +196,11 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
 
   const openNotifyModal = (sector: SectorGovernance) => { setNotifyTargetSector(sector); setNotifyMode('broadcast'); setNotifyTitle(''); setNotifyBody(''); setNotifyType('system'); setNotifySelectedIds([]); setNotifyEntitySearch(''); setNotifyOpen(true); };
 
-  const openEditModal = (sector: SectorGovernance) => { setEditSectorKey(sector.key); setEditLabels({ labelAr: sector.labelAr, labelEn: sector.labelEn, labelFr: sector.labelFr }); setEditActive(sector.active); };
+  const openEditModal = (sector: SectorGovernance) => { setEditSectorKey(sector.key); setEditLabels({ labelAr: sector.labelAr, labelEn: sector.labelEn, labelFr: sector.labelFr }); setEditActive(sector.active); setEditCoverUrl(sector.coverUrl || ''); };
 
   const toggleSectorActive = (sector: SectorGovernance) => {
     const fields = lang === 'ar' ? { labelAr: sector.labelAr, labelEn: sector.labelEn, labelFr: sector.labelFr } : lang === 'en' ? { labelAr: sector.labelAr, labelEn: sector.labelEn, labelFr: sector.labelFr } : { labelAr: sector.labelAr, labelEn: sector.labelEn, labelFr: sector.labelFr };
-    updateSectorMutation.mutate({ sectorKey: sector.key, ...fields, active: !sector.active });
+    updateSectorMutation.mutate({ sectorKey: sector.key, ...fields, active: !sector.active, coverUrl: sector.coverUrl || '' });
   };
 
   const handleNotifySubmit = () => {
@@ -388,7 +390,11 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                     const label = getSectorLabel(sector);
                     const isTrend = sector.source === 'contentCreators';
                     return (
-                      <div key={sector.key} className={`flex flex-col gap-3 rounded-2xl border p-4 shadow-sm transition ${sector.active ? 'border-slate-200 bg-white dark:border-slate-700/60 dark:bg-[#1e293b]' : 'border-dashed border-slate-300 bg-slate-50/60 opacity-75 dark:border-slate-700 dark:bg-[#1e293b]/60'}`}>
+                      <div key={sector.key} className={`flex min-h-[330px] flex-col overflow-hidden rounded-2xl border shadow-sm transition ${sector.active ? 'border-slate-200 bg-white dark:border-slate-700/60 dark:bg-[#1e293b]' : 'border-dashed border-slate-300 bg-slate-50/60 opacity-75 dark:border-slate-700 dark:bg-[#1e293b]/60'}`}>
+                        <div className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
+                          {sector.coverUrl ? <img src={sector.coverUrl} alt={label} className="h-full w-full object-cover object-center" /> : <div className="flex h-full items-center justify-center text-slate-400"><NavIcon size={42} /></div>}
+                        </div>
+                        <div className="flex flex-1 flex-col gap-3 p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
                             <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${sector.active ? 'bg-orange-50 text-orange-500 dark:bg-orange-500/10 dark:text-orange-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'}`}>
