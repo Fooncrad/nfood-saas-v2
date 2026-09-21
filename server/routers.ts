@@ -211,7 +211,19 @@ export const appRouter = router({
     testLogin: publicProcedure.input(z.object({ email: z.string().trim().email().max(320), password: z.string().min(1), deviceFingerprintHash: z.string().regex(/^[a-f0-9]{64}$/).optional(), deviceLabel: z.string().trim().min(2).max(160).optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const email = input.email.trim().toLowerCase();
-      const account = (await db.select({ id: users.id, openId: users.openId, name: users.name, email: users.email, passwordHash: users.passwordHash, accountRole: users.accountRole, role: users.role, deletedAt: users.deletedAt }).from(users).where(eq(users.email, email)).limit(1))[0];
+      let account;
+      try {
+        account = (await db.select({ id: users.id, openId: users.openId, name: users.name, email: users.email, passwordHash: users.passwordHash, accountRole: users.accountRole, role: users.role, deletedAt: users.deletedAt }).from(users).where(eq(users.email, email)).limit(1))[0];
+      } catch (error: any) {
+        const cause = error?.cause ?? error;
+        console.error("[Auth][Database] Login query failed", {
+          code: cause?.code ?? null,
+          errno: cause?.errno ?? null,
+          sqlState: cause?.sqlState ?? null,
+          message: cause?.message ?? error?.message ?? "Unknown database error",
+        });
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "تعذر الاتصال بقاعدة بيانات تسجيل الدخول" });
+      }
       if (!account || account.deletedAt || !account.passwordHash) throw new TRPCError({ code: "UNAUTHORIZED", message: "الحساب غير مفعل أو بيانات الدخول غير صحيحة" });
       const [scheme, salt, storedKey] = account.passwordHash.split("$");
       if (scheme !== "scrypt" || !salt || !storedKey) throw new TRPCError({ code: "UNAUTHORIZED", message: "بيانات الدخول غير صحيحة" });
