@@ -355,13 +355,20 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
               <button type="button" onClick={() => onToggleTheme?.()} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800" aria-label="theme">
                 {dark ? <Sun size={17} /> : <Moon size={17} />}
               </button>
-              <button type="button" onClick={cycleLanguage} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800" aria-label="language">
-                <Globe size={17} />
-              </button>
+              <div className="relative hidden md:block">
+                <Globe size={14} className="pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <select value={lang} onChange={(event) => setLang(event.target.value as Language)} className="h-9 appearance-none rounded-xl border border-slate-200 bg-white ps-8 pe-7 text-[11px] font-black text-slate-600 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300" aria-label="language">
+                  <option value="ar">العربية</option><option value="en">English</option><option value="fr">Français</option>
+                </select>
+              </div>
               <button type="button" className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800" aria-label="notifications">
                 <Bell size={17} />
-                <span className="absolute -end-0.5 -top-0.5 h-2 w-2 rounded-full bg-orange-500 ring-2 ring-white dark:ring-[#0f172a]" />
+                {(liveData?.recentGovernance?.length ?? 0) > 0 && <span className="absolute -end-1 -top-1 min-w-4 rounded-full bg-orange-500 px-1 text-center text-[9px] font-black leading-4 text-white">{Math.min(liveData?.recentGovernance?.length ?? 0, 99)}</span>}
               </button>
+              <div className="hidden items-center gap-2 border-s border-slate-200 ps-3 lg:flex dark:border-white/10">
+                <div className="text-end leading-tight"><p className="text-[11px] font-black">FOON Cards</p><p className="text-[9px] font-bold text-orange-500">Super Admin</p></div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-amber-600 text-xs font-black text-white">FC</div>
+              </div>
             </div>
           </header>
 
@@ -551,8 +558,8 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
                   <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/50">
                     <div>
-                      <h2 className="text-base font-black">{t.table_title}</h2>
-                      <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{t.table_subtitle}</p>
+                      <h2 className="text-base font-black">{currentSection === 'overview' ? (lang === 'ar' ? 'أحدث المتاجر والمنشآت' : lang === 'fr' ? 'Dernières entreprises' : 'Latest stores & businesses') : t.table_title}</h2>
+                      <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{currentSection === 'overview' ? (lang === 'ar' ? 'أحدث البيانات الحقيقية المسجلة في المنصة' : 'Latest live records registered on the platform') : t.table_subtitle}</p>
                     </div>
                     <button type="button" onClick={() => handleOpenModal(orders[0])} disabled={!orders.length} className="flex cursor-pointer items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-black text-orange-600 transition hover:bg-orange-100 disabled:cursor-default disabled:opacity-40 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20">
                       <ShieldCheck size={11} />
