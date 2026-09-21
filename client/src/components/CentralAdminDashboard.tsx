@@ -156,11 +156,6 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
     onError: () => toast.error(lang === 'ar' ? 'فشلت ترقية مساحة التخزين (راجع الحد المطلوب)' : lang === 'en' ? 'Storage upgrade failed (check requested limit)' : 'Échec de l\'augmentation du stockage (vérifiez la limite)'),
   });
 
-  const seedDemoMutation = trpc.admin.seedPlatformDemoData.useMutation({
-    onSuccess: (data) => { toast.success(lang === 'ar' ? (data.message ?? 'تم تجهيز البيانات التجريبية') : lang === 'en' ? (data.seeded ? 'Demo data seeded successfully' : 'Demo data already present') : (data.seeded ? 'Données de démo générées' : 'Données déjà présentes')); refetch(); },
-    onError: () => toast.error(lang === 'ar' ? 'فشل تجهيز البيانات التجريبية' : lang === 'en' ? 'Failed to seed demo data' : 'Échec de la génération des données'),
-  });
-
   const sectorCatalogQuery = trpc.admin.sectorCatalog.useQuery();
   const sectors: SectorGovernance[] = sectorCatalogQuery.data?.sectors ?? [];
 
@@ -260,11 +255,11 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
   const showEntityTable = currentSection === 'overview' || isSectorSection;
 
   const kpis = [
-    { label: t.card_restaurants, value: String(summary?.active ?? 0), detail: lang === 'ar' ? 'منشآت مفعلة' : 'active entities', icon: Store },
-    { label: t.card_accounts, value: String(summary?.total ?? 0), detail: lang === 'ar' ? `${summary?.suspended ?? 0} موقوف` : `${summary?.suspended ?? 0} suspended`, icon: Users },
-    { label: t.card_subscriptions, value: String((liveData?.byPlan['Enterprise'] ?? 0) + (liveData?.byPlan['Pro'] ?? 0)), detail: lang === 'ar' ? 'Pro + Enterprise' : 'Pro + Enterprise', icon: ShieldCheck },
-    { label: lang === 'ar' ? 'الكتالوجات النشطة' : 'Active catalogs', value: String(summary?.catalogs ?? 0), detail: lang === 'ar' ? 'بيانات حية' : 'live data', icon: FolderOpen },
-    { label: t.card_notifications, value: String(liveData?.recentGovernance?.length ?? 0), detail: lang === 'ar' ? 'سجل الحوكمة الأخير' : 'recent governance', icon: Bell },
+    { label: lang === 'ar' ? 'المطاعم النشطة' : lang === 'fr' ? 'Restaurants actifs' : 'Active restaurants', value: String(summary?.active ?? 0), detail: lang === 'ar' ? 'بيانات حية' : 'live data', icon: Store },
+    { label: lang === 'ar' ? 'الإيرادات الشهرية' : lang === 'fr' ? 'Revenu mensuel' : 'Monthly revenue', value: '—', detail: lang === 'ar' ? 'غير مفحوص' : 'Not checked', icon: TrendingUp },
+    { label: lang === 'ar' ? 'الطلبات اليوم' : lang === 'fr' ? 'Commandes aujourd’hui' : 'Orders today', value: '—', detail: lang === 'ar' ? 'غير مفحوص' : 'Not checked', icon: ShoppingCart },
+    { label: lang === 'ar' ? 'إجمالي المتاجر' : lang === 'fr' ? 'Total magasins' : 'Total stores', value: String(summary?.total ?? 0), detail: lang === 'ar' ? 'كل المنشآت' : 'all entities', icon: Store },
+    { label: lang === 'ar' ? 'إجمالي المستخدمين' : lang === 'fr' ? 'Total utilisateurs' : 'Total users', value: '—', detail: lang === 'ar' ? 'غير مفحوص' : 'Not checked', icon: Users },
   ];
 
   const planCls: Record<'Basic' | 'Pro' | 'Enterprise', string> = {
@@ -483,13 +478,25 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                       </section>
                       <section className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-5">
                         <h2 className="text-sm font-black">{lang === 'ar' ? 'توزيع الفئات' : 'Category distribution'}</h2>
-                        <div className="mt-5 space-y-3">{Object.entries(liveData?.byPlan ?? {}).map(([label,value]) => <div key={label}><div className="mb-1 flex justify-between text-[11px]"><span>{label}</span><span className="font-black">{String(value)}</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-orange-500" style={{width: `${Math.min(100, Number(value || 0) * 10)}%`}} /></div></div>)}</div>
+                        <div className="mt-5 space-y-3">{sectors.length ? sectors.slice(0, 6).map((sector) => { const total = Math.max(1, sectors.reduce((sum, item) => sum + item.entityCount, 0)); return <div key={sector.key}><div className="mb-1 flex justify-between text-[11px]"><span>{getSectorLabel(sector)}</span><span className="font-black">{sector.entityCount}</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-orange-500" style={{width: `${Math.round((sector.entityCount / total) * 100)}%`}} /></div></div> }) : <div className="flex h-36 items-center justify-center text-xs text-slate-500">{lang === 'ar' ? 'لا توجد بيانات فئات متاحة' : 'No category data available'}</div>}</div>
                       </section>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                      {[[Settings,'التحكم في الميزات','إدارة الميزات'],[ShieldCheck,'باقات الاشتراك','إدارة الباقات'],[Send,'قوالب الرسائل','البريد والرسائل والإشعارات'],[Store,'إدارة المتاجر','عرض وتفعيل وتعديل'],[Sparkles,'تخصيص موقعك','الهوية والمظهر العام']].map(([Icon,title,subtitle],index)=>{const QuickIcon=Icon as typeof Settings; return <button key={String(title)} type="button" onClick={()=>setCurrentSection(index===2?'settings':index===3?'admin':index===4?'files':index===0?'settings':'admin')} className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-4 text-start transition hover:border-orange-500/60"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400"><QuickIcon size={19}/></span><p className="mt-3 text-sm font-black">{lang==='ar'?String(title):String(title)}</p><p className="mt-1 text-[10px] text-slate-400">{String(subtitle)}</p></button>})}
+                      {[
+  [Settings, lang === 'ar' ? 'التحكم في الميزات' : 'Feature controls', lang === 'ar' ? 'إدارة صلاحيات المنصة' : 'Manage platform capabilities'],
+  [ShieldCheck, lang === 'ar' ? 'باقات الاشتراك' : 'Subscription plans', lang === 'ar' ? 'إدارة الباقات والحدود' : 'Plans and entitlements'],
+  [Send, lang === 'ar' ? 'قوالب الرسائل' : 'Message templates', lang === 'ar' ? 'البريد والرسائل والإشعارات' : 'Email, messages and alerts'],
+  [Store, lang === 'ar' ? 'إدارة المتاجر' : 'Store management', lang === 'ar' ? 'عرض وتفعيل وتعديل' : 'View, activate and edit'],
+  [Sparkles, lang === 'ar' ? 'تخصيص موقعك' : 'Site customization', lang === 'ar' ? 'الهوية والمظهر العام' : 'Brand and appearance'],
+].map(([Icon,title,subtitle],index)=>{const QuickIcon=Icon as typeof Settings; return <button key={String(title)} type="button" onClick={()=>setCurrentSection(index===2?'settings':index===3?'admin':index===4?'files':index===0?'settings':'sectors')} className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-4 text-start transition hover:border-orange-500/60"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400"><QuickIcon size={19}/></span><p className="mt-3 text-sm font-black">{String(title)}</p><p className="mt-1 text-[10px] text-slate-400">{String(subtitle)}</p></button>})}
                     </div>
                   </>
+                )}
+                {currentSection === 'overview' && (
+                  <section className="grid gap-3 rounded-xl border border-slate-700/60 bg-[#0c1828] p-4 sm:grid-cols-5">
+                    <div><p className="text-sm font-black">{lang === 'ar' ? 'الحالة النظامية' : 'System status'}</p><p className="mt-1 text-[10px] text-slate-500">{lang === 'ar' ? 'لا نعرض حالة خضراء دون فحص فعلي' : 'No healthy status is shown without a real probe'}</p></div>
+                    {['API / Server','Database','Payment gateway','Messaging','Cloud storage'].map((service) => <div key={service} className="rounded-lg border border-slate-700 bg-[#08111d] px-3 py-2"><p className="text-[10px] text-slate-400">{service}</p><p className="mt-1 text-xs font-black text-amber-400">{lang === 'ar' ? 'غير مفحوص' : 'Not checked'}</p></div>)}
+                  </section>
                 )}
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
                   <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
