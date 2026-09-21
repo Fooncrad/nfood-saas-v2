@@ -134,7 +134,8 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme, embedded = 
   const t = translations[lang];
 
   const { data: liveData, isLoading, refetch } = trpc.admin.getPlatformEntities.useQuery(
-    { sector: currentSection, search: searchQuery, filterTab: activeTab }
+    { sector: currentSection, search: searchQuery, filterTab: activeTab },
+    { enabled: !embedded }
   );
 
   const toggleStatusMutation = trpc.admin.toggleEntityStatus.useMutation({
