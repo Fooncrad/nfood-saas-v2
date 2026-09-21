@@ -27,10 +27,11 @@ import MarketplaceStoresView from "@/components/MarketplaceStoresView";
 import { UiTranslationAdminPanel } from "@/components/UiTranslationAdminPanel";
 import { MediaLibraryPanel } from "@/components/MediaLibraryPanel";
 import ContentMarketplace from "@/pages/ContentMarketplace";
+import VcardCardsAdmin from "@/pages/VcardCardsAdmin";
 import { StorefrontCustomizationPanel } from "@/components/StorefrontCustomizationPanel";
 
 type OrderStatus = "new" | "preparing" | "ready" | "completed";
-type NavKey = "overview" | "admin" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "storefront" | "reservations" | "remote" | "security" | "health" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend";
+type NavKey = "overview" | "admin" | "nfc" | "branches" | "orders" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "storefront" | "reservations" | "remote" | "security" | "health" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend";
 
 type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string };
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
@@ -80,6 +81,7 @@ export default function Home() {
       case "files": return <MediaLibraryPanel isCentralAdmin />;
       case "stores": return <MarketplaceStoresView />;
       case "trend": return <ContentMarketplace />;
+      case "nfc": return <VcardCardsAdmin />;
       case "security": return <SecurityView />;
       case "health": return <SystemHealthView />;
       case "overview": return undefined;
