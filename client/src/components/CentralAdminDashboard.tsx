@@ -118,7 +118,7 @@ function SectionGroupLabel({ children }: { children: ReactNode }) {
   return <div className="px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-wider text-slate-400">{children}</div>;
 }
 
-export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void, currentTheme: string }) {
+export function CentralAdminDashboard({ onToggleTheme, currentTheme, embedded = false }: { onToggleTheme?: () => void, currentTheme: string, embedded?: boolean }) {
   const dark = currentTheme === 'dark';
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('nfood-lang') as Language) || 'ar');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
@@ -259,6 +259,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
 
   const isSectorSection = ALL_SECTORS.has(currentSection);
   const showEntityTable = currentSection === 'overview' || isSectorSection;
+  useEffect(() => { if (embedded) setCurrentSection('sectors'); }, [embedded]);
 
   const kpis = [
     { label: lang === 'ar' ? 'المطاعم النشطة' : lang === 'fr' ? 'Restaurants actifs' : 'Active restaurants', value: String(summary?.active ?? 0), detail: lang === 'ar' ? 'بيانات حية' : 'live data', icon: Store },
@@ -273,6 +274,564 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
     Pro: 'bg-violet-50 text-violet-600 ring-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:ring-violet-500/30',
     Enterprise: 'bg-orange-50 text-orange-600 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/30',
   };
+
+  if (embedded) {
+    return (
+      <div className="space-y-5 p-1">
+        {currentSection === 'sectors' ? (
+              <>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-base font-black">{t.sectors_title}</h2>
+                      <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{t.sectors_subtitle}</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-black text-orange-600 ring-1 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/30">
+                      <Store size={12} />
+                      {sectors.length} {lang === 'ar' ? 'قطاعات' : lang === 'en' ? 'Sectors' : 'Secteurs'}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                  {sectors.map((sector) => {
+                    const NavIcon = sector.key === 'trend' ? Sparkles : (SECTOR_NAV.find((n) => n.key === (sector.alias || sector.key))?.icon ?? ShieldAlert);
+                    const label = getSectorLabel(sector);
+                    const isTrend = sector.source === 'contentCreators';
+                    return (
+                      <div key={sector.key} className={`flex min-h-[330px] flex-col overflow-hidden rounded-2xl border shadow-sm transition ${sector.active ? 'border-slate-200 bg-white dark:border-slate-700/60 dark:bg-[#1e293b]' : 'border-dashed border-slate-300 bg-slate-50/60 opacity-75 dark:border-slate-700 dark:bg-[#1e293b]/60'}`}>
+                        <div className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
+                          {sector.coverUrl ? <img src={sector.coverUrl} alt={label} className="h-full w-full object-cover object-center" /> : <div className="flex h-full items-center justify-center text-slate-400"><NavIcon size={42} /></div>}
+                        </div>
+                        <div className="flex flex-1 flex-col gap-3 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${sector.active ? 'bg-orange-50 text-orange-500 dark:bg-orange-500/10 dark:text-orange-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'}`}>
+                              <NavIcon size={20} />
+                            </span>
+                            <div>
+                              <p className="text-sm font-black text-slate-900 dark:text-white">{label}</p>
+                              <p className="mt-0.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500">{sector.entityCount} {sector.entityCount === 1 ? t.sector_entities : t.sector_entities}</p>
+                            </div>
+                          </div>
+                          <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[9px] font-black ring-1 ${sector.active ? 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30' : 'bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700'}`}>
+                            {sector.active ? t.sector_status_active : t.sector_status_inactive}
+                          </span>
+                        </div>
+                        {isTrend && (
+                          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-black text-amber-600 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30">
+                            <Sparkles size={9} />
+                            {lang === 'ar' ? 'سوق المبدعين' : lang === 'en' ? 'Creators Marketplace' : 'Marché des Créateurs'}
+                          </span>
+                        )}
+                        <div className="mt-auto flex flex-wrap gap-1.5">
+                          <button type="button" onClick={() => openEditModal(sector)} className="flex cursor-pointer items-center gap-1 rounded-lg bg-slate-50 px-2 py-1.5 text-[10px] font-black text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-700">
+                            <Pencil size={11} />{t.btn_edit_labels}
+                          </button>
+                          <button type="button" onClick={() => openNotifyModal(sector)} disabled={notifySectorMutation.isPending || notifyEntitiesMutation.isPending} className="flex cursor-pointer items-center gap-1 rounded-lg bg-orange-50 px-2 py-1.5 text-[10px] font-black text-orange-600 ring-1 ring-orange-200 transition hover:bg-orange-100 disabled:opacity-50 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/30 dark:hover:bg-orange-500/20">
+                            <Megaphone size={11} />{t.btn_notify}
+                          </button>
+                          {!isTrend && (
+                            <button type="button" onClick={() => toggleSectorActive(sector)} disabled={updateSectorMutation.isPending} className={`flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black ring-1 ring-inset transition disabled:opacity-50 ${sector.active ? 'bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/30 dark:hover:bg-rose-500/20' : 'bg-emerald-50 text-emerald-600 ring-emerald-200 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30 dark:hover:bg-emerald-500/20'}`}>
+                              {sector.active ? <ToggleLeft size={12} /> : <ToggleRight size={12} />}
+                              {sector.active ? t.btn_deactivate : t.btn_activate}
+                            </button>
+                          )}
+                        </div>
+                        {!sector.active && !isTrend && <p className="text-[9px] text-slate-400 dark:text-slate-500">{lang === 'ar' ? 'القطاع موقوف — لا يستقبل طلبات جديدة' : lang === 'en' ? 'Sector inactive — not accepting new orders' : 'Secteur inactif — n\'accepte pas les nouvelles commandes'}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : showEntityTable ? (
+              <>
+                {isSectorSection && (() => {
+                  const sec = sectors.find((s) => (s.alias === currentSection || s.key === currentSection) && s.source === 'platformEntity');
+                  if (!sec) return null;
+                  const label = getSectorLabel(sec);
+                  return (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
+                      <div className="flex items-center gap-3">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black ring-1 ${sec.active ? 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30' : 'bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700'}`}>
+                          {sec.active ? t.sector_status_active : t.sector_status_inactive}
+                        </span>
+                        <p className="text-sm font-black text-slate-900 dark:text-white">{label}</p>
+                        <span className="text-[10px] text-slate-400">{sec.entityCount} {t.sector_entities}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button type="button" onClick={() => openEditModal(sec)} className="flex cursor-pointer items-center gap-1 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[11px] font-black text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-700">
+                          <Pencil size={12} />{t.btn_edit_labels}
+                        </button>
+                        <button type="button" onClick={() => openNotifyModal(sec)} disabled={notifySectorMutation.isPending || notifyEntitiesMutation.isPending} className="flex cursor-pointer items-center gap-1 rounded-lg bg-orange-50 px-2.5 py-1.5 text-[11px] font-black text-orange-600 ring-1 ring-orange-200 transition hover:bg-orange-100 disabled:opacity-50 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/30 dark:hover:bg-orange-500/20">
+                          <Megaphone size={12} />{t.btn_broadcast}
+                        </button>
+                        <button type="button" onClick={() => toggleSectorActive(sec)} disabled={updateSectorMutation.isPending} className={`flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-black ring-1 ring-inset transition disabled:opacity-50 ${sec.active ? 'bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/30 dark:hover:bg-rose-500/20' : 'bg-emerald-50 text-emerald-600 ring-emerald-200 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30 dark:hover:bg-emerald-500/20'}`}>
+                          {sec.active ? <ToggleLeft size={13} /> : <ToggleRight size={13} />}
+                          {sec.active ? t.btn_deactivate : t.btn_activate}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+                {currentSection === 'overview' && (
+                  <>
+                    <section className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h1 className="text-2xl font-black">{lang === 'ar' ? 'مرحباً بعودتك 👋' : lang === 'fr' ? 'Bon retour 👋' : 'Welcome back 👋'}</h1>
+                        <p className="mt-1 text-xs text-slate-400">{lang === 'ar' ? 'إليك نظرة شاملة على أداء منصتك اليوم' : 'A live overview of your platform today'}</p>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-500 dark:border-white/10 dark:bg-[#0c1828] dark:text-slate-300">{new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                    </section>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                      {kpis.map((kpi) => { const Icon = kpi.icon; return <div key={kpi.label} className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-4 shadow-sm"><div className="flex items-center justify-between"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400"><Icon size={19}/></span><span className="text-[10px] font-black text-emerald-400">{kpi.detail}</span></div><p className="mt-3 text-2xl font-black">{kpi.value}</p><p className="mt-1 text-[11px] text-slate-400">{kpi.label}</p></div>})}
+                    </div>
+                    <div className="grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(260px,1fr)]">
+                      <section className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-5">
+                        <div className="flex items-center justify-between"><h2 className="text-sm font-black">{lang === 'ar' ? 'نظرة عامة على المبيعات' : 'Sales overview'}</h2><span className="rounded-lg border border-slate-700 px-2 py-1 text-[10px] text-slate-400">{lang === 'ar' ? 'بيانات مباشرة فقط' : 'Live data only'}</span></div>
+                        <div className="mt-4 flex h-44 items-center justify-center rounded-lg border border-dashed border-slate-700 bg-[#08111d] px-5 text-center text-xs text-slate-500">{lang === 'ar' ? "سيظهر الرسم البياني فور ربط مصدر الإيرادات والطلبات الموثوق — لا توجد أرقام تجريبية. الحالة الحالية: 'غير مفحوص'." : "Financial chart will appear when a trusted revenue/orders source is available — no demo figures are shown. Status: 'Not checked'."}</div>
+                      </section>
+                      <section className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-5">
+                        <h2 className="text-sm font-black">{lang === 'ar' ? 'توزيع الفئات' : 'Category distribution'}</h2>
+                        <div className="mt-5 space-y-3">{sectors.length ? sectors.slice(0, 6).map((sector) => { const total = Math.max(1, sectors.reduce((sum, item) => sum + item.entityCount, 0)); return <div key={sector.key}><div className="mb-1 flex justify-between text-[11px]"><span>{getSectorLabel(sector)}</span><span className="font-black">{sector.entityCount}</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-orange-500" style={{width: `${Math.round((sector.entityCount / total) * 100)}%`}} /></div></div> }) : <div className="flex h-36 items-center justify-center text-xs text-slate-500">{lang === 'ar' ? 'لا توجد بيانات فئات متاحة' : 'No category data available'}</div>}</div>
+                      </section>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                      {[
+  [Settings, lang === 'ar' ? 'التحكم في الميزات' : 'Feature controls', lang === 'ar' ? 'إدارة صلاحيات المنصة' : 'Manage platform capabilities'],
+  [ShieldCheck, lang === 'ar' ? 'باقات الاشتراك' : 'Subscription plans', lang === 'ar' ? 'إدارة الباقات والحدود' : 'Plans and entitlements'],
+  [Send, lang === 'ar' ? 'قوالب الرسائل' : 'Message templates', lang === 'ar' ? 'البريد والرسائل والإشعارات' : 'Email, messages and alerts'],
+  [Store, lang === 'ar' ? 'إدارة المتاجر' : 'Store management', lang === 'ar' ? 'عرض وتفعيل وتعديل' : 'View, activate and edit'],
+  [Sparkles, lang === 'ar' ? 'تخصيص موقعك' : 'Site customization', lang === 'ar' ? 'الهوية والمظهر العام' : 'Brand and appearance'],
+].map(([Icon,title,subtitle],index)=>{const QuickIcon=Icon as typeof Settings; return <button key={String(title)} type="button" onClick={()=>setCurrentSection(index===2?'settings':index===3?'admin':index===4?'files':index===0?'settings':'sectors')} className="rounded-xl border border-slate-700/60 bg-[#0c1828] p-4 text-start transition hover:border-orange-500/60"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400"><QuickIcon size={19}/></span><p className="mt-3 text-sm font-black">{String(title)}</p><p className="mt-1 text-[10px] text-slate-400">{String(subtitle)}</p></button>})}
+                    </div>
+                  </>
+                )}
+                {currentSection === 'overview' && (
+                  <section className="grid gap-3 rounded-xl border border-slate-700/60 bg-[#0c1828] p-4 sm:grid-cols-5">
+                    <div><p className="text-sm font-black">{lang === 'ar' ? 'الحالة النظامية' : 'System status'}</p><p className="mt-1 text-[10px] text-slate-500">{lang === 'ar' ? 'لا نعرض حالة خضراء دون فحص فعلي' : 'No healthy status is shown without a real probe'}</p></div>
+                    {['API / Server','Database','Payment gateway','Messaging','Cloud storage'].map((service) => <div key={service} className="rounded-lg border border-slate-700 bg-[#08111d] px-3 py-2"><p className="text-[10px] text-slate-400">{service}</p><p className="mt-1 text-xs font-black text-amber-400">{lang === 'ar' ? 'غير مفحوص' : 'Not checked'}</p></div>)}
+                  </section>
+                )}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
+                  <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+                    <button type="button" onClick={() => setActiveTab('orders')} className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-black transition ${activeTab === 'orders' ? 'bg-white text-orange-600 shadow-sm dark:bg-slate-700 dark:text-orange-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>
+                      <ShieldCheck size={13} />
+                      {t.tab_companies}
+                    </button>
+                    <button type="button" onClick={() => setActiveTab('freelancers')} className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-black transition ${activeTab === 'freelancers' ? 'bg-white text-orange-600 shadow-sm dark:bg-slate-700 dark:text-orange-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>
+                      <Camera size={13} />
+                      {t.tab_creators}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
+                  <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/50">
+                    <div>
+                      <h2 className="text-base font-black">{currentSection === 'overview' ? (lang === 'ar' ? 'أحدث المتاجر والمنشآت' : lang === 'fr' ? 'Dernières entreprises' : 'Latest stores & businesses') : t.table_title}</h2>
+                      <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{currentSection === 'overview' ? (lang === 'ar' ? 'أحدث البيانات الحقيقية المسجلة في المنصة' : 'Latest live records registered on the platform') : t.table_subtitle}</p>
+                    </div>
+                    <button type="button" onClick={() => handleOpenModal(orders[0])} disabled={!orders.length} className="flex cursor-pointer items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-black text-orange-600 transition hover:bg-orange-100 disabled:cursor-default disabled:opacity-40 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20">
+                      <ShieldCheck size={11} />
+                      {t.btn_viewDetails}
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[780px] text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 text-[11px] font-bold text-slate-400 dark:bg-slate-900/40">
+                          <th className="px-5 py-3 text-start">{t.th_orderNum}</th>
+                          <th className="px-5 py-3 text-start">{t.th_customer}</th>
+                          <th className="px-5 py-3 text-start">{t.th_restaurant}</th>
+                          <th className="px-5 py-3 text-start">{t.th_status}</th>
+                          <th className="px-5 py-3 text-start">{t.th_amount}</th>
+                          {activeTab === 'freelancers' && <th className="px-5 py-3 text-start">{t.th_storage}</th>}
+                          <th className="px-5 py-3 text-start">{t.th_lastUpdate}</th>
+                          <th className="px-5 py-3 text-start">{t.th_actions}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {isLoading ? (
+                          <tr>
+                            <td colSpan={activeTab === 'freelancers' ? 8 : 7} className="px-5 py-10 text-center text-xs font-semibold text-slate-400">{t.loading}</td>
+                          </tr>
+                        ) : orders.length === 0 ? (
+                          <tr>
+                            <td colSpan={activeTab === 'freelancers' ? 8 : 7} className="px-5 py-10 text-center text-xs font-semibold text-slate-400">{t.empty}</td>
+                          </tr>
+                        ) : orders.map((order) => (
+                          <tr key={order.id} className="border-t border-slate-100 transition hover:bg-slate-50/60 dark:border-slate-700/40 dark:hover:bg-slate-800/40">
+                            <td className="px-5 py-4 font-mono text-xs font-bold">{order.id}</td>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold">{order.customer}</p>
+                                {activeTab === 'freelancers' && order.isPhotographer && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[9px] font-black text-violet-600 ring-1 ring-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:ring-violet-500/30">
+                                    <Camera size={9} />
+                                    {t.badge_photographer}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-0.5 text-[11px] text-slate-400" dir="ltr">{order.email}</p>
+                            </td>
+                            <td className="px-5 py-4 text-xs font-semibold text-slate-600 dark:text-slate-300">{order.restaurant}</td>
+                            <td className="px-5 py-4">
+                              <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-black ring-1 ${order.status ? 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30' : 'bg-amber-50 text-amber-600 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30'}`}>
+                                {order.status ? t.status_completed : t.status_pending}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4">
+                              <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-black ring-1 ${planCls[order.plan]}`}>{order.plan}</span>
+                            </td>
+                            {activeTab === 'freelancers' && (
+                              <td className="px-5 py-4">
+                                <div className="flex min-w-[150px] flex-col gap-1.5">
+                                  <span className={`inline-flex items-center gap-1 text-[10px] font-black ${order.catalogEnabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
+                                    <HardDrive size={11} />
+                                    {order.catalogEnabled ? t.status_completed : t.status_pending}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                      <div className={`h-full rounded-full ${order.storageUsed >= order.storageLimit ? 'bg-gradient-to-r from-rose-500 to-red-400' : 'bg-gradient-to-r from-orange-500 to-amber-400'}`} style={{ width: `${Math.min(100, Math.round((order.storageUsed / Math.max(order.storageLimit, 1)) * 100))}%` }} />
+                                    </div>
+                                    <span className="text-[9px] font-bold text-slate-400" dir="ltr">{order.storageUsed} / {order.storageLimit} MB</span>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => setUpgradeMenuId(upgradeMenuId === order.id ? null : order.id)}
+                                      disabled={upgradeStorageMutation.isPending}
+                                      title={t.storage_locked_hint}
+                                      className={`flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-black ring-1 ring-inset transition disabled:opacity-50 ${order.storageUsed >= order.storageLimit ? 'bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/30 dark:hover:bg-rose-500/20' : 'bg-orange-50 text-orange-600 ring-orange-200 hover:bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/30 dark:hover:bg-orange-500/20'}`}
+                                    >
+                                      <ArrowUpCircle size={11} />
+                                      {t.storage_upgrade}
+                                    </button>
+                                    {upgradeMenuId === order.id && (
+                                      <div className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                                        {[2, 5, 10].map((gb) => {
+                                          const targetLimitMb = order.storageLimit + gb * 1024;
+                                          const fee = gb * 20;
+                                          return (
+                                            <button
+                                              key={gb}
+                                              type="button"
+                                              onClick={() => upgradeStorageMutation.mutate({ entityId: order.id, targetLimitMb })}
+                                              disabled={upgradeStorageMutation.isPending}
+                                              className="flex cursor-pointer items-center justify-between gap-3 rounded-md px-2 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-orange-50 dark:text-slate-300 dark:hover:bg-orange-500/10"
+                                            >
+                                              <span dir="ltr">+{gb} GB</span>
+                                              <span className="text-orange-600 dark:text-orange-400">{fee} SAR</span>
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {order.storageUsed >= order.storageLimit && (
+                                    <span className="inline-flex items-center gap-1 text-[9px] font-black text-rose-500 dark:text-rose-400">
+                                      <LockKeyhole size={9} />
+                                      {t.storage_locked}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                            )}
+                            <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-400" dir="ltr">{order.date}</td>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleStatusMutation.mutate({ entityId: order.id })}
+                                  disabled={toggleStatusMutation.isPending}
+                                  title={t.actionToggle}
+                                  className={`flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-black ring-1 ring-inset transition disabled:opacity-50 ${order.status ? 'bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/30 dark:hover:bg-rose-500/20' : 'bg-emerald-50 text-emerald-600 ring-emerald-200 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30 dark:hover:bg-emerald-500/20'}`}
+                                >
+                                  {order.status ? <ToggleLeft size={13} /> : <ToggleRight size={13} />}
+                                  {lang === 'ar' ? (order.status ? 'إيقاف' : 'تفعيل') : lang === 'en' ? (order.status ? 'Off' : 'On') : (order.status ? 'Off' : 'On')}
+                                </button>
+                                {activeTab === 'freelancers' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleCatalogMutation.mutate({ entityId: order.id })}
+                                    disabled={toggleCatalogMutation.isPending}
+                                    title={t.catalog_toggle}
+                                    className={`flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-black ring-1 ring-inset transition disabled:opacity-50 ${order.catalogEnabled ? 'bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/30 dark:hover:bg-rose-500/20' : 'bg-violet-50 text-violet-600 ring-violet-200 hover:bg-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:ring-violet-500/30 dark:hover:bg-violet-500/20'}`}
+                                  >
+                                    {order.catalogEnabled ? <ToggleLeft size={13} /> : <ToggleRight size={13} />}
+                                    {t.catalog_toggle}
+                                  </button>
+                                )}
+                                <button type="button" onClick={() => handleOpenModal(order)} className="flex cursor-pointer items-center gap-1 rounded-xl bg-orange-50 px-2.5 py-1.5 text-[11px] font-black text-orange-600 ring-1 ring-orange-200 transition hover:bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/30 dark:hover:bg-orange-500/20">
+                                  <Eye size={13} />
+                                  {t.btn_viewDetails}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 dark:border-slate-700/50">
+                    <p className="text-[11px] text-slate-400">
+                      {orders.length} {t.th_actions === 'إجراءات الحوكمة السريعة' ? 'منشأة' : 'entities'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-black">{t.summary_title}</h3>
+                      <p className="mt-1 text-[11px] text-slate-400">{t.table_subtitle}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => setFeatures((f) => ({ ...f, customers: !f.customers }))} className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                        {features.customers ? <ToggleRight size={14} className="text-orange-500" /> : <ToggleLeft size={14} />}
+                        {t.sum_total}
+                      </button>
+                      <button type="button" onClick={() => setFeatures((f) => ({ ...f, restaurants: !f.restaurants }))} className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                        {features.restaurants ? <ToggleRight size={14} className="text-orange-500" /> : <ToggleLeft size={14} />}
+                        {t.sum_active}
+                      </button>
+                      <button type="button" onClick={() => setFeatures((f) => ({ ...f, translations: !f.translations }))} className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                        {features.translations ? <ToggleRight size={14} className="text-orange-500" /> : <ToggleLeft size={14} />}
+                        {t.sum_profiles}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div className={`rounded-xl p-4 ${features.customers ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'bg-slate-50 dark:bg-slate-900/40'}`}>
+                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{t.sum_total}</p>
+                      <p className={`mt-1 text-xl font-black ${features.customers ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>{features.customers ? (lang === 'ar' ? 'مفعّل' : lang === 'en' ? 'Enabled' : 'Activé') : (lang === 'ar' ? 'معطّل' : lang === 'en' ? 'Disabled' : 'Désactivé')}</p>
+                    </div>
+                    <div className={`rounded-xl p-4 ${features.restaurants ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'bg-slate-50 dark:bg-slate-900/40'}`}>
+                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{t.sum_active}</p>
+                      <p className={`mt-1 text-xl font-black ${features.restaurants ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>{features.restaurants ? (lang === 'ar' ? 'مفعّل' : lang === 'en' ? 'Enabled' : 'Activé') : (lang === 'ar' ? 'معطّل' : lang === 'en' ? 'Disabled' : 'Désactivé')}</p>
+                    </div>
+                    <div className={`rounded-xl p-4 ${features.translations ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'bg-slate-50 dark:bg-slate-900/40'}`}>
+                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{t.sum_profiles}</p>
+                      <p className={`mt-1 text-xl font-black ${features.translations ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>{features.translations ? (lang === 'ar' ? 'مفعّل' : lang === 'en' ? 'Enabled' : 'Activé') : (lang === 'ar' ? 'معطّل' : lang === 'en' ? 'Disabled' : 'Désactivé')}</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700/60 dark:bg-[#1e293b]">
+                <ShieldAlert size={30} className="mx-auto text-slate-300" />
+                <p className="mt-3 text-base font-black">{t[`nav_${currentSection}`]}</p>
+                <p className="mx-auto mt-1 max-w-sm text-[11px] leading-5 text-slate-400">{t.panelSubtitle}</p>
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
+
+      {isModalOpen && selectedOrder && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setIsModalOpen(false)}>
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-[#1e293b]" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-black">{t.modal_title}</h3>
+                <p className="mt-1 font-mono text-xs text-slate-400">{selectedOrder.id}</p>
+              </div>
+              <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="close">
+                <X size={17} />
+              </button>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/40">
+                <p className="text-[10px] font-bold text-slate-400">{t.th_customer}</p>
+                <p className="mt-1 text-sm font-bold">{selectedOrder.customer}</p>
+                <p className="mt-0.5 text-[11px] text-slate-400" dir="ltr">{selectedOrder.email}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/40">
+                <p className="text-[10px] font-bold text-slate-400">{t.th_restaurant}</p>
+                <p className="mt-1 text-sm font-bold">{selectedOrder.restaurant}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/40">
+                <p className="text-[10px] font-bold text-slate-400">{t.modal_tax}</p>
+                <p className="mt-1 font-mono text-sm font-bold">{selectedOrder.taxId}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/40">
+                <p className="text-[10px] font-bold text-slate-400">{t.modal_transfer_status}</p>
+                <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black ring-1 ${selectedOrder.status ? 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30' : 'bg-amber-50 text-amber-600 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30'}`}>
+                  {selectedOrder.status ? <CheckCircle2 size={12} /> : <X size={12} />}
+                  {selectedOrder.status ? t.status_completed : t.status_pending}
+                </span>
+              </div>
+              <div className="sm:col-span-2 rounded-xl bg-slate-50 p-3 dark:bg-slate-900/40">
+                <p className="text-[10px] font-bold text-slate-400">{t.actionToggle} · {t.planLook}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <select value={selectedPlan} onChange={(event) => setSelectedPlan(event.target.value as 'Basic' | 'Pro' | 'Enterprise')} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black outline-none focus:border-orange-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <option value="Basic">Basic</option>
+                    <option value="Pro">Pro</option>
+                    <option value="Enterprise">Enterprise</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => upgradePlanMutation.mutate({ entityId: selectedOrder.id, plan: selectedPlan })}
+                    disabled={upgradePlanMutation.isPending || selectedPlan === selectedOrder.plan}
+                    className="flex cursor-pointer items-center gap-1 rounded-xl bg-orange-500 px-3 py-2 text-[11px] font-black text-white transition hover:bg-orange-600 disabled:cursor-default disabled:opacity-50"
+                  >
+                    <ArrowUpCircle size={13} />
+                    {upgradePlanMutation.isPending ? t.upgrading : t.plan_upgrade}
+                  </button>
+                  {selectedOrder.catalog && selectedOrder.catalog.catalogUrl && (
+                    <a href={selectedOrder.catalog.catalogUrl.startsWith('http') ? selectedOrder.catalog.catalogUrl : `https://${selectedOrder.catalog.catalogUrl}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                      <ExternalLink size={13} />
+                      {t.btn_viewDetails}
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+            <button type="button" onClick={() => setIsModalOpen(false)} className="mt-5 w-full rounded-xl bg-[#0f172a] py-2.5 text-sm font-black text-white transition hover:bg-slate-800 dark:bg-orange-500 dark:text-slate-900 dark:hover:bg-orange-600">
+              {t.modal_close}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {editSectorKey && (() => {
+        const sec = sectors.find((s) => s.key === editSectorKey);
+        if (!sec) return null;
+        return (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setEditSectorKey(null)}>
+            <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-[#1e293b]" onClick={(event) => event.stopPropagation()}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-black">{t.edit_modal_title}</h3>
+                  <p className="mt-1 text-xs text-slate-400">{getSectorLabel(sec)}</p>
+                </div>
+                <button type="button" onClick={() => setEditSectorKey(null)} className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="close"><X size={17} /></button>
+              </div>
+              <div className="mt-5 grid gap-4">
+                <label className="block">
+                  <span className="text-[10px] font-bold text-slate-400">{t.edit_label_ar}</span>
+                  <input dir="rtl" value={editLabels.labelAr} onChange={(e) => setEditLabels((p) => ({ ...p, labelAr: e.target.value }))} className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-orange-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                </label>
+                <label className="block">
+                  <span className="text-[10px] font-bold text-slate-400">{t.edit_label_en}</span>
+                  <input dir="ltr" value={editLabels.labelEn} onChange={(e) => setEditLabels((p) => ({ ...p, labelEn: e.target.value }))} className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-orange-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                </label>
+                <label className="block">
+                  <span className="text-[10px] font-bold text-slate-400">{t.edit_label_fr}</span>
+                  <input dir="ltr" value={editLabels.labelFr} onChange={(e) => setEditLabels((p) => ({ ...p, labelFr: e.target.value }))} className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-orange-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                </label>
+                {sec.source !== 'contentCreators' && (
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+                    <button type="button" onClick={() => setEditActive(!editActive)} className={`flex cursor-pointer items-center gap-2 text-[11px] font-black ${editActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                      {editActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                      {editActive ? t.sector_status_active : t.sector_status_inactive}
+                    </button>
+                    <span className="text-[10px] text-slate-400">{t.edit_active}</span>
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 flex items-center gap-2">
+                <button type="button" onClick={() => updateSectorMutation.mutate({ sectorKey: editSectorKey, ...editLabels, active: sec.source === 'contentCreators' ? sec.active : editActive })} disabled={updateSectorMutation.isPending || !editLabels.labelAr.trim() || !editLabels.labelEn.trim() || !editLabels.labelFr.trim()} className="flex cursor-pointer items-center gap-1 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-black text-white transition hover:bg-orange-600 disabled:cursor-default disabled:opacity-50">
+                  <CheckCircle2 size={15} />
+                  {updateSectorMutation.isPending ? t.loading : t.btn_save}
+                </button>
+                <button type="button" onClick={() => setEditSectorKey(null)} className="flex cursor-pointer items-center gap-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-black text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                  {t.btn_cancel}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {notifyOpen && notifyTargetSector && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setNotifyOpen(false)}>
+          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-[#1e293b]" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-black">{t.notify_modal_title}</h3>
+                <p className="mt-1 text-xs text-slate-400">{getSectorLabel(notifyTargetSector)}</p>
+              </div>
+              <button type="button" onClick={() => setNotifyOpen(false)} className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="close"><X size={17} /></button>
+            </div>
+
+            {notifyTargetSector.source === 'platformEntity' && (
+              <div className="mt-4 flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+                <button type="button" onClick={() => { setNotifyMode('broadcast'); setNotifySelectedIds([]); }} className={`flex-1 cursor-pointer rounded-lg px-3 py-2 text-[11px] font-black transition ${notifyMode === 'broadcast' ? 'bg-white text-orange-600 shadow-sm dark:bg-slate-700 dark:text-orange-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>
+                  {t.notify_broadcast_all}
+                </button>
+                <button type="button" onClick={() => setNotifyMode('targeted')} className={`flex-1 cursor-pointer rounded-lg px-3 py-2 text-[11px] font-black transition ${notifyMode === 'targeted' ? 'bg-white text-orange-600 shadow-sm dark:bg-slate-700 dark:text-orange-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>
+                  {t.notify_targeted} ({notifySelectedIds.length})
+                </button>
+              </div>
+            )}
+
+            {notifyTargetSector.source === 'contentCreators' && notifyMode === 'targeted' && (
+              <p className="mt-3 text-[10px] text-amber-600 dark:text-amber-400">{lang === 'ar' ? 'سوق الترند يدعم الإرسال الجماعي فقط — يُرسل لجميع المبدعين' : lang === 'en' ? 'Trend Market only supports broadcast — message goes to all creators' : 'Le Marché Trend supporte uniquement la diffusion — message envoyé à tous les créateurs'}</p>
+            )}
+
+            {notifyMode === 'targeted' && notifyTargetSector.source === 'platformEntity' && (
+              <div className="mt-4 space-y-3">
+                <div className="relative">
+                  <Search size={15} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input dir="ltr" value={notifyEntitySearch} onChange={(e) => setNotifyEntitySearch(e.target.value)} placeholder={t.notify_search_placeholder} className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 ps-9 text-sm outline-none placeholder:text-slate-400 focus:border-orange-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                </div>
+                <div className="max-h-40 space-y-1 overflow-y-auto rounded-xl border border-slate-200 p-2 dark:border-slate-700">
+                  {(notifyEntityQuery.data?.entities ?? []).map((ent) => (
+                    <label key={ent.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-slate-50 dark:hover:bg-slate-800">
+                      <input type="checkbox" checked={notifySelectedIds.includes(ent.id)} onChange={() => setNotifySelectedIds((prev) => prev.includes(ent.id) ? prev.filter((id) => id !== ent.id) : [...prev, ent.id])} className="h-3.5 w-3.5 rounded border-slate-300 text-orange-500 focus:ring-orange-500" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[11px] font-semibold text-slate-700 dark:text-slate-300">{ent.customerName}</p>
+                        <p className="truncate text-[9px] text-slate-400" dir="ltr">{ent.email}</p>
+                      </div>
+                      <span className="shrink-0 text-[9px] text-slate-400">{ent.id}</span>
+                    </label>
+                  ))}
+                  {(notifyEntityQuery.data?.entities ?? []).length === 0 && <p className="py-4 text-center text-[11px] text-slate-400">{t.loading}</p>}
+                </div>
+                {notifySelectedIds.length > 0 && <p className="text-[10px] text-slate-400">{notifySelectedIds.length} {t.notify_selected}</p>}
+              </div>
+            )}
+
+            <div className="mt-4 grid gap-4">
+              <div className="flex gap-2">
+                <label className="flex-1 block">
+                  <span className="text-[10px] font-bold text-slate-400">{t.notify_title_label}</span>
+                  <input dir="rtl" value={notifyTitle} onChange={(e) => setNotifyTitle(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-orange-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                </label>
+                <label className="w-32 block">
+                  <span className="text-[10px] font-bold text-slate-400">{t.notify_type_label}</span>
+                  <select value={notifyType} onChange={(e) => setNotifyType(e.target.value as typeof notifyType)} className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-orange-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    {typeOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  </select>
+                </label>
+              </div>
+              <label className="block">
+                <span className="text-[10px] font-bold text-slate-400">{t.notify_body_label}</span>
+                <textarea dir="rtl" value={notifyBody} onChange={(e) => setNotifyBody(e.target.value)} rows={4} className="mt-1 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-orange-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              </label>
+            </div>
+
+            <div className="mt-5 flex items-center gap-2">
+              <button type="button" onClick={handleNotifySubmit} disabled={(notifySectorMutation.isPending || notifyEntitiesMutation.isPending) || !notifyTitle.trim() || !notifyBody.trim() || (notifyMode === 'targeted' && notifySelectedIds.length === 0)} className="flex cursor-pointer items-center gap-1 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-black text-white transition hover:bg-orange-600 disabled:cursor-default disabled:opacity-50">
+                <Send size={15} />
+                {(notifySectorMutation.isPending || notifyEntitiesMutation.isPending) ? t.loading : t.notify_send}
+              </button>
+              <button type="button" onClick={() => setNotifyOpen(false)} className="flex cursor-pointer items-center gap-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-black text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                {t.btn_close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    {coverPickerOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/75 p-4" onMouseDown={() => setCoverPickerOpen(false)}><div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl dark:bg-[#0c1828]" onMouseDown={(e) => e.stopPropagation()}><div className="mb-4 flex items-center justify-between"><div><h3 className="font-black">{lang === 'ar' ? 'اختيار كفر النشاط' : 'Choose sector cover'}</h3><p className="mt-1 text-[11px] text-slate-500">{lang === 'ar' ? 'المقاس الموصى به 1200×675 بنسبة 16:9' : 'Recommended 1200×675 · 16:9'}</p></div><button type="button" onClick={() => setCoverPickerOpen(false)} className="rounded-xl p-2 hover:bg-slate-100 dark:hover:bg-slate-800"><X size={18}/></button></div>{platformImagesQuery.isLoading ? <div className="py-12 text-center text-sm text-slate-500">{t.loading}</div> : (platformImagesQuery.data ?? []).length === 0 ? <div className="py-12 text-center text-sm text-slate-500">{lang === 'ar' ? 'لا توجد صور في مكتبة المنصة بعد' : 'No platform images yet'}</div> : <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{(platformImagesQuery.data ?? []).map((file) => <button key={file.id} type="button" onClick={() => { setEditCoverUrl(file.publicUrl); setCoverPickerOpen(false); }} className="overflow-hidden rounded-2xl border border-slate-200 text-start transition hover:border-orange-400 dark:border-slate-700"><div className="aspect-video bg-slate-100 dark:bg-slate-900"><img src={file.publicUrl} alt={file.originalName} className="h-full w-full object-cover object-center"/></div><p className="truncate p-2 text-[10px] font-bold">{file.originalName}</p></button>)}</div>}</div></div>}
+</div>
+  );
+              </>\n            ) : null}
+      </div>
+    );
+  }
 
   return (
     <div dir={t.dir} className="w-full min-h-screen bg-slate-50 font-sans text-slate-900 transition-colors duration-300 dark:bg-[#0f172a] dark:text-[#f8fafc]">
