@@ -60,4 +60,22 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(catalog).not.toContain("overflow-x-auto");
     expect(catalog).not.toContain("min-w-[980px]");
   });
+  it("keeps every Super Admin module wired to the active shell and real data procedures", () => {
+    const home = read("pages/Home.tsx");
+    const admin = read("components/CentralAdminCommandCenter.tsx");
+    const requiredNav = ["overview", "admin", "activities", "stores", "site", "nfc", "trend", "settings", "languages", "files", "security", "health"];
+    for (const key of requiredNav) expect(admin).toContain(`"${key}"`);
+    const requiredPanels = ["SuperAdminView", "PlatformOverview", "AccountManagementPanel", "PlatformSettingsPanel", "UiTranslationAdminPanel", "MediaLibraryPanel", "MarketplaceStoresView", "ContentMarketplace", "VcardCardsAdmin", "SecurityView", "SystemHealthView"];
+    for (const panel of requiredPanels) expect(home).toContain(panel);
+    for (const key of ["activities", "stores", "site", "nfc", "trend", "settings", "languages", "files", "security", "health"]) expect(home).toContain(`case "${key}"`);
+    expect(admin).toContain("trpc.admin.restaurants.useQuery");
+    expect(admin).toContain("trpc.admin.subscriptions.useQuery");
+    expect(admin).toContain("trpc.admin.customers.useQuery");
+    expect(admin).toContain("trpc.admin.saasMetrics.useQuery");
+    expect(admin).toContain("trpc.notifications.mine.useQuery");
+    expect(admin).toContain("markAllRead");
+    expect(admin).toContain("deleteAll");
+    expect(admin).toContain("onLogout");
+  });
+
 });
