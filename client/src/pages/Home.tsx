@@ -21,6 +21,7 @@ import Barcode from "react-barcode";
 import { ReservationsView } from "@/pages/ReservationsView";
 import { PlatformSettingsPanel } from "@/components/PlatformSettingsPanel";
 import { CentralAdminCommandCenter, type CentralAdminNavKey } from "@/components/CentralAdminCommandCenter";
+import { PlatformOverview } from "@/components/PlatformOverview";
 import { RestaurantCommandCenter } from "@/components/RestaurantCommandCenter";
 import AccountManagementPanel from "@/components/AccountManagementPanel";
 import MarketplaceStoresView from "@/components/MarketplaceStoresView";
@@ -75,7 +76,7 @@ export default function Home() {
   const adminPanelChildren = useMemo(() => {
     switch (active as CentralAdminNavKey) {
       case "admin": return <SuperAdminView />;
-      case "activities": return <PlatformOverview onNavigate={(key) => setActive(key as NavKey)} />;
+      case "activities": return <PlatformOverview onNavigate={() => setActive("admin")} />;
       case "accounts": return <AccountManagementPanel />;
       case "settings": return <PlatformSettingsPanel />;
       case "site": return <PlatformSettingsPanel />;
