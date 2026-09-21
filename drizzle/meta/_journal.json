@@ -1331,6 +1331,13 @@
       "when": 1790005000000,
       "tag": "0189_seed_permission_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 190,
+      "version": "5",
+      "when": 1790006000000,
+      "tag": "0190_users_native_auth",
+      "breakpoints": true
     }
   ]
 }
