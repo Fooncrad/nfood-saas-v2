@@ -96,6 +96,7 @@ type SectorGovernance = {
   labelFr: string;
   active: boolean;
   entityCount: number;
+  coverUrl: string;
   source: 'platformEntity' | 'contentCreators';
 };
 
@@ -162,6 +163,11 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
   const [editSectorKey, setEditSectorKey] = useState<string | null>(null);
   const [editLabels, setEditLabels] = useState({ labelAr: '', labelEn: '', labelFr: '' });
   const [editActive, setEditActive] = useState(true);
+  const [editCoverUrl, setEditCoverUrl] = useState('');
+  const [coverPickerOpen, setCoverPickerOpen] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const platformImagesQuery = trpc.media.list.useQuery({ scope: "platform", category: "image" }, { enabled: coverPickerOpen, retry: false });
+  const uploadSectorCover = trpc.media.upload.useMutation();
 
   const updateSectorMutation = trpc.admin.updateSectorMeta.useMutation({
     onSuccess: () => { toast.success(t.label_updated); sectorCatalogQuery.refetch(); setEditSectorKey(null); },
@@ -194,11 +200,11 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
 
   const openNotifyModal = (sector: SectorGovernance) => { setNotifyTargetSector(sector); setNotifyMode('broadcast'); setNotifyTitle(''); setNotifyBody(''); setNotifyType('system'); setNotifySelectedIds([]); setNotifyEntitySearch(''); setNotifyOpen(true); };
 
-  const openEditModal = (sector: SectorGovernance) => { setEditSectorKey(sector.key); setEditLabels({ labelAr: sector.labelAr, labelEn: sector.labelEn, labelFr: sector.labelFr }); setEditActive(sector.active); };
+  const openEditModal = (sector: SectorGovernance) => { setEditSectorKey(sector.key); setEditLabels({ labelAr: sector.labelAr, labelEn: sector.labelEn, labelFr: sector.labelFr }); setEditActive(sector.active); setEditCoverUrl(sector.coverUrl || ''); };
 
   const toggleSectorActive = (sector: SectorGovernance) => {
     const fields = lang === 'ar' ? { labelAr: sector.labelAr, labelEn: sector.labelEn, labelFr: sector.labelFr } : lang === 'en' ? { labelAr: sector.labelAr, labelEn: sector.labelEn, labelFr: sector.labelFr } : { labelAr: sector.labelAr, labelEn: sector.labelEn, labelFr: sector.labelFr };
-    updateSectorMutation.mutate({ sectorKey: sector.key, ...fields, active: !sector.active });
+    updateSectorMutation.mutate({ sectorKey: sector.key, ...fields, active: !sector.active, coverUrl: sector.coverUrl || '' });
   };
 
   const handleNotifySubmit = () => {
@@ -388,7 +394,11 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
                     const label = getSectorLabel(sector);
                     const isTrend = sector.source === 'contentCreators';
                     return (
-                      <div key={sector.key} className={`flex flex-col gap-3 rounded-2xl border p-4 shadow-sm transition ${sector.active ? 'border-slate-200 bg-white dark:border-slate-700/60 dark:bg-[#1e293b]' : 'border-dashed border-slate-300 bg-slate-50/60 opacity-75 dark:border-slate-700 dark:bg-[#1e293b]/60'}`}>
+                      <div key={sector.key} className={`flex min-h-[330px] flex-col overflow-hidden rounded-2xl border shadow-sm transition ${sector.active ? 'border-slate-200 bg-white dark:border-slate-700/60 dark:bg-[#1e293b]' : 'border-dashed border-slate-300 bg-slate-50/60 opacity-75 dark:border-slate-700 dark:bg-[#1e293b]/60'}`}>
+                        <div className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
+                          {sector.coverUrl ? <img src={sector.coverUrl} alt={label} className="h-full w-full object-cover object-center" /> : <div className="flex h-full items-center justify-center text-slate-400"><NavIcon size={42} /></div>}
+                        </div>
+                        <div className="flex flex-1 flex-col gap-3 p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
                             <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${sector.active ? 'bg-orange-50 text-orange-500 dark:bg-orange-500/10 dark:text-orange-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'}`}>
@@ -910,6 +920,7 @@ export function CentralAdminDashboard({ onToggleTheme, currentTheme }: { onToggl
           </div>
         </div>
       )}
-    </div>
+    {coverPickerOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/75 p-4" onMouseDown={() => setCoverPickerOpen(false)}><div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl dark:bg-[#0c1828]" onMouseDown={(e) => e.stopPropagation()}><div className="mb-4 flex items-center justify-between"><div><h3 className="font-black">{lang === 'ar' ? 'اختيار كفر النشاط' : 'Choose sector cover'}</h3><p className="mt-1 text-[11px] text-slate-500">{lang === 'ar' ? 'المقاس الموصى به 1200×675 بنسبة 16:9' : 'Recommended 1200×675 · 16:9'}</p></div><button type="button" onClick={() => setCoverPickerOpen(false)} className="rounded-xl p-2 hover:bg-slate-100 dark:hover:bg-slate-800"><X size={18}/></button></div>{platformImagesQuery.isLoading ? <div className="py-12 text-center text-sm text-slate-500">{t.loading}</div> : (platformImagesQuery.data ?? []).length === 0 ? <div className="py-12 text-center text-sm text-slate-500">{lang === 'ar' ? 'لا توجد صور في مكتبة المنصة بعد' : 'No platform images yet'}</div> : <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{(platformImagesQuery.data ?? []).map((file) => <button key={file.id} type="button" onClick={() => { setEditCoverUrl(file.publicUrl); setCoverPickerOpen(false); }} className="overflow-hidden rounded-2xl border border-slate-200 text-start transition hover:border-orange-400 dark:border-slate-700"><div className="aspect-video bg-slate-100 dark:bg-slate-900"><img src={file.publicUrl} alt={file.originalName} className="h-full w-full object-cover object-center"/></div><p className="truncate p-2 text-[10px] font-bold">{file.originalName}</p></button>)}</div>}</div></div>}
+</div>
   );
 }
