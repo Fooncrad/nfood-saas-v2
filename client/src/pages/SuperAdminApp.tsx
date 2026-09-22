@@ -15,13 +15,13 @@ import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function SuperAdminApp() {
   const { user, logout } = useAuth();
-  const [active, setActive] = useState<CentralAdminNavKey>("activities");
+  const [active, setActive] = useState<CentralAdminNavKey>("overview");
   const panel = useMemo(() => {
     switch (active) {
       case "admin": return <PlatformOverview onNavigate={() => setActive("activities")} />;
       case "activities": return <ActivitiesSectorsAdmin />;
       case "accounts": return <AccountManagementPanel />;
-      case "settings":
+      case "settings": return <PlatformSettingsPanel initialSection="advanced" />;
       case "site": return <PlatformSettingsPanel initialSection="site" />;
       case "languages": return <UiTranslationAdminPanel />;
       case "files": return <MediaLibraryPanel isCentralAdmin />;
