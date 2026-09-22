@@ -59,43 +59,43 @@ export function ActivitiesSectorsView({ sectors, lang, getSectorLabel, onAdd, on
     ? [...filteredRows].sort((left, right) => Number(right.entityCount) - Number(left.entityCount))
     : sort === "oldest" ? [...filteredRows].reverse() : filteredRows;
 
-  return <div className="mx-auto max-w-[1480px] space-y-5" dir={lang === "ar" ? "rtl" : "ltr"}>
-    <section className="flex flex-wrap items-center justify-between gap-4">
+  return <div className="mx-auto w-full max-w-[1480px] space-y-4 sm:space-y-5" dir={lang === "ar" ? "rtl" : "ltr"}>
+    <section className="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
       <div>
-        <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-orange-500/10 text-orange-500"><Layers3 size={25}/></span><h1 className="text-3xl font-black text-white">{copy.title}</h1></div>
+        <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-orange-500/10 text-orange-500"><Layers3 size={25}/></span><h1 className="text-xl font-black text-white sm:text-2xl xl:text-3xl">{copy.title}</h1></div>
         <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{copy.subtitle}</p>
       </div>
-      <button type="button" onClick={onAdd} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-gradient-to-l from-orange-500 to-orange-600 px-5 text-xs font-black text-white shadow-lg shadow-orange-500/20 transition hover:-translate-y-0.5 hover:shadow-orange-500/30"><Plus size={17}/>{copy.add}</button>
+      <button type="button" onClick={onAdd} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl sm:w-auto bg-gradient-to-l from-orange-500 to-orange-600 px-5 text-xs font-black text-white shadow-lg shadow-orange-500/20 transition hover:-translate-y-0.5 hover:shadow-orange-500/30"><Plus size={17}/>{copy.add}</button>
     </section>
 
     {dataNotice && <div className={`rounded-xl border px-4 py-3 text-xs font-bold ${usingFallback ? "border-amber-500/30 bg-amber-500/10 text-amber-300" : "border-sky-500/20 bg-sky-500/10 text-sky-300"}`}>{dataNotice}</div>}
 
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       {[
         [copy.total, sectors.length, Store, "text-sky-400 bg-sky-500/10"],
         [copy.active, active, ToggleRight, "text-emerald-400 bg-emerald-500/10"],
         [copy.inactive, inactive, ToggleLeft, "text-orange-400 bg-orange-500/10"],
         [copy.registered, registered, Users, "text-violet-400 bg-violet-500/10"],
-      ].map(([label,value,Icon,tone]) => { const StatIcon=Icon as typeof Store; return <div key={String(label)} className="rounded-2xl border border-[#20364d] bg-[#0b2034] p-5 shadow-lg shadow-black/10"><div className="flex items-center justify-between"><span className={`grid h-11 w-11 place-items-center rounded-2xl ${tone}`}><StatIcon size={20}/></span><div className="text-end"><p className="text-2xl font-black text-white">{Number(value).toLocaleString("en-US")}</p><p className="mt-1 text-[11px] font-bold text-slate-400">{String(label)}</p></div></div></div>})}
+      ].map(([label,value,Icon,tone]) => { const StatIcon=Icon as typeof Store; return <div key={String(label)} className="min-w-0 rounded-2xl border border-[#20364d] bg-[#0b2034] p-3 sm:p-5 shadow-lg shadow-black/10"><div className="flex items-center justify-between"><span className={`grid h-11 w-11 place-items-center rounded-2xl ${tone}`}><StatIcon size={20}/></span><div className="text-end"><p className="text-xl font-black text-white sm:text-2xl">{Number(value).toLocaleString("en-US")}</p><p className="mt-1 text-[11px] font-bold text-slate-400">{String(label)}</p></div></div></div>})}
     </section>
 
-    <section className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-1 flex-wrap items-center gap-3">
-        <div className="relative min-w-[240px] max-w-sm flex-1"><Search size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-slate-500"/><input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder={copy.search} className="h-11 w-full rounded-xl border border-slate-700 bg-[#0b2034] ps-10 pe-3 text-xs text-white outline-none focus:border-orange-500"/></div>
-        <select value={status} onChange={(e)=>setStatus(e.target.value as typeof status)} className="h-11 rounded-xl border border-slate-700 bg-[#0b2034] px-4 text-xs font-bold text-slate-200"><option value="all">{copy.all}</option><option value="active">{copy.statusActive}</option><option value="inactive">{copy.statusInactive}</option></select>
+    <section className="flex flex-col items-stretch justify-between gap-3 md:flex-row md:items-center">
+      <div className="flex min-w-0 flex-1 flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative min-w-0 flex-1 sm:min-w-[240px] sm:max-w-sm"><Search size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-slate-500"/><input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder={copy.search} className="h-11 w-full rounded-xl border border-slate-700 bg-[#0b2034] ps-10 pe-3 text-xs text-white outline-none focus:border-orange-500"/></div>
+        <select value={status} onChange={(e)=>setStatus(e.target.value as typeof status)} className="h-11 w-full rounded-xl border border-slate-700 bg-[#0b2034] px-4 sm:w-auto text-xs font-bold text-slate-200"><option value="all">{copy.all}</option><option value="active">{copy.statusActive}</option><option value="inactive">{copy.statusInactive}</option></select>
       </div>
-      <label className="relative">
+      <label className="relative w-full md:w-auto">
         <ArrowDownUp size={15} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-slate-500"/>
-        <select value={sort} onChange={(event)=>setSort(event.target.value as typeof sort)} aria-label={copy.newest} className="h-11 appearance-none rounded-xl border border-slate-700 bg-[#0b2034] ps-9 pe-8 text-xs font-bold text-slate-300 outline-none focus:border-orange-500">
+        <select value={sort} onChange={(event)=>setSort(event.target.value as typeof sort)} aria-label={copy.newest} className="h-11 w-full appearance-none rounded-xl md:w-auto border border-slate-700 bg-[#0b2034] ps-9 pe-8 text-xs font-bold text-slate-300 outline-none focus:border-orange-500">
           <option value="newest">{copy.newest}</option><option value="oldest">{copy.oldest}</option><option value="registered">{copy.mostRegistered}</option>
         </select>
       </label>
     </section>
 
-    <section id="sector-grid" className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+    <section id="sector-grid" className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
       {rows.map((sector) => {
         const label=getSectorLabel(sector);
-        return <article key={sector.key} className={`group overflow-hidden rounded-2xl border bg-[#0b2034] shadow-sm transition hover:-translate-y-0.5 hover:border-orange-500/50 ${sector.active ? "border-slate-700/70" : "border-dashed border-slate-700 opacity-80"}`}>
+        return <article key={sector.key} className={`group min-w-0 overflow-hidden rounded-2xl border bg-[#0b2034] shadow-sm transition hover:-translate-y-0.5 hover:border-orange-500/50 ${sector.active ? "border-slate-700/70" : "border-dashed border-slate-700 opacity-80"}`}>
           <div className="relative aspect-[16/7] overflow-hidden bg-[#07182b]">
             {sector.coverUrl ? <img src={sector.coverUrl} alt={label} className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"/> : <div className="grid h-full place-items-center text-slate-600"><Store size={36}/></div>}
             <button type="button" onClick={()=>onEdit(sector)} className="absolute end-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white backdrop-blur"><MoreVertical size={16}/></button>
@@ -115,6 +115,6 @@ export function ActivitiesSectorsView({ sectors, lang, getSectorLabel, onAdd, on
       </button>
     </section>
 
-    <aside className="flex items-center gap-3 rounded-2xl border border-orange-500/20 bg-orange-500/5 px-5 py-4"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-orange-500/10 text-orange-400">💡</span><p className="text-xs text-slate-400"><strong className="me-2 text-orange-400">{copy.tip}</strong>{copy.tipText}</p></aside>
+    <aside className="flex items-start gap-3 rounded-2xl sm:items-center border border-orange-500/20 bg-orange-500/5 px-5 py-4"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-orange-500/10 text-orange-400">💡</span><p className="text-xs text-slate-400"><strong className="me-2 text-orange-400">{copy.tip}</strong>{copy.tipText}</p></aside>
   </div>;
 }
