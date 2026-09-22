@@ -29,6 +29,7 @@ import { UiTranslationAdminPanel } from "@/components/UiTranslationAdminPanel";
 import { MediaLibraryPanel } from "@/components/MediaLibraryPanel";
 import ContentMarketplace from "@/pages/ContentMarketplace";
 import VcardCardsAdmin from "@/pages/VcardCardsAdmin";
+import ActivitiesSectorsAdmin from "@/components/ActivitiesSectorsAdmin";
 import { StorefrontCustomizationPanel } from "@/components/StorefrontCustomizationPanel";
 
 type OrderStatus = "new" | "preparing" | "ready" | "completed";
@@ -76,7 +77,7 @@ export default function Home() {
   const adminPanelChildren = useMemo(() => {
     switch (active as CentralAdminNavKey) {
       case "admin": return <SuperAdminView />;
-      case "activities": return <PlatformOverview onNavigate={() => setActive("admin")} />;
+      case "activities": return <ActivitiesSectorsAdmin />;
       case "accounts": return <AccountManagementPanel />;
       case "settings": return <PlatformSettingsPanel />;
       case "site": return <PlatformSettingsPanel />;
