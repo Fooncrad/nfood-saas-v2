@@ -53,11 +53,11 @@ export default function ActivitiesSectorsAdmin() {
     onError: (error) => toast.error(error.message || "تعذر حفظ النشاط"),
   });
   const updateMarketplace = trpc.marketplace.updateSector.useMutation({
-    onSuccess: async () => { await utils.marketplace.adminSectors.invalidate(); toast.success("تم حفظ بيانات النشاط"); setEditorOpen(false); },
+    onSuccess: async () => { await Promise.all([utils.marketplace.adminSectors.invalidate(), utils.marketplace.publicSectors.invalidate()]); toast.success("تم حفظ بيانات النشاط"); setEditorOpen(false); },
     onError: (error) => toast.error(error.message || "تعذر حفظ النشاط"),
   });
   const createSector = trpc.marketplace.createSector.useMutation({
-    onSuccess: async () => { await utils.marketplace.adminSectors.invalidate(); toast.success("تمت إضافة النشاط الجديد"); setEditorOpen(false); },
+    onSuccess: async () => { await Promise.all([utils.marketplace.adminSectors.invalidate(), utils.marketplace.publicSectors.invalidate()]); toast.success("تمت إضافة النشاط الجديد"); setEditorOpen(false); },
     onError: (error) => toast.error(error.message || "تعذر إضافة النشاط"),
   });
 
