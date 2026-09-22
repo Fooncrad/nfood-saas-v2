@@ -80,7 +80,7 @@ export function CreateRestaurantDialog({ open, pending = false, onClose, onSubmi
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-      <DialogContent dir="rtl" className="max-h-[92vh] overflow-y-auto rounded-3xl border-slate-200 bg-white p-5 shadow-2xl sm:max-w-2xl sm:p-7">
+      <DialogContent dir="rtl" className="left-1/2 top-1/2 max-h-[88dvh] w-[calc(100vw-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-3xl border-slate-200 bg-white p-5 shadow-2xl sm:w-full sm:p-7">
         <DialogHeader className="text-right">
           <p className="text-xs font-bold text-[#e76f3c]">إضافة نشاط جديد</p>
           <DialogTitle className="mt-1 text-xl font-black text-slate-900">أضف مطعمًا إلى المنصة</DialogTitle>
