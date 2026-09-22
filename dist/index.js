@@ -2286,14 +2286,34 @@ async function sendPushToUser(userId, payload) {
 
 // server/db.ts
 var _db = null;
-async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
+var _dbUrlWarningShown = false;
+function getDatabaseUrl() {
+  const raw = process.env.DATABASE_URL;
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  const normalized = trimmed.startsWith('"') && trimmed.endsWith('"') || trimmed.startsWith("'") && trimmed.endsWith("'") ? trimmed.slice(1, -1).trim() : trimmed;
+  try {
+    const parsed = new URL(normalized);
+    if (!["mysql:", "mysql2:"].includes(parsed.protocol)) throw new Error("unsupported protocol");
+    if (!parsed.hostname || !parsed.pathname || parsed.pathname === "/") throw new Error("missing host or database");
+    return normalized;
+  } catch {
+    if (!_dbUrlWarningShown) {
+      console.error("[Database] DATABASE_URL is invalid. Expected mysql://USER:PASSWORD@HOST/DATABASE (without wrapping quotes).");
+      _dbUrlWarningShown = true;
     }
+    return null;
+  }
+}
+async function getDb() {
+  if (_db) return _db;
+  const databaseUrl = getDatabaseUrl();
+  if (!databaseUrl) return null;
+  try {
+    _db = drizzle(databaseUrl);
+  } catch (error) {
+    console.warn("[Database] Failed to initialize MySQL:", error instanceof Error ? error.message : String(error));
+    _db = null;
   }
   return _db;
 }
