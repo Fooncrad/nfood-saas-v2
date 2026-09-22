@@ -61,10 +61,10 @@ export function ActivitiesSectorsView({ sectors, lang, getSectorLabel, onAdd, on
       ? [...filteredRows].sort((left, right) => getSectorLabel(left).localeCompare(getSectorLabel(right), lang))
       : filteredRows;
 
-  return <div className="mx-auto w-full max-w-[1480px] space-y-4 sm:space-y-5" dir={lang === "ar" ? "rtl" : "ltr"}>
-    <section className="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
+  return <div className="mx-auto w-full max-w-[1540px] space-y-3 sm:space-y-4" dir={lang === "ar" ? "rtl" : "ltr"}>
+    <section className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
       <div>
-        <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-orange-500/10 text-orange-500"><Layers3 size={25}/></span><h1 className="text-xl font-black text-white sm:text-2xl xl:text-3xl">{copy.title}</h1></div>
+        <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-500/10 text-orange-500"><Layers3 size={25}/></span><h1 className="text-lg font-black text-white sm:text-xl">{copy.title}</h1></div>
         <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{copy.subtitle}</p>
       </div>
       <button type="button" onClick={onAdd} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl sm:w-auto bg-gradient-to-l from-orange-500 to-orange-600 px-5 text-xs font-black text-white shadow-lg shadow-orange-500/20 transition hover:-translate-y-0.5 hover:shadow-orange-500/30"><Plus size={17}/>{copy.add}</button>
@@ -72,13 +72,13 @@ export function ActivitiesSectorsView({ sectors, lang, getSectorLabel, onAdd, on
 
     {dataNotice && <div className={`rounded-xl border px-4 py-3 text-xs font-bold ${usingFallback ? "border-amber-500/30 bg-amber-500/10 text-amber-300" : "border-sky-500/20 bg-sky-500/10 text-sky-300"}`}>{dataNotice}</div>}
 
-    <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+    <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       {[
         [copy.total, sectors.length, Store, "text-sky-400 bg-sky-500/10"],
         [copy.active, active, ToggleRight, "text-emerald-400 bg-emerald-500/10"],
         [copy.inactive, inactive, ToggleLeft, "text-orange-400 bg-orange-500/10"],
         [copy.registered, registered, Users, "text-violet-400 bg-violet-500/10"],
-      ].map(([label,value,Icon,tone]) => { const StatIcon=Icon as typeof Store; return <div key={String(label)} className="min-w-0 rounded-2xl border border-[#20364d] bg-[#0b2034] p-3 sm:p-5 shadow-lg shadow-black/10"><div className="flex items-center justify-between"><span className={`grid h-11 w-11 place-items-center rounded-2xl ${tone}`}><StatIcon size={20}/></span><div className="text-end"><p className="text-xl font-black text-white sm:text-2xl">{Number(value).toLocaleString("en-US")}</p><p className="mt-1 text-[11px] font-bold text-slate-400">{String(label)}</p></div></div></div>})}
+      ].map(([label,value,Icon,tone]) => { const StatIcon=Icon as typeof Store; return <div key={String(label)} className="min-w-0 rounded-2xl border border-[#20364d] bg-[#0b2034] p-3 sm:p-4 shadow-lg shadow-black/10"><div className="flex items-center justify-between"><span className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}><StatIcon size={20}/></span><div className="text-end"><p className="text-xl font-black text-white sm:text-2xl">{Number(value).toLocaleString("en-US")}</p><p className="mt-1 text-[11px] font-bold text-slate-400">{String(label)}</p></div></div></div>})}
     </section>
 
     <section className="flex flex-col items-stretch justify-between gap-3 md:flex-row md:items-center">
@@ -94,23 +94,23 @@ export function ActivitiesSectorsView({ sectors, lang, getSectorLabel, onAdd, on
       </label>
     </section>
 
-    <section id="sector-grid" className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <section id="sector-grid" className="grid grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {rows.map((sector) => {
         const label=getSectorLabel(sector);
         return <article key={sector.key} className={`group min-w-0 overflow-hidden rounded-2xl border bg-[#0b2034] shadow-sm transition hover:-translate-y-0.5 hover:border-orange-500/50 ${sector.active ? "border-slate-700/70" : "border-dashed border-slate-700 opacity-80"}`}>
-          <div className="relative aspect-[16/7] overflow-hidden bg-[#07182b]">
+          <div className="relative aspect-[16/6] overflow-hidden bg-[#07182b]">
             {sector.coverUrl ? <img src={sector.coverUrl} alt={label} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"/> : <div className="grid h-full place-items-center text-slate-600"><Store size={36}/></div>}
             <button type="button" onClick={()=>onEdit(sector)} className="absolute end-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white backdrop-blur"><MoreVertical size={16}/></button>
           </div>
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
             <div className="flex items-start justify-between gap-2"><div className="min-w-0"><h3 className="truncate text-sm font-black text-white">{label}</h3><p className="mt-1 truncate text-[10px] text-slate-400">{sector.labelEn || sector.key}</p></div><button type="button" role="switch" aria-checked={sector.active} aria-label={`${label} - ${sector.active ? copy.statusActive : copy.statusInactive}`} onClick={()=>onToggle(sector)} disabled={updatePending || sector.source==="contentCreators"} className={`relative h-6 w-11 shrink-0 rounded-full transition ${sector.active ? "bg-emerald-500" : "bg-slate-600"} disabled:opacity-50`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${sector.active ? "end-1" : "start-1"}`}/></button></div>
-            <div className="mt-4 flex items-end justify-between"><div><p className="text-lg font-black text-white">{Number(sector.entityCount).toLocaleString("en-US")}</p><p className="text-[10px] text-slate-400">{copy.registeredLabel}</p></div><span className={`text-[10px] font-black ${sector.active ? "text-emerald-400" : "text-slate-500"}`}>{sector.active ? copy.statusActive : copy.statusInactive}</span></div>
-            <div className="mt-4 grid grid-cols-2 gap-2"><button type="button" onClick={()=>onEdit(sector)} className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-700 py-2 text-[10px] font-black text-slate-200 hover:border-orange-500/60"><Pencil size={12}/>{copy.edit}</button><button type="button" onClick={()=>onPreview(sector)} disabled={notifyPending} className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-700 py-2 text-[10px] font-black text-slate-200 hover:border-orange-500/60 disabled:opacity-50"><Eye size={12}/>{copy.preview}</button></div>
+            <div className="mt-3 flex items-end justify-between"><div><p className="text-lg font-black text-white">{Number(sector.entityCount).toLocaleString("en-US")}</p><p className="text-[10px] text-slate-400">{copy.registeredLabel}</p></div><span className={`text-[10px] font-black ${sector.active ? "text-emerald-400" : "text-slate-500"}`}>{sector.active ? copy.statusActive : copy.statusInactive}</span></div>
+            <div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={()=>onEdit(sector)} className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-700 py-2 text-[10px] font-black text-slate-200 hover:border-orange-500/60"><Pencil size={12}/>{copy.edit}</button><button type="button" onClick={()=>onPreview(sector)} disabled={notifyPending} className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-700 py-2 text-[10px] font-black text-slate-200 hover:border-orange-500/60 disabled:opacity-50"><Eye size={12}/>{copy.preview}</button></div>
           </div>
         </article>;
       })}
       {rows.length===0 && <div className="col-span-full rounded-2xl border border-dashed border-slate-700 bg-[#0b2034] p-10 text-center text-xs text-slate-500">{copy.noResults}</div>}
-      <button type="button" onClick={onAdd} className="group min-h-[260px] rounded-2xl border border-dashed border-slate-600 bg-[#0b2034]/55 p-6 text-center transition hover:border-orange-500 hover:bg-orange-500/5">
+      <button type="button" onClick={onAdd} className="group min-h-[230px] rounded-2xl border border-dashed border-slate-600 bg-[#0b2034]/55 p-6 text-center transition hover:border-orange-500 hover:bg-orange-500/5">
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-dashed border-slate-500 text-slate-400 transition group-hover:border-orange-500 group-hover:bg-orange-500/10 group-hover:text-orange-400"><Plus size={25}/></span>
         <strong className="mt-4 block text-sm text-slate-200">{copy.add}</strong>
         <span className="mt-2 block text-[10px] leading-5 text-slate-500">{lang === "ar" ? "أنشئ قطاعًا جديدًا وحدد اسمه وهويته وحالة ظهوره." : "Create a sector and configure its identity and visibility."}</span>
