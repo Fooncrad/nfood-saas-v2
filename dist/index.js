@@ -1707,17 +1707,6 @@ var uiTranslationHistory = mysqlTable("uiTranslationHistory", {
   uiTranslationHistoryEntry: index("ui_translation_history_entry_idx").on(table.entryId, table.createdAt),
   uiTranslationHistoryAction: index("ui_translation_history_action_idx").on(table.action, table.createdAt)
 }));
-var PLATFORM_SECTOR_KEYS = [
-  "restaurant",
-  "vegetables",
-  "grocery",
-  "laundry",
-  "automotive",
-  "beauty_salon",
-  "public_works",
-  "fashion",
-  "sweets"
-];
 var PLAN_TIERS = ["Basic", "Pro", "Enterprise"];
 var platformEntities = mysqlTable("platform_entities", {
   id: varchar("id", { length: 30 }).primaryKey(),
@@ -1729,7 +1718,7 @@ var platformEntities = mysqlTable("platform_entities", {
   timezone: varchar("timezone", { length: 64 }).default("Asia/Riyadh").notNull(),
   currencyCode: varchar("currency_code", { length: 3 }).default("SAR").notNull(),
   primaryLanguage: varchar("primary_language", { length: 10 }).default("ar").notNull(),
-  sector: mysqlEnum("sector", PLATFORM_SECTOR_KEYS).default("restaurant").notNull(),
+  sector: varchar("sector", { length: 80 }).default("restaurant").notNull(),
   status: boolean("status").default(true).notNull(),
   plan: mysqlEnum("plan", PLAN_TIERS).default("Basic").notNull(),
   taxId: varchar("tax_id", { length: 50 }).notNull(),
@@ -2286,14 +2275,34 @@ async function sendPushToUser(userId, payload) {
 
 // server/db.ts
 var _db = null;
-async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
+var _dbUrlWarningShown = false;
+function getDatabaseUrl() {
+  const raw = process.env.DATABASE_URL;
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  const normalized = trimmed.startsWith('"') && trimmed.endsWith('"') || trimmed.startsWith("'") && trimmed.endsWith("'") ? trimmed.slice(1, -1).trim() : trimmed;
+  try {
+    const parsed = new URL(normalized);
+    if (!["mysql:", "mysql2:"].includes(parsed.protocol)) throw new Error("unsupported protocol");
+    if (!parsed.hostname || !parsed.pathname || parsed.pathname === "/") throw new Error("missing host or database");
+    return normalized;
+  } catch {
+    if (!_dbUrlWarningShown) {
+      console.error("[Database] DATABASE_URL is invalid. Expected mysql://USER:PASSWORD@HOST/DATABASE (without wrapping quotes).");
+      _dbUrlWarningShown = true;
     }
+    return null;
+  }
+}
+async function getDb() {
+  if (_db) return _db;
+  const databaseUrl = getDatabaseUrl();
+  if (!databaseUrl) return null;
+  try {
+    _db = drizzle(databaseUrl);
+  } catch (error) {
+    console.warn("[Database] Failed to initialize MySQL:", error instanceof Error ? error.message : String(error));
+    _db = null;
   }
   return _db;
 }
@@ -7005,7 +7014,7 @@ var marketplaceRouter = router({
     timezone: z2.string().trim().min(3).max(64),
     currencyCode: z2.string().trim().length(3).transform((value) => value.toUpperCase()),
     primaryLanguage: z2.string().trim().min(2).max(10),
-    sector: z2.enum(["restaurant", "vegetables", "grocery", "laundry", "automotive", "beauty_salon", "public_works", "fashion", "sweets"]),
+    sector: z2.string().trim().min(2).max(80).regex(/^[a-z0-9_-]+$/),
     plan: z2.enum(PLAN_TIERS).default("Basic"),
     taxId: z2.string().trim().max(50).default(""),
     status: z2.boolean().default(true)
@@ -7014,8 +7023,8 @@ var marketplaceRouter = router({
     if (!db) throw new TRPCError3({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const duplicate = (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq3(platformEntities.email, input.email)).limit(1))[0];
     if (duplicate) throw new TRPCError3({ code: "CONFLICT", message: "\u064A\u0648\u062C\u062F \u0645\u062A\u062C\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0647\u0630\u0627 \u0627\u0644\u0628\u0631\u064A\u062F \u0628\u0627\u0644\u0641\u0639\u0644" });
-    const sector = (await db.select({ id: marketplaceSectors.id }).from(marketplaceSectors).where(eq3(marketplaceSectors.slug, input.sector)).limit(1))[0];
-    if (!sector) throw new TRPCError3({ code: "BAD_REQUEST", message: "\u0627\u0644\u0646\u0634\u0627\u0637 \u063A\u064A\u0631 \u0645\u0641\u0639\u0651\u0644 \u0641\u064A \u0643\u062A\u0627\u0644\u0648\u062C \u0627\u0644\u0633\u0648\u0642" });
+    const sector = (await db.select({ id: marketplaceSectors.id, isActive: marketplaceSectors.isActive }).from(marketplaceSectors).where(eq3(marketplaceSectors.slug, input.sector)).limit(1))[0];
+    if (!sector?.isActive) throw new TRPCError3({ code: "BAD_REQUEST", message: "\u0627\u0644\u0646\u0634\u0627\u0637 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0623\u0648 \u063A\u064A\u0631 \u0645\u0641\u0639\u0651\u0644 \u0641\u064A \u0643\u062A\u0627\u0644\u0648\u062C \u0627\u0644\u0633\u0648\u0642" });
     const id = `ent_${nanoid3(16)}`;
     await db.insert(platformEntities).values({
       id,
