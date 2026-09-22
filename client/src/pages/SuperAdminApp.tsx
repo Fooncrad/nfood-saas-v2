@@ -15,7 +15,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function SuperAdminApp() {
   const { user, logout } = useAuth();
-  const [active, setActive] = useState<CentralAdminNavKey>("overview");
+  const [active, setActive] = useState<CentralAdminNavKey>("activities");
   const panel = useMemo(() => {
     switch (active) {
       case "admin": return <PlatformOverview onNavigate={() => setActive("activities")} />;
