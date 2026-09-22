@@ -8,7 +8,6 @@ import { UI_LANGUAGES, languageMeta, useLanguage } from "@/contexts/LanguageCont
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import "./auth-scroll.css";
 
-const sectors = [{ id: "restaurant" }, { id: "vegetables" }, { id: "grocery" }, { id: "laundry" }, { id: "automotive" }, { id: "beauty_salon" }, { id: "public_works" }, { id: "fashion" }, { id: "sweets" }] as const;
 const languageOptions = UI_LANGUAGES.map((code) => ({ code, label: languageMeta[code].nativeLabel }));
 
 const registerCopy = {
@@ -189,6 +188,8 @@ export default function RegisterScreen() {
   const { language, direction } = useLanguage();
   const copy = language === "fr" ? registerCopy.fr : language === "en" ? registerCopy.en : registerCopy.ar;
   const sectorNames = copy.sectorNames;
+  const liveSectors = trpc.marketplace.publicSectors.useQuery(undefined, { retry: 2 });
+  const sectors = useMemo(() => (liveSectors.data ?? []).map((item) => ({ id: item.slug, label: language === "ar" ? item.labelAr : language === "fr" ? item.labelFr : item.labelEn })), [liveSectors.data, language]);
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
@@ -211,7 +212,7 @@ export default function RegisterScreen() {
   const languageLabel = languageOptions.find((item) => item.code === languageCode)?.label ?? languageOptions[0].label;
   const countryName = (item: { code: string; nameAr: string; name: string }) => language === "ar" ? item.nameAr : item.name;
   const currencyName = (item: { code: string; nameAr: string; name: string; symbol: string }) => language === "ar" ? item.nameAr : item.name;
-  const sectorLabel = (id: string) => sectorNames[id as keyof typeof sectorNames] ?? id;
+  const sectorLabel = (id: string) => sectors.find((item) => item.id === id)?.label ?? sectorNames[id as keyof typeof sectorNames] ?? id;
   const validContact = form.business.trim().length >= 2 && /^\S+@\S+\.\S+$/.test(form.email.trim()) && form.phone.trim().length >= 7 && form.city.trim().length >= 2;
   const next = () => {
     if (step === 2 && !validContact) { toast.error(copy.toastValidation); return; }
@@ -220,7 +221,7 @@ export default function RegisterScreen() {
   const submit = () => {
     if (!acceptedLegal) { toast.error(language === "ar" ? "يجب الموافقة على الشروط وسياسة الخصوصية" : language === "fr" ? "Vous devez accepter les conditions et la politique de confidentialité." : "You must accept the Terms and Privacy Policy."); return; }
     if (!registrationCaptcha.data?.challenge || !/^\d{1,2}$/.test(captchaAnswer.trim())) { toast.error(copy.toastCaptcha); return; }
-    register.mutate({ restaurantName: form.business.trim(), sector: sector as "restaurant" | "vegetables" | "grocery" | "laundry" | "automotive" | "beauty_salon" | "public_works" | "fashion" | "sweets", countryCode, currencyCode, primaryLanguage: languageCode as "ar" | "en" | "fr" | "ur" | "es" | "de" | "tr", country: country.nameAr, city: form.city.trim(), email: form.email.trim(), phone: form.phone.trim(), plan: "Free", captchaChallenge: registrationCaptcha.data.challenge, captchaAnswer: captchaAnswer.trim() });
+    register.mutate({ restaurantName: form.business.trim(), sector, countryCode, currencyCode, primaryLanguage: languageCode as "ar" | "en" | "fr" | "ur" | "es" | "de" | "tr", country: country.nameAr, city: form.city.trim(), email: form.email.trim(), phone: form.phone.trim(), plan: "Free", captchaChallenge: registrationCaptcha.data.challenge, captchaAnswer: captchaAnswer.trim() });
   };
 
   if (done && register.data) return (
