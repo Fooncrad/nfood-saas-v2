@@ -13,9 +13,14 @@ describe("Super Admin activities and sectors", () => {
   });
 
   it("keeps reference controls and responsive activity cards", () => {
-    expect(view).toContain("sm:grid-cols-2 xl:grid-cols-4");
+    expect(view).toContain("sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4");
+    expect(view).not.toContain("2xl:grid-cols-5");
+    expect(view).toContain("grid grid-cols-2 gap-3 xl:grid-cols-4");
+    expect(view).toContain("w-full items-center justify-center");
     expect(view).toContain("onPreview");
     expect(view).toContain("onToggle");
+    expect(view).toContain('role="switch"');
+    expect(view).toContain('loading="lazy"');
     expect(view).toContain('value="registered"');
     expect(view).toContain("min-h-[260px]");
   });
