@@ -721,7 +721,7 @@ export const marketplaceRouter = router({
     timezone: z.string().trim().min(3).max(64),
     currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()),
     primaryLanguage: z.string().trim().min(2).max(10),
-    sector: z.enum(["restaurant","vegetables","grocery","laundry","automotive","beauty_salon","public_works","fashion","sweets"]),
+    sector: z.string().trim().min(2).max(80).regex(/^[a-z0-9_-]+$/),
     plan: z.enum(PLAN_TIERS).default("Basic"),
     taxId: z.string().trim().max(50).default(""),
     status: z.boolean().default(true),
@@ -730,8 +730,8 @@ export const marketplaceRouter = router({
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const duplicate = (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq(platformEntities.email, input.email)).limit(1))[0];
     if (duplicate) throw new TRPCError({ code: "CONFLICT", message: "يوجد متجر مرتبط بهذا البريد بالفعل" });
-    const sector = (await db.select({ id: marketplaceSectors.id }).from(marketplaceSectors).where(eq(marketplaceSectors.slug, input.sector)).limit(1))[0];
-    if (!sector) throw new TRPCError({ code: "BAD_REQUEST", message: "النشاط غير مفعّل في كتالوج السوق" });
+    const sector = (await db.select({ id: marketplaceSectors.id, isActive: marketplaceSectors.isActive }).from(marketplaceSectors).where(eq(marketplaceSectors.slug, input.sector)).limit(1))[0];
+    if (!sector?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "النشاط غير موجود أو غير مفعّل في كتالوج السوق" });
     const id = `ent_${nanoid(16)}`;
     await db.insert(platformEntities).values({
       id, customerName: input.customerName, email: input.email, countryCode: input.countryCode,
