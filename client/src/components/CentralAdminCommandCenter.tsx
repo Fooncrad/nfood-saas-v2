@@ -298,7 +298,7 @@ export function CentralAdminCommandCenter({
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     const today = orders.filter((order) => order.createdAt && new Date(order.createdAt).getTime() >= startOfDay.getTime()).length;
-    return today || orders.length;
+    return today;
   }, [orders]);
   const avgOrder = orders.length ? totalSales / orders.length : 0;
 
