@@ -1,1 +1,0 @@
-import{j as s,c as n}from"./dashboard-operations-BrdBgrnD.js";function a({className:t,...e}){return s.jsx("div",{"data-loc":"client/src/components/ui/skeleton.tsx:5","data-slot":"skeleton",className:n("bg-accent animate-pulse rounded-md",t),...e})}export{a as S};
