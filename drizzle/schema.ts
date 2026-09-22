@@ -1804,7 +1804,7 @@ export const platformEntities = mysqlTable("platform_entities", {
   timezone: varchar("timezone", { length: 64 }).default("Asia/Riyadh").notNull(),
   currencyCode: varchar("currency_code", { length: 3 }).default("SAR").notNull(),
   primaryLanguage: varchar("primary_language", { length: 10 }).default("ar").notNull(),
-  sector: mysqlEnum("sector", PLATFORM_SECTOR_KEYS).default("restaurant").notNull(),
+  sector: varchar("sector", { length: 80 }).default("restaurant").notNull(),
   status: boolean("status").default(true).notNull(),
   plan: mysqlEnum("plan", PLAN_TIERS).default("Basic").notNull(),
   taxId: varchar("tax_id", { length: 50 }).notNull(),
