@@ -265,7 +265,7 @@ export function CentralAdminCommandCenter({
   const { theme, toggleTheme } = useTheme();
   const { direction, language, locale } = useLanguage();
   const copy = language === "ar" ? COPY_AR : COPY_EN;
-  const dark = true;
+  const dark = theme === "dark";
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState("");
