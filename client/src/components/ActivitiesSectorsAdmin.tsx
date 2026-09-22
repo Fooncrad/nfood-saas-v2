@@ -96,7 +96,7 @@ export default function ActivitiesSectorsAdmin() {
     <ActivitiesSectorsView sectors={sectors} lang={lang} getSectorLabel={getLabel} onAdd={openAdd} onEdit={openEdit} onPreview={setPreview} onToggle={toggle} updatePending={pending} notifyPending={false} loading={catalog.isLoading || marketplace.isLoading} usingFallback={catalog.isError || marketplace.isError}/>
 
     <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
-      <DialogContent dir="rtl" className="max-h-[90vh] overflow-y-auto rounded-3xl border-slate-700 bg-[#0c1828] text-slate-100 sm:max-w-2xl">
+      <DialogContent dir="rtl" className="left-1/2 top-1/2 max-h-[88dvh] w-[calc(100vw-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-3xl border-slate-700 bg-[#0c1828] text-slate-100 sm:w-full">
         <DialogHeader className="text-right"><DialogTitle className="flex items-center gap-2 text-xl font-black"><Layers3 className="h-5 w-5 text-orange-500"/>{creating ? "إضافة نشاط جديد" : "تعديل النشاط"}</DialogTitle><DialogDescription className="text-slate-400">الأسماء وحالة الظهور تُحفظ في بيانات المنصة الفعلية.</DialogDescription></DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
           {creating && <label className="text-xs font-bold sm:col-span-2">رمز النشاط بالإنجليزية<Input value={draft.key} onChange={(event)=>setDraft({...draft,key:event.target.value})} placeholder="example-sector" dir="ltr" className="mt-2 border-slate-700 bg-[#07111f]"/></label>}
