@@ -79,8 +79,8 @@ export default function Home() {
       case "admin": return <SuperAdminView />;
       case "activities": return <ActivitiesSectorsAdmin />;
       case "accounts": return <AccountManagementPanel />;
-      case "settings": return <PlatformSettingsPanel />;
-      case "site": return <PlatformSettingsPanel />;
+      case "settings": return <PlatformSettingsPanel initialSection="advanced" />;
+      case "site": return <PlatformSettingsPanel initialSection="site" />;
       case "languages": return <UiTranslationAdminPanel />;
       case "files": return <MediaLibraryPanel isCentralAdmin />;
       case "stores": return <MarketplaceStoresView />;
