@@ -8,7 +8,6 @@ import {
   KeyRound,
   LogIn,
   MoreHorizontal,
-  Plus,
   Search,
   Store,
   Trash2,
@@ -22,7 +21,6 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { CreateRestaurantDialog } from "@/components/CreateRestaurantDialog";
 import {
   Dialog,
   DialogContent,
@@ -74,7 +72,6 @@ export function SuperAdminRestaurantCatalog() {
         : { center: "Restaurant center", title: "Restaurant list", subtitle: "Manage registered restaurants, plans, statuses, and public links from one workspace.", add: "Add restaurant", search: "Search by restaurant name, ID, or plan", all: "All", active: "Active", trial: "Trial", pending: "Pending", plans: "All plans", actions: "Actions", retry: "Try again", empty: "No restaurants match the current search.", report: "Report details", branches: "branches", account: "Account", statusActive: "Active", statusTrial: "Trial", statusPending: "Pending", plan: "Plan", publicLink: "Public link", details: "Details", login: "Open restaurant", pause: "Pause", activate: "Activate", editPlan: "Edit plan", resetPassword: "Reset password", unspecified: "Not set" };
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("الكل");
-  const [createOpen, setCreateOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [expandedPlan, setExpandedPlan] = useState<number | null>(null);
   const [planFilter, setPlanFilter] = useState("الكل");
@@ -119,18 +116,6 @@ export function SuperAdminRestaurantCatalog() {
       window.location.assign("/");
     },
     onError: error => toast.error(`تعذر الدخول إلى المطعم: ${error.message}`),
-  });
-  const createRestaurant = trpc.admin.createRestaurant.useMutation({
-    onSuccess: data => {
-      void utils.admin.restaurants.invalidate();
-      setCreateOpen(false);
-      setCredentials({
-        email: data.account.email,
-        password: data.account.temporaryPassword,
-      });
-      toast.success("تم إنشاء المطعم وحساب الدخول");
-    },
-    onError: error => toast.error(`تعذر إنشاء المطعم: ${error.message}`),
   });
   const resetPassword = trpc.admin.resetRestaurantPassword.useMutation({
     onSuccess: data => {
@@ -207,21 +192,7 @@ export function SuperAdminRestaurantCatalog() {
           <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-white md:text-xl">{ui.title}</h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500 dark:text-slate-400">{ui.subtitle}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => setCreateOpen(true)}
-            className="h-9 gap-1.5 rounded-lg bg-[#e76f3c] px-3 text-xs shadow-sm hover:bg-[#d85f2e]"
-          >
-            <Plus className="h-4 w-4" /> {ui.add}
-          </Button>
-        </div>
       </div>
-      <CreateRestaurantDialog
-        open={createOpen}
-        pending={createRestaurant.isPending}
-        onClose={() => setCreateOpen(false)}
-        onSubmit={input => createRestaurant.mutate(input)}
-      />
       <Dialog
         open={Boolean(planEditor)}
         onOpenChange={open => {
