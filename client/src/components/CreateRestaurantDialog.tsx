@@ -80,11 +80,11 @@ export function CreateRestaurantDialog({ open, pending = false, onClose, onSubmi
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-      <DialogContent dir="rtl" className="left-1/2 top-1/2 max-h-[88dvh] w-[calc(100vw-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-3xl border-slate-200 bg-white p-5 shadow-2xl sm:w-full sm:p-7">
+      <DialogContent dir="rtl" className="left-1/2 top-1/2 max-h-[88dvh] w-[calc(100vw-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-3xl border-slate-200 bg-white p-5 text-slate-900 shadow-2xl dark:border-slate-700 dark:bg-[#0c1828] dark:text-slate-100 sm:w-full sm:p-7">
         <DialogHeader className="text-right">
           <p className="text-xs font-bold text-[#e76f3c]">إضافة نشاط جديد</p>
-          <DialogTitle className="mt-1 text-xl font-black text-slate-900">أضف مطعمًا إلى المنصة</DialogTitle>
-          <DialogDescription className="mt-1 text-sm leading-6 text-slate-500">تُنشأ هوية المطعم وQR المنيو تلقائيًا، ثم يستطيع مدير المطعم تخصيص الشعار والواجهة والرموز المسموح بها.</DialogDescription>
+          <DialogTitle className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100">أضف مطعمًا إلى المنصة</DialogTitle>
+          <DialogDescription className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">تُنشأ هوية المطعم وQR المنيو تلقائيًا، ثم يستطيع مدير المطعم تخصيص الشعار والواجهة والرموز المسموح بها.</DialogDescription>
         </DialogHeader>
         <div className="mt-2 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
