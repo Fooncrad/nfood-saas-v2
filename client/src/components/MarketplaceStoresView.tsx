@@ -1,15 +1,21 @@
 import { useMemo, useState } from "react";
-import { CircleDollarSign, ExternalLink, Search, Store, UserRoundCheck, UserRoundX } from "lucide-react";
+import { CircleDollarSign, ExternalLink, Search, Store, UserRoundCheck, UserRoundX, MessageCircle, LogIn } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import AdminBusinessOnboarding from "@/components/AdminBusinessOnboarding";
 
 type AdminStore = {
   id: string;
   customerName: string;
   email: string;
+  countryCode: string;
+  city: string | null;
+  timezone: string;
+  currencyCode: string;
+  primaryLanguage: string;
   sector: string;
   sectorLabelAr: string;
   sectorLabelEn: string;
@@ -86,6 +92,7 @@ export default function MarketplaceStoresView() {
 
   return (
     <section dir="rtl" className="space-y-5">
+      <AdminBusinessOnboarding />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-bold text-[#e76f3c]">سوق نفود · المنشآت</p>
@@ -155,6 +162,8 @@ export default function MarketplaceStoresView() {
                         <span>·</span>
                         <span>{store.sectorLabelAr || store.sector}</span>
                         <span>·</span>
+                        <span>{store.countryCode} / {store.currencyCode}</span>
+                        <span>·</span>
                         <span>{store.listings.toLocaleString("en-US", { maximumFractionDigits: 0 })} منتجات</span>
                         <span>·</span>
                         <span>{store.coupons.toLocaleString("en-US", { maximumFractionDigits: 0 })} كوبونات</span>
@@ -167,9 +176,9 @@ export default function MarketplaceStoresView() {
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">{store.plan}</span>
                     <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600" title="رسوم الترخيص"><CircleDollarSign className="h-3.5 w-3.5 text-[#e76f3c]" />{String(store.licensingFee ?? "0.00")} ر.س</span>
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${store.status ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>{store.status ? "نشط" : "معطل"}</span>
-                    <a href={`/store/${store.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-orange-300 hover:text-[#e76f3c]" title="عرض المتجر العام">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
+                    <a href={`/store/${store.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-orange-300 hover:text-[#e76f3c]" title="عرض المتجر العام"><ExternalLink className="h-4 w-4" /></a>
+                    <button type="button" onClick={() => openEditor(store)} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-bold text-blue-700 transition hover:bg-blue-100" title="الدخول لإدارة المتجر عند الحاجة"><LogIn className="h-4 w-4" />إدارة المتجر</button>
+                    <a href={`/support?restaurant=${store.id}&subject=${encodeURIComponent("استعلام بخصوص "+store.customerName)}`} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100" title="فتح استعلام دعم"><MessageCircle className="h-4 w-4" />استعلام</a>
                     <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={() => openEditor(store)}>تعديل</Button>
                     <Button type="button" size="sm" className="rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]" onClick={() => toggleStatus(store)}>{store.status ? "تعطيل" : "تفعيل"}</Button>
                   </div>
@@ -184,7 +193,7 @@ export default function MarketplaceStoresView() {
         <DialogContent dir="rtl" className="rounded-3xl sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>تعديل المتجر</DialogTitle>
-            <DialogDescription>تعديل مباشر من Admin: الاسم، الباقة، السجل الضريبي، رسوم الترخيص، وحالة التفعيل.</DialogDescription>
+            <DialogDescription>تعديل مباشر من Admin لبيانات المنشأة التشغيلية والاشتراك. الدولة والعملة الحالية: {selected?.countryCode ?? "—"} / {selected?.currencyCode ?? "—"}.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <label className="block text-sm font-semibold">

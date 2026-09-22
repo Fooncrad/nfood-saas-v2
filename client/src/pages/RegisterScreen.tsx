@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Car, Check, HardHat, Languages, Lock, Mail, MapPin, Phone, Scissors, ShieldCheck, ShoppingCart, Shirt, Store, Utensils, WalletCards } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Lock, Mail, MapPin, Phone, ShieldCheck, Store, WalletCards } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -6,8 +6,9 @@ import { trpc } from "@/lib/trpc";
 import { COUNTRIES, CURRENCIES, getCurrency } from "@shared/currencies";
 import { UI_LANGUAGES, languageMeta, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import "./auth-scroll.css";
 
-const sectors = [{ id: "restaurant", icon: Store }, { id: "fashion", icon: Shirt }, { id: "beauty", icon: Scissors }, { id: "grocery", icon: ShoppingCart }, { id: "auto", icon: Car }, { id: "maintenance", icon: HardHat }] as const;
+const sectors = [{ id: "restaurant" }, { id: "vegetables" }, { id: "grocery" }, { id: "laundry" }, { id: "automotive" }, { id: "beauty_salon" }, { id: "public_works" }, { id: "fashion" }, { id: "sweets" }] as const;
 const languageOptions = UI_LANGUAGES.map((code) => ({ code, label: languageMeta[code].nativeLabel }));
 
 const registerCopy = {
@@ -41,7 +42,7 @@ const registerCopy = {
     continue: "متابعة",
     sectorTitle: "قطاع النشاط",
     businessName: "اسم المنشأة",
-    businessPlaceholder: "مثال: شاورما السدة",
+    businessPlaceholder: "مثال: مقهى ناصر",
     country: "الدولة",
     currency: "العملة",
     autoCurrency: "تُستنتج تلقائيًا من الدولة",
@@ -66,7 +67,7 @@ const registerCopy = {
     toastError: "تعذر إنشاء الحساب",
     toastValidation: "أكمل البيانات المطلوبة بصيغة صحيحة",
     toastCaptcha: "أكمل اختبار التحقق أولًا",
-    sectorNames: { restaurant: "مطاعم ومأكولات", fashion: "أزياء وموضة", beauty: "صالونات وتجميل", grocery: "بقالات وتموينات", auto: "خدمات سيارات", maintenance: "صيانة وأشغال عامة" },
+    sectorNames: { restaurant: "مطاعم ومأكولات", vegetables: "خضار وفواكه", grocery: "بقالات وتموينات", laundry: "مغاسل", automotive: "سيارات وخدماتها", beauty_salon: "صالونات وتجميل", public_works: "صيانة وأشغال عامة", fashion: "أزياء وموضة", sweets: "حلويات ومخبوزات" },
   },
   en: {
     gateway: "Commercial businesses gateway",
@@ -98,7 +99,7 @@ const registerCopy = {
     continue: "Continue",
     sectorTitle: "Business sector",
     businessName: "Business name",
-    businessPlaceholder: "Example: Al-Sadda Shawarma",
+    businessPlaceholder: "Example: Nasser Café",
     country: "Country",
     currency: "Currency",
     autoCurrency: "Inferred automatically from country",
@@ -123,7 +124,7 @@ const registerCopy = {
     toastError: "Could not create the account",
     toastValidation: "Complete the required fields with valid values.",
     toastCaptcha: "Complete the security check first.",
-    sectorNames: { restaurant: "Restaurants & food", fashion: "Fashion & clothing", beauty: "Salons & beauty", grocery: "Groceries & supplies", auto: "Auto services", maintenance: "Maintenance & general works" },
+    sectorNames: { restaurant: "Restaurants & food", vegetables: "Fruit & vegetables", grocery: "Groceries & supplies", laundry: "Laundry", automotive: "Automotive services", beauty_salon: "Salons & beauty", public_works: "Maintenance & general works", fashion: "Fashion & clothing", sweets: "Sweets & bakery" },
   },
   fr: {
     gateway: "Portail des établissements commerciaux",
@@ -155,7 +156,7 @@ const registerCopy = {
     continue: "Continuer",
     sectorTitle: "Secteur d’activité",
     businessName: "Nom de l’établissement",
-    businessPlaceholder: "Exemple : Chawarma Al-Sadda",
+    businessPlaceholder: "Exemple : Café Nasser",
     country: "Pays",
     currency: "Devise",
     autoCurrency: "Déduite automatiquement du pays",
@@ -180,7 +181,7 @@ const registerCopy = {
     toastError: "Impossible de créer le compte",
     toastValidation: "Complétez les champs obligatoires avec des valeurs valides.",
     toastCaptcha: "Complétez d’abord le contrôle de sécurité.",
-    sectorNames: { restaurant: "Restaurants et plats", fashion: "Mode et vêtements", beauty: "Salons et beauté", grocery: "Épiceries et provisions", auto: "Services auto", maintenance: "Maintenance et travaux généraux" },
+    sectorNames: { restaurant: "Restaurants et cuisine", vegetables: "Fruits et légumes", grocery: "Épiceries", laundry: "Blanchisserie", automotive: "Services automobiles", beauty_salon: "Salons et beauté", public_works: "Maintenance et travaux", fashion: "Mode et vêtements", sweets: "Pâtisserie et boulangerie" },
   },
 } as const;
 
@@ -192,11 +193,12 @@ export default function RegisterScreen() {
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
   const [sector, setSector] = useState("restaurant");
-  const [languageCode, setLanguageCode] = useState("ar");
+  const [languageCode] = useState(() => language);
   const [form, setForm] = useState({ business: "", email: "", phone: "", city: "" });
   const [countryCode, setCountryCode] = useState("SA");
   const [currencyCode, setCurrencyCode] = useState("SAR");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const registrationCaptcha = trpc.auth.registrationCaptcha.useQuery();
   const register = trpc.auth.registerRestaurant.useMutation({
     onSuccess: () => { setDone(true); toast.success(copy.toastCreated); },
@@ -205,7 +207,6 @@ export default function RegisterScreen() {
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const arrow = direction === "rtl" ? "h-4 w-4" : "h-4 w-4 rotate-180";
   const country = useMemo(() => COUNTRIES.find((item) => item.code === countryCode) ?? COUNTRIES[0], [countryCode]);
-  const autoCurrency = getCurrency(country.currencyCode);
   const selectedCurrency = getCurrency(currencyCode);
   const languageLabel = languageOptions.find((item) => item.code === languageCode)?.label ?? languageOptions[0].label;
   const countryName = (item: { code: string; nameAr: string; name: string }) => language === "ar" ? item.nameAr : item.name;
@@ -217,8 +218,9 @@ export default function RegisterScreen() {
     setStep((current) => Math.min(3, current + 1));
   };
   const submit = () => {
+    if (!acceptedLegal) { toast.error(language === "ar" ? "يجب الموافقة على الشروط وسياسة الخصوصية" : language === "fr" ? "Vous devez accepter les conditions et la politique de confidentialité." : "You must accept the Terms and Privacy Policy."); return; }
     if (!registrationCaptcha.data?.challenge || !/^\d{1,2}$/.test(captchaAnswer.trim())) { toast.error(copy.toastCaptcha); return; }
-    register.mutate({ restaurantName: form.business.trim(), countryCode, currencyCode, primaryLanguage: languageCode as "ar" | "en" | "fr" | "ur" | "es" | "de" | "tr", country: country.nameAr, city: form.city.trim(), email: form.email.trim(), phone: form.phone.trim(), plan: "Free", captchaChallenge: registrationCaptcha.data.challenge, captchaAnswer: captchaAnswer.trim() });
+    register.mutate({ restaurantName: form.business.trim(), sector: sector as "restaurant" | "vegetables" | "grocery" | "laundry" | "automotive" | "beauty_salon" | "public_works" | "fashion" | "sweets", countryCode, currencyCode, primaryLanguage: languageCode as "ar" | "en" | "fr" | "ur" | "es" | "de" | "tr", country: country.nameAr, city: form.city.trim(), email: form.email.trim(), phone: form.phone.trim(), plan: "Free", captchaChallenge: registrationCaptcha.data.challenge, captchaAnswer: captchaAnswer.trim() });
   };
 
   if (done && register.data) return (
@@ -284,11 +286,11 @@ export default function RegisterScreen() {
             <p className="flex items-center gap-3"><Check className="h-4 w-4" /> {copy.languageSaved}</p>
           </div>
         </aside>
-        <main className="bg-[#f8fafc] px-5 py-8 sm:px-10 lg:px-16">
+        <main className="nfood-auth-scroll min-h-dvh overflow-y-auto bg-[#f8fafc] px-4 py-5 sm:px-10 sm:py-8 lg:px-16">
           <div className="mx-auto max-w-2xl">
             <div className="mb-8 flex items-center justify-between">
               <button onClick={() => setLocation("/login")} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-orange-500"><ArrowRight className={arrow} /> {copy.backToLogin}</button>
-              <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 font-black text-white">N</span><strong className="tracking-[.16em]">NFOOD</strong><LanguageSwitcher compact /></div>
+              <div className="flex min-w-0 items-center gap-2"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-500 font-black text-white">N</span><strong className="hidden tracking-[.16em] sm:block">NFOOD</strong><LanguageSwitcher compact /></div>
             </div>
             <div className="mb-8">
               <div className="mb-4 flex items-center gap-1 text-xs font-bold text-orange-600">
@@ -300,28 +302,17 @@ export default function RegisterScreen() {
                 <span className="text-slate-400">{copy.stepsCount}</span>
               </div>
               <p className="text-sm font-bold text-orange-600">{copy.setUpWorkspace}</p>
-              <h2 className="mt-1 text-3xl font-black tracking-tight">{copy.createAccountTitle}</h2>
+              <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{copy.createAccountTitle}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">{copy.stepDescriptions[step - 1]}</p>
             </div>
             {step === 1 ? (
               <section className="space-y-7">
                 <div>
-                  <div className="mb-3 flex items-center gap-2"><Languages className="h-4 w-4 text-orange-500" /><h3 className="font-black">{copy.accountLanguage}</h3></div>
-                  <select value={languageCode} onChange={(event) => setLanguageCode(event.target.value)} className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
-                    {languageOptions.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
-                  </select>
-                  <p className="mt-2 text-[11px] leading-5 text-slate-400">{copy.accountLanguageDesc}</p>
-                </div>
-                <div>
                   <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><Store className="h-4 w-4 text-orange-500" /><h3 className="font-black">{copy.chooseSector}</h3></div><span className="text-[11px] font-bold text-slate-400">{sectors.length} {copy.sectors}</span></div>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {sectors.map(({ id, icon: Icon }) => (
-                      <button key={id} onClick={() => setSector(id)} className={`rounded-2xl border p-4 text-start transition ${sector === id ? "border-orange-400 bg-orange-50 ring-2 ring-orange-100" : "border-slate-200 bg-white hover:border-orange-200"}`}>
-                        <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${sector === id ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-500"}`}><Icon className="h-5 w-5" /></span>
-                        <span className="mt-3 block text-xs font-bold leading-5">{sectorLabel(id)}</span>
-                      </button>
-                    ))}
-                  </div>
+                  <select value={sector} onChange={(event) => setSector(event.target.value)} className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
+                    {sectors.map(({ id }) => <option key={id} value={id}>{sectorLabel(id)}</option>)}
+                  </select>
+                  <p className="mt-2 text-[11px] leading-5 text-slate-400">{copy.accountLanguageLabel}: <strong>{languageLabel}</strong> · {copy.accountLanguageDesc}</p>
                 </div>
                 <button onClick={next} className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#e76f3c] text-base font-bold text-white hover:bg-[#d85f2e]">{copy.continue} <ArrowLeft className={arrow} /></button>
               </section>
@@ -346,7 +337,7 @@ export default function RegisterScreen() {
                     <span className="mb-2 flex items-center gap-2 text-xs font-bold text-slate-700"><WalletCards className="h-4 w-4 text-orange-500" /> {copy.currency}</span>
                     <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
                       <p className="text-[11px] font-bold text-emerald-700">{copy.autoCurrency}</p>
-                      <p className="mt-1 text-sm font-black text-emerald-900">{autoCurrency.nameAr} · {autoCurrency.code} ({autoCurrency.symbol})</p>
+                      <p className="mt-1 text-sm font-black text-emerald-900">{currencyName(selectedCurrency)} · {selectedCurrency.code} ({selectedCurrency.symbol})</p>
                     </div>
                     <select value={currencyCode} onChange={(event) => setCurrencyCode(event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400">
                       {CURRENCIES.map((item) => <option key={item.code} value={item.code}>{currencyName(item)} · {item.code} ({item.symbol})</option>)}
@@ -395,6 +386,10 @@ export default function RegisterScreen() {
                   </div>
                   <input value={captchaAnswer} onChange={(event) => setCaptchaAnswer(event.target.value.replace(/\D/g, "").slice(0, 2))} inputMode="numeric" autoComplete="off" required placeholder={copy.answerPlaceholder} aria-label={copy.answerLabel} className="mt-3 h-12 w-full rounded-xl border border-orange-200 bg-white px-4 text-sm outline-none focus:border-orange-400" />
                 </div>
+                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-xs leading-6 text-slate-600">
+                  <input type="checkbox" checked={acceptedLegal} onChange={(event) => setAcceptedLegal(event.target.checked)} className="mt-1 accent-orange-500" />
+                  <span>{language === "ar" ? <>بإنشاء الحساب أوافق على <a href="/terms" target="_blank" className="font-bold text-orange-600">الشروط والأحكام</a> و<a href="/privacy" target="_blank" className="font-bold text-orange-600">سياسة الخصوصية</a>.</> : language === "fr" ? <>En créant le compte, j’accepte les <a href="/terms" target="_blank" className="font-bold text-orange-600">Conditions</a> et la <a href="/privacy" target="_blank" className="font-bold text-orange-600">Politique de confidentialité</a>.</> : <>By creating the account, I agree to the <a href="/terms" target="_blank" className="font-bold text-orange-600">Terms</a> and <a href="/privacy" target="_blank" className="font-bold text-orange-600">Privacy Policy</a>.</>}</span>
+                </label>
                 <div className="flex items-center gap-3">
                   <button type="button" onClick={() => setStep(2)} disabled={register.isPending} className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-500 hover:border-orange-200"><ArrowRight className={arrow} /> {copy.back}</button>
                   <button type="button" onClick={submit} disabled={register.isPending} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#e76f3c] text-base font-bold text-white hover:bg-[#d85f2e] disabled:opacity-60"><Lock className="h-4 w-4" /> {register.isPending ? copy.creating : copy.create}</button>

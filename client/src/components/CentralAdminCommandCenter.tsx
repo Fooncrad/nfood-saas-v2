@@ -8,6 +8,8 @@ import {
   CircleDollarSign,
   HardDrive,
   HelpCircle,
+  Globe2,
+  Layers3,
   Languages,
   LayoutDashboard,
   LogOut,
@@ -31,13 +33,16 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { trpc } from "@/lib/trpc";
 import type { Order } from "@/components/homeNavigation";
 
-export type CentralAdminNavKey = "overview" | "admin" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend" | "security" | "health";
+export type CentralAdminNavKey = "overview" | "admin" | "activities" | "nfc" | "site" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend" | "security" | "health";
 
-const NAV_ORDER: CentralAdminNavKey[] = ["overview", "admin", "accounts", "settings", "languages", "files", "stores", "trend", "security", "health"];
+const NAV_ORDER: CentralAdminNavKey[] = ["overview", "admin", "activities", "stores", "accounts", "site", "nfc", "trend", "settings", "languages", "files", "security", "health"];
 
 const NAV_LABELS: Record<CentralAdminNavKey, { ar: string; en: string }> = {
   overview: { ar: "نظرة عامة", en: "Overview" },
   admin: { ar: "Super Admin", en: "Super Admin" },
+  activities: { ar: "الأنشطة والقطاعات", en: "Activities & sectors" },
+  nfc: { ar: "بطاقات الأعمال NFC", en: "NFC business cards" },
+  site: { ar: "صفحات وهوية الموقع", en: "Site pages & identity" },
   accounts: { ar: "الحسابات", en: "Accounts" },
   settings: { ar: "الإعدادات العامة", en: "General settings" },
   languages: { ar: "اللغة والترجمة", en: "Languages" },
@@ -51,6 +56,9 @@ const NAV_LABELS: Record<CentralAdminNavKey, { ar: string; en: string }> = {
 const NAV_ICONS: Record<CentralAdminNavKey, LucideIcon> = {
   overview: LayoutDashboard,
   admin: ShieldCheck,
+  activities: Layers3,
+  nfc: WalletCards,
+  site: Globe2,
   accounts: Users,
   settings: Settings2,
   languages: Languages,

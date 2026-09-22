@@ -1,116 +1,47 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { Coins, Gift, Heart, Megaphone, Package, Search, ShoppingBag, Sparkles, Store, Tag, Truck, Utensils, WalletCards, type LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { marketplaceCopy, marketplaceCountries, sectorMeta } from "@/lib/marketplaceExperience";
+import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { Globe2, Search, Store, MapPin, Moon, Sun, Heart, ShieldCheck, Truck, Headphones, CreditCard, ArrowLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 
-const SECTOR_ICONS: Record<string, LucideIcon> = {
-  store: Store,
-  utensils: Utensils,
-  shopping: ShoppingBag,
-  shoppingBag: ShoppingBag,
-  gift: Gift,
-  package: Package,
-  megaphone: Megaphone,
-  sparkles: Sparkles,
-  tag: Tag,
-  tags: Tag,
-  coins: Coins,
-  wallet: WalletCards,
-  truck: Truck,
-  heart: Heart,
-};
+const fallbackHero="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1800&q=85";
 
-export default function MarketplaceLanding() {
-  const [search, setSearch] = useState("");
-  const sectors = trpc.marketplace.publicSectors.useQuery(undefined, { retry: false });
-  const stores = trpc.marketplace.publicStores.useQuery({ search: search.trim() || undefined }, { retry: false });
-  const sectorRows = sectors.data ?? [];
-  const storeRows = stores.data ?? [];
-  const trimmed = search.trim().toLowerCase();
-  const visibleSectors = trimmed ? sectorRows.filter((sector) => `${sector.labelAr} ${sector.labelEn} ${sector.labelFr}`.toLowerCase().includes(trimmed)) : sectorRows;
-  const totalListings = sectorRows.reduce((total, sector) => total + sector.listingCount, 0);
+export default function MarketplaceLanding(){
+ const {language,direction}=useLanguage(); const lang=language==="fr"?"fr":language==="en"?"en":"ar"; const copy=marketplaceCopy(lang);
+ const [country,setCountry]=useState(()=>localStorage.getItem("nfood-market-country")||"SA"); const [search,setSearch]=useState(""); const [theme,setTheme]=useState<"light"|"dark">(()=>localStorage.getItem("nfood-market-theme")==="light"?"light":"dark");
+ const appearanceQuery=trpc.marketplace.publicAppearance.useQuery(undefined,{retry:false}); const sectors=trpc.marketplace.publicSectors.useQuery(undefined,{retry:false}); const stores=trpc.marketplace.publicStores.useQuery({countryCode:country,search:search.trim()||undefined},{retry:false});
+ const appearance=(appearanceQuery.data?.appearance||{}) as Record<string,any>; const primary=appearance.primaryColor||"#f97316"; const radius=`${appearance.cardRadius||24}px`; const countryInfo=marketplaceCountries.find(x=>x.code===country)??marketplaceCountries[0]; const sectorRows=sectors.data??[]; const storeRows=stores.data??[];
+ useEffect(()=>{ if(appearance.theme==="light"||appearance.theme==="dark"){setTheme(appearance.theme)} else if(!localStorage.getItem("nfood-market-theme")) setTheme(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")},[appearance.theme]);
+ const title=lang==="ar"?(appearance.heroTitleAr||"اكتشف أفضل المطاعم والمتاجر في مدينتك"):lang==="fr"?(appearance.heroTitleFr||"Découvrez les meilleurs restaurants et boutiques de votre ville"):(appearance.heroTitleEn||"Discover the best restaurants and stores in your city");
+ const featured=useMemo(()=>storeRows.slice(0,4),[storeRows]); const filteredSectors=useMemo(()=>sectorRows.filter(s=>!search.trim()||`${s.labelAr} ${s.labelEn} ${s.labelFr}`.toLowerCase().includes(search.toLowerCase())),[sectorRows,search]);
+ const chooseCountry=(v:string)=>{setCountry(v);localStorage.setItem("nfood-market-country",v)}; const toggleTheme=()=>{const v=theme==="dark"?"light":"dark";setTheme(v);localStorage.setItem("nfood-market-theme",v)};
+ const dark=theme==="dark"; const shell=dark?"bg-[#08111d] text-white":"bg-[#f8fafc] text-[#0b1729]"; const card=dark?"border-white/10 bg-[#101b2b]":"border-slate-200 bg-white";
+ return <main dir={direction} className={`min-h-screen transition-colors duration-300 ${shell}`} style={{"--market-primary":primary,"--market-radius":radius} as React.CSSProperties}>
+  <header className={`sticky top-0 z-50 border-b backdrop-blur-xl ${dark?"border-white/10 bg-[#08111d]/90":"border-slate-200 bg-white/90"}`}><div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
+   <Link href="/marketplace" className="flex items-center gap-2">{appearanceQuery.data?.siteLogoUrl?<img src={appearanceQuery.data.siteLogoUrl} className="h-10 w-10 rounded-xl object-contain"/>:<span className="grid h-10 w-10 place-items-center rounded-xl text-xl font-black text-white" style={{background:primary}}>N</span>}<span><b className="block text-lg tracking-wide">{appearanceQuery.data?.siteName||"NFOOD"}</b><small className="opacity-50">{lang==="ar"?"مطاعم • مقاهي • متاجر":"Restaurants • Cafés • Stores"}</small></span></Link>
+   <nav className="hidden items-center gap-7 text-sm font-bold lg:flex"><Link href="/">{lang==="ar"?"الرئيسية":"Home"}</Link><a href="#categories">{lang==="ar"?"التصنيفات":"Categories"}</a><a href="#stores">{lang==="ar"?"المتاجر":"Stores"}</a><a href="#offers">{lang==="ar"?"العروض":"Offers"}</a></nav>
+   <div className="flex items-center gap-2"><button onClick={toggleTheme} className={`grid h-10 w-10 place-items-center rounded-xl border ${dark?"border-white/10 bg-white/5":"border-slate-200 bg-white"}`} aria-label="Theme">{dark?<Sun className="h-4 w-4"/>:<Moon className="h-4 w-4"/>}</button><LanguageSwitcher compact /><Link href="/login"><Button variant="ghost">{copy.login}</Button></Link></div>
+  </div></header>
 
-  return (
-    <main dir="rtl" className="min-h-screen bg-[#0b0f17] text-white">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b0f17]/90 px-5 py-4 backdrop-blur-xl md:px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E76F3C] text-lg font-black text-white">N</span>
-            <span>
-              <strong className="block tracking-[.15em]">NFOOD MARKETPLACE</strong>
-              <small className="block text-[10px] font-bold tracking-[.2em] text-orange-300/80">سوق متعدد القطاعات</small>
-            </span>
-          </Link>
-          <nav className="flex flex-wrap items-center gap-2">
-            <Link href="/affiliate"><Button type="button" variant="ghost" className="rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"><WalletCards className="ml-2 h-4 w-4" />التسويق بالعمولة</Button></Link>
-            <Link href="/store-marketing"><Button type="button" variant="ghost" className="rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"><Store className="ml-2 h-4 w-4" />لوحة التاجر</Button></Link>
-            <Link href="/"><Button type="button" variant="outline" className="rounded-xl border-white/15 text-white hover:bg-white/10">الرئيسية</Button></Link>
-          </nav>
-        </div>
-      </header>
+  <section className="relative min-h-[500px] overflow-hidden"><img src={appearance.heroImageUrl||fallbackHero} className="absolute inset-0 h-full w-full object-cover" alt=""/><div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/65 to-black/35"/><div className="relative mx-auto flex min-h-[500px] max-w-7xl items-center px-4 py-16 md:px-8"><div className="w-full max-w-3xl text-white">
+   <span className="inline-flex rounded-full border border-white/20 bg-black/30 px-4 py-2 text-xs font-bold backdrop-blur">{countryInfo.flag} {countryInfo[lang]} · NFOOD</span><h1 className="mt-5 text-4xl font-black leading-tight md:text-6xl">{title}</h1><p className="mt-4 text-base text-white/80 md:text-xl">{appearance.heroSubtitleAr||copy.subtitle}</p>
+   <div className="mt-7 flex overflow-hidden rounded-2xl bg-white p-1.5 shadow-2xl"><Search className="ms-3 mt-3 h-5 w-5 text-slate-400"/><Input value={search} onChange={e=>setSearch(e.target.value)} placeholder={copy.search} className="h-11 flex-1 border-0 bg-transparent text-slate-900 shadow-none focus-visible:ring-0"/><Button className="h-11 rounded-xl px-7 text-white" style={{background:primary}}>{lang==="ar"?"بحث":"Search"}</Button></div>
+   <div className="mt-3 grid gap-2 sm:grid-cols-2"><select value={country} onChange={e=>chooseCountry(e.target.value)} className="h-11 rounded-xl border border-white/20 bg-black/35 px-4 text-sm font-bold text-white backdrop-blur">{marketplaceCountries.map(c=><option className="text-black" key={c.code} value={c.code}>{c.flag} {c[lang]}</option>)}</select><Link href="/store-marketing" className="grid h-11 place-items-center rounded-xl border border-white/20 bg-white/10 text-sm font-bold backdrop-blur">{copy.merchant}</Link></div>
+  </div></div></section>
 
-      <section className="relative isolate overflow-hidden px-5 pb-14 pt-16 md:px-8 md:pt-20">
-        <div className="absolute -right-24 -top-32 h-96 w-96 rounded-full bg-orange-500/20 blur-3xl" />
-        <div className="absolute -bottom-40 left-0 h-[30rem] w-[30rem] rounded-full bg-sky-500/10 blur-3xl" />
-        <div className="relative mx-auto max-w-7xl">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-orange-300/30 bg-orange-400/10 px-3 py-2 text-xs font-bold text-orange-200"><Sparkles className="h-4 w-4" /> منصة NFOOD · أسواق المتاجر والخدمات</div>
-          <h1 className="max-w-3xl text-4xl font-black leading-[1.15] tracking-tight md:text-6xl">سوق NFOOD للمتاجر<br /><span className="text-orange-400">من كل القطاعات.</span></h1>
-          <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300 md:text-lg">تصفح المتاجر والمنتجات والخدمات من قطاعات متعددة عبر سوق موحّد. أدخلت المنشأة برنامج مكافآت لكل متجر، وكوبونات خصم، وحملات تسويقية، وروابط إحالة، مع برنامج عمولة للمسوّقين.</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <div className="relative w-full max-w-md">
-              <Search className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-slate-500" />
-              <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ابحث عن متجر أو منتج أو قطاع..." className="h-11 rounded-2xl border-white/10 bg-white/5 pr-10 text-white placeholder:text-slate-500" />
-            </div>
-            <Link href="/store-marketing"><Button type="button" className="rounded-2xl bg-[#E76F3C] px-6 py-3 font-black text-white shadow-xl shadow-orange-950/30 transition hover:bg-orange-400">افتح متجرك الآن</Button></Link>
-          </div>
-          <div className="mt-8 flex flex-wrap items-center gap-4 text-xs text-slate-400"><Badge className="border-white/10 bg-white/5 text-orange-200">{sectorRows.length} قطاعًا</Badge><Badge className="border-white/10 bg-white/5 text-emerald-300">{storeRows.length} متجرًا نشطًا</Badge><Badge className="border-white/10 bg-white/5 text-sky-300">{totalListings} منتجًا معروضًا</Badge></div>
-        </div>
-      </section>
+  {appearance.showTrustBar!==false&&<section className={`mx-auto -mt-5 relative z-10 grid max-w-6xl grid-cols-2 gap-px overflow-hidden border shadow-xl md:grid-cols-4 ${card}`} style={{borderRadius:radius}}>{[[ShieldCheck,"متاجر موثوقة","جودة وخدمة مضمونة"],[CreditCard,"دفع آمن وسهل","خيارات دفع متعددة"],[Truck,"توصيل سريع","إلى باب منزلك"],[Headphones,"دعم على مدار الساعة","نحن دائماً هنا لمساعدتك"]].map(([I,a,b])=>{const Icon=I as typeof ShieldCheck;return <div key={a as string} className="flex items-center gap-3 p-5"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-orange-50" style={{color:primary}}><Icon className="h-5 w-5"/></span><div><b className="text-sm">{a as string}</b><p className="mt-1 text-[11px] opacity-50">{b as string}</p></div></div>})}</section>}
 
-      <section className="mx-auto max-w-7xl px-5 pb-16 md:px-8">
-        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-          <aside className="h-fit rounded-3xl border border-white/10 bg-white/5 p-4 lg:sticky lg:top-24">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-sm font-black">القطاعات</h2>
-              <Badge className="border-white/10 bg-white/5 text-orange-200">{sectorRows.length}</Badge>
-            </div>
-            <p className="mb-4 text-[11px] leading-5 text-slate-400">اختر قطاعًا لتصفح متاجره ومنتجاته.</p>
-            {sectors.isLoading ? <div className="space-y-2">{[1, 2, 3, 4].map((item) => <div key={item} className="h-12 animate-pulse rounded-2xl border border-white/10 bg-white/5" />)}</div> : visibleSectors.length === 0 ? <div className="rounded-2xl border border-dashed border-white/15 p-6 text-center text-xs text-slate-400">لا توجد قطاعات مطابقة لبحثك.</div> : <nav aria-label="القطاعات" className="space-y-1.5">{visibleSectors.map((sector) => { const Icon = SECTOR_ICONS[sector.icon] ?? Store; return <Link key={sector.id} href={`/marketplace/sector/${sector.slug}`} className="flex items-center gap-3 rounded-2xl border border-transparent px-3 py-2.5 transition hover:border-orange-400/30 hover:bg-white/10"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${sector.color}22`, color: sector.color }}><Icon className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-black">{sector.labelAr}</span><span className="block truncate text-[10px] font-bold text-slate-500">{sector.labelEn}</span></span><span className="shrink-0 text-[11px] font-black text-orange-200/80">{sector.listingCount}</span></Link>; })}</nav>}
-          </aside>
+  <section id="categories" className="mx-auto max-w-7xl px-4 py-14 md:px-8"><div className="mb-7 flex items-end justify-between"><div><p className="text-xs font-black" style={{color:primary}}>NFOOD</p><h2 className="mt-1 text-3xl font-black">{lang==="ar"?"تصفح حسب التصنيف":copy.activity}</h2></div></div><div className="flex gap-3 overflow-x-auto pb-3">{filteredSectors.map(s=>{const m=sectorMeta(s.slug);return <Link key={s.id} href={`/marketplace/sector/${s.slug}?country=${country}`} className={`min-w-36 border p-4 text-center transition hover:-translate-y-1 ${card}`} style={{borderRadius:radius}}><span className="text-4xl">{m.icon}</span><b className="mt-3 block text-sm">{lang==="ar"?m.ar:lang==="fr"?m.fr:m.en}</b></Link>})}</div></section>
 
-          <div className="min-w-0 space-y-14">
-            <section>
-              <div className="mb-5 flex items-end justify-between gap-3">
-                <div><h2 className="text-xl font-black">القطاعات</h2><p className="mt-1 text-xs text-slate-400">أشهر قطاعات السوق وعروضها.</p></div>
-              </div>
-              {sectors.isLoading ? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{[1, 2, 3, 4].map((item) => <div key={item} className="h-28 animate-pulse rounded-3xl border border-white/10 bg-white/5" />)}</div> : visibleSectors.length === 0 ? <div className="rounded-3xl border border-dashed border-white/15 p-14 text-center text-sm text-slate-400">لا توجد قطاعات مطابقة لبحثك.</div> : <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{visibleSectors.map((sector) => { const Icon = SECTOR_ICONS[sector.icon] ?? Store; return <Link key={sector.id} href={`/marketplace/sector/${sector.slug}`} className="group rounded-3xl border border-white/10 bg-white/5 p-5 transition hover:-translate-y-1 hover:border-orange-400/40 hover:bg-white/10"><div className="flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: `${sector.color}22`, color: sector.color }}><Icon className="h-6 w-6" /></div><h3 className="mt-4 font-black">{sector.labelAr}</h3><p className="mt-1 text-[11px] font-bold text-orange-200/80">{sector.listingCount} منتجًا · {sector.labelEn}</p></Link>; })}</div>}
-            </section>
+  <section id="stores" className="mx-auto max-w-7xl px-4 pb-14 md:px-8"><div className="mb-7 flex items-end justify-between"><div><h2 className="text-3xl font-black">{lang==="ar"?"متاجر مميزة لك":copy.stores}</h2><p className="mt-2 text-sm opacity-50">{lang==="ar"?"مختارة بعناية لتمنحك أفضل التجارب":"Selected stores for a better experience"}</p></div></div>
+   {stores.isLoading?<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{[1,2,3,4].map(x=><div key={x} className={`h-72 animate-pulse ${card}`} style={{borderRadius:radius}}/>)}</div>:featured.length?<div className="grid grid-cols-2 gap-3 md:gap-5 lg:grid-cols-4">{featured.map(store=>{const r=store.restaurant;const cover=(r as any)?.coverUrl;const meta=sectorMeta(store.sector);return <Link key={store.entityId} href={`/store/${store.entityId}?country=${country}`} className={`group overflow-hidden border shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${card}`} style={{borderRadius:radius}}><div className="relative aspect-[4/3] overflow-hidden bg-slate-200">{cover?<img src={cover} className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/>:<div className="grid h-full place-items-center text-6xl">{meta.icon}</div>}<button className="absolute end-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/35 text-white backdrop-blur"><Heart className="h-4 w-4"/></button></div><div className="p-4"><h3 className="truncate font-black">{store.customerName}</h3><p className="mt-1 flex items-center gap-1 text-xs opacity-50"><MapPin className="h-3 w-3"/>{r?.city||countryInfo[lang]}</p><div className="mt-3 flex items-center justify-between"><span className="text-xs font-bold" style={{color:primary}}>{meta.icon} {lang==="ar"?meta.ar:meta.en}</span><span className="text-xs opacity-50">{store.listingCount} {lang==="ar"?"صنف":"items"}</span></div></div></Link>})}</div>:<div className={`border border-dashed p-12 text-center ${card}`} style={{borderRadius:radius}}><Store className="mx-auto h-10 w-10 opacity-30"/><p className="mt-3 font-bold">{lang==="ar"?"نعمل على إضافة متاجر مميزة في هذه الدولة":"Great stores are coming to this country"}</p></div>}
+  </section>
 
-            <section>
-              <div className="mb-5 flex items-end justify-between gap-3">
-                <div><h2 className="text-xl font-black">متاجر نشطة</h2><p className="mt-1 text-xs text-slate-400">متاجر حقيقية من المنصات العاملة على NFOOD.</p></div>
-              </div>
-              {stores.isLoading ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[1, 2, 3, 4].map((item) => <div key={item} className="h-72 animate-pulse rounded-3xl border border-white/10 bg-white/5" />)}</div> : storeRows.length === 0 ? <div className="rounded-3xl border border-dashed border-white/15 p-14 text-center text-sm text-slate-400">لا توجد متاجر نشطة بمحتوى بعد — كن أول من يفتح متجرًا.</div> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{storeRows.map((store) => <Link key={store.entityId} href={`/store/${store.entityId}`} className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 transition hover:-translate-y-1 hover:border-orange-400/40"><div className="relative flex h-24 items-end justify-between gap-2 p-4" style={{ background: `linear-gradient(135deg, ${store.restaurant?.brandColor ?? "#111927"}, ${store.restaurant?.brandAccentColor ?? store.restaurant?.brandColor ?? "#0b1d35"})` }}>{store.restaurant?.brandLogoUrl ? <img src={store.restaurant.brandLogoUrl} alt="" className="h-14 w-14 rounded-2xl bg-white/95 object-cover p-1 shadow-lg" /> : <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-xl font-black text-white">{store.customerName.trim().charAt(0)}</span>}<Badge className="border-white/20 bg-black/40 text-orange-200">{store.sector}</Badge></div><CardContent className="p-4"><div className="flex items-center justify-between gap-2"><h3 className="line-clamp-1 font-black">{store.customerName}</h3></div><p className="mt-1 line-clamp-1 text-xs text-slate-400">{store.restaurant?.city ?? store.email}</p><div className="mt-3 flex items-center justify-between text-xs"><span className="font-bold text-emerald-300">{store.listingCount} منتجًا</span><span className="font-black text-white">{Number(store.minPrice) > 0 ? `من ${store.minPrice.toLocaleString("en-US")} ${store.plan === "Basic" ? "ر.س" : "ر.س"}` : "مجانًا"}</span></div></CardContent></Link>)}</div>}
-            </section>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-5 pb-16 md:px-8">
-        <div className="grid gap-3 sm:grid-cols-3">{[[WalletCards, "عمولة للمسوّقين", "سجّل في برنامج العمولة واستلم نسبة من كل طلب مدفوع يصل عبر رابطك."], [Gift, "مكافآت الولاء", "كل متجر يحدد نقاط الولاء الخاصة به ويستبدلها العميل كقسائم."], [Megaphone, "كوبونات وحملات", "أنشئ كوبونات الخصم والحملات الموسمية من لوحة التاجر مباشرة."]].map(([Icon, title, body]) => { const IconEl = Icon as LucideIcon; return <Card key={title as string} className="rounded-3xl border-white/10 bg-white/5"><CardContent className="p-6"><IconEl className="h-6 w-6 text-orange-300" /><h3 className="mt-4 font-black">{title as string}</h3><p className="mt-2 text-sm leading-7 text-slate-400">{body as string}</p></CardContent></Card>; })}</div>
-      </section>
-
-      <footer className="mx-auto max-w-7xl px-5 pb-14 md:px-8">
-        <div className="rounded-3xl border border-orange-400/20 bg-orange-400/5 p-8 text-center">
-          <h2 className="text-2xl font-black">هل أنت منشأة مسجلة؟</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-slate-300">لوحة التاجر تفتح لك إدارة المنتجات، الكوبونات، الحملات، مكافآت الولاء، وروابط الإحالة في مكان واحد.</p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3"><Link href="/store-marketing"><Button type="button" className="rounded-xl bg-[#E76F3C] px-6 font-black hover:bg-orange-400">لوحة التاجر</Button></Link><Link href="/"><Button type="button" variant="outline" className="rounded-xl border-white/15 text-white hover:bg-white/10">العودة لموقع NFOOD</Button></Link></div>
-        </div>
-      </footer>
-    </main>
-  );
+  {appearance.showPromo!==false&&<section id="offers" className="mx-auto max-w-7xl px-4 pb-14 md:px-8"><div className="relative overflow-hidden bg-gradient-to-r from-violet-900 via-fuchsia-800 to-orange-600 p-8 text-white md:p-10" style={{borderRadius:radius}}><div className="relative z-10 max-w-xl"><h2 className="text-3xl font-black">{appearance.promoTextAr||"اكتشف تجارب جديدة كل يوم!"}</h2><p className="mt-2 text-white/75">{lang==="ar"?"متاجر جديدة • أطباق مميزة • عروض حصرية":"New stores • special dishes • exclusive offers"}</p><a href="#stores" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-slate-900">{lang==="ar"?"تصفح المتاجر الآن":"Browse stores"}<ArrowLeft className="h-4 w-4"/></a></div></div></section>}
+  <footer className={`border-t px-4 py-10 ${dark?"border-white/10 bg-[#06101b]":"border-slate-200 bg-white"}`}><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4"><b className="text-xl">NFOOD</b><p className="text-xs opacity-50">© {new Date().getFullYear()} NFOOD · {lang==="ar"?"جميع الحقوق محفوظة":"All rights reserved"}</p></div></footer>
+ </main>
 }

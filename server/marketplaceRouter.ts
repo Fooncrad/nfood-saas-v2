@@ -7,8 +7,18 @@ import {
   affiliateCommissions,
   affiliateLinks,
   affiliatePayoutRequests,
+  businessStoragePolicies,
+  businessDepartments,
+  scopedRoleAssignments,
+  permissions,
+  rolePermissions,
+  roles,
+  users,
+  branches,
+  entityStorageUsage,
   marketplaceListings,
   marketplaceSectors,
+  marketplaceStorefrontSettings,
   platformEntities,
   restaurants,
   storeCampaigns,
@@ -19,14 +29,14 @@ import {
   storeReferralLinks,
   storeReferralRecords,
   storeRewardTransactions,
-  users,
   walletAccounts,
 } from "../drizzle/schema";
 import { publicProcedure, protectedProcedure, adminProcedure, platformAdminProcedure, router } from "./_core/trpc";
 import type { TrpcContext } from "./_core/context";
 import { nanoid } from "nanoid";
-import { getDb, getMerchantRestaurantId, insertAuditLog } from "./db";
+import { getDb, getMerchantRestaurantId, getPlatformSettings, insertAuditLog } from "./db";
 import { sendPushToUser } from "./push";
+import { COUNTRIES, CURRENCIES } from "../shared/currencies";
 
 async function getProviderEntity(user: AuthUser) {
   const db = await getDb();
@@ -58,6 +68,7 @@ const entityIdSchema = z.string().trim().min(1).max(30);
 
 export const marketplaceRouter = router({
   // ── Public storefront ────────────────────────────────────────────────
+  publicAppearance: publicProcedure.query(async () => { const settings = await getPlatformSettings(); let appearance: Record<string, unknown> = {}; try { appearance = JSON.parse(settings.marketplaceAppearanceJson || "{}"); } catch {} return { siteName: settings.siteName, siteLogoUrl: settings.siteLogoUrl, socialLinks: settings.socialLinks, appearance }; }),
   publicSectors: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
@@ -65,6 +76,19 @@ export const marketplaceRouter = router({
     const counts = await db.select({ sectorId: marketplaceListings.sectorId, total: sql<number>`count(*)` }).from(marketplaceListings).where(eq(marketplaceListings.status, "active")).groupBy(marketplaceListings.sectorId);
     const countMap = new Map(counts.map((row) => [Number(row.sectorId), Number(row.total)]));
     return sectors.map((sector) => ({ ...sector, listingCount: countMap.get(sector.id) ?? 0 }));
+  }),
+  publicFeaturedStores: publicProcedure.query(async () => {
+    const db = await getDb(); if (!db) return [];
+    const settings = await getPlatformSettings(); let appearance: any = {}; try { appearance = JSON.parse(settings.marketplaceAppearanceJson || "{}"); } catch {}
+    const limit = Math.min(20, Math.max(1, Number(appearance.homeFeaturedLimit) || 5));
+    const preferred = Array.isArray(appearance.homeFeaturedEntityIds) ? appearance.homeFeaturedEntityIds.filter((id: unknown): id is string => typeof id === "string") : [];
+    const entities = await db.select().from(platformEntities).where(eq(platformEntities.status, true));
+    const listings = await db.select({ entityId: marketplaceListings.entityId, imageUrl: marketplaceListings.imageUrl, sectorId: marketplaceListings.sectorId }).from(marketplaceListings).where(eq(marketplaceListings.status, "active"));
+    const sectorRows = await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug, labelAr: marketplaceSectors.labelAr, labelEn: marketplaceSectors.labelEn, labelFr: marketplaceSectors.labelFr }).from(marketplaceSectors).where(eq(marketplaceSectors.isActive, true));
+    const sectorMap = new Map(sectorRows.map(s => [s.id, s]));
+    const eligible = entities.filter(e => preferred.includes(e.id) || listings.some(l => l.entityId === e.id));
+    const ordered = [...eligible].sort((a,b) => { const ai=preferred.indexOf(a.id), bi=preferred.indexOf(b.id); if(ai>=0||bi>=0) return (ai<0?9999:ai)-(bi<0?9999:bi); return a.customerName.localeCompare(b.customerName); }).slice(0,limit);
+    return ordered.map(entity => { const items=listings.filter(l=>l.entityId===entity.id); const sector=sectorMap.get(items[0]?.sectorId); return { entityId:entity.id, customerName:entity.customerName, sector:entity.sector, sectorLabelAr:sector?.labelAr ?? entity.sector, sectorLabelEn:sector?.labelEn ?? entity.sector, sectorLabelFr:sector?.labelFr ?? entity.sector, imageUrl:items.find(i=>i.imageUrl)?.imageUrl ?? null, listingCount:items.length, featured:preferred.includes(entity.id) }; });
   }),
   publicStores: publicProcedure.input(z.object({
     countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional(),
@@ -104,6 +128,7 @@ export const marketplaceRouter = router({
       if (searchTerm && !(entity.customerName.toLowerCase().includes(searchTerm) || entity.email.toLowerCase().includes(searchTerm))) continue;
       const entityListings = listings.filter((listing) => listing.entityId === entity.id);
       const restaurantMatch = await db.select({ id: restaurants.id, brandName: restaurants.brandName, brandLogoUrl: restaurants.brandLogoUrl, coverUrl: restaurants.coverUrl, city: restaurants.city, brandColor: restaurants.brandColor, brandAccentColor: restaurants.brandAccentColor }).from(restaurants).where(eq(restaurants.brandName, entity.customerName)).limit(1);
+      const storefront = (await db.select().from(marketplaceStorefrontSettings).where(and(eq(marketplaceStorefrontSettings.entityId, entity.id), eq(marketplaceStorefrontSettings.isPublished, true))).limit(1))[0] ?? null;
       result.push({
         entityId: entity.id,
         customerName: entity.customerName,
@@ -114,6 +139,7 @@ export const marketplaceRouter = router({
         listingCount: entityListings.length,
         minPrice: entityListings.length ? Math.min(...entityListings.map((row) => Number(row.price))) : 0,
         restaurant: restaurantMatch[0] ?? null,
+        storefront,
       });
     }
     return result;
@@ -134,15 +160,81 @@ export const marketplaceRouter = router({
     const now = new Date();
     const coupons = await db.select().from(storeCoupons).where(and(eq(storeCoupons.entityId, input.entityId), eq(storeCoupons.isActive, true), or(isNull(storeCoupons.startsAt), lte(storeCoupons.startsAt, now)), or(isNull(storeCoupons.endsAt), gte(storeCoupons.endsAt, now)))).orderBy(desc(storeCoupons.createdAt));
     const restaurant = (await db.select().from(restaurants).where(eq(restaurants.brandName, entity.customerName)).limit(1))[0] ?? null;
-    return { entity, listings, loyaltySettings, coupons, restaurant };
+    const storefront = (await db.select().from(marketplaceStorefrontSettings).where(and(eq(marketplaceStorefrontSettings.entityId, entity.id), eq(marketplaceStorefrontSettings.isPublished, true))).limit(1))[0] ?? null;
+    return { entity, listings, loyaltySettings, coupons, restaurant, storefront };
   }),
-  publicListings: publicProcedure.input(z.object({ sectorId: z.number().int().positive().optional(), featuredOnly: z.boolean().optional() }).optional()).query(async ({ input }) => {
+  publicListings: publicProcedure.input(z.object({ sectorId: z.number().int().positive().optional(), featuredOnly: z.boolean().optional(), countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional() }).optional()).query(async ({ input }) => {
     const db = await getDb();
     if (!db) return [];
     const conditions = [eq(marketplaceListings.status, "active")];
+    if (input?.countryCode) {
+      const countryEntities = await db.select({ id: platformEntities.id }).from(platformEntities).where(and(eq(platformEntities.status, true), eq(platformEntities.countryCode, input.countryCode)));
+      if (!countryEntities.length) return [];
+      conditions.push(inArray(marketplaceListings.entityId, countryEntities.map((row) => row.id)));
+    }
     if (input?.sectorId) conditions.push(eq(marketplaceListings.sectorId, input.sectorId));
     if (input?.featuredOnly) conditions.push(eq(marketplaceListings.isFeatured, true));
     return db.select().from(marketplaceListings).where(and(...conditions)).orderBy(desc(marketplaceListings.isFeatured), desc(marketplaceListings.sortOrder));
+  }),
+
+  // ── Global country/currency registry used by Super Admin onboarding ──
+  adminLocalizationCatalog: platformAdminProcedure.query(async () => {
+    const currencyMap = new Map(CURRENCIES.map((currency) => [currency.code, currency]));
+    return {
+      countries: COUNTRIES.map((country) => {
+        const currency = currencyMap.get(country.currencyCode);
+        const language = country.locale.split("-")[0] || "en";
+        return {
+          code: country.code,
+          name: country.name,
+          nameAr: country.nameAr,
+          currencyCode: country.currencyCode,
+          currencyName: currency?.name ?? country.currencyCode,
+          currencyNameAr: currency?.nameAr ?? country.currencyCode,
+          currencySymbol: currency?.symbol ?? country.currencyCode,
+          locale: country.locale,
+          primaryLanguage: language,
+        };
+      }),
+      currencies: CURRENCIES,
+    };
+  }),
+
+  // ── Storage quotas: platform plan policy + per-business override ─────
+  providerStorage: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const entity = await requireProviderEntity(ctx.user, db);
+    const policy = (await db.select().from(businessStoragePolicies).where(eq(businessStoragePolicies.plan, entity.plan)).limit(1))[0] ?? null;
+    const usage = (await db.select().from(entityStorageUsage).where(eq(entityStorageUsage.entityId, entity.id)).limit(1))[0] ?? null;
+    const planQuotaBytes = Number(policy?.quotaBytes ?? 0);
+    const quotaBytes = Number(usage?.overrideQuotaBytes ?? planQuotaBytes);
+    const usedBytes = Number(usage?.usedBytes ?? 0);
+    return { entityId: entity.id, plan: entity.plan, quotaBytes, usedBytes, remainingBytes: Math.max(0, quotaBytes - usedBytes), percentUsed: quotaBytes > 0 ? Math.min(100, Math.round((usedBytes / quotaBytes) * 10000) / 100) : 0, maxFileSizeBytes: Number(policy?.maxFileSizeBytes ?? 0), allowedMimePrefixesJson: policy?.allowedMimePrefixesJson ?? "[]", warningPercent: policy?.warningPercent ?? 80, criticalPercent: policy?.criticalPercent ?? 90, breakdown: { images: Number(usage?.imageBytes ?? 0), videos: Number(usage?.videoBytes ?? 0), documents: Number(usage?.documentBytes ?? 0), purchasedContent: Number(usage?.purchasedContentBytes ?? 0) } };
+  }),
+  adminSetStoragePolicy: platformAdminProcedure.input(z.object({
+    plan: z.enum(PLAN_TIERS),
+    quotaBytes: z.string().regex(/^\d+$/),
+    maxFileSizeBytes: z.string().regex(/^\d+$/),
+    allowedMimePrefixes: z.array(z.string().trim().min(2).max(120)).min(1).max(30),
+    warningPercent: z.number().int().min(1).max(99).default(80),
+    criticalPercent: z.number().int().min(1).max(100).default(90),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    if (input.criticalPercent <= input.warningPercent) throw new TRPCError({ code: "BAD_REQUEST", message: "Critical threshold must be greater than warning threshold" });
+    const existing = (await db.select({ id: businessStoragePolicies.id }).from(businessStoragePolicies).where(eq(businessStoragePolicies.plan, input.plan)).limit(1))[0];
+    const values = { quotaBytes: input.quotaBytes, maxFileSizeBytes: input.maxFileSizeBytes, allowedMimePrefixesJson: JSON.stringify(input.allowedMimePrefixes), warningPercent: input.warningPercent, criticalPercent: input.criticalPercent, updatedByUserId: ctx.user.id };
+    if (existing) await db.update(businessStoragePolicies).set(values).where(eq(businessStoragePolicies.id, existing.id)); else await db.insert(businessStoragePolicies).values({ plan: input.plan, ...values });
+    return { success: true };
+  }),
+  adminSetEntityStorageOverride: platformAdminProcedure.input(z.object({ entityId: entityIdSchema, quotaBytes: z.string().regex(/^\d+$/).nullable() })).mutation(async ({ ctx, input }) => {
+    const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const entity = (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq(platformEntities.id, input.entityId)).limit(1))[0];
+    if (!entity) throw new TRPCError({ code: "NOT_FOUND", message: "النشاط غير موجود" });
+    const existing = (await db.select({ id: entityStorageUsage.id }).from(entityStorageUsage).where(eq(entityStorageUsage.entityId, input.entityId)).limit(1))[0];
+    if (existing) await db.update(entityStorageUsage).set({ overrideQuotaBytes: input.quotaBytes }).where(eq(entityStorageUsage.id, existing.id)); else await db.insert(entityStorageUsage).values({ entityId: input.entityId, overrideQuotaBytes: input.quotaBytes });
+    await insertAuditLog({ actorUserId: ctx.user.id, action: "marketplace.storage.override", entityType: "platform_entity", entityId: input.entityId, outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ quotaBytes: input.quotaBytes }) });
+    return { success: true };
   }),
 
   // ── Provider store manager ───────────────────────────────────────────
@@ -184,6 +276,12 @@ export const marketplaceRouter = router({
     stockQuantity: z.number().int().nonnegative().optional(),
     isFeatured: z.boolean().optional(),
     tagsJson: z.string().max(2000).optional(),
+    metadataJson: z.string().max(8000).optional(),
+    actionType: z.enum(["buy", "book", "order", "service", "contact", "visit"]).default("visit"),
+    actionUrl: z.string().trim().url().max(1000).optional(),
+    actionLabelAr: z.string().trim().max(120).optional(),
+    actionLabelEn: z.string().trim().max(120).optional(),
+    actionLabelFr: z.string().trim().max(120).optional(),
   })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
@@ -210,6 +308,12 @@ export const marketplaceRouter = router({
       stockQuantity: input.stockQuantity ?? null,
       isFeatured: input.isFeatured ?? false,
       tagsJson: input.tagsJson ?? null,
+      metadataJson: input.metadataJson ?? null,
+      actionType: input.actionType,
+      actionUrl: input.actionUrl ?? null,
+      actionLabelAr: input.actionLabelAr ?? null,
+      actionLabelEn: input.actionLabelEn ?? null,
+      actionLabelFr: input.actionLabelFr ?? null,
       status: "active",
     });
     const id = Number(result[0].insertId);
@@ -231,6 +335,12 @@ export const marketplaceRouter = router({
     isFeatured: z.boolean().optional(),
     status: z.enum(["draft", "active", "paused", "sold_out"]).optional(),
     tagsJson: z.string().max(2000).nullable().optional(),
+    metadataJson: z.string().max(8000).nullable().optional(),
+    actionType: z.enum(["buy", "book", "order", "service", "contact", "visit"]).optional(),
+    actionUrl: z.string().trim().url().max(1000).nullable().optional(),
+    actionLabelAr: z.string().trim().max(120).nullable().optional(),
+    actionLabelEn: z.string().trim().max(120).nullable().optional(),
+    actionLabelFr: z.string().trim().max(120).nullable().optional(),
   })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
@@ -603,6 +713,41 @@ export const marketplaceRouter = router({
     return { success: true, id: input.id, status: input.status };
   }),
 
+  adminCreateStore: platformAdminProcedure.input(z.object({
+    customerName: z.string().trim().min(2).max(300),
+    email: z.string().trim().email().max(255).transform((value) => value.toLowerCase()),
+    countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()),
+    city: z.string().trim().max(120).optional(),
+    timezone: z.string().trim().min(3).max(64),
+    currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()),
+    primaryLanguage: z.string().trim().min(2).max(10),
+    sector: z.enum(["restaurant","vegetables","grocery","laundry","automotive","beauty_salon","public_works","fashion","sweets"]),
+    plan: z.enum(PLAN_TIERS).default("Basic"),
+    taxId: z.string().trim().max(50).default(""),
+    status: z.boolean().default(true),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const duplicate = (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq(platformEntities.email, input.email)).limit(1))[0];
+    if (duplicate) throw new TRPCError({ code: "CONFLICT", message: "يوجد متجر مرتبط بهذا البريد بالفعل" });
+    const sector = (await db.select({ id: marketplaceSectors.id }).from(marketplaceSectors).where(eq(marketplaceSectors.slug, input.sector)).limit(1))[0];
+    if (!sector) throw new TRPCError({ code: "BAD_REQUEST", message: "النشاط غير مفعّل في كتالوج السوق" });
+    const id = `ent_${nanoid(16)}`;
+    await db.insert(platformEntities).values({
+      id, customerName: input.customerName, email: input.email, countryCode: input.countryCode,
+      city: input.city || null, timezone: input.timezone, currencyCode: input.currencyCode,
+      primaryLanguage: input.primaryLanguage, sector: input.sector, status: input.status,
+      plan: input.plan, taxId: input.taxId || "", licensingFee: "0.00",
+    });
+    await db.insert(marketplaceStorefrontSettings).values({
+      entityId: id, languagesJson: JSON.stringify(Array.from(new Set([input.primaryLanguage, "en"]))),
+      sectorConfigJson: JSON.stringify({ modules: input.sector === "restaurant" ? ["catalog","orders","reservations","restaurant_tables","kitchen","pos","invoicing","inventory"] : ["catalog","orders","pos","invoicing","inventory"] }),
+      isPublished: input.status,
+    });
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "marketplace.store.created", entityType: "platform_entity", entityId: id, outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ countryCode: input.countryCode, currencyCode: input.currencyCode, sector: input.sector, plan: input.plan }) });
+    return { success: true, id };
+  }),
+
   adminStores: platformAdminProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
@@ -621,6 +766,11 @@ export const marketplaceRouter = router({
         id: store.id,
         customerName: store.customerName,
         email: store.email,
+        countryCode: store.countryCode,
+        city: store.city,
+        timezone: store.timezone,
+        currencyCode: store.currencyCode,
+        primaryLanguage: store.primaryLanguage,
         sector: store.sector,
         sectorLabelAr: sector?.labelAr ?? store.sector,
         sectorLabelEn: sector?.labelEn ?? store.sector,
@@ -637,6 +787,225 @@ export const marketplaceRouter = router({
     });
   }),
 
+  adminStoreOperations: platformAdminProcedure.input(z.object({ id: z.string().trim().min(1).max(30) })).query(async ({ input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const store = (await db.select().from(platformEntities).where(eq(platformEntities.id, input.id)).limit(1))[0];
+    if (!store) throw new TRPCError({ code: "NOT_FOUND", message: "المنشأة غير موجودة" });
+    const settings = (await db.select().from(marketplaceStorefrontSettings).where(eq(marketplaceStorefrontSettings.entityId, input.id)).limit(1))[0];
+    let sectorConfig: { modules?: string[] } = {};
+    try { sectorConfig = settings?.sectorConfigJson ? JSON.parse(settings.sectorConfigJson) : {}; } catch { sectorConfig = {}; }
+    const defaults = store.sector === "restaurant"
+      ? ["catalog","orders","reservations","restaurant_tables","kitchen","pos","invoicing","inventory"]
+      : ["catalog","orders","pos","invoicing","inventory"];
+    return { id: store.id, sector: store.sector, modules: sectorConfig.modules?.length ? sectorConfig.modules : defaults };
+  }),
+
+  adminUpdateStoreModules: platformAdminProcedure.input(z.object({
+    id: z.string().trim().min(1).max(30),
+    modules: z.array(z.enum(["catalog","orders","reservations","restaurant_tables","kitchen","pos","invoicing","inventory","purchasing","delivery","hotel_rooms","room_service","appointments","staff","loyalty","coupons"])).min(1),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const store = (await db.select().from(platformEntities).where(eq(platformEntities.id, input.id)).limit(1))[0];
+    if (!store) throw new TRPCError({ code: "NOT_FOUND", message: "المنشأة غير موجودة" });
+    const existing = (await db.select().from(marketplaceStorefrontSettings).where(eq(marketplaceStorefrontSettings.entityId, input.id)).limit(1))[0];
+    const sectorConfigJson = JSON.stringify({ modules: Array.from(new Set(input.modules)) });
+    if (existing) await db.update(marketplaceStorefrontSettings).set({ sectorConfigJson }).where(eq(marketplaceStorefrontSettings.entityId, input.id));
+    else await db.insert(marketplaceStorefrontSettings).values({ entityId: input.id, sectorConfigJson });
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "marketplace.store.modules.updated", entityType: "platform_entity", entityId: input.id, outcome: "success", requestId: nanoid(12), metadata: sectorConfigJson });
+    return { success: true, id: input.id, modules: input.modules };
+  }),
+
+  adminRestaurantBranches: platformAdminProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(async ({ input }) => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select().from(branches).where(eq(branches.restaurantId, input.restaurantId)).orderBy(desc(branches.createdAt));
+  }),
+
+  adminCreateRestaurantBranch: platformAdminProcedure.input(z.object({
+    restaurantId: z.number().int().positive(),
+    name: z.string().trim().min(2).max(160),
+    countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()),
+    currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()),
+    currencyDecimals: z.number().int().min(0).max(4).default(2),
+    city: z.string().trim().max(120).optional(),
+    openingTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/).optional(),
+    closingTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/).optional(),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(eq(restaurants.id, input.restaurantId)).limit(1))[0];
+    if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "المنشأة التشغيلية غير موجودة" });
+    const result = await db.insert(branches).values({ ...input, status: "open" });
+    const id = Number(result[0].insertId);
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "branch.created", entityType: "branch", entityId: String(id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ restaurantId: input.restaurantId, name: input.name, countryCode: input.countryCode, currencyCode: input.currencyCode }) });
+    return { success: true, id };
+  }),
+
+  adminUpdateRestaurantBranch: platformAdminProcedure.input(z.object({
+    id: z.number().int().positive(),
+    name: z.string().trim().min(2).max(160).optional(),
+    status: z.enum(["open","closed"]).optional(),
+    city: z.string().trim().max(120).nullable().optional(),
+    openingTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/).nullable().optional(),
+    closingTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/).nullable().optional(),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const { id, ...patch } = input;
+    const existing = (await db.select().from(branches).where(eq(branches.id, id)).limit(1))[0];
+    if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "الفرع غير موجود" });
+    await db.update(branches).set(patch).where(eq(branches.id, id));
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "branch.updated", entityType: "branch", entityId: String(id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(patch) });
+    return { success: true, id };
+  }),
+
+  adminDepartments: platformAdminProcedure.input(z.object({ branchId: z.number().int().positive() })).query(async ({ input }) => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select().from(businessDepartments).where(eq(businessDepartments.branchId, input.branchId)).orderBy(desc(businessDepartments.createdAt));
+  }),
+
+  adminCreateDepartment: platformAdminProcedure.input(z.object({
+    restaurantId: z.number().int().positive(),
+    branchId: z.number().int().positive(),
+    name: z.string().trim().min(2).max(160),
+    code: z.string().trim().max(80).optional(),
+    modules: z.array(z.string().trim().min(1).max(80)).default([]),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const branch = (await db.select().from(branches).where(and(eq(branches.id, input.branchId), eq(branches.restaurantId, input.restaurantId))).limit(1))[0];
+    if (!branch) throw new TRPCError({ code: "NOT_FOUND", message: "الفرع غير موجود أو لا يتبع المنشأة" });
+    const result = await db.insert(businessDepartments).values({ restaurantId: input.restaurantId, branchId: input.branchId, name: input.name, code: input.code, modulesJson: JSON.stringify(Array.from(new Set(input.modules))), isActive: true });
+    const id = Number(result[0].insertId);
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "department.created", entityType: "business_department", entityId: String(id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ branchId: input.branchId, name: input.name, modules: input.modules }) });
+    return { success: true, id };
+  }),
+
+  adminUpdateDepartment: platformAdminProcedure.input(z.object({
+    id: z.number().int().positive(),
+    name: z.string().trim().min(2).max(160).optional(),
+    code: z.string().trim().max(80).nullable().optional(),
+    isActive: z.boolean().optional(),
+    modules: z.array(z.string().trim().min(1).max(80)).optional(),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const existing = (await db.select().from(businessDepartments).where(eq(businessDepartments.id, input.id)).limit(1))[0];
+    if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "القسم غير موجود" });
+    const patch: { name?: string; code?: string | null; isActive?: boolean; modulesJson?: string } = {};
+    if (input.name !== undefined) patch.name = input.name;
+    if (input.code !== undefined) patch.code = input.code;
+    if (input.isActive !== undefined) patch.isActive = input.isActive;
+    if (input.modules !== undefined) patch.modulesJson = JSON.stringify(Array.from(new Set(input.modules)));
+    await db.update(businessDepartments).set(patch).where(eq(businessDepartments.id, input.id));
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "department.updated", entityType: "business_department", entityId: String(input.id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(patch) });
+    return { success: true, id: input.id };
+  }),
+
+  adminScopedRoles: platformAdminProcedure.input(z.object({
+    restaurantId: z.number().int().positive().optional(),
+    branchId: z.number().int().positive().optional(),
+    departmentId: z.number().int().positive().optional(),
+  })).query(async ({ input }) => {
+    const db = await getDb();
+    if (!db) return [];
+    const conditions = [];
+    if (input.restaurantId) conditions.push(eq(scopedRoleAssignments.restaurantId, input.restaurantId));
+    if (input.branchId) conditions.push(eq(scopedRoleAssignments.branchId, input.branchId));
+    if (input.departmentId) conditions.push(eq(scopedRoleAssignments.departmentId, input.departmentId));
+    return db.select({
+      id: scopedRoleAssignments.id, userId: scopedRoleAssignments.userId, roleId: scopedRoleAssignments.roleId,
+      restaurantId: scopedRoleAssignments.restaurantId, branchId: scopedRoleAssignments.branchId,
+      departmentId: scopedRoleAssignments.departmentId, isActive: scopedRoleAssignments.isActive,
+      roleName: roles.name, userName: users.name, userEmail: users.email,
+    }).from(scopedRoleAssignments)
+      .leftJoin(roles, eq(scopedRoleAssignments.roleId, roles.id))
+      .leftJoin(users, eq(scopedRoleAssignments.userId, users.id))
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(scopedRoleAssignments.createdAt));
+  }),
+
+  adminAssignScopedRole: platformAdminProcedure.input(z.object({
+    userId: z.number().int().positive(),
+    roleId: z.number().int().positive(),
+    restaurantId: z.number().int().positive().optional(),
+    branchId: z.number().int().positive().optional(),
+    departmentId: z.number().int().positive().optional(),
+  }).refine((value) => value.restaurantId || value.branchId || value.departmentId, { message: "يجب تحديد نطاق للصلاحية" })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    if (input.branchId && input.restaurantId) {
+      const branch = (await db.select().from(branches).where(and(eq(branches.id, input.branchId), eq(branches.restaurantId, input.restaurantId))).limit(1))[0];
+      if (!branch) throw new TRPCError({ code: "BAD_REQUEST", message: "الفرع لا يتبع المنشأة المحددة" });
+    }
+    if (input.departmentId) {
+      const department = (await db.select().from(businessDepartments).where(eq(businessDepartments.id, input.departmentId)).limit(1))[0];
+      if (!department) throw new TRPCError({ code: "NOT_FOUND", message: "القسم غير موجود" });
+      if (input.branchId && department.branchId !== input.branchId) throw new TRPCError({ code: "BAD_REQUEST", message: "القسم لا يتبع الفرع المحدد" });
+      if (input.restaurantId && department.restaurantId !== input.restaurantId) throw new TRPCError({ code: "BAD_REQUEST", message: "القسم لا يتبع المنشأة المحددة" });
+    }
+    const result = await db.insert(scopedRoleAssignments).values({ ...input, isActive: true });
+    const id = Number(result[0].insertId);
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "rbac.scope.assigned", entityType: "scoped_role_assignment", entityId: String(id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(input) });
+    return { success: true, id };
+  }),
+
+  adminSetScopedRoleStatus: platformAdminProcedure.input(z.object({ id: z.number().int().positive(), isActive: z.boolean() })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const existing = (await db.select().from(scopedRoleAssignments).where(eq(scopedRoleAssignments.id, input.id)).limit(1))[0];
+    if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "تعيين الصلاحية غير موجود" });
+    await db.update(scopedRoleAssignments).set({ isActive: input.isActive }).where(eq(scopedRoleAssignments.id, input.id));
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: input.isActive ? "rbac.scope.enabled" : "rbac.scope.disabled", entityType: "scoped_role_assignment", entityId: String(input.id), outcome: "success", requestId: nanoid(12) });
+    return { success: true };
+  }),
+
+  adminPermissions: platformAdminProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select().from(permissions).orderBy(permissions.key);
+  }),
+
+  adminCreatePermission: platformAdminProcedure.input(z.object({
+    key: z.string().trim().min(3).max(120).regex(/^[a-z][a-z0-9_.:-]*$/),
+    label: z.string().trim().min(2).max(160),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const existing = (await db.select().from(permissions).where(eq(permissions.key, input.key)).limit(1))[0];
+    if (existing) throw new TRPCError({ code: "CONFLICT", message: "مفتاح الصلاحية موجود مسبقاً" });
+    const result = await db.insert(permissions).values(input);
+    const id = Number(result[0].insertId);
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "rbac.permission.created", entityType: "permission", entityId: String(id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(input) });
+    return { success: true, id };
+  }),
+
+  adminRolePermissions: platformAdminProcedure.input(z.object({ roleId: z.number().int().positive() })).query(async ({ input }) => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select({ id: permissions.id, key: permissions.key, label: permissions.label })
+      .from(rolePermissions).innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(eq(rolePermissions.roleId, input.roleId)).orderBy(permissions.key);
+  }),
+
+  adminSetRolePermissions: platformAdminProcedure.input(z.object({
+    roleId: z.number().int().positive(),
+    permissionIds: z.array(z.number().int().positive()).max(500),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const role = (await db.select().from(roles).where(eq(roles.id, input.roleId)).limit(1))[0];
+    if (!role) throw new TRPCError({ code: "NOT_FOUND", message: "الدور غير موجود" });
+    const ids = Array.from(new Set(input.permissionIds));
+    await db.delete(rolePermissions).where(eq(rolePermissions.roleId, input.roleId));
+    if (ids.length) await db.insert(rolePermissions).values(ids.map((permissionId) => ({ roleId: input.roleId, permissionId })));
+    await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "rbac.role.permissions.updated", entityType: "role", entityId: String(input.roleId), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ permissionIds: ids }) });
+    return { success: true, roleId: input.roleId, permissionIds: ids };
+  }),
+
   adminUpdateStore: platformAdminProcedure.input(z.object({
     id: z.string().trim().min(1).max(30),
     status: z.boolean().optional(),
@@ -644,17 +1013,27 @@ export const marketplaceRouter = router({
     customerName: z.string().trim().min(1).max(300).optional(),
     taxId: z.string().trim().min(1).max(50).optional(),
     licensingFee: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+    countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional(),
+    city: z.string().trim().max(120).nullable().optional(),
+    timezone: z.string().trim().min(3).max(64).optional(),
+    currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()).optional(),
+    primaryLanguage: z.string().trim().min(2).max(10).optional(),
   })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const existing = (await db.select().from(platformEntities).where(eq(platformEntities.id, input.id)).limit(1))[0];
     if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "المنشأة غير موجودة" });
-    const patch: { status?: boolean; plan?: (typeof PLAN_TIERS)[number]; customerName?: string; taxId?: string; licensingFee?: string } = {};
+    const patch: { status?: boolean; plan?: (typeof PLAN_TIERS)[number]; customerName?: string; taxId?: string; licensingFee?: string; countryCode?: string; city?: string | null; timezone?: string; currencyCode?: string; primaryLanguage?: string } = {};
     if (input.status !== undefined) patch.status = input.status;
     if (input.plan !== undefined) patch.plan = input.plan;
     if (input.customerName !== undefined) patch.customerName = input.customerName;
     if (input.taxId !== undefined) patch.taxId = input.taxId;
     if (input.licensingFee !== undefined) patch.licensingFee = input.licensingFee;
+    if (input.countryCode !== undefined) patch.countryCode = input.countryCode;
+    if (input.city !== undefined) patch.city = input.city;
+    if (input.timezone !== undefined) patch.timezone = input.timezone;
+    if (input.currencyCode !== undefined) patch.currencyCode = input.currencyCode;
+    if (input.primaryLanguage !== undefined) patch.primaryLanguage = input.primaryLanguage;
     await db.update(platformEntities).set(patch).where(eq(platformEntities.id, input.id));
     await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "marketplace.store.updated", entityType: "platform_entity", entityId: input.id, outcome: "success", requestId: nanoid(12), metadata: JSON.stringify(patch) });
     return { success: true, id: input.id };

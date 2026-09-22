@@ -3,16 +3,19 @@ import { sendTemplatedEmail } from "./emailTemplates";
 import { getEffectiveIntegrationSecret } from "./db";
 
 function getTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 587);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASSWORD;
+  const host = process.env.SMTP_HOST || process.env.MAIL_HOST;
+  const port = Number(process.env.SMTP_PORT || process.env.MAIL_PORT || 587);
+  const user = process.env.SMTP_USER || process.env.MAIL_USERNAME;
+  const pass = process.env.SMTP_PASSWORD || process.env.MAIL_PASSWORD;
   if (!host || !user || !pass) return null;
   return nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
 }
 
 function formatWhen(date: Date) { return date.toLocaleString("ar-SA-u-ca-gregory-nu-latn", { dateStyle: "full", timeStyle: "short" }); }
 
+export async function sendDriverAssignmentEmail(input: { to?: string | null; restaurantId: number; orderNumber: number; restaurantName: string; deliveryAddress?: string | null }) { return sendTemplatedEmail({ to: input.to, restaurantId: input.restaurantId, eventKey: "driver.assignment", data: { orderNumber: input.orderNumber, restaurantName: input.restaurantName, deliveryAddress: input.deliveryAddress || "راجع تفاصيل الطلب داخل NFOOD" } }); }
+export async function sendWelcomeEmail(input: { to: string; customerName: string; restaurantName: string; restaurantId?: number | null }) { return sendTemplatedEmail({ to: input.to, restaurantId: input.restaurantId, eventKey: "account.welcome", data: { name: input.customerName, restaurantName: input.restaurantName, siteName: "NFOOD" } }); }
+export async function sendEmailVerificationEmail(input: { to: string; customerName: string; verifyUrl: string; restaurantId?: number | null }) { return sendTemplatedEmail({ to: input.to, restaurantId: input.restaurantId, eventKey: "account.email_verification", data: { name: input.customerName, verifyUrl: input.verifyUrl, siteName: "NFOOD" } }); }
 export async function sendPasswordResetEmail(input: { to: string; customerName: string; resetUrl: string; restaurantId?: number | null }) { return sendTemplatedEmail({ to: input.to, restaurantId: input.restaurantId, eventKey: "account.password_reset", data: { name: input.customerName, resetUrl: input.resetUrl, siteName: "NFOOD" } }); }
 export async function sendGuestClaimOtpEmail(input: { to: string; customerName: string; code: string; restaurantId?: number | null }) { return sendTemplatedEmail({ to: input.to, restaurantId: input.restaurantId, eventKey: "account.otp", data: { name: input.customerName, code: input.code, expiresMinutes: 10, siteName: "NFOOD" } }); }
 export async function sendReservationAcceptedEmail(input: { to?: string | null; customerName: string; restaurantName: string; tableName: string; reservedFor: Date; partySize: number; restaurantId?: number | null }) { return sendTemplatedEmail({ to: input.to, restaurantId: input.restaurantId, eventKey: "reservation.accepted", data: { name: input.customerName, restaurantName: input.restaurantName, tableName: input.tableName, reservedFor: formatWhen(input.reservedFor), partySize: input.partySize } }); }

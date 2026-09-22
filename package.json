@@ -16,7 +16,8 @@
     "e2e:mutations": "E2E_MUTATIONS=1 playwright test",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
     "postinstall": "node .scripts/postinstall.mjs",
-    "preinstall": "node .scripts/postinstall.mjs"
+    "preinstall": "node .scripts/postinstall.mjs",
+    "seed:marketplace": "tsx scripts/seed-marketplace-demo.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",

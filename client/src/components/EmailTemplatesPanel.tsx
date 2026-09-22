@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 
 type Template = { eventKey: string; locale: string; subject: string; htmlBody: string; textBody: string; isEnabled?: boolean };
-const labels: Record<string, string> = { "account.welcome": "ترحيب الحساب", "account.password_reset": "استعادة كلمة المرور", "account.otp": "رمز التحقق", "order.received": "استلام الطلب", "order.status": "تحديث حالة الطلب", "reservation.accepted": "تأكيد الحجز", "reservation.cancelled": "إلغاء الحجز", "payment.receipt": "إيصال الدفع", "driver.assignment": "إسناد التوصيل" };
+const labels: Record<string, string> = { "account.welcome": "ترحيب الحساب", "account.email_verification": "تأكيد البريد الإلكتروني", "account.password_reset": "استعادة كلمة المرور", "account.otp": "رمز التحقق", "order.received": "استلام الطلب", "order.status": "تحديث حالة الطلب", "reservation.accepted": "تأكيد الحجز", "reservation.cancelled": "إلغاء الحجز", "payment.receipt": "إيصال الدفع", "driver.assignment": "إسناد التوصيل" };
 const localeLabels = { ar: "العربية", en: "English", fr: "Français" } as const;
 
 export function EmailTemplatesPanel({ restaurantId }: { restaurantId: number }) {

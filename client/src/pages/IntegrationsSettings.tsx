@@ -78,6 +78,16 @@ export default function IntegrationsSettings() {
   );
 }
 
+const platformFieldMap: Record<string, { key: string; label: string; placeholder: string; secret?: boolean; type?: "select"; options?: {value:string;label:string}[] }[]> = {
+  SMTP: [
+    { key: "host", label: "SMTP Host", placeholder: "smtp.example.com" }, { key: "port", label: "SMTP Port", placeholder: "587" },
+    { key: "username", label: "SMTP Username", placeholder: "user@example.com" }, { key: "password", label: "SMTP Password", placeholder: "كلمة مرور SMTP", secret: true },
+    { key: "fromEmail", label: "From Email", placeholder: "no-reply@example.com" }, { key: "fromName", label: "From Name", placeholder: "NFOOD" },
+    { key: "replyTo", label: "Reply-To", placeholder: "support@example.com" }, { key: "secure", label: "التشفير", placeholder: "TLS", type: "select", options: [{value:"tls",label:"TLS / STARTTLS"},{value:"ssl",label:"SSL"}] },
+  ],
+  "Google OAuth": [{key:"clientId",label:"Google Client ID",placeholder:"...apps.googleusercontent.com"},{key:"clientSecret",label:"Google Client Secret",placeholder:"سر OAuth",secret:true},{key:"redirectUri",label:"Redirect URI",placeholder:"https://.../api/oauth/callback"}],
+};
+
 function IntegrationCard({
   provider,
   setting,
@@ -107,6 +117,9 @@ function IntegrationCard({
 }) {
   const [secret, setSecret] = useState("");
   const [keyReference, setKeyReference] = useState(setting?.keyReference ?? "");
+  const parseReference = () => { try { const parsed = setting?.keyReference ? JSON.parse(setting.keyReference) : {}; return parsed && typeof parsed === "object" ? parsed as Record<string,string> : {}; } catch { return setting?.keyReference ? { clientId: setting.keyReference } : {}; } };
+  const [fields, setFields] = useState<Record<string,string>>(parseReference);
+  const providerFields = platformFieldMap[provider.providerKey] ?? platformFieldMap[provider.label] ?? [];
   const [status, setStatus] = useState<
     "not_configured" | "configured" | "disabled"
   >(setting?.status ?? "not_configured");
@@ -150,12 +163,8 @@ function IntegrationCard({
             تعرضه أو تضعه في الواجهة.
           </p>
         )}
-        {provider.providerKey === "smtp" && (
-          <p className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-[11px] leading-5 text-blue-800">
-            إرسال البريد يعتمد على إعدادات SMTP_HOST وSMTP_USER وSMTP_PASSWORD
-            وSMTP_FROM_EMAIL في الخادم، ويمكن اختبارها من بيئة الاستضافة دون
-            إضافة إعدادات مطعم منفصلة.
-          </p>
+        {(provider.providerKey.toLowerCase() === "smtp" || provider.label === "SMTP") && (
+          <p className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-[11px] leading-5 text-blue-800">أدخل إعدادات SMTP هنا. كلمة المرور تُحفظ ضمن السر المشفر ولا تُعرض بعد الحفظ.</p>
         )}
         {!isPublicLogin && (
           <p className="mt-2 rounded-lg bg-violet-50 px-3 py-2 text-[11px] leading-5 text-violet-800">
@@ -165,25 +174,7 @@ function IntegrationCard({
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        <Input
-          value={keyReference}
-          onChange={event => setKeyReference(event.target.value)}
-          placeholder="اسم المفتاح أو Client ID (اختياري)"
-          className="rounded-xl"
-          dir="ltr"
-        />
-        <Input
-          value={secret}
-          onChange={event => setSecret(event.target.value)}
-          placeholder={
-            setting?.status === "configured"
-              ? "اتركه فارغًا للإبقاء على السر المحفوظ"
-              : "ألصق المفتاح لاحقًا"
-          }
-          type="password"
-          className="rounded-xl"
-          dir="ltr"
-        />
+        {providerFields.length ? <div className="grid gap-3 sm:grid-cols-2">{providerFields.map((field, index) => field.type === "select" ? <label key={field.key} className="text-xs font-semibold text-slate-600">{field.label}<select value={fields[field.key] ?? ""} onChange={e=>setFields(v=>({...v,[field.key]:e.target.value}))} className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3" dir="ltr"><option value="">اختر</option>{field.options?.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></label> : <label key={field.key} className="text-xs font-semibold text-slate-600">{field.label}<Input value={fields[field.key] ?? (index===0 ? keyReference : "")} onChange={e=>{setFields(v=>({...v,[field.key]:e.target.value})); if(index===0)setKeyReference(e.target.value);}} placeholder={field.secret && setting?.status==="configured" ? "اتركه فارغًا للإبقاء على السر المحفوظ" : field.placeholder} type={field.secret ? "password":"text"} className="mt-1 rounded-xl" dir="ltr"/></label>)}</div> : <><Input value={keyReference} onChange={event => setKeyReference(event.target.value)} placeholder="اسم المفتاح أو Client ID (اختياري)" className="rounded-xl" dir="ltr"/><Input value={secret} onChange={event => setSecret(event.target.value)} placeholder={setting?.status === "configured" ? "اتركه فارغًا للإبقاء على السر المحفوظ" : "ألصق المفتاح لاحقًا"} type="password" className="rounded-xl" dir="ltr"/></>}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <select
             value={status}
@@ -212,8 +203,8 @@ function IntegrationCard({
                   providerKey: provider.providerKey,
                   category: provider.category,
                   status,
-                  keyReference: keyReference || undefined,
-                  secret: secret || undefined,
+                  keyReference: providerFields.length ? JSON.stringify(Object.fromEntries(providerFields.filter(f=>!f.secret && (fields[f.key]?.trim() || (f.key==="clientId" && keyReference.trim()))).map(f=>[f.key,(fields[f.key] || (f.key==="clientId" ? keyReference : "")).trim()]))) : (keyReference || undefined),
+                  secret: providerFields.length ? (Object.keys(fields).some(k => providerFields.find(f=>f.key===k)?.secret && fields[k]?.trim()) ? JSON.stringify(Object.fromEntries(providerFields.filter(f=>f.secret && fields[f.key]?.trim()).map(f=>[f.key,fields[f.key].trim()]))) : undefined) : (secret || undefined),
                 })
               }
               className="rounded-xl bg-[#e76f3c]"

@@ -2,27 +2,27 @@ name: NFOOD Verify
 
 on:
   push:
-    branches: [main]
+    branches: [main, build/production-dist]
   pull_request:
-    branches: [main]
+    branches: [main, build/production-dist]
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 10.4.1
           run_install: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 22.13.1
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - run: pnpm exec vitest run server/sensitive-permissions.test.ts server/rbac.test.ts client/src/dashboard-theme-shortcuts.test.ts
       - run: pnpm i18n:check
       - run: pnpm build

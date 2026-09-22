@@ -1,0 +1,16 @@
+{
+  "name": "NFOOD البار",
+  "short_name": "NFOOD Bar",
+  "description": "محطة البار لمتابعة مشروبات الطلبات والتذاكر الموجهة.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f7f9",
+  "theme_color": "#0f1b2d",
+  "orientation": "any",
+  "icons": [
+    { "src": "/manus-storage/nfood-icon-512_7362ca11.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/manus-storage/nfood-icon-192_a2276f8e.png", "sizes": "192x192", "type": "image/png", "purpose": "any" }
+  ]
+}

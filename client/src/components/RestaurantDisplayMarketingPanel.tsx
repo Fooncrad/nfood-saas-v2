@@ -61,10 +61,16 @@ export function RestaurantDisplayMarketingPanel({ restaurantId, branchId }: Prop
   const [matchQrUrl, setMatchQrUrl] = useState("");
   const [matchEndsAt, setMatchEndsAt] = useState("");
   const [displaySection, setDisplaySection] = useState<"overview" | "connections" | "content" | "campaigns" | "preview">("overview");
+  const [screenSearch, setScreenSearch] = useState("");
   const [screenFilter, setScreenFilter] = useState<"all" | "active" | "offline">("all");
   const [isDropActive, setIsDropActive] = useState(false);
   const utils = trpc.useUtils();
-  const filteredScreens = (screens.data ?? []).filter((screen) => screenFilter === "all" || (screenFilter === "active" ? screen.status === "active" && screen.isConnected : !screen.isConnected));
+  const filteredScreens = (screens.data ?? []).filter((screen) => {
+    const matchesStatus = screenFilter === "all" || (screenFilter === "active" ? screen.status === "active" && screen.isConnected : !screen.isConnected);
+    const matchesSearch = !screenSearch.trim() || screen.name.toLowerCase().includes(screenSearch.trim().toLowerCase()) || String(screen.id).includes(screenSearch.trim());
+    return matchesStatus && matchesSearch;
+  });
+  const screenStats = { total: screens.data?.length ?? 0, online: (screens.data ?? []).filter((screen) => screen.isConnected).length, active: (screens.data ?? []).filter((screen) => screen.status === "active").length, offline: (screens.data ?? []).filter((screen) => !screen.isConnected).length };
   const activeScreen = (screens.data ?? []).find((screen) => screen.id === selectedScreenId) ?? filteredScreens[0] ?? screens.data?.[0];
   useEffect(() => { if (activeScreen) { setEditScreenName(activeScreen.name); setEditRefreshSeconds(String(activeScreen.refreshSeconds)); setQrEnabled(activeScreen.qrEnabled); setQrPosition(activeScreen.qrPosition); setQrSize(String(activeScreen.qrSize)); setQrForeground(activeScreen.qrForeground); setQrBackground(activeScreen.qrBackground); setCopyBackground(activeScreen.copyBackground ?? "#07111fcc"); setAdBackground(activeScreen.adBackground ?? "#111c2ee6"); setDisplayLayout(activeScreen.displayLayout ?? "single"); } }, [activeScreen?.id]);
   const refresh = () => void utils.restaurantContent.screens.invalidate();
@@ -160,11 +166,14 @@ export function RestaurantDisplayMarketingPanel({ restaurantId, branchId }: Prop
   return (
     <div className="nfood-display-center w-full max-w-none min-w-0 space-y-5">
       <div className="nfood-display-hero rounded-3xl border border-orange-100 bg-gradient-to-l from-[#111c2e] via-[#19334a] to-[#e76f3c] p-5 text-white shadow-lg sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-200">NFOOD DISPLAY STUDIO</p><h2 className="mt-2 text-2xl font-black sm:text-3xl">حوّل شاشة كوفي ناصر إلى واجهة بيع حيّة</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200">أدر الصور، العروض، الحركات، والروابط من مكان واحد، وشاهد النتيجة مباشرة على التلفاز.</p></div><div className="flex flex-wrap gap-2"><Button type="button" onClick={() => setDisplaySection("content")} className="rounded-xl bg-white/15 text-xs text-white hover:bg-white/25"><Sparkles className="h-4 w-4" /> صمّم الشرائح</Button><Button type="button" onClick={() => setDisplaySection("campaigns")} className="rounded-xl bg-orange-400 text-xs text-white hover:bg-orange-300"><Megaphone className="h-4 w-4" /> أطلق حملة</Button><Button type="button" onClick={() => setDisplaySection("preview")} className="rounded-xl bg-white/15 text-xs text-white hover:bg-white/25"><Eye className="h-4 w-4" /> شاهد الآن</Button></div></div>
+        <div className="flex flex-wrap items-center justify-between gap-4"><div className="mb-3 w-full"><Input value={screenSearch} onChange={(event) => setScreenSearch(event.target.value)} placeholder="ابحث باسم الشاشة أو رقمها" className="h-10 rounded-xl" /></div><div><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-200">NFOOD DISPLAY STUDIO</p><h2 className="mt-2 text-2xl font-black sm:text-3xl">حوّل شاشة كوفي ناصر إلى واجهة بيع حيّة</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200">أدر الصور، العروض، الحركات، والروابط من مكان واحد، وشاهد النتيجة مباشرة على التلفاز.</p></div><div className="flex flex-wrap gap-2"><Button type="button" onClick={() => setDisplaySection("content")} className="rounded-xl bg-white/15 text-xs text-white hover:bg-white/25"><Sparkles className="h-4 w-4" /> صمّم الشرائح</Button><Button type="button" onClick={() => setDisplaySection("campaigns")} className="rounded-xl bg-orange-400 text-xs text-white hover:bg-orange-300"><Megaphone className="h-4 w-4" /> أطلق حملة</Button><Button type="button" onClick={() => setDisplaySection("preview")} className="rounded-xl bg-white/15 text-xs text-white hover:bg-white/25"><Eye className="h-4 w-4" /> شاهد الآن</Button></div></div>
       </div>
       <div>
         <p className="text-xs font-black uppercase tracking-[0.18em] text-[#e76f3c]">Restaurant Screens & Marketing</p>
         <h2 className="mt-2 text-2xl font-black text-slate-900">مركز شاشات العرض</h2>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {[["كل الشاشات", screenStats.total], ["متصلة الآن", screenStats.online], ["نشطة", screenStats.active], ["غير متصلة", screenStats.offline]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-slate-200 bg-white px-3 py-2"><p className="text-[10px] font-bold text-slate-400">{label}</p><p className="mt-1 text-lg font-black text-slate-900">{value}</p></div>)}
+        </div>
         <p className="mt-2 text-sm leading-6 text-slate-500">كل إعدادات الشاشات والمحتوى والروابط والحملات في مساحة واحدة مرتبة.</p>
       </div>
 

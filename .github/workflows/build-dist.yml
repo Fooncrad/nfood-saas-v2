@@ -1,0 +1,66 @@
+name: Build production dist
+
+on:
+  push:
+    branches:
+      - build/production-dist
+    paths-ignore:
+      - "dist/**"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build-dist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Publish dist branch
+        id: publish
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f dist
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "dist is already up to date"
+            exit 0
+          fi
+
+          BRANCH="automation/build-dist-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git checkout -b "$BRANCH"
+          git commit -m "build: publish production dist"
+          git push origin "HEAD:$BRANCH"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Open dist pull request
+        if: steps.publish.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_BRANCH: ${{ steps.publish.outputs.branch }}
+        run: |
+          gh pr create \
+            --base build/production-dist \
+            --head "$HEAD_BRANCH" \
+            --title "build: publish production dist" \
+            --body "Automated production dist build for source commit ${GITHUB_SHA}. This PR is intentionally opened so repository rules and the required verify check remain enforced."
