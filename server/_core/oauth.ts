@@ -12,7 +12,7 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 async function googleConfiguration(req: Request) {
-  const setting = await db.getIntegrationSetting("platform", "google_oauth");
+  const setting = await db.getIntegrationSetting("platform", "google_oauth") ?? await db.getIntegrationSetting("platform", "Google OAuth");
   if (setting?.status === "configured") {
     let meta: Record<string, string> = {};
     try { const parsed = setting.keyReference ? JSON.parse(setting.keyReference) : {}; if (parsed && typeof parsed === "object") meta = parsed; } catch { if (setting.keyReference) meta.clientId = setting.keyReference; }
@@ -21,7 +21,7 @@ async function googleConfiguration(req: Request) {
     try { const parsed = rawSecret ? JSON.parse(rawSecret) : {}; if (parsed && typeof parsed === "object") secret = parsed; } catch { if (rawSecret) secret.clientSecret = rawSecret; }
     if (meta.clientId && secret.clientSecret) return { clientId: meta.clientId, clientSecret: secret.clientSecret, redirectUri: meta.redirectUri || `${req.protocol}://${req.get("host")}/api/oauth/google/callback` };
   }
-  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) return { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, redirectUri: process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get("host")}/api/oauth/google/callback` };
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) return { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, redirectUri: process.env.GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT || `${req.protocol}://${req.get("host")}/api/oauth/google/callback` };
   return null;
 }
 
