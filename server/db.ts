@@ -508,6 +508,12 @@ export async function getUserByOpenId(openId: string) {
   return result[0];
 }
 
+export async function getUserByEmail(email: string) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email.trim().toLowerCase())).limit(1);
+  return result[0];
+}
+
 export async function listRestaurants(restaurantId?: number) { const db = await getDb(); if (!db) return []; return restaurantId ? db.select().from(restaurants).where(eq(restaurants.id, restaurantId)).orderBy(desc(restaurants.createdAt)) : db.select().from(restaurants).orderBy(desc(restaurants.createdAt)); }
 export async function listRestaurantsWithBranchCount() { const db = await getDb(); if (!db) return []; const rows = await db.select().from(restaurants).orderBy(desc(restaurants.createdAt)); const counts = await db.select({ restaurantId: branches.restaurantId, branchCount: count() }).from(branches).groupBy(branches.restaurantId); const countByRestaurant = new Map(counts.map((row) => [row.restaurantId, Number(row.branchCount)])); return rows.map((restaurant) => ({ ...restaurant, branchCount: countByRestaurant.get(restaurant.id) ?? 0 })); }
 export async function getRestaurantById(id: number) { const db = await getDb(); if (!db) return undefined; const result = await db.select().from(restaurants).where(eq(restaurants.id, id)).limit(1); return result[0]; }

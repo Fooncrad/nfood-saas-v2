@@ -12,7 +12,7 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 async function googleConfiguration(req: Request) {
-  const setting = await db.getIntegrationSetting("platform", "google_oauth") ?? await db.getIntegrationSetting("platform", "Google OAuth");
+  const setting = await db.getIntegrationSetting("platform", "Google OAuth") ?? await db.getIntegrationSetting("platform", "google_oauth");
   if (setting?.status === "configured") {
     let meta: Record<string, string> = {};
     try { const parsed = setting.keyReference ? JSON.parse(setting.keyReference) : {}; if (parsed && typeof parsed === "object") meta = parsed; } catch { if (setting.keyReference) meta.clientId = setting.keyReference; }
@@ -47,9 +47,19 @@ export function registerOAuthRoutes(app: Express) {
       if (!tokenResponse.ok) throw new Error("google_token_exchange_failed");
       const token = await tokenResponse.json() as { access_token?: string }; if (!token.access_token) throw new Error("google_access_token_missing");
       const infoResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { authorization: `Bearer ${token.access_token}` } }); if (!infoResponse.ok) throw new Error("google_userinfo_failed");
-      const info = await infoResponse.json() as { sub?: string; email?: string; name?: string }; if (!info.sub) throw new Error("google_subject_missing");
-      const openId = `google_${info.sub}`; await db.upsertUser({ openId, name: info.name ?? null, email: info.email ?? null, loginMethod: "google", lastSignedIn: new Date() });
-      const sessionToken = await sdk.createSessionToken(openId, { name: info.name || "", expiresInMs: ONE_YEAR_MS }); res.cookie(COOKIE_NAME, sessionToken, { ...getSessionCookieOptions(req), maxAge: ONE_YEAR_MS }); return res.redirect(302, "/");
+      const info = await infoResponse.json() as { sub?: string; email?: string; name?: string; email_verified?: boolean }; if (!info.sub) throw new Error("google_subject_missing");
+      const googleOpenId = `google_${info.sub}`;
+      const normalizedEmail = info.email?.trim().toLowerCase();
+      const existingGoogleUser = await db.getUserByOpenId(googleOpenId);
+      const existingEmailUser = !existingGoogleUser && info.email_verified && normalizedEmail ? await db.getUserByEmail(normalizedEmail) : undefined;
+      const sessionOpenId = existingGoogleUser?.openId ?? existingEmailUser?.openId ?? googleOpenId;
+      if (!existingGoogleUser && !existingEmailUser) await db.upsertUser({ openId: googleOpenId, name: info.name ?? null, email: normalizedEmail ?? null, loginMethod: "google", lastSignedIn: new Date() });
+      else await db.upsertUser({ openId: sessionOpenId, name: info.name ?? undefined, email: normalizedEmail ?? undefined, lastSignedIn: new Date() });
+      const user = await db.getUserByOpenId(sessionOpenId);
+      const sessionToken = await sdk.createSessionToken(sessionOpenId, { name: info.name || user?.name || "", expiresInMs: ONE_YEAR_MS }); res.cookie(COOKIE_NAME, sessionToken, { ...getSessionCookieOptions(req), maxAge: ONE_YEAR_MS });
+      if (user?.role === "admin") return res.redirect(302, "/admin");
+      const restaurantId = user ? await db.getMerchantRestaurantId(user.id) : null;
+      return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/register?oauth=google");
     } catch (error) { console.error("[Google OAuth] Callback failed", error); return res.redirect(302, "/login?oauth=google_failed"); }
   });
 
