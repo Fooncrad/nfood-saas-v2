@@ -1707,17 +1707,6 @@ var uiTranslationHistory = mysqlTable("uiTranslationHistory", {
   uiTranslationHistoryEntry: index("ui_translation_history_entry_idx").on(table.entryId, table.createdAt),
   uiTranslationHistoryAction: index("ui_translation_history_action_idx").on(table.action, table.createdAt)
 }));
-var PLATFORM_SECTOR_KEYS = [
-  "restaurant",
-  "vegetables",
-  "grocery",
-  "laundry",
-  "automotive",
-  "beauty_salon",
-  "public_works",
-  "fashion",
-  "sweets"
-];
 var PLAN_TIERS = ["Basic", "Pro", "Enterprise"];
 var platformEntities = mysqlTable("platform_entities", {
   id: varchar("id", { length: 30 }).primaryKey(),
@@ -1729,7 +1718,7 @@ var platformEntities = mysqlTable("platform_entities", {
   timezone: varchar("timezone", { length: 64 }).default("Asia/Riyadh").notNull(),
   currencyCode: varchar("currency_code", { length: 3 }).default("SAR").notNull(),
   primaryLanguage: varchar("primary_language", { length: 10 }).default("ar").notNull(),
-  sector: mysqlEnum("sector", PLATFORM_SECTOR_KEYS).default("restaurant").notNull(),
+  sector: varchar("sector", { length: 80 }).default("restaurant").notNull(),
   status: boolean("status").default(true).notNull(),
   plan: mysqlEnum("plan", PLAN_TIERS).default("Basic").notNull(),
   taxId: varchar("tax_id", { length: 50 }).notNull(),
@@ -2286,14 +2275,34 @@ async function sendPushToUser(userId, payload) {
 
 // server/db.ts
 var _db = null;
-async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
+var _dbUrlWarningShown = false;
+function getDatabaseUrl() {
+  const raw = process.env.DATABASE_URL;
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  const normalized = trimmed.startsWith('"') && trimmed.endsWith('"') || trimmed.startsWith("'") && trimmed.endsWith("'") ? trimmed.slice(1, -1).trim() : trimmed;
+  try {
+    const parsed = new URL(normalized);
+    if (!["mysql:", "mysql2:"].includes(parsed.protocol)) throw new Error("unsupported protocol");
+    if (!parsed.hostname || !parsed.pathname || parsed.pathname === "/") throw new Error("missing host or database");
+    return normalized;
+  } catch {
+    if (!_dbUrlWarningShown) {
+      console.error("[Database] DATABASE_URL is invalid. Expected mysql://USER:PASSWORD@HOST/DATABASE (without wrapping quotes).");
+      _dbUrlWarningShown = true;
     }
+    return null;
+  }
+}
+async function getDb() {
+  if (_db) return _db;
+  const databaseUrl = getDatabaseUrl();
+  if (!databaseUrl) return null;
+  try {
+    _db = drizzle(databaseUrl);
+  } catch (error) {
+    console.warn("[Database] Failed to initialize MySQL:", error instanceof Error ? error.message : String(error));
+    _db = null;
   }
   return _db;
 }
@@ -6372,7 +6381,7 @@ var marketplaceRouter = router({
     const listings = await db.select({ entityId: marketplaceListings.entityId, imageUrl: marketplaceListings.imageUrl, sectorId: marketplaceListings.sectorId }).from(marketplaceListings).where(eq3(marketplaceListings.status, "active"));
     const sectorRows = await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug, labelAr: marketplaceSectors.labelAr, labelEn: marketplaceSectors.labelEn, labelFr: marketplaceSectors.labelFr }).from(marketplaceSectors).where(eq3(marketplaceSectors.isActive, true));
     const sectorMap = new Map(sectorRows.map((s) => [s.id, s]));
-    const eligible = entities.filter((e) => preferred.includes(e.id) || listings.some((l) => l.entityId === e.id));
+    const eligible = entities;
     const ordered = [...eligible].sort((a, b) => {
       const ai = preferred.indexOf(a.id), bi = preferred.indexOf(b.id);
       if (ai >= 0 || bi >= 0) return (ai < 0 ? 9999 : ai) - (bi < 0 ? 9999 : bi);
@@ -6412,8 +6421,9 @@ var marketplaceRouter = router({
     } else {
       for (const listing of listings) matchingEntityIds.add(listing.entityId);
     }
-    if (!matchingEntityIds.size) return [];
-    const entityConditions = [eq3(platformEntities.status, true), inArray2(platformEntities.id, Array.from(matchingEntityIds))];
+    if (input.sectorSlug && !matchingEntityIds.size) return [];
+    const entityConditions = [eq3(platformEntities.status, true)];
+    if (input.sectorSlug) entityConditions.push(inArray2(platformEntities.id, Array.from(matchingEntityIds)));
     if (input.countryCode) entityConditions.push(eq3(platformEntities.countryCode, input.countryCode));
     const entityRows = await db.select().from(platformEntities).where(and3(...entityConditions));
     const searchTerm = input.search?.trim().toLowerCase();
@@ -7005,7 +7015,7 @@ var marketplaceRouter = router({
     timezone: z2.string().trim().min(3).max(64),
     currencyCode: z2.string().trim().length(3).transform((value) => value.toUpperCase()),
     primaryLanguage: z2.string().trim().min(2).max(10),
-    sector: z2.enum(["restaurant", "vegetables", "grocery", "laundry", "automotive", "beauty_salon", "public_works", "fashion", "sweets"]),
+    sector: z2.string().trim().min(2).max(80).regex(/^[a-z0-9_-]+$/),
     plan: z2.enum(PLAN_TIERS).default("Basic"),
     taxId: z2.string().trim().max(50).default(""),
     status: z2.boolean().default(true)
@@ -7014,8 +7024,8 @@ var marketplaceRouter = router({
     if (!db) throw new TRPCError3({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const duplicate = (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq3(platformEntities.email, input.email)).limit(1))[0];
     if (duplicate) throw new TRPCError3({ code: "CONFLICT", message: "\u064A\u0648\u062C\u062F \u0645\u062A\u062C\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0647\u0630\u0627 \u0627\u0644\u0628\u0631\u064A\u062F \u0628\u0627\u0644\u0641\u0639\u0644" });
-    const sector = (await db.select({ id: marketplaceSectors.id }).from(marketplaceSectors).where(eq3(marketplaceSectors.slug, input.sector)).limit(1))[0];
-    if (!sector) throw new TRPCError3({ code: "BAD_REQUEST", message: "\u0627\u0644\u0646\u0634\u0627\u0637 \u063A\u064A\u0631 \u0645\u0641\u0639\u0651\u0644 \u0641\u064A \u0643\u062A\u0627\u0644\u0648\u062C \u0627\u0644\u0633\u0648\u0642" });
+    const sector = (await db.select({ id: marketplaceSectors.id, isActive: marketplaceSectors.isActive }).from(marketplaceSectors).where(eq3(marketplaceSectors.slug, input.sector)).limit(1))[0];
+    if (!sector?.isActive) throw new TRPCError3({ code: "BAD_REQUEST", message: "\u0627\u0644\u0646\u0634\u0627\u0637 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0623\u0648 \u063A\u064A\u0631 \u0645\u0641\u0639\u0651\u0644 \u0641\u064A \u0643\u062A\u0627\u0644\u0648\u062C \u0627\u0644\u0633\u0648\u0642" });
     const id = `ent_${nanoid3(16)}`;
     await db.insert(platformEntities).values({
       id,
@@ -8926,10 +8936,12 @@ var appRouter = router({
       await db.delete(authSessions).where(eq7(authSessions.userId, user.id));
       return { success: true, message: "\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631. \u064A\u0645\u0643\u0646\u0643 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0627\u0644\u0622\u0646." };
     }),
-    registerRestaurant: publicProcedure.input(z3.object({ restaurantName: z3.string().trim().min(2).max(160), sector: z3.enum(["restaurant", "vegetables", "grocery", "laundry", "automotive", "beauty_salon", "public_works", "fashion", "sweets"]).default("restaurant"), country: z3.string().trim().min(2).max(120).optional(), countryCode: z3.string().length(2).default("SA"), currencyCode: z3.string().length(3).optional(), primaryLanguage: z3.enum(["ar", "en", "fr", "ur", "es", "de", "tr"]).default("ar"), city: z3.string().trim().min(2).max(120), email: z3.string().trim().email().max(320), phone: z3.string().trim().min(7).max(40), plan: z3.enum(["Free", "Starter", "Growth", "Business", "Enterprise"]).default("Free"), captchaChallenge: z3.string().min(20).max(1e3), captchaAnswer: z3.string().trim().regex(/^\d{1,2}$/) })).mutation(async ({ ctx, input }) => {
+    registerRestaurant: publicProcedure.input(z3.object({ restaurantName: z3.string().trim().min(2).max(160), sector: z3.string().trim().min(2).max(80).regex(/^[a-z0-9_-]+$/).default("restaurant"), country: z3.string().trim().min(2).max(120).optional(), countryCode: z3.string().length(2).default("SA"), currencyCode: z3.string().length(3).optional(), primaryLanguage: z3.enum(["ar", "en", "fr", "ur", "es", "de", "tr"]).default("ar"), city: z3.string().trim().min(2).max(120), email: z3.string().trim().email().max(320), phone: z3.string().trim().min(7).max(40), plan: z3.enum(["Free", "Starter", "Growth", "Business", "Enterprise"]).default("Free"), captchaChallenge: z3.string().min(20).max(1e3), captchaAnswer: z3.string().trim().regex(/^\d{1,2}$/) })).mutation(async ({ ctx, input }) => {
       if (!verifyRegistrationCaptcha(input.captchaChallenge, input.captchaAnswer)) throw new TRPCError6({ code: "BAD_REQUEST", message: "\u0623\u0643\u0645\u0644 \u0627\u062E\u062A\u0628\u0627\u0631 \u0627\u0644\u062A\u062D\u0642\u0642 \u0628\u0634\u0643\u0644 \u0635\u062D\u064A\u062D" });
       const db = await getDb();
       if (!db) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const activeSector = (await db.select({ id: marketplaceSectors.id }).from(marketplaceSectors).where(and7(eq7(marketplaceSectors.slug, input.sector), eq7(marketplaceSectors.isActive, true))).limit(1))[0];
+      if (!activeSector) throw new TRPCError6({ code: "BAD_REQUEST", message: "\u0627\u0644\u0646\u0634\u0627\u0637 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0623\u0648 \u063A\u064A\u0631 \u0645\u0641\u0639\u0651\u0644" });
       const countryDef = COUNTRIES.find((item) => item.code === input.countryCode);
       if (!countryDef) throw new TRPCError6({ code: "BAD_REQUEST", message: "\u0627\u0644\u062F\u0648\u0644\u0629 \u0627\u0644\u0645\u062D\u062F\u062F\u0629 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645\u0629" });
       const resolvedCurrency = input.currencyCode ? CURRENCIES.find((item) => item.code === input.currencyCode) : CURRENCIES.find((item) => item.code === countryDef.currencyCode);
