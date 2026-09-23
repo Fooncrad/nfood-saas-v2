@@ -61,6 +61,21 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(catalog).not.toContain("overflow-x-auto");
     expect(catalog).not.toContain("min-w-[980px]");
   });
+
+  it("keeps removed legacy Super Admin duplicates from returning", () => {
+    const home = read("pages/Home.tsx");
+    const settings = read("components/PlatformSettingsPanel.tsx");
+    const start = home.indexOf("function SuperAdminView()");
+    const end = home.indexOf("function CustomerAdminPanel()", start);
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    const legacyView = home.slice(start, end);
+    for (const duplicate of ["المطاعم والعملاء", "<SubscriptionAdminPanel", "<CustomerAdminPanel", "<RoleAdminPanel", "<RolePermissionsPanel", "<FeatureUsagePanel", "<FeatureAccessPanel"]) {
+      expect(legacyView).not.toContain(duplicate);
+    }
+    expect(settings).not.toContain("WalletTopupReviewPanel");
+  });
+
   it("keeps every Super Admin module wired to the active shell and real data procedures", () => {
     const home = read("pages/Home.tsx");
     const admin = read("components/CentralAdminCommandCenter.tsx");
