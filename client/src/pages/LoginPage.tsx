@@ -114,17 +114,17 @@ export default function LoginPage() {
   const login = trpc.auth.testLogin.useMutation({ onSuccess: (result) => {
     toast.success(copy.toastSignedIn);
     const next = new URLSearchParams(window.location.search).get("next");
-    const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : result.role === "admin" ? "/admin" : "/";
+    const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : result.next ?? (result.role === "admin" ? "/admin" : "/");
     setLocation(safeNext);
-  }, onError: (error) => toast.error(error.message || copy.toastInvalid) });
+  }, onError: (error) => { if (error.message === "VERIFY_EMAIL_REQUIRED") { toast.error(language === "ar" ? "تحقق من بريدك الإلكتروني أولًا ثم ارجع لتسجيل الدخول." : language === "fr" ? "Vérifiez d’abord votre e-mail, puis reconnectez-vous." : "Verify your email first, then return to sign in."); return; } toast.error(error.message || copy.toastInvalid); } });
   const features = [copy.feat1, copy.feat2, copy.feat3];
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#071525] text-white">{copy.checking}</div>;
   if (user) return <Home />;
 
   return (
-    <div dir={direction} className="min-h-dvh bg-[#071525] text-white">
-      <div className="grid min-h-dvh lg:grid-cols-[1.05fr_.95fr]">
+    <div dir={direction} className="min-h-[100svh] overflow-x-hidden bg-[#071525] text-white">
+      <div className="grid min-h-[100svh] lg:min-h-screen lg:grid-cols-[1.05fr_.95fr]">
         <section className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between bg-[#0b1d35] p-12 xl:p-16">
           <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-orange-500/15 blur-3xl" />
           <div className="absolute -bottom-40 right-0 h-[28rem] w-[28rem] rounded-full bg-teal-500/10 blur-3xl" />
@@ -149,8 +149,8 @@ export default function LoginPage() {
           </div>
           <div className="relative flex items-center gap-3 text-xs text-slate-500"><ShieldCheck className="h-4 w-4 text-teal-400" /> {copy.badge}</div>
         </section>
-        <section className="flex min-h-dvh items-start justify-center overflow-y-auto bg-[#f8fafc] px-4 py-6 text-slate-900 sm:items-center sm:px-8 sm:py-10">
-          <div className="w-full max-w-md">
+        <section className="flex min-h-[100svh] items-start justify-center overflow-x-hidden bg-[#f8fafc] px-4 py-5 text-slate-900 sm:items-center sm:px-8 sm:py-8 lg:min-h-screen lg:overflow-y-auto lg:py-10">
+          <div className="w-full max-w-md [overflow-anchor:none]">
             <div className="mb-8 flex items-center justify-between">
               <button type="button" onClick={() => setLocation("/")} className="text-xs font-bold text-slate-500 hover:text-orange-600">{copy.backHome}</button>
               <div className="ms-auto"><LanguageSwitcher compact /></div>

@@ -53,14 +53,11 @@ jobs:
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
 
-      - name: Open dist pull request
+      - name: Dist PR instructions
         if: steps.publish.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
           HEAD_BRANCH: ${{ steps.publish.outputs.branch }}
         run: |
-          gh pr create \
-            --base build/production-dist \
-            --head "$HEAD_BRANCH" \
-            --title "build: publish production dist" \
-            --body "Automated production dist build for source commit ${GITHUB_SHA}. This PR is intentionally opened so repository rules and the required verify check remain enforced."
+          echo "Built dist was published to ${HEAD_BRANCH}."
+          echo "Open a pull request from ${HEAD_BRANCH} into build/production-dist using an authorized user/app token."
+          echo "GitHub Actions tokens are intentionally not used to create pull requests because repository policy blocks that operation."
