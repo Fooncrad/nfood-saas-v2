@@ -12,7 +12,9 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 async function googleConfiguration(req: Request) {
-  const setting = await db.getIntegrationSetting("platform", "google_oauth") ?? await db.getIntegrationSetting("platform", "Google OAuth");
+  // The admin editor writes the human-readable key. Prefer it so a stale legacy
+  // google_oauth row cannot shadow the configuration that was just saved/tested.
+  const setting = await db.getIntegrationSetting("platform", "Google OAuth") ?? await db.getIntegrationSetting("platform", "google_oauth");
   if (setting?.status === "configured") {
     let meta: Record<string, string> = {};
     try { const parsed = setting.keyReference ? JSON.parse(setting.keyReference) : {}; if (parsed && typeof parsed === "object") meta = parsed; } catch { if (setting.keyReference) meta.clientId = setting.keyReference; }
@@ -27,6 +29,17 @@ async function googleConfiguration(req: Request) {
 
 function oauthNonce(res: Response) { const nonce = nanoid(32); res.cookie(OAUTH_STATE_COOKIE, nonce, { httpOnly: true, path: "/", maxAge: 600000, sameSite: "lax", secure: true }); return nonce; }
 function verifyOauthNonce(req: Request, state: string) { return Boolean(state && state === parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE]); }
+
+async function postLoginDestination(openId: string) {
+  const user = await db.getUserByOpenId(openId);
+  if (!user) return "/register?resume=1";
+  const role = String(user.role ?? "");
+  if (role === "admin") return "/admin";
+  if (["restaurant", "restaurant_admin", "waiter", "driver", "cashier", "kitchen", "bar"].includes(role)) return "/restaurant/dashboard";
+  // A newly-created Google identity has no business role yet. Resume merchant
+  // onboarding instead of silently dropping it on the public homepage.
+  return "/register?resume=1";
+}
 
 export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/google/start", async (req: Request, res: Response) => {
@@ -49,7 +62,9 @@ export function registerOAuthRoutes(app: Express) {
       const infoResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { authorization: `Bearer ${token.access_token}` } }); if (!infoResponse.ok) throw new Error("google_userinfo_failed");
       const info = await infoResponse.json() as { sub?: string; email?: string; name?: string }; if (!info.sub) throw new Error("google_subject_missing");
       const openId = `google_${info.sub}`; await db.upsertUser({ openId, name: info.name ?? null, email: info.email ?? null, loginMethod: "google", lastSignedIn: new Date() });
-      const sessionToken = await sdk.createSessionToken(openId, { name: info.name || "", expiresInMs: ONE_YEAR_MS }); res.cookie(COOKIE_NAME, sessionToken, { ...getSessionCookieOptions(req), maxAge: ONE_YEAR_MS }); return res.redirect(302, "/");
+      const sessionToken = await sdk.createSessionToken(openId, { name: info.name || "", expiresInMs: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, { ...getSessionCookieOptions(req), maxAge: ONE_YEAR_MS });
+      return res.redirect(302, await postLoginDestination(openId));
     } catch (error) { console.error("[Google OAuth] Callback failed", error); return res.redirect(302, "/login?oauth=google_failed"); }
   });
 
@@ -62,9 +77,6 @@ export function registerOAuthRoutes(app: Express) {
       return;
     }
 
-    // CSRF guard: the nonce in `state` must match the one-time cookie that
-    // startLogin set in the browser that began this login. An attacker can
-    // forge `state`, but cannot plant this cookie in the victim's browser.
     const { nonce } = decodeOAuthState(state);
     const expectedNonce = parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE];
     if (!nonce || nonce !== expectedNonce) {
@@ -97,8 +109,7 @@ export function registerOAuthRoutes(app: Express) {
 
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-
-      res.redirect(302, "/");
+      res.redirect(302, await postLoginDestination(userInfo.openId));
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });
