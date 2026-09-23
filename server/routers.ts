@@ -636,11 +636,13 @@ export const appRouter = router({
         await nodemailer.createTransport({ host, port, secure: (meta.secure || "").toLowerCase() === "ssl" || port === 465, auth: { user, pass }, connectionTimeout: 8000 }).verify();
         return { ok: true, message: "اتصال SMTP ناجح" };
       }
-      const clientId = meta.clientId || meta.primary; const clientSecret = secret.clientSecret;
-      if (!clientId || !clientSecret) throw new TRPCError({ code: "BAD_REQUEST", message: "بيانات Google OAuth المحفوظة غير مكتملة" });
-      const response = await fetch("https://oauth2.googleapis.com/tokeninfo?id_token=invalid", { signal: AbortSignal.timeout(8000) });
-      if (response.status >= 500) throw new TRPCError({ code: "BAD_GATEWAY", message: "تعذر الوصول إلى Google OAuth" });
-      return { ok: true, message: "تم الوصول إلى Google OAuth، والإعدادات المحفوظة جاهزة لبدء تسجيل الدخول" };
+      const clientId = meta.clientId || meta.primary; const clientSecret = secret.clientSecret; const redirectUri = meta.redirectUri;
+      if (!clientId || !clientSecret || !redirectUri) throw new TRPCError({ code: "BAD_REQUEST", message: "بيانات Google OAuth المحفوظة غير مكتملة" });
+      if (!clientId.endsWith(".apps.googleusercontent.com")) throw new TRPCError({ code: "BAD_REQUEST", message: "صيغة Google Client ID غير صحيحة" });
+      try { new URL(redirectUri); } catch { throw new TRPCError({ code: "BAD_REQUEST", message: "Redirect URI غير صالح" }); }
+      const response = await fetch("https://accounts.google.com/.well-known/openid-configuration", { signal: AbortSignal.timeout(8000) });
+      if (!response.ok) throw new TRPCError({ code: "BAD_GATEWAY", message: "تعذر الوصول إلى Google OAuth" });
+      return { ok: true, message: "اتصال Google OAuth ناجح والإعدادات الأساسية مكتملة" };
     }),
     globalSearch: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive(), query: z.string().max(120), limit: z.number().int().positive().max(50).default(20) })).query(({ ctx, input }) => { assertNotDriver(ctx); assertRestaurantAccess(ctx, input.restaurantId); return globalSearch(input.restaurantId, input.query, input.limit); }),
     roleSummary: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive(), branchId: z.number().int().positive().optional() })).query(({ ctx, input }) => { assertNotDriver(ctx); assertRestaurantAccess(ctx, input.restaurantId); return getRoleSummary(input.restaurantId, ctx.user?.testRole, ctx.user?.id, input.branchId); }),
