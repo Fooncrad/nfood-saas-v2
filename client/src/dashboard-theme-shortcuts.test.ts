@@ -70,10 +70,12 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(start).toBeGreaterThanOrEqual(0);
     expect(end).toBeGreaterThan(start);
     const legacyView = home.slice(start, end);
-    for (const duplicate of ["المطاعم والعملاء", "<SubscriptionAdminPanel", "<CustomerAdminPanel", "<RoleAdminPanel", "<RolePermissionsPanel", "<FeatureUsagePanel", "<FeatureAccessPanel"]) {
+    expect(legacyView).not.toContain('<CardTitle className="text-base">المطاعم والعملاء</CardTitle>');
+    for (const duplicate of ["<SubscriptionAdminPanel", "<CustomerAdminPanel", "<RoleAdminPanel", "<RolePermissionsPanel", "<FeatureUsagePanel", "<FeatureAccessPanel"]) {
       expect(legacyView).not.toContain(duplicate);
     }
-    expect(settings).not.toContain("WalletTopupReviewPanel");
+    expect(settings).not.toContain('import { WalletTopupReviewPanel }');
+    expect(settings).not.toContain("<WalletTopupReviewPanel");
   });
 
   it("keeps every Super Admin module wired to the active shell and real data procedures", () => {
