@@ -189,7 +189,11 @@ export default function RegisterScreen() {
   const copy = language === "fr" ? registerCopy.fr : language === "en" ? registerCopy.en : registerCopy.ar;
   const sectorNames = copy.sectorNames;
   const liveSectors = trpc.marketplace.publicSectors.useQuery(undefined, { retry: 2 });
-  const sectors = useMemo(() => (liveSectors.data ?? []).map((item) => ({ id: item.slug, label: language === "ar" ? item.labelAr : language === "fr" ? item.labelFr : item.labelEn })), [liveSectors.data, language]);
+  const fallbackSectors = useMemo(() => Object.entries(sectorNames).map(([id, label]) => ({ id, label })), [sectorNames]);
+  const sectors = useMemo(() => {
+    const live = (liveSectors.data ?? []).map((item) => ({ id: item.slug, label: language === "ar" ? item.labelAr : language === "fr" ? item.labelFr : item.labelEn }));
+    return live.length ? live : fallbackSectors;
+  }, [liveSectors.data, language, fallbackSectors]);
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
@@ -310,9 +314,8 @@ export default function RegisterScreen() {
               <section className="space-y-7">
                 <div>
                   <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><Store className="h-4 w-4 text-orange-500" /><h3 className="font-black">{copy.chooseSector}</h3></div><span className="text-[11px] font-bold text-slate-400">{sectors.length} {copy.sectors}</span></div>
-                  <select value={sector} onChange={(event) => setSector(event.target.value)} className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
-                    {sectors.map(({ id }) => <option key={id} value={id}>{sectorLabel(id)}</option>)}
-                  </select>
+                  {liveSectors.isLoading ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{Array.from({length:6}).map((_,i)=><div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-200/70" />)}</div> : <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{sectors.map(({ id }) => { const selected=sector===id; return <button type="button" key={id} onClick={()=>setSector(id)} className={`min-h-20 rounded-2xl border px-3 py-3 text-start text-sm font-black transition ${selected ? "border-orange-500 bg-orange-50 text-orange-900 ring-2 ring-orange-100" : "border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:bg-orange-50/40"}`}><span className="flex items-center gap-2"><Store className={`h-4 w-4 ${selected ? "text-orange-500" : "text-slate-400"}`} />{sectorLabel(id)}</span>{selected && <span className="mt-2 flex items-center gap-1 text-[10px] text-orange-600"><Check className="h-3 w-3" />{language==="ar"?"تم الاختيار":language==="fr"?"Sélectionné":"Selected"}</span>}</button>})}</div>}
+                  {liveSectors.isError && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{language==="ar"?"تعذر تحديث القطاعات الآن؛ يمكنك المتابعة بالقطاعات الأساسية ثم تعديل النشاط لاحقًا.":language==="fr"?"Impossible d’actualiser les secteurs. Vous pouvez continuer avec les secteurs de base.":"Could not refresh sectors. You can continue with the core sectors."}</p>}
                   <p className="mt-2 text-[11px] leading-5 text-slate-400">{copy.accountLanguageLabel}: <strong>{languageLabel}</strong> · {copy.accountLanguageDesc}</p>
                 </div>
                 <button onClick={next} className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#e76f3c] text-base font-bold text-white hover:bg-[#d85f2e]">{copy.continue} <ArrowLeft className={arrow} /></button>
