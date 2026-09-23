@@ -86,7 +86,7 @@ export const marketplaceRouter = router({
     const listings = await db.select({ entityId: marketplaceListings.entityId, imageUrl: marketplaceListings.imageUrl, sectorId: marketplaceListings.sectorId }).from(marketplaceListings).where(eq(marketplaceListings.status, "active"));
     const sectorRows = await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug, labelAr: marketplaceSectors.labelAr, labelEn: marketplaceSectors.labelEn, labelFr: marketplaceSectors.labelFr }).from(marketplaceSectors).where(eq(marketplaceSectors.isActive, true));
     const sectorMap = new Map(sectorRows.map(s => [s.id, s]));
-    const eligible = entities.filter(e => preferred.includes(e.id) || listings.some(l => l.entityId === e.id));
+    const eligible = entities;
     const ordered = [...eligible].sort((a,b) => { const ai=preferred.indexOf(a.id), bi=preferred.indexOf(b.id); if(ai>=0||bi>=0) return (ai<0?9999:ai)-(bi<0?9999:bi); return a.customerName.localeCompare(b.customerName); }).slice(0,limit);
     return ordered.map(entity => { const items=listings.filter(l=>l.entityId===entity.id); const sector=sectorMap.get(items[0]?.sectorId); return { entityId:entity.id, customerName:entity.customerName, sector:entity.sector, sectorLabelAr:sector?.labelAr ?? entity.sector, sectorLabelEn:sector?.labelEn ?? entity.sector, sectorLabelFr:sector?.labelFr ?? entity.sector, imageUrl:items.find(i=>i.imageUrl)?.imageUrl ?? null, listingCount:items.length, featured:preferred.includes(entity.id) }; });
   }),
@@ -118,8 +118,9 @@ export const marketplaceRouter = router({
     } else {
       for (const listing of listings) matchingEntityIds.add(listing.entityId);
     }
-    if (!matchingEntityIds.size) return [];
-    const entityConditions = [eq(platformEntities.status, true), inArray(platformEntities.id, Array.from(matchingEntityIds))];
+    if (input.sectorSlug && !matchingEntityIds.size) return [];
+    const entityConditions = [eq(platformEntities.status, true)];
+    if (input.sectorSlug) entityConditions.push(inArray(platformEntities.id, Array.from(matchingEntityIds)));
     if (input.countryCode) entityConditions.push(eq(platformEntities.countryCode, input.countryCode));
     const entityRows = await db.select().from(platformEntities).where(and(...entityConditions));
     const searchTerm = input.search?.trim().toLowerCase();
