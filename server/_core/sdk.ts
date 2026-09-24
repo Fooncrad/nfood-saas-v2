@@ -258,7 +258,10 @@ class SDKServer {
   async authenticateRequest(req: Request): Promise<AuthenticatedUser> {
     // 1. Prefer the session cookie (regular OAuth login).
     const cookies = this.parseCookies(req.headers.cookie);
-    let sessionToken = cookies.get(TEST_SESSION_COOKIE) || cookies.get(COOKIE_NAME);
+    // A real account session must win over any stale preview/test session.
+    // Otherwise a successful Google/email sign-in can be shadowed by an old
+    // nfood_test_session cookie and the user is bounced back to login.
+    let sessionToken = cookies.get(COOKIE_NAME) || cookies.get(TEST_SESSION_COOKIE);
 
     // 2. Fallback to the Authorization header (Preview auto-login via
     //    sessionStorage), used when the browser blocks iframe cookies such as
