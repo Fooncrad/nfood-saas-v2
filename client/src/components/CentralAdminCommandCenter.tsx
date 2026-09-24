@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
+  Bot,
   Bell,
   CheckCircle2,
   CircleDollarSign,
@@ -33,9 +34,9 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { trpc } from "@/lib/trpc";
 import type { Order } from "@/components/homeNavigation";
 
-export type CentralAdminNavKey = "overview" | "admin" | "activities" | "nfc" | "site" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend" | "security" | "health";
+export type CentralAdminNavKey = "overview" | "admin" | "activities" | "nfc" | "site" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend" | "security" | "health" | "devAgent";
 
-const NAV_ORDER: CentralAdminNavKey[] = ["overview", "admin", "activities", "stores", "accounts", "site", "nfc", "trend", "settings", "languages", "files", "security", "health"];
+const NAV_ORDER: CentralAdminNavKey[] = ["overview", "admin", "activities", "stores", "accounts", "site", "nfc", "trend", "settings", "languages", "files", "devAgent", "security", "health"];
 
 const NAV_LABELS: Record<CentralAdminNavKey, { ar: string; en: string }> = {
   overview: { ar: "نظرة عامة", en: "Overview" },
@@ -51,6 +52,7 @@ const NAV_LABELS: Record<CentralAdminNavKey, { ar: string; en: string }> = {
   trend: { ar: "Trend Kitchen · سوق نفود", en: "Trend Kitchen" },
   security: { ar: "أمان الحساب والجلسات", en: "Security" },
   health: { ar: "صحة النظام", en: "System health" },
+  devAgent: { ar: "وكيل تطوير NFOOD", en: "Development Agent" },
 };
 
 const NAV_ICONS: Record<CentralAdminNavKey, LucideIcon> = {
@@ -67,6 +69,7 @@ const NAV_ICONS: Record<CentralAdminNavKey, LucideIcon> = {
   trend: Sparkles,
   security: ShieldCheck,
   health: Activity,
+  devAgent: Bot,
 };
 
 type AdminOrderStatus = "review" | "pending" | "payment" | "completed";
