@@ -12,6 +12,7 @@ import VcardCardsAdmin from "@/pages/VcardCardsAdmin";
 import ActivitiesSectorsAdmin from "@/components/ActivitiesSectorsAdmin";
 import { SecurityView } from "@/components/SecurityView";
 import { SystemHealthView } from "@/components/SystemHealthView";
+import NfoodDevelopmentAgent from "@/components/NfoodDevelopmentAgent";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function SuperAdminApp() {
@@ -32,6 +33,7 @@ export default function SuperAdminApp() {
       case "nfc": return <VcardCardsAdmin />;
       case "security": return <SecurityView />;
       case "health": return <SystemHealthView />;
+      case "devAgent": return <NfoodDevelopmentAgent />;
       case "overview": return undefined;
     }
   }, [active]);
