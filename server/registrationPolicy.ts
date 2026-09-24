@@ -27,10 +27,12 @@ export function isSameRegistrationAccount(existingEmail: string, submittedEmail:
   return normalizeRegistrationEmail(existingEmail) === normalizeRegistrationEmail(submittedEmail);
 }
 
+export type RegistrationRejectReason = "sign_in_required" | "email_verification_required" | "email_mismatch";
+
 export type RegistrationAccountDecision =
   | { action: "create" }
   | { action: "link"; userId: number }
-  | { action: "reject"; reason: "sign_in_required" | "email_verification_required" | "email_mismatch" };
+  | { action: "reject"; reason: RegistrationRejectReason };
 
 export type RegistrationAccountPolicyInput = {
   submittedEmail: string;
@@ -64,7 +66,7 @@ export function resolveRegistrationAccount(input: RegistrationAccountPolicyInput
 
 export type MerchantOnboardingDecision =
   | { allowed: true; normalizedEmail: string; account: { action: "create" } | { action: "link"; userId: number } }
-  | { allowed: false; normalizedEmail: string; reason: RegistrationAccountDecision extends { action: "reject"; reason: infer R } ? R : never };
+  | { allowed: false; normalizedEmail: string; reason: RegistrationRejectReason };
 
 /**
  * Single server-side decision for merchant onboarding. Tenant creation is
@@ -75,7 +77,7 @@ export type MerchantOnboardingDecision =
 export function resolveMerchantOnboarding(input: RegistrationSectorPolicyInput & RegistrationAccountPolicyInput): MerchantOnboardingDecision {
   const normalizedEmail = normalizeRegistrationEmail(input.submittedEmail);
   if (!canCreateTenantForSector(input)) {
-    // Kept as a defensive boundary if tenant policy ever gains a real platform restriction.
+    // Defensive only: tenant creation is currently open for every valid sector.
     return { allowed: false, normalizedEmail, reason: "email_mismatch" };
   }
   const account = resolveRegistrationAccount({
