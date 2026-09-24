@@ -59,7 +59,12 @@ export function registerOAuthRoutes(app: Express) {
       if (!existingGoogleUser && !existingEmailUser) await db.upsertUser({ openId: googleOpenId, name: info.name ?? null, email: normalizedEmail ?? null, loginMethod: "google", lastSignedIn: new Date() });
       else await db.upsertUser({ openId: sessionOpenId, name: info.name ?? undefined, email: normalizedEmail ?? undefined, lastSignedIn: new Date() });
       const user = await db.getUserByOpenId(sessionOpenId);
-      const sessionToken = await sdk.createSessionToken(sessionOpenId, { name: info.name || user?.name || "", expiresInMs: ONE_YEAR_MS });\n      const cookieOptions = getSessionCookieOptions(req);\n      // Switching from preview/password sessions to Google must not leave a\n      // competing test cookie that can shadow the newly authenticated account.\n      res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);\n      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      const sessionToken = await sdk.createSessionToken(sessionOpenId, { name: info.name || user?.name || "", expiresInMs: ONE_YEAR_MS });
+      const cookieOptions = getSessionCookieOptions(req);
+      // Switching from preview/password sessions to Google must not leave a
+      // competing test cookie that can shadow the newly authenticated account.
+      res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
       if (user?.role === "admin") return res.redirect(302, "/admin");
       const restaurantId = user ? await db.getMerchantRestaurantId(user.id) : null;
       return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/register?oauth=google");
