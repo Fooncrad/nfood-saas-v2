@@ -1,3 +1,4 @@
+import { PLAN_TIERS } from "../drizzle/schema";
 import { buildAdminStoreCreationPlan, type AdminStoreCreationPlanInput } from "./adminStoreCreationPlan";
 
 export type AdminStorePersistenceInput = AdminStoreCreationPlanInput & {
@@ -7,7 +8,7 @@ export type AdminStorePersistenceInput = AdminStoreCreationPlanInput & {
   city?: string | null;
   timezone: string;
   currencyCode: string;
-  plan: string;
+  plan: (typeof PLAN_TIERS)[number];
   taxId?: string;
 };
 

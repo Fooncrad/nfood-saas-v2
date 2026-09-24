@@ -1,3 +1,4 @@
+import { PLAN_TIERS } from "../drizzle/schema";
 import { buildAdminStorePersistencePlan } from "./adminStorePersistencePlan";
 
 export type AdminCreateStoreRouterInput = {
@@ -9,7 +10,7 @@ export type AdminCreateStoreRouterInput = {
   currencyCode: string;
   primaryLanguage: string;
   sector: string;
-  plan: string;
+  plan: (typeof PLAN_TIERS)[number];
   taxId?: string;
   status: boolean;
 };
