@@ -15,25 +15,37 @@ export type AdminStorePersistenceInput = AdminStoreCreationPlanInput & {
 /**
  * Converts the verified onboarding decision into the exact persistence values
  * used by admin store creation. Keeping this pure prevents the router from
- * deriving publication, language, modules, or sector aliases independently.
+ * deriving publication, language, modules, sector aliases, or branch defaults independently.
  */
 export function buildAdminStorePersistencePlan(input: AdminStorePersistenceInput) {
   const creation = buildAdminStoreCreationPlan(input);
+  const customerName = input.customerName.trim();
+  const city = input.city?.trim() || null;
+  const timezone = input.timezone.trim();
+  const currencyCode = input.currencyCode.trim().toUpperCase();
 
   return {
     entity: {
-      customerName: input.customerName.trim(),
+      customerName,
       email: input.email.trim().toLowerCase(),
       countryCode: input.countryCode.trim().toUpperCase(),
-      city: input.city?.trim() || null,
-      timezone: input.timezone.trim(),
-      currencyCode: input.currencyCode.trim().toUpperCase(),
+      city,
+      timezone,
+      currencyCode,
       primaryLanguage: creation.primaryLanguage,
       sector: creation.sector,
       status: input.requestedActive,
       plan: input.plan,
       taxId: input.taxId?.trim() || "",
       licensingFee: "0.00",
+    },
+    primaryBranch: {
+      name: customerName,
+      city,
+      timezone,
+      currencyCode,
+      isActive: input.requestedActive,
+      isPrimary: true,
     },
     storefront: {
       languagesJson: JSON.stringify(creation.languages),
