@@ -79,8 +79,11 @@ export function registerOAuthRoutes(app: Express) {
       // competing test cookie that can shadow the newly authenticated account.
       res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      if (user?.role === "admin") return res.redirect(302, "/admin");
-      if (returnTo) return res.redirect(302, returnTo);
+      if (user?.role === "admin" || user?.accountRole === "admin") return res.redirect(302, "/admin");
+      // Do not bounce an authenticated Google session back onto the login page.
+      // This was the visible "stuck on first page" failure when /login itself
+      // was captured as returnTo.
+      if (returnTo && !/^\/login(?:[/?#]|$)/.test(returnTo)) return res.redirect(302, returnTo);
       const restaurantId = user ? await db.getMerchantRestaurantId(user.id) : null;
       return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/customer-portal?oauth=google");
     } catch (error) { console.error("[Google OAuth] Callback failed", error); return res.redirect(302, "/login?oauth=google_failed"); }
