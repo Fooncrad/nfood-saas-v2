@@ -37,6 +37,7 @@ import { nanoid } from "nanoid";
 import { getDb, getMerchantRestaurantId, getPlatformSettings, insertAuditLog } from "./db";
 import { sendPushToUser } from "./push";
 import { COUNTRIES, CURRENCIES } from "../shared/currencies";
+import { buildAdminStoreRouterPlan } from "./adminStoreRouterPlan";
 
 async function getProviderEntity(user: AuthUser) {
   const db = await getDb();
@@ -731,19 +732,17 @@ export const marketplaceRouter = router({
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const duplicate = (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq(platformEntities.email, input.email)).limit(1))[0];
     if (duplicate) throw new TRPCError({ code: "CONFLICT", message: "يوجد متجر مرتبط بهذا البريد بالفعل" });
-    const sector = (await db.select({ id: marketplaceSectors.id, isActive: marketplaceSectors.isActive }).from(marketplaceSectors).where(eq(marketplaceSectors.slug, input.sector)).limit(1))[0];
-    if (!sector?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "النشاط غير موجود أو غير مفعّل في كتالوج السوق" });
+    const sector = (await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug, isActive: marketplaceSectors.isActive }).from(marketplaceSectors).where(eq(marketplaceSectors.slug, input.sector)).limit(1))[0] ?? null;
+    const creationPlan = buildAdminStoreRouterPlan(input, sector);
     const id = `ent_${nanoid(16)}`;
     await db.insert(platformEntities).values({
-      id, customerName: input.customerName, email: input.email, countryCode: input.countryCode,
-      city: input.city || null, timezone: input.timezone, currencyCode: input.currencyCode,
-      primaryLanguage: input.primaryLanguage, sector: input.sector, status: input.status,
-      plan: input.plan, taxId: input.taxId || "", licensingFee: "0.00",
+      id,
+      ...creationPlan.entity,
+      licensingFee: "0.00",
     });
     await db.insert(marketplaceStorefrontSettings).values({
-      entityId: id, languagesJson: JSON.stringify(Array.from(new Set([input.primaryLanguage, "en"]))),
-      sectorConfigJson: JSON.stringify({ modules: input.sector === "restaurant" ? ["catalog","orders","reservations","restaurant_tables","kitchen","pos","invoicing","inventory"] : ["catalog","orders","pos","invoicing","inventory"] }),
-      isPublished: input.status,
+      entityId: id,
+      ...creationPlan.storefront,
     });
     await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "marketplace.store.created", entityType: "platform_entity", entityId: id, outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ countryCode: input.countryCode, currencyCode: input.currencyCode, sector: input.sector, plan: input.plan }) });
     return { success: true, id };
