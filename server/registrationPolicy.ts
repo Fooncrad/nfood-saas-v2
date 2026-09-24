@@ -26,3 +26,38 @@ export function normalizeRegistrationEmail(email: string): string {
 export function isSameRegistrationAccount(existingEmail: string, submittedEmail: string): boolean {
   return normalizeRegistrationEmail(existingEmail) === normalizeRegistrationEmail(submittedEmail);
 }
+
+export type RegistrationAccountDecision =
+  | { action: "create" }
+  | { action: "link"; userId: number }
+  | { action: "reject"; reason: "sign_in_required" | "email_verification_required" | "email_mismatch" };
+
+export type RegistrationAccountPolicyInput = {
+  submittedEmail: string;
+  existingUser?: { id: number; email: string | null; emailVerified: boolean } | null;
+  authenticatedUser?: { id: number; email: string | null; emailVerified: boolean } | null;
+};
+
+/**
+ * Decide whether merchant onboarding may create a fresh identity or reuse an
+ * existing NFOOD identity. An existing email is never silently claimed: it can
+ * only be linked to the same authenticated, verified user. This keeps account
+ * recognition separate from authentication and prevents duplicate identities
+ * without introducing an account-takeover path.
+ */
+export function resolveRegistrationAccount(input: RegistrationAccountPolicyInput): RegistrationAccountDecision {
+  if (!input.existingUser) return { action: "create" };
+
+  const authenticated = input.authenticatedUser;
+  if (!authenticated) return { action: "reject", reason: "sign_in_required" };
+  if (authenticated.id !== input.existingUser.id) return { action: "reject", reason: "email_mismatch" };
+  if (!authenticated.email || !input.existingUser.email) return { action: "reject", reason: "email_mismatch" };
+  if (!isSameRegistrationAccount(authenticated.email, input.submittedEmail) || !isSameRegistrationAccount(input.existingUser.email, input.submittedEmail)) {
+    return { action: "reject", reason: "email_mismatch" };
+  }
+  if (!authenticated.emailVerified || !input.existingUser.emailVerified) {
+    return { action: "reject", reason: "email_verification_required" };
+  }
+
+  return { action: "link", userId: input.existingUser.id };
+}
