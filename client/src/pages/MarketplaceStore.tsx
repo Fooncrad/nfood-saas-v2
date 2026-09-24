@@ -53,6 +53,7 @@ export default function MarketplaceStore() {
   };
   const categories = useMemo(() => ["الكل", ...Array.from(new Set(listings.map(listingCategory)))], [listings]);
   const visibleListings = activeCategory === "الكل" ? listings : listings.filter((listing) => listingCategory(listing) === activeCategory);
+  const activityLabel = entity?.sector === "restaurant" ? "مطعم" : entity?.sector === "fashion" ? "أزياء" : entity?.sector === "automotive" ? "سيارات" : entity?.sector === "real_estate" ? "عقار" : entity?.sector === "beauty_salon" ? "جمال وعناية" : "نشاط";
   const productImageRatio = entity?.sector === "restaurant" ? "aspect-square" : entity?.sector === "fashion" ? "aspect-[3/4]" : entity?.sector === "automotive" ? "aspect-[16/10]" : entity?.sector === "beauty_salon" || entity?.sector === "public_works" || entity?.sector === "laundry" ? "aspect-[4/3]" : "aspect-square";
   const productImageFit = entity?.sector === "fashion" ? "object-cover object-top" : "object-cover";
   const galleryImages = useMemo(() => {
@@ -71,7 +72,7 @@ export default function MarketplaceStore() {
           <Link href={sectorSlug ? `/marketplace/sector/${sectorSlug}?country=${country}` : `/marketplace?country=${country}`}><Button type="button" variant="ghost" className="rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"><ArrowRight className="ml-2 h-4 w-4" />رجوع</Button></Link><Link href={`/marketplace?country=${country}`} className="hidden items-center gap-1 text-xs text-slate-500 hover:text-white sm:flex"><Home className="h-3.5 w-3.5"/>السوق</Link>
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E76F3C] text-lg font-black text-white">N</span>
           <strong className="text-sm tracking-[.12em]">NFOOD MARKETPLACE</strong>
-          {entity && <Badge className="border-white/20 bg-white/5 text-orange-200">{entity.sector}</Badge>}
+          {entity && <Badge className="border-white/20 bg-white/5 text-orange-200">{activityLabel}</Badge>}
         </div>
       </header>
 
@@ -84,7 +85,7 @@ export default function MarketplaceStore() {
             <div className="flex shrink-0 items-center gap-4">
               {restaurant?.brandLogoUrl ? <img src={restaurant.brandLogoUrl} alt="" className="h-20 w-20 rounded-3xl bg-white/95 object-cover p-1.5 shadow-lg" /> : <span className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/20 text-2xl font-black text-white">{entity.customerName.trim().charAt(0)}</span>}
               <div>
-                <h1 className="text-2xl font-black tracking-tight md:text-3xl">{entity.customerName}</h1>
+                <p className="mb-1 text-[11px] font-bold text-orange-300">{activityLabel} · صفحة مستقلة على NFOOD</p><h1 className="text-2xl font-black tracking-tight md:text-3xl">{entity.customerName}</h1>
                 <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-300">{restaurant?.city ? <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{restaurant.city}</span> : null}<span className="rounded-full bg-white/10 px-2 py-1">{entity.plan} Plan</span></p>
               </div>
             </div>
