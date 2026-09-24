@@ -27,10 +27,12 @@ export function isSameRegistrationAccount(existingEmail: string, submittedEmail:
   return normalizeRegistrationEmail(existingEmail) === normalizeRegistrationEmail(submittedEmail);
 }
 
+export type RegistrationRejectReason = "sign_in_required" | "email_verification_required" | "email_mismatch";
+
 export type RegistrationAccountDecision =
   | { action: "create" }
   | { action: "link"; userId: number }
-  | { action: "reject"; reason: "sign_in_required" | "email_verification_required" | "email_mismatch" };
+  | { action: "reject"; reason: RegistrationRejectReason };
 
 export type RegistrationAccountPolicyInput = {
   submittedEmail: string;
@@ -60,4 +62,29 @@ export function resolveRegistrationAccount(input: RegistrationAccountPolicyInput
   }
 
   return { action: "link", userId: input.existingUser.id };
+}
+
+export type MerchantOnboardingDecision =
+  | { allowed: true; normalizedEmail: string; account: { action: "create" } | { action: "link"; userId: number } }
+  | { allowed: false; normalizedEmail: string; reason: RegistrationRejectReason };
+
+/**
+ * Single server-side decision for merchant onboarding. Tenant creation is
+ * deliberately independent from marketplace publication state, while existing
+ * email reuse remains bound to the same authenticated and verified identity.
+ * Routers should consume this result before creating restaurant/store records.
+ */
+export function resolveMerchantOnboarding(input: RegistrationSectorPolicyInput & RegistrationAccountPolicyInput): MerchantOnboardingDecision {
+  const normalizedEmail = normalizeRegistrationEmail(input.submittedEmail);
+  if (!canCreateTenantForSector(input)) {
+    // Defensive only: tenant creation is currently open for every valid sector.
+    return { allowed: false, normalizedEmail, reason: "email_mismatch" };
+  }
+  const account = resolveRegistrationAccount({
+    submittedEmail: normalizedEmail,
+    existingUser: input.existingUser,
+    authenticatedUser: input.authenticatedUser,
+  });
+  if (account.action === "reject") return { allowed: false, normalizedEmail, reason: account.reason };
+  return { allowed: true, normalizedEmail, account };
 }
