@@ -1,10 +1,9 @@
 import { Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import Home from "@/pages/Home";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -114,13 +113,20 @@ export default function LoginPage() {
   const login = trpc.auth.testLogin.useMutation({ onSuccess: (result) => {
     toast.success(copy.toastSignedIn);
     const next = new URLSearchParams(window.location.search).get("next");
-    const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : result.next ?? (result.role === "admin" ? "/admin" : "/");
+    const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : result.next ?? (result.role === "admin" ? "/admin" : "/dashboard");
     setLocation(safeNext);
   }, onError: (error) => { if (error.message === "VERIFY_EMAIL_REQUIRED") { toast.error(language === "ar" ? "تحقق من بريدك الإلكتروني أولًا ثم ارجع لتسجيل الدخول." : language === "fr" ? "Vérifiez d’abord votre e-mail, puis reconnectez-vous." : "Verify your email first, then return to sign in."); return; } toast.error(error.message || copy.toastInvalid); } });
   const features = [copy.feat1, copy.feat2, copy.feat3];
+  useEffect(() => {
+    if (loading || !user) return;
+    const next = new URLSearchParams(window.location.search).get("next");
+    if (next?.startsWith("/") && !next.startsWith("//")) { setLocation(next); return; }
+    if (user.role === "admin") { setLocation("/admin"); return; }
+    setLocation("/dashboard");
+  }, [loading, user, setLocation]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#071525] text-white">{copy.checking}</div>;
-  if (user) return <Home />;
+  if (user) return <div className="flex min-h-screen items-center justify-center bg-[#071525] text-white">{copy.checking}</div>;
 
   return (
     <div dir={direction} className="min-h-[100svh] overflow-x-hidden bg-[#071525] text-white">
