@@ -1,10 +1,9 @@
 import { Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import Home from "@/pages/Home";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -114,13 +113,20 @@ export default function LoginPage() {
   const login = trpc.auth.testLogin.useMutation({ onSuccess: (result) => {
     toast.success(copy.toastSignedIn);
     const next = new URLSearchParams(window.location.search).get("next");
-    const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : result.next ?? (result.role === "admin" ? "/admin" : "/");
+    const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : result.next ?? (result.role === "admin" ? "/admin" : "/dashboard");
     setLocation(safeNext);
   }, onError: (error) => { if (error.message === "VERIFY_EMAIL_REQUIRED") { toast.error(language === "ar" ? "تحقق من بريدك الإلكتروني أولًا ثم ارجع لتسجيل الدخول." : language === "fr" ? "Vérifiez d’abord votre e-mail, puis reconnectez-vous." : "Verify your email first, then return to sign in."); return; } toast.error(error.message || copy.toastInvalid); } });
   const features = [copy.feat1, copy.feat2, copy.feat3];
+  useEffect(() => {
+    if (loading || !user) return;
+    const next = new URLSearchParams(window.location.search).get("next");
+    if (next?.startsWith("/") && !next.startsWith("//")) { setLocation(next); return; }
+    if (user.role === "admin") { setLocation("/admin"); return; }
+    setLocation("/dashboard");
+  }, [loading, user, setLocation]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#071525] text-white">{copy.checking}</div>;
-  if (user) return <Home />;
+  if (user) return <div className="flex min-h-screen items-center justify-center bg-[#071525] text-white">{copy.checking}</div>;
 
   return (
     <div dir={direction} className="min-h-[100svh] overflow-x-hidden bg-[#071525] text-white">
@@ -194,7 +200,7 @@ export default function LoginPage() {
               <button type="submit" disabled={login.isPending} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 text-sm font-black text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:opacity-60">{login.isPending ? copy.signingIn : copy.signIn}</button>
             </form>}
             <div className="my-6 flex items-center gap-3"><span className="h-px flex-1 bg-slate-200" /><span className="text-[11px] text-slate-400">{copy.or}</span><span className="h-px flex-1 bg-slate-200" /></div>
-            <button onClick={() => { window.location.href = "/api/oauth/google/start"; }} className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white text-sm font-bold transition hover:border-blue-300 hover:shadow-md"><span className="grid h-6 w-6 place-items-center rounded-full border border-slate-200 font-black text-blue-600">G</span>{copy.oauth}</button>
+            <button onClick={() => { const params = new URLSearchParams(window.location.search); const next = params.get("next"); const returnTo = next?.startsWith("/") && !next.startsWith("//") ? next : `${window.location.pathname}${window.location.search}${window.location.hash}`; window.location.href = `/api/oauth/google/start?returnTo=${encodeURIComponent(returnTo)}`; }} className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white text-sm font-bold transition hover:border-blue-300 hover:shadow-md"><span className="grid h-6 w-6 place-items-center rounded-full border border-slate-200 font-black text-blue-600">G</span>{copy.oauth}</button>
             <button type="button" onClick={() => setLocation("/register")} className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 text-sm font-black text-orange-700 transition hover:bg-orange-100">{copy.createAccount}</button>
             <p className="mt-6 text-center text-[11px] leading-6 text-slate-400">{copy.legal}</p>
           </div>

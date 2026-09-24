@@ -1,4 +1,4 @@
-import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState } from "@shared/const";
+import { COOKIE_NAME, TEST_SESSION_COOKIE, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState } from "@shared/const";
 import { parse as parseCookieHeader } from "cookie";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
@@ -12,7 +12,7 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 async function googleConfiguration(req: Request) {
-  const setting = await db.getIntegrationSetting("platform", "google_oauth");
+  const setting = await db.getIntegrationSetting("platform", "Google OAuth") ?? await db.getIntegrationSetting("platform", "google_oauth");
   if (setting?.status === "configured") {
     let meta: Record<string, string> = {};
     try { const parsed = setting.keyReference ? JSON.parse(setting.keyReference) : {}; if (parsed && typeof parsed === "object") meta = parsed; } catch { if (setting.keyReference) meta.clientId = setting.keyReference; }
@@ -21,18 +21,30 @@ async function googleConfiguration(req: Request) {
     try { const parsed = rawSecret ? JSON.parse(rawSecret) : {}; if (parsed && typeof parsed === "object") secret = parsed; } catch { if (rawSecret) secret.clientSecret = rawSecret; }
     if (meta.clientId && secret.clientSecret) return { clientId: meta.clientId, clientSecret: secret.clientSecret, redirectUri: meta.redirectUri || `${req.protocol}://${req.get("host")}/api/oauth/google/callback` };
   }
-  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) return { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, redirectUri: process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get("host")}/api/oauth/google/callback` };
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) return { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, redirectUri: process.env.GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT || `${req.protocol}://${req.get("host")}/api/oauth/google/callback` };
   return null;
 }
 
 function oauthNonce(res: Response) { const nonce = nanoid(32); res.cookie(OAUTH_STATE_COOKIE, nonce, { httpOnly: true, path: "/", maxAge: 600000, sameSite: "lax", secure: true }); return nonce; }
 function verifyOauthNonce(req: Request, state: string) { return Boolean(state && state === parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE]); }
+function safeReturnTo(value: string | undefined): string | null {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\") || /[\r\n]/.test(value)) return null;
+  try {
+    const parsed = new URL(value, "https://nfood.local");
+    if (parsed.origin !== "https://nfood.local") return null;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch { return null; }
+}
+const GOOGLE_RETURN_COOKIE = "nfood_google_return_to";
 
 export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/google/start", async (req: Request, res: Response) => {
     const config = await googleConfiguration(req);
     if (!config) return res.redirect(302, "/login?oauth=google_not_configured");
     const state = oauthNonce(res);
+    const returnTo = safeReturnTo(getQueryParam(req, "returnTo"));
+    if (returnTo) res.cookie(GOOGLE_RETURN_COOKIE, returnTo, { httpOnly: true, path: "/", maxAge: 600000, sameSite: "lax", secure: true });
+    else res.clearCookie(GOOGLE_RETURN_COOKIE, { path: "/" });
     const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     url.searchParams.set("client_id", config.clientId); url.searchParams.set("redirect_uri", config.redirectUri); url.searchParams.set("response_type", "code"); url.searchParams.set("scope", "openid email profile"); url.searchParams.set("state", state); url.searchParams.set("prompt", "select_account");
     return res.redirect(302, url.toString());
@@ -41,15 +53,36 @@ export function registerOAuthRoutes(app: Express) {
     const code = getQueryParam(req, "code"); const state = getQueryParam(req, "state");
     if (!code || !state || !verifyOauthNonce(req, state)) return res.redirect(302, "/login?oauth=invalid_state");
     res.clearCookie(OAUTH_STATE_COOKIE, { path: "/" });
+    const returnTo = safeReturnTo(parseCookieHeader(req.headers.cookie ?? "")[GOOGLE_RETURN_COOKIE]);
+    res.clearCookie(GOOGLE_RETURN_COOKIE, { path: "/" });
     try {
       const config = await googleConfiguration(req); if (!config) return res.redirect(302, "/login?oauth=google_not_configured");
       const tokenResponse = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ code, client_id: config.clientId, client_secret: config.clientSecret, redirect_uri: config.redirectUri, grant_type: "authorization_code" }) });
       if (!tokenResponse.ok) throw new Error("google_token_exchange_failed");
       const token = await tokenResponse.json() as { access_token?: string }; if (!token.access_token) throw new Error("google_access_token_missing");
       const infoResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { authorization: `Bearer ${token.access_token}` } }); if (!infoResponse.ok) throw new Error("google_userinfo_failed");
-      const info = await infoResponse.json() as { sub?: string; email?: string; name?: string }; if (!info.sub) throw new Error("google_subject_missing");
-      const openId = `google_${info.sub}`; await db.upsertUser({ openId, name: info.name ?? null, email: info.email ?? null, loginMethod: "google", lastSignedIn: new Date() });
-      const sessionToken = await sdk.createSessionToken(openId, { name: info.name || "", expiresInMs: ONE_YEAR_MS }); res.cookie(COOKIE_NAME, sessionToken, { ...getSessionCookieOptions(req), maxAge: ONE_YEAR_MS }); return res.redirect(302, "/");
+      const info = await infoResponse.json() as { sub?: string; email?: string; name?: string; email_verified?: boolean }; if (!info.sub) throw new Error("google_subject_missing");
+      const googleOpenId = `google_${info.sub}`;
+      const normalizedEmail = info.email?.trim().toLowerCase();
+      const existingGoogleUser = await db.getUserByOpenId(googleOpenId);
+      // A verified Google email is the canonical identity bridge. Prefer the existing
+      // NFOOD account for that email (including Super Admin) over an OAuth-only row
+      // that may have been created by an earlier sign-in attempt.
+      const existingEmailUser = info.email_verified && normalizedEmail ? await db.getUserByEmail(normalizedEmail) : undefined;
+      const sessionOpenId = existingEmailUser?.openId ?? existingGoogleUser?.openId ?? googleOpenId;
+      if (!existingGoogleUser && !existingEmailUser) await db.upsertUser({ openId: googleOpenId, name: info.name ?? null, email: normalizedEmail ?? null, loginMethod: "google", lastSignedIn: new Date() });
+      else await db.upsertUser({ openId: sessionOpenId, name: info.name ?? undefined, email: normalizedEmail ?? undefined, lastSignedIn: new Date() });
+      const user = await db.getUserByOpenId(sessionOpenId);
+      const sessionToken = await sdk.createSessionToken(sessionOpenId, { name: info.name || user?.name || "", expiresInMs: ONE_YEAR_MS });
+      const cookieOptions = getSessionCookieOptions(req);
+      // Switching from preview/password sessions to Google must not leave a
+      // competing test cookie that can shadow the newly authenticated account.
+      res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      if (user?.role === "admin") return res.redirect(302, "/admin");
+      if (returnTo) return res.redirect(302, returnTo);
+      const restaurantId = user ? await db.getMerchantRestaurantId(user.id) : null;
+      return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/customer-portal?oauth=google");
     } catch (error) { console.error("[Google OAuth] Callback failed", error); return res.redirect(302, "/login?oauth=google_failed"); }
   });
 

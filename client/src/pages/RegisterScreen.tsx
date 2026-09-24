@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { COUNTRIES, CURRENCIES, getCurrency } from "@shared/currencies";
 import { UI_LANGUAGES, languageMeta, useLanguage } from "@/contexts/LanguageContext";
+import { useMerchantOnboardingDraft } from "@/hooks/useMerchantOnboardingDraft";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import "./auth-scroll.css";
 
@@ -195,21 +196,22 @@ export default function RegisterScreen() {
     return live.length ? live : fallbackSectors;
   }, [liveSectors.data, language, fallbackSectors]);
   const [, setLocation] = useLocation();
-  const [step, setStep] = useState(1);
+  const { draft: onboardingDraft, patchDraft, resetDraft } = useMerchantOnboardingDraft();
+  const [step, setStep] = useState(() => onboardingDraft.step);
   const [done, setDone] = useState(false);
-  const [sector, setSector] = useState("restaurant");
+  const [sector, setSector] = useState(() => onboardingDraft.sector || "restaurant");
   const [languageCode] = useState(() => language);
-  const [form, setForm] = useState({ business: "", email: "", phone: "", city: "" });
-  const [countryCode, setCountryCode] = useState("SA");
-  const [currencyCode, setCurrencyCode] = useState("SAR");
+  const [form, setForm] = useState(() => ({ business: onboardingDraft.business, email: onboardingDraft.email, phone: onboardingDraft.phone, city: onboardingDraft.city }));
+  const [countryCode, setCountryCode] = useState(() => onboardingDraft.countryCode || "SA");
+  const [currencyCode, setCurrencyCode] = useState(() => onboardingDraft.currencyCode || "SAR");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [acceptedLegal, setAcceptedLegal] = useState(false);
   const registrationCaptcha = trpc.auth.registrationCaptcha.useQuery();
   const register = trpc.auth.registerRestaurant.useMutation({
-    onSuccess: () => { setDone(true); toast.success(copy.toastCreated); },
+    onSuccess: () => { resetDraft(); setDone(true); toast.success(copy.toastCreated); },
     onError: (error) => toast.error(error.message || copy.toastError),
   });
-  const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const update = (key: keyof typeof form, value: string) => { setForm((current) => ({ ...current, [key]: value })); patchDraft({ [key]: value }); };
   const arrow = direction === "rtl" ? "h-4 w-4" : "h-4 w-4 rotate-180";
   const country = useMemo(() => COUNTRIES.find((item) => item.code === countryCode) ?? COUNTRIES[0], [countryCode]);
   const selectedCurrency = getCurrency(currencyCode);
@@ -220,7 +222,7 @@ export default function RegisterScreen() {
   const validContact = form.business.trim().length >= 2 && /^\S+@\S+\.\S+$/.test(form.email.trim()) && form.phone.trim().length >= 7 && form.city.trim().length >= 2;
   const next = () => {
     if (step === 2 && !validContact) { toast.error(copy.toastValidation); return; }
-    setStep((current) => Math.min(3, current + 1));
+    setStep((current) => { const nextStep = Math.min(3, current + 1) as 1 | 2 | 3; patchDraft({ step: nextStep }); return nextStep; });
   };
   const submit = () => {
     if (!acceptedLegal) { toast.error(language === "ar" ? "يجب الموافقة على الشروط وسياسة الخصوصية" : language === "fr" ? "Vous devez accepter les conditions et la politique de confidentialité." : "You must accept the Terms and Privacy Policy."); return; }
@@ -314,7 +316,7 @@ export default function RegisterScreen() {
               <section className="space-y-7">
                 <div>
                   <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><Store className="h-4 w-4 text-orange-500" /><h3 className="font-black">{copy.chooseSector}</h3></div><span className="text-[11px] font-bold text-slate-400">{sectors.length} {copy.sectors}</span></div>
-                  {liveSectors.isLoading ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{Array.from({length:6}).map((_,i)=><div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-200/70" />)}</div> : <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{sectors.map(({ id }) => { const selected=sector===id; return <button type="button" key={id} onClick={()=>setSector(id)} className={`min-h-20 rounded-2xl border px-3 py-3 text-start text-sm font-black transition ${selected ? "border-orange-500 bg-orange-50 text-orange-900 ring-2 ring-orange-100" : "border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:bg-orange-50/40"}`}><span className="flex items-center gap-2"><Store className={`h-4 w-4 ${selected ? "text-orange-500" : "text-slate-400"}`} />{sectorLabel(id)}</span>{selected && <span className="mt-2 flex items-center gap-1 text-[10px] text-orange-600"><Check className="h-3 w-3" />{language==="ar"?"تم الاختيار":language==="fr"?"Sélectionné":"Selected"}</span>}</button>})}</div>}
+                  {liveSectors.isLoading ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{Array.from({length:6}).map((_,i)=><div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-200/70" />)}</div> : <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{sectors.map(({ id }) => { const selected=sector===id; return <button type="button" key={id} onClick={()=>{setSector(id);patchDraft({sector:id});}} className={`min-h-20 rounded-2xl border px-3 py-3 text-start text-sm font-black transition ${selected ? "border-orange-500 bg-orange-50 text-orange-900 ring-2 ring-orange-100" : "border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:bg-orange-50/40"}`}><span className="flex items-center gap-2"><Store className={`h-4 w-4 ${selected ? "text-orange-500" : "text-slate-400"}`} />{sectorLabel(id)}</span>{selected && <span className="mt-2 flex items-center gap-1 text-[10px] text-orange-600"><Check className="h-3 w-3" />{language==="ar"?"تم الاختيار":language==="fr"?"Sélectionné":"Selected"}</span>}</button>})}</div>}
                   {liveSectors.isError && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{language==="ar"?"تعذر تحديث القطاعات الآن؛ يمكنك المتابعة بالقطاعات الأساسية ثم تعديل النشاط لاحقًا.":language==="fr"?"Impossible d’actualiser les secteurs. Vous pouvez continuer avec les secteurs de base.":"Could not refresh sectors. You can continue with the core sectors."}</p>}
                   <p className="mt-2 text-[11px] leading-5 text-slate-400">{copy.accountLanguageLabel}: <strong>{languageLabel}</strong> · {copy.accountLanguageDesc}</p>
                 </div>
@@ -333,7 +335,7 @@ export default function RegisterScreen() {
                   </label>
                   <label className="block sm:col-span-2">
                     <span className="mb-2 flex items-center gap-2 text-xs font-bold text-slate-700"><MapPin className="h-4 w-4 text-orange-500" /> {copy.country}</span>
-                    <select value={countryCode} onChange={(event) => { setCountryCode(event.target.value); setCurrencyCode(COUNTRIES.find((item) => item.code === event.target.value)?.currencyCode ?? "SAR"); }} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400">
+                    <select value={countryCode} onChange={(event) => { setCountryCode(event.target.value); const nextCurrency = COUNTRIES.find((item) => item.code === event.target.value)?.currencyCode ?? "SAR"; setCurrencyCode(nextCurrency); patchDraft({ countryCode: event.target.value, currencyCode: nextCurrency }); }} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400">
                       {COUNTRIES.map((item) => <option key={item.code} value={item.code}>{countryName(item)}</option>)}
                     </select>
                   </label>
@@ -343,7 +345,7 @@ export default function RegisterScreen() {
                       <p className="text-[11px] font-bold text-emerald-700">{copy.autoCurrency}</p>
                       <p className="mt-1 text-sm font-black text-emerald-900">{currencyName(selectedCurrency)} · {selectedCurrency.code} ({selectedCurrency.symbol})</p>
                     </div>
-                    <select value={currencyCode} onChange={(event) => setCurrencyCode(event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400">
+                    <select value={currencyCode} onChange={(event) => { setCurrencyCode(event.target.value); patchDraft({ currencyCode: event.target.value }); }} className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400">
                       {CURRENCIES.map((item) => <option key={item.code} value={item.code}>{currencyName(item)} · {item.code} ({item.symbol})</option>)}
                     </select>
                   </label>
@@ -361,7 +363,7 @@ export default function RegisterScreen() {
                   </label>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setStep(1)} className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-500 hover:border-orange-200"><ArrowRight className={arrow} /> {copy.back}</button>
+                  <button type="button" onClick={() => { setStep(1); patchDraft({ step: 1 }); }} className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-500 hover:border-orange-200"><ArrowRight className={arrow} /> {copy.back}</button>
                   <button onClick={next} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#e76f3c] text-base font-bold text-white hover:bg-[#d85f2e]">{copy.continue} <ArrowLeft className={arrow} /></button>
                 </div>
               </section>
@@ -370,7 +372,7 @@ export default function RegisterScreen() {
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm">
                   <div className="flex items-center justify-between gap-3">
                     <div><p className="text-xs text-orange-700">{copy.businessName}</p><p className="mt-0.5 font-black">{form.business || "—"}</p></div>
-                    <button type="button" onClick={() => setStep(2)} className="text-xs font-bold text-orange-600">{copy.edit}</button>
+                    <button type="button" onClick={() => { setStep(2); patchDraft({ step: 2 }); }} className="text-xs font-bold text-orange-600">{copy.edit}</button>
                   </div>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs"><span className="block text-slate-400">{copy.countryCurrency}</span><span className="mt-0.5 block font-bold">{countryName(country)} · {selectedCurrency.code}</span></p>
@@ -395,7 +397,7 @@ export default function RegisterScreen() {
                   <span>{language === "ar" ? <>بإنشاء الحساب أوافق على <a href="/terms" target="_blank" className="font-bold text-orange-600">الشروط والأحكام</a> و<a href="/privacy" target="_blank" className="font-bold text-orange-600">سياسة الخصوصية</a>.</> : language === "fr" ? <>En créant le compte, j’accepte les <a href="/terms" target="_blank" className="font-bold text-orange-600">Conditions</a> et la <a href="/privacy" target="_blank" className="font-bold text-orange-600">Politique de confidentialité</a>.</> : <>By creating the account, I agree to the <a href="/terms" target="_blank" className="font-bold text-orange-600">Terms</a> and <a href="/privacy" target="_blank" className="font-bold text-orange-600">Privacy Policy</a>.</>}</span>
                 </label>
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setStep(2)} disabled={register.isPending} className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-500 hover:border-orange-200"><ArrowRight className={arrow} /> {copy.back}</button>
+                  <button type="button" onClick={() => { setStep(2); patchDraft({ step: 2 }); }} disabled={register.isPending} className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-500 hover:border-orange-200"><ArrowRight className={arrow} /> {copy.back}</button>
                   <button type="button" onClick={submit} disabled={register.isPending} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#e76f3c] text-base font-bold text-white hover:bg-[#d85f2e] disabled:opacity-60"><Lock className="h-4 w-4" /> {register.isPending ? copy.creating : copy.create}</button>
                 </div>
               </section>

@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import { and, eq } from "drizzle-orm";
 import { emailTemplates } from "../drizzle/schema";
-import { getDb } from "./db";
+import { decryptIntegrationSecret, getDb, getIntegrationSetting } from "./db";
 
 export type EmailLocale = "ar" | "en" | "fr";
 export type EmailEventKey = "account.welcome" | "account.email_verification" | "account.password_reset" | "account.otp" | "order.received" | "order.status" | "reservation.accepted" | "reservation.rejected" | "reservation.updated" | "reservation.cancelled" | "payment.receipt" | "driver.assignment";
@@ -23,7 +23,22 @@ const seeds: EmailTemplateSeed[] = [
   { eventKey: "driver.assignment", locale: "ar", subject: "تم إسناد طلب توصيل جديد #{{orderNumber}}", htmlBody: "<div dir=\"rtl\" style=\"font-family:Arial;line-height:1.8\"><h2>طلب توصيل جديد</h2><p>تم إسناد الطلب {{orderNumber}} إليك من {{restaurantName}}. العنوان: {{deliveryAddress}}.</p></div>", textBody: "تم إسناد الطلب {{orderNumber}} إليك من {{restaurantName}}. العنوان: {{deliveryAddress}}." },
 ];
 
-function transporter() { const host = process.env.SMTP_HOST || process.env.MAIL_HOST; const user = process.env.SMTP_USER || process.env.MAIL_USERNAME; const pass = process.env.SMTP_PASSWORD || process.env.MAIL_PASSWORD; if (!host || !user || !pass) return null; const port = Number(process.env.SMTP_PORT || process.env.MAIL_PORT || 587); return nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } }); }
+type SmtpRuntimeConfig = { host: string; port: number; user: string; pass: string; fromEmail: string; fromName?: string; secure: boolean };
+async function smtpRuntimeConfig(): Promise<SmtpRuntimeConfig | null> {
+  const setting = await getIntegrationSetting("platform", "SMTP") ?? await getIntegrationSetting("platform", "smtp");
+  if (setting?.status === "configured") {
+    let meta: Record<string, unknown> = {};
+    let secret: Record<string, unknown> = {};
+    try { const parsed = setting.keyReference ? JSON.parse(setting.keyReference) : {}; if (parsed && typeof parsed === "object") meta = parsed as Record<string, unknown>; } catch {}
+    try { const raw = setting.secretCiphertext ? decryptIntegrationSecret(setting.secretCiphertext) : ""; const parsed = raw ? JSON.parse(raw) : {}; if (parsed && typeof parsed === "object") secret = parsed as Record<string, unknown>; else if (raw) secret.password = raw; } catch { try { if (setting.secretCiphertext) secret.password = decryptIntegrationSecret(setting.secretCiphertext); } catch {} }
+    const host = String(meta.host ?? "").trim(); const user = String(meta.username ?? meta.user ?? "").trim(); const pass = String(secret.password ?? secret.pass ?? "").trim(); const port = Number(meta.port ?? 587);
+    if (host && user && pass && Number.isFinite(port)) return { host, port, user, pass, fromEmail: String(meta.fromEmail ?? user).trim() || user, fromName: String(meta.fromName ?? "NFOOD").trim() || "NFOOD", secure: meta.secure === true || String(meta.encryption ?? "").toLowerCase() === "ssl" || port === 465 };
+  }
+  const host = process.env.SMTP_HOST || process.env.MAIL_HOST; const user = process.env.SMTP_USER || process.env.MAIL_USERNAME; const pass = process.env.SMTP_PASSWORD || process.env.MAIL_PASSWORD;
+  if (!host || !user || !pass) return null; const port = Number(process.env.SMTP_PORT || process.env.MAIL_PORT || 587);
+  return { host, port, user, pass, fromEmail: process.env.SMTP_FROM_EMAIL || process.env.MAIL_FROM_ADDRESS || user, fromName: process.env.MAIL_FROM_NAME || "NFOOD", secure: port === 465 };
+}
+async function transporter() { const config = await smtpRuntimeConfig(); if (!config) return null; return { mailer: nodemailer.createTransport({ host: config.host, port: config.port, secure: config.secure, requireTLS: config.port === 587, auth: { user: config.user, pass: config.pass } }), config }; }
 function escape(value: unknown) { return String(value ?? "").replace(/[&<>\"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" })[character] ?? character); }
 export function renderEmailTemplate(template: string, data: Record<string, unknown>) { return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) => escape(data[key])); }
 
@@ -46,11 +61,11 @@ export async function getEffectiveEmailTemplate(input: { restaurantId?: number |
 }
 export async function sendTemplatedEmail(input: { to?: string | null; restaurantId?: number | null; eventKey: EmailEventKey; locale?: EmailLocale; data: Record<string, unknown> }) {
   if (!input.to) return { sent: false as const, skipped: "no-recipient" as const };
-  const mailer = transporter();
-  if (!mailer) return { sent: false as const, skipped: "smtp-not-configured" as const };
+  const transport = await transporter();
+  if (!transport) return { sent: false as const, skipped: "smtp-not-configured" as const };
   const template = await getEffectiveEmailTemplate(input);
   if (!template || ("isEnabled" in template && template.isEnabled === false)) return { sent: false as const, skipped: "template-disabled" as const };
-  await mailer.sendMail({ from: process.env.SMTP_FROM_EMAIL || process.env.MAIL_FROM_ADDRESS || process.env.SMTP_USER || process.env.MAIL_USERNAME || process.env.MAIL_USERNAME, to: input.to, subject: renderEmailTemplate(template.subject, input.data), text: renderEmailTemplate(template.textBody, input.data), html: renderEmailTemplate(template.htmlBody, input.data) });
+  await transport.mailer.sendMail({ from: transport.config.fromName ? `"${transport.config.fromName.replace(/"/g, "")}" <${transport.config.fromEmail}>` : transport.config.fromEmail, to: input.to, subject: renderEmailTemplate(template.subject, input.data), text: renderEmailTemplate(template.textBody, input.data), html: renderEmailTemplate(template.htmlBody, input.data) });
   return { sent: true as const };
 }
 export { seeds as emailTemplateSeeds };
