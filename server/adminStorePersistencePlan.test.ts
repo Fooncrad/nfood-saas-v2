@@ -30,6 +30,18 @@ describe("admin store persistence plan", () => {
     },
   );
 
+  it("creates a canonical primary branch plan with the tenant operational settings", () => {
+    const plan = buildAdminStorePersistencePlan({ ...base, sector: "grocery", marketplaceSector: null });
+    expect(plan.primaryBranch).toEqual({
+      name: "Nasser Cafe",
+      city: "Riyadh",
+      timezone: "Asia/Riyadh",
+      currencyCode: "SAR",
+      isActive: true,
+      isPrimary: true,
+    });
+  });
+
   it("canonicalizes restaurant aliases and persists restaurant operating modules", () => {
     const plan = buildAdminStorePersistencePlan({ ...base, sector: "restaurants", marketplaceSector: null });
     expect(plan.entity.sector).toBe("restaurant");
