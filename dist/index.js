@@ -7705,7 +7705,7 @@ async function smtpRuntimeConfig() {
 async function transporter() {
   const config = await smtpRuntimeConfig();
   if (!config) return null;
-  return { mailer: nodemailer.createTransport({ host: config.host, port: config.port, secure: config.secure, requireTLS: config.port === 587, auth: { user: config.user, pass: config.pass } }), config };
+  return { mailer: nodemailer.createTransport({ host: config.host, port: config.port, secure: config.secure, requireTLS: config.port === 587, auth: { user: config.user, pass: config.pass }, connectionTimeout: 15e3, greetingTimeout: 15e3, socketTimeout: 2e4 }), config };
 }
 function escape(value) {
   return String(value ?? "").replace(/[&<>\"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
@@ -7738,8 +7738,14 @@ async function sendTemplatedEmail(input) {
   if (!transport) return { sent: false, skipped: "smtp-not-configured" };
   const template = await getEffectiveEmailTemplate(input);
   if (!template || "isEnabled" in template && template.isEnabled === false) return { sent: false, skipped: "template-disabled" };
-  await transport.mailer.sendMail({ from: transport.config.fromName ? `"${transport.config.fromName.replace(/"/g, "")}" <${transport.config.fromEmail}>` : transport.config.fromEmail, to: input.to, subject: renderEmailTemplate(template.subject, input.data), text: renderEmailTemplate(template.textBody, input.data), html: renderEmailTemplate(template.htmlBody, input.data) });
-  return { sent: true };
+  try {
+    const info = await transport.mailer.sendMail({ from: transport.config.fromName ? `"${transport.config.fromName.replace(/"/g, "")}" <${transport.config.fromEmail}>` : transport.config.fromEmail, to: input.to, subject: renderEmailTemplate(template.subject, input.data), text: renderEmailTemplate(template.textBody, input.data), html: renderEmailTemplate(template.htmlBody, input.data) });
+    console.info("[Email] delivered", { eventKey: input.eventKey, recipientDomain: input.to.split("@")[1] ?? "unknown", messageId: info.messageId });
+    return { sent: true };
+  } catch (error) {
+    console.error("[Email] delivery failed", { eventKey: input.eventKey, recipientDomain: input.to.split("@")[1] ?? "unknown", error: error instanceof Error ? error.message : String(error) });
+    return { sent: false, skipped: "delivery-failed" };
+  }
 }
 
 // server/reservationEmail.ts
@@ -9296,6 +9302,7 @@ var appRouter = router({
       if (ownerPlan.mode === "create_identity" && emailVerificationToken) {
         const verificationDelivery = await sendEmailVerificationEmail({ to: email, customerName: `\u0645\u062F\u064A\u0631 ${input.restaurantName}`, verifyUrl: `${origin}/register?verify=${emailVerificationToken}`, restaurantId });
         verificationEmailDelivered = verificationDelivery.sent;
+        if (!verificationDelivery.sent) console.error("[Registration] verification email was not delivered", { restaurantId, recipientDomain: email.split("@")[1] ?? "unknown", reason: "skipped" in verificationDelivery ? verificationDelivery.skipped : "unknown" });
       }
       return { success: true, restaurantId, entityId, sector: input.sector, plan: input.plan, temporaryPassword, emailVerified: ownerPlan.mode === "reuse_verified_identity", emailVerificationRequired: ownerPlan.requiresEmailVerification, verificationEmailDelivered, reusedIdentity: ownerPlan.mode === "reuse_verified_identity" };
     }),
