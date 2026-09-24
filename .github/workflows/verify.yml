@@ -23,6 +23,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      - run: pnpm exec vitest run server/sensitive-permissions.test.ts server/rbac.test.ts client/src/dashboard-theme-shortcuts.test.ts
+      - run: pnpm exec vitest run server/sensitive-permissions.test.ts server/rbac.test.ts server/phase1-branch-controls.test.ts client/src/dashboard-theme-shortcuts.test.ts
       - run: pnpm i18n:check
       - run: pnpm build
