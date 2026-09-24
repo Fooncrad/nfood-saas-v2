@@ -51,8 +51,11 @@ export function registerOAuthRoutes(app: Express) {
       const googleOpenId = `google_${info.sub}`;
       const normalizedEmail = info.email?.trim().toLowerCase();
       const existingGoogleUser = await db.getUserByOpenId(googleOpenId);
-      const existingEmailUser = !existingGoogleUser && info.email_verified && normalizedEmail ? await db.getUserByEmail(normalizedEmail) : undefined;
-      const sessionOpenId = existingGoogleUser?.openId ?? existingEmailUser?.openId ?? googleOpenId;
+      // A verified Google email is the canonical identity bridge. Prefer the existing
+      // NFOOD account for that email (including Super Admin) over an OAuth-only row
+      // that may have been created by an earlier sign-in attempt.
+      const existingEmailUser = info.email_verified && normalizedEmail ? await db.getUserByEmail(normalizedEmail) : undefined;
+      const sessionOpenId = existingEmailUser?.openId ?? existingGoogleUser?.openId ?? googleOpenId;
       if (!existingGoogleUser && !existingEmailUser) await db.upsertUser({ openId: googleOpenId, name: info.name ?? null, email: normalizedEmail ?? null, loginMethod: "google", lastSignedIn: new Date() });
       else await db.upsertUser({ openId: sessionOpenId, name: info.name ?? undefined, email: normalizedEmail ?? undefined, lastSignedIn: new Date() });
       const user = await db.getUserByOpenId(sessionOpenId);
