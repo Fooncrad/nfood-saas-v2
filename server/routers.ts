@@ -623,7 +623,9 @@ export const appRouter = router({
     integrationSettings: protectedProcedure.input(z.object({ scope: z.enum(["platform", "restaurant"]), restaurantId: z.number().int().positive().optional() })).query(({ ctx, input }) => { if (input.scope === "platform" && !isAdminContext(ctx)) throw new TRPCError({ code: "FORBIDDEN", message: "Platform scope is restricted to Super Admin" }); if (input.scope === "restaurant") { if (!input.restaurantId) throw new TRPCError({ code: "BAD_REQUEST", message: "Restaurant scope is required" }); assertRestaurantAccess(ctx, input.restaurantId); } return listIntegrationSettings(input.scope, input.restaurantId); }),
     upsertIntegrationSetting: protectedProcedure.input(z.object({ scope: z.enum(["platform", "restaurant"]), restaurantId: z.number().int().positive().optional(), providerKey: z.string().trim().min(2).max(120), category: z.string().trim().min(2).max(80), status: z.enum(["not_configured", "configured", "disabled"]), keyReference: z.string().trim().max(180).optional(), secret: z.string().trim().max(4000).optional() })).mutation(async ({ ctx, input }) => { if (input.scope === "platform" && !isAdminContext(ctx)) throw new TRPCError({ code: "FORBIDDEN", message: "Platform scope is restricted to Super Admin" }); if (input.scope === "restaurant") { if (!input.restaurantId) throw new TRPCError({ code: "BAD_REQUEST", message: "Restaurant scope is required" }); assertRestaurantAccess(ctx, input.restaurantId); if (ctx.user?.role !== "admin" && ctx.user?.testRole !== "restaurant_admin") throw new TRPCError({ code: "FORBIDDEN", message: "إدارة أسرار التكامل متاحة لمدير المطعم فقط" }); } if (input.status === "configured" && input.keyReference?.startsWith("DEMO_")) throw new TRPCError({ code: "BAD_REQUEST", message: "Replace the demo integration reference before enabling this provider" }); const id = await upsertIntegrationSetting({ ...input, updatedByUserId: ctx.user.id }); return { success: true, id, status: input.status, secretStored: Boolean(input.secret) }; }),
     testIntegrationSetting: platformAdminProcedure.input(z.object({ providerKey: z.enum(["SMTP", "Google OAuth"]) })).mutation(async ({ input }) => {
-      const row = await getIntegrationSetting("platform", input.providerKey === "Google OAuth" ? "google_oauth" : input.providerKey).catch(() => null) ?? await getIntegrationSetting("platform", input.providerKey);
+      const row = input.providerKey === "Google OAuth"
+        ? (await getIntegrationSetting("platform", "Google OAuth") ?? await getIntegrationSetting("platform", "google_oauth"))
+        : await getIntegrationSetting("platform", input.providerKey);
       if (!row || row.status !== "configured") throw new TRPCError({ code: "BAD_REQUEST", message: "احفظ الإعداد وفعّله قبل الاختبار" });
       let meta: Record<string, string> = {};
       try { const parsed = row.keyReference ? JSON.parse(row.keyReference) : {}; if (parsed && typeof parsed === "object") meta = parsed; } catch { if (row.keyReference) meta.primary = row.keyReference; }
@@ -633,8 +635,16 @@ export const appRouter = router({
       if (input.providerKey === "SMTP") {
         const host = meta.host || meta.primary; const port = Number(meta.port || 587); const user = meta.username; const pass = secret.password;
         if (!host || !user || !pass) throw new TRPCError({ code: "BAD_REQUEST", message: "بيانات SMTP المحفوظة غير مكتملة" });
-        await nodemailer.createTransport({ host, port, secure: (meta.secure || "").toLowerCase() === "ssl" || port === 465, auth: { user, pass }, connectionTimeout: 8000 }).verify();
-        return { ok: true, message: "اتصال SMTP ناجح" };
+        try {
+          await nodemailer.createTransport({ host, port, secure: (meta.secure || "").toLowerCase() === "ssl" || port === 465, requireTLS: port === 587, auth: { user, pass }, connectionTimeout: 8000 }).verify();
+          return { ok: true, message: "اتصال SMTP ناجح" };
+        } catch (error: any) {
+          const code = String(error?.code ?? "");
+          const responseCode = Number(error?.responseCode ?? 0);
+          if (code === "EAUTH" || responseCode === 535) throw new TRPCError({ code: "BAD_REQUEST", message: "رفض خادم SMTP تسجيل الدخول (535). تحقق من اسم المستخدم وكلمة مرور صندوق البريد ثم احفظ كلمة المرور من جديد." });
+          if (code === "ETIMEDOUT" || code === "ESOCKET" || code === "ECONNECTION") throw new TRPCError({ code: "BAD_GATEWAY", message: "تعذر الاتصال بخادم SMTP. تحقق من Host وPort ونوع التشفير." });
+          throw new TRPCError({ code: "BAD_GATEWAY", message: "فشل اختبار SMTP. تحقق من إعدادات البريد المحفوظة." });
+        }
       }
       const clientId = meta.clientId || meta.primary; const clientSecret = secret.clientSecret; const redirectUri = meta.redirectUri;
       if (!clientId || !clientSecret || !redirectUri) throw new TRPCError({ code: "BAD_REQUEST", message: "بيانات Google OAuth المحفوظة غير مكتملة" });
