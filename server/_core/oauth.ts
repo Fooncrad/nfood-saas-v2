@@ -27,12 +27,24 @@ async function googleConfiguration(req: Request) {
 
 function oauthNonce(res: Response) { const nonce = nanoid(32); res.cookie(OAUTH_STATE_COOKIE, nonce, { httpOnly: true, path: "/", maxAge: 600000, sameSite: "lax", secure: true }); return nonce; }
 function verifyOauthNonce(req: Request, state: string) { return Boolean(state && state === parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE]); }
+function safeReturnTo(value: string | undefined): string | null {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\") || /[\r\n]/.test(value)) return null;
+  try {
+    const parsed = new URL(value, "https://nfood.local");
+    if (parsed.origin !== "https://nfood.local") return null;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch { return null; }
+}
+const GOOGLE_RETURN_COOKIE = "nfood_google_return_to";
 
 export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/google/start", async (req: Request, res: Response) => {
     const config = await googleConfiguration(req);
     if (!config) return res.redirect(302, "/login?oauth=google_not_configured");
     const state = oauthNonce(res);
+    const returnTo = safeReturnTo(getQueryParam(req, "returnTo"));
+    if (returnTo) res.cookie(GOOGLE_RETURN_COOKIE, returnTo, { httpOnly: true, path: "/", maxAge: 600000, sameSite: "lax", secure: true });
+    else res.clearCookie(GOOGLE_RETURN_COOKIE, { path: "/" });
     const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     url.searchParams.set("client_id", config.clientId); url.searchParams.set("redirect_uri", config.redirectUri); url.searchParams.set("response_type", "code"); url.searchParams.set("scope", "openid email profile"); url.searchParams.set("state", state); url.searchParams.set("prompt", "select_account");
     return res.redirect(302, url.toString());
@@ -41,6 +53,8 @@ export function registerOAuthRoutes(app: Express) {
     const code = getQueryParam(req, "code"); const state = getQueryParam(req, "state");
     if (!code || !state || !verifyOauthNonce(req, state)) return res.redirect(302, "/login?oauth=invalid_state");
     res.clearCookie(OAUTH_STATE_COOKIE, { path: "/" });
+    const returnTo = safeReturnTo(parseCookieHeader(req.headers.cookie ?? "")[GOOGLE_RETURN_COOKIE]);
+    res.clearCookie(GOOGLE_RETURN_COOKIE, { path: "/" });
     try {
       const config = await googleConfiguration(req); if (!config) return res.redirect(302, "/login?oauth=google_not_configured");
       const tokenResponse = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ code, client_id: config.clientId, client_secret: config.clientSecret, redirect_uri: config.redirectUri, grant_type: "authorization_code" }) });
@@ -66,8 +80,9 @@ export function registerOAuthRoutes(app: Express) {
       res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
       if (user?.role === "admin") return res.redirect(302, "/admin");
+      if (returnTo) return res.redirect(302, returnTo);
       const restaurantId = user ? await db.getMerchantRestaurantId(user.id) : null;
-      return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/register?oauth=google");
+      return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/customer-portal?oauth=google");
     } catch (error) { console.error("[Google OAuth] Callback failed", error); return res.redirect(302, "/login?oauth=google_failed"); }
   });
 
