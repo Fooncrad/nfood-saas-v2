@@ -51,3 +51,19 @@ describe("registration runtime plan", () => {
     })).toThrow("البريد لا يطابق الحساب المسجّل دخوله");
   });
 });
+
+
+describe("registration owner persistence integration contract", () => {
+  it("keeps verified same-account linking available to the registration runtime", () => {
+    const plan = buildRegistrationRuntimePlan({
+      sector: "fashion",
+      submittedEmail: "OWNER@EXAMPLE.COM ",
+      existingUser: { id: 42, email: "owner@example.com", emailVerified: true },
+      authenticatedUser: { id: 42, email: "owner@example.com", emailVerified: true },
+      marketplaceSectorExists: false,
+      marketplaceSectorActive: false,
+    });
+    expect(plan.normalizedEmail).toBe("owner@example.com");
+    expect(plan.account).toEqual({ action: "link", userId: 42 });
+  });
+});
