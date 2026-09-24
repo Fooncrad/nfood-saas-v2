@@ -67,7 +67,7 @@ export function registerOAuthRoutes(app: Express) {
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
       if (user?.role === "admin") return res.redirect(302, "/admin");
       const restaurantId = user ? await db.getMerchantRestaurantId(user.id) : null;
-      return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/register?oauth=google");
+      // Google sign-in authenticates the person, not a merchant role.\n      // Users without an owned activity continue as customers in the marketplace;\n      // creating a store remains an explicit action from the authenticated experience.\n      return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/marketplace?oauth=google");
     } catch (error) { console.error("[Google OAuth] Callback failed", error); return res.redirect(302, "/login?oauth=google_failed"); }
   });
 
