@@ -24,6 +24,7 @@ import { previewMenuFromUrl, type ImportedMenuPreview } from "./menuImport";
 import { AFRICAN_CURRENCY_CODES } from "@shared/africanCurrencies";
 import { marketplaceRouter } from "./marketplaceRouter";
 import { requireScopedPermission } from "./rbac";
+import { buildRegistrationRuntimePlan } from "./registrationRuntimePlan";
 
 const SECTOR_ALIAS: Record<string, string> = { veg: "vegetables", grocery: "grocery", laundry: "laundry", auto: "automotive", barber: "beauty_salon", public: "public_works", fashion: "fashion", restaurant: "restaurant", sweets: "sweets" };
 
