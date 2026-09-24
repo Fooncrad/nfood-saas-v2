@@ -38,7 +38,7 @@ async function smtpRuntimeConfig(): Promise<SmtpRuntimeConfig | null> {
   if (!host || !user || !pass) return null; const port = Number(process.env.SMTP_PORT || process.env.MAIL_PORT || 587);
   return { host, port, user, pass, fromEmail: process.env.SMTP_FROM_EMAIL || process.env.MAIL_FROM_ADDRESS || user, fromName: process.env.MAIL_FROM_NAME || "NFOOD", secure: port === 465 };
 }
-async function transporter() { const config = await smtpRuntimeConfig(); if (!config) return null; return { mailer: nodemailer.createTransport({ host: config.host, port: config.port, secure: config.secure, requireTLS: config.port === 587, auth: { user: config.user, pass: config.pass } }), config }; }
+async function transporter() { const config = await smtpRuntimeConfig(); if (!config) return null; return { mailer: nodemailer.createTransport({ host: config.host, port: config.port, secure: config.secure, requireTLS: config.port === 587, auth: { user: config.user, pass: config.pass }, connectionTimeout: 15_000, greetingTimeout: 15_000, socketTimeout: 20_000 }), config }; }
 function escape(value: unknown) { return String(value ?? "").replace(/[&<>\"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" })[character] ?? character); }
 export function renderEmailTemplate(template: string, data: Record<string, unknown>) { return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) => escape(data[key])); }
 
@@ -65,7 +65,13 @@ export async function sendTemplatedEmail(input: { to?: string | null; restaurant
   if (!transport) return { sent: false as const, skipped: "smtp-not-configured" as const };
   const template = await getEffectiveEmailTemplate(input);
   if (!template || ("isEnabled" in template && template.isEnabled === false)) return { sent: false as const, skipped: "template-disabled" as const };
-  await transport.mailer.sendMail({ from: transport.config.fromName ? `"${transport.config.fromName.replace(/"/g, "")}" <${transport.config.fromEmail}>` : transport.config.fromEmail, to: input.to, subject: renderEmailTemplate(template.subject, input.data), text: renderEmailTemplate(template.textBody, input.data), html: renderEmailTemplate(template.htmlBody, input.data) });
-  return { sent: true as const };
+  try {
+    const info = await transport.mailer.sendMail({ from: transport.config.fromName ? `"${transport.config.fromName.replace(/"/g, "")}" <${transport.config.fromEmail}>` : transport.config.fromEmail, to: input.to, subject: renderEmailTemplate(template.subject, input.data), text: renderEmailTemplate(template.textBody, input.data), html: renderEmailTemplate(template.htmlBody, input.data) });
+    console.info("[Email] delivered", { eventKey: input.eventKey, recipientDomain: input.to.split("@")[1] ?? "unknown", messageId: info.messageId });
+    return { sent: true as const };
+  } catch (error) {
+    console.error("[Email] delivery failed", { eventKey: input.eventKey, recipientDomain: input.to.split("@")[1] ?? "unknown", error: error instanceof Error ? error.message : String(error) });
+    return { sent: false as const, skipped: "delivery-failed" as const };
+  }
 }
 export { seeds as emailTemplateSeeds };
