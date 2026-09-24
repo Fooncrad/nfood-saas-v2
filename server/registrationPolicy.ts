@@ -61,3 +61,28 @@ export function resolveRegistrationAccount(input: RegistrationAccountPolicyInput
 
   return { action: "link", userId: input.existingUser.id };
 }
+
+export type MerchantOnboardingDecision =
+  | { allowed: true; normalizedEmail: string; account: { action: "create" } | { action: "link"; userId: number } }
+  | { allowed: false; normalizedEmail: string; reason: RegistrationAccountDecision extends { action: "reject"; reason: infer R } ? R : never };
+
+/**
+ * Single server-side decision for merchant onboarding. Tenant creation is
+ * deliberately independent from marketplace publication state, while existing
+ * email reuse remains bound to the same authenticated and verified identity.
+ * Routers should consume this result before creating restaurant/store records.
+ */
+export function resolveMerchantOnboarding(input: RegistrationSectorPolicyInput & RegistrationAccountPolicyInput): MerchantOnboardingDecision {
+  const normalizedEmail = normalizeRegistrationEmail(input.submittedEmail);
+  if (!canCreateTenantForSector(input)) {
+    // Kept as a defensive boundary if tenant policy ever gains a real platform restriction.
+    return { allowed: false, normalizedEmail, reason: "email_mismatch" };
+  }
+  const account = resolveRegistrationAccount({
+    submittedEmail: normalizedEmail,
+    existingUser: input.existingUser,
+    authenticatedUser: input.authenticatedUser,
+  });
+  if (account.action === "reject") return { allowed: false, normalizedEmail, reason: account.reason };
+  return { allowed: true, normalizedEmail, account };
+}
