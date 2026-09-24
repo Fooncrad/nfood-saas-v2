@@ -13,6 +13,9 @@ export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 // with "invalid oauth state". It returns void by design, so there is no URL to
 // stash across renders.
 export const startLogin = () => {
+  // Preserve the exact public/customer journey through OAuth. The server validates
+  // returnTo as same-origin relative before redirecting after authentication.
+  const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
@@ -26,6 +29,7 @@ export const startLogin = () => {
   url.searchParams.set("redirectUri", redirectUri);
   url.searchParams.set("state", state);
   url.searchParams.set("type", "signIn");
+  url.searchParams.set("returnTo", returnTo);
 
   window.location.href = url.toString();
 };
