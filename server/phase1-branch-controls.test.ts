@@ -6,16 +6,22 @@ import { dirname, resolve } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(resolve(here, "marketplaceRouter.ts"), "utf8");
 
+function procedureBlock(startMarker: string, nextMarker: string) {
+  const start = source.indexOf(startMarker);
+  expect(start, `${startMarker} must exist`).toBeGreaterThanOrEqual(0);
+  const end = source.indexOf(nextMarker, start + startMarker.length);
+  expect(end, `${nextMarker} must follow ${startMarker}`).toBeGreaterThan(start);
+  return source.slice(start, end);
+}
+
 describe("phase 1 restaurant branch controls", () => {
   it("scopes branch listing to the selected restaurant", () => {
-    expect(source).toContain("adminRestaurantBranches");
-    expect(source).toContain("eq(branches.restaurantId, input.restaurantId)");
+    const block = procedureBlock("adminRestaurantBranches", "adminCreateRestaurantBranch");
+    expect(block).toContain("eq(branches.restaurantId, input.restaurantId)");
   });
 
   it("validates the parent restaurant before creating a branch", () => {
-    const start = source.indexOf("adminCreateRestaurantBranch");
-    const end = source.indexOf("adminUpdateRestaurantBranch", start);
-    const block = source.slice(start, end);
+    const block = procedureBlock("adminCreateRestaurantBranch", "adminUpdateRestaurantBranch");
     expect(block).toContain("eq(restaurants.id, input.restaurantId)");
     expect(block).toContain('code: "NOT_FOUND"');
     expect(block).toContain('action: "branch.created"');
@@ -23,11 +29,10 @@ describe("phase 1 restaurant branch controls", () => {
   });
 
   it("audits branch changes and never accepts restaurantId in the update payload", () => {
-    const start = source.indexOf("adminUpdateRestaurantBranch");
-    const end = source.indexOf("adminUpdateStore", start);
-    const block = source.slice(start, end);
+    const block = procedureBlock("adminUpdateRestaurantBranch", "adminUpdateStore");
+    const inputSchema = block.slice(0, block.indexOf(".mutation"));
     expect(block).toContain('action: "branch.updated"');
-    expect(block).toContain("id: z.number().int().positive()");
-    expect(block).not.toContain("restaurantId: z.number()");
+    expect(inputSchema).toContain("id: z.number().int().positive()");
+    expect(inputSchema).not.toContain("restaurantId:");
   });
 });
