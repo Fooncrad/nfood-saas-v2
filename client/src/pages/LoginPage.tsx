@@ -121,8 +121,9 @@ export default function LoginPage() {
     if (loading || !user) return;
     const next = new URLSearchParams(window.location.search).get("next");
     if (next?.startsWith("/") && !next.startsWith("//")) { setLocation(next); return; }
-    if (user.role === "admin") { setLocation("/admin"); return; }
-    setLocation("/dashboard");
+    if (user.role === "admin" || user.accountRole === "admin") { setLocation("/admin"); return; }
+    if (user.accountRole === "restaurant_admin") { setLocation("/restaurant/dashboard"); return; }
+    setLocation("/customer-portal");
   }, [loading, user, setLocation]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#071525] text-white">{copy.checking}</div>;
