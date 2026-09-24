@@ -239,6 +239,7 @@ interface CentralAdminCommandCenterProps {
   userName?: string;
   userEmail?: string;
   onLogout?: () => void;
+  onOpenStore?: () => void;
   pendingTransferCount?: number;
   transferBannerDismissed?: boolean;
   onOpenTransfers?: () => void;
@@ -255,6 +256,7 @@ export function CentralAdminCommandCenter({
   userName,
   userEmail,
   onLogout,
+  onOpenStore,
   pendingTransferCount = 0,
   transferBannerDismissed = false,
   onOpenTransfers,
@@ -403,6 +405,12 @@ export function CentralAdminCommandCenter({
           </div>
           <p className="mt-1 text-[11px] leading-5 text-slate-400">{copy.helpBody}</p>
         </div>
+        {onOpenStore && (
+          <button type="button" onClick={onOpenStore} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-3 py-2.5 text-xs font-black text-white transition hover:bg-orange-600">
+            <Store className="h-4 w-4" />
+            {language === "ar" ? "الدخول إلى المتاجر" : "Open store workspace"}
+          </button>
+        )}
         <div className="mt-3 flex items-center gap-2 rounded-xl px-1">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-white">
             {(userName ?? "A").charAt(0).toUpperCase()}
