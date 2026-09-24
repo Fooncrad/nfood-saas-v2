@@ -3,6 +3,7 @@ import {
   canCreateTenantForSector,
   isSameRegistrationAccount,
   normalizeRegistrationEmail,
+  resolveMerchantOnboarding,
   resolveRegistrationAccount,
 } from "./registrationPolicy";
 
@@ -10,13 +11,7 @@ describe("registration onboarding policy", () => {
   it.each(["restaurant", "cars", "real-estate", "grocery", "laundry", "perfumes"])(
     "does not require marketplace catalogue activation for %s tenant creation",
     (sector) => {
-      expect(
-        canCreateTenantForSector({
-          sector,
-          marketplaceSectorExists: false,
-          marketplaceSectorActive: false,
-        }),
-      ).toBe(true);
+      expect(canCreateTenantForSector({ sector, marketplaceSectorExists: false, marketplaceSectorActive: false })).toBe(true);
     },
   );
 
@@ -34,33 +29,30 @@ describe("registration onboarding policy", () => {
   });
 
   it("requires sign-in before an existing email can be linked", () => {
-    expect(resolveRegistrationAccount({
-      submittedEmail: "owner@example.com",
-      existingUser: { id: 7, email: "owner@example.com", emailVerified: true },
-    })).toEqual({ action: "reject", reason: "sign_in_required" });
+    expect(resolveRegistrationAccount({ submittedEmail: "owner@example.com", existingUser: { id: 7, email: "owner@example.com", emailVerified: true } })).toEqual({ action: "reject", reason: "sign_in_required" });
   });
 
   it("links only the same authenticated and verified existing account", () => {
-    expect(resolveRegistrationAccount({
-      submittedEmail: " OWNER@EXAMPLE.COM ",
-      existingUser: { id: 7, email: "owner@example.com", emailVerified: true },
-      authenticatedUser: { id: 7, email: "Owner@Example.com", emailVerified: true },
-    })).toEqual({ action: "link", userId: 7 });
+    expect(resolveRegistrationAccount({ submittedEmail: " OWNER@EXAMPLE.COM ", existingUser: { id: 7, email: "owner@example.com", emailVerified: true }, authenticatedUser: { id: 7, email: "Owner@Example.com", emailVerified: true } })).toEqual({ action: "link", userId: 7 });
   });
 
   it("rejects an authenticated different user even when an existing email is known", () => {
-    expect(resolveRegistrationAccount({
-      submittedEmail: "owner@example.com",
-      existingUser: { id: 7, email: "owner@example.com", emailVerified: true },
-      authenticatedUser: { id: 8, email: "other@example.com", emailVerified: true },
-    })).toEqual({ action: "reject", reason: "email_mismatch" });
+    expect(resolveRegistrationAccount({ submittedEmail: "owner@example.com", existingUser: { id: 7, email: "owner@example.com", emailVerified: true }, authenticatedUser: { id: 8, email: "other@example.com", emailVerified: true } })).toEqual({ action: "reject", reason: "email_mismatch" });
   });
 
   it("does not link an unverified existing identity", () => {
-    expect(resolveRegistrationAccount({
-      submittedEmail: "owner@example.com",
-      existingUser: { id: 7, email: "owner@example.com", emailVerified: false },
-      authenticatedUser: { id: 7, email: "owner@example.com", emailVerified: false },
-    })).toEqual({ action: "reject", reason: "email_verification_required" });
+    expect(resolveRegistrationAccount({ submittedEmail: "owner@example.com", existingUser: { id: 7, email: "owner@example.com", emailVerified: false }, authenticatedUser: { id: 7, email: "owner@example.com", emailVerified: false } })).toEqual({ action: "reject", reason: "email_verification_required" });
+  });
+
+  it("combines sector independence and normalized new-email creation in one router decision", () => {
+    expect(resolveMerchantOnboarding({ sector: "automotive", marketplaceSectorExists: false, marketplaceSectorActive: false, submittedEmail: " New@Example.COM " })).toEqual({ allowed: true, normalizedEmail: "new@example.com", account: { action: "create" } });
+  });
+
+  it("combines existing verified identity linking without marketplace coupling", () => {
+    expect(resolveMerchantOnboarding({ sector: "real-estate", marketplaceSectorExists: false, marketplaceSectorActive: false, submittedEmail: "OWNER@example.com", existingUser: { id: 42, email: "owner@example.com", emailVerified: true }, authenticatedUser: { id: 42, email: "owner@example.com", emailVerified: true } })).toEqual({ allowed: true, normalizedEmail: "owner@example.com", account: { action: "link", userId: 42 } });
+  });
+
+  it("keeps takeover prevention in the combined router decision", () => {
+    expect(resolveMerchantOnboarding({ sector: "grocery", submittedEmail: "owner@example.com", existingUser: { id: 42, email: "owner@example.com", emailVerified: true } })).toEqual({ allowed: false, normalizedEmail: "owner@example.com", reason: "sign_in_required" });
   });
 });
