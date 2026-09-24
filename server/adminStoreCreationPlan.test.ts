@@ -33,6 +33,31 @@ describe("admin store creation plan", () => {
     expect(plan.modules).toContain("restaurant_tables");
   });
 
+  it.each([["restaurants", "restaurant"], ["cars", "automotive"], ["real_estate", "real-estate"]])(
+    "canonicalizes legacy sector %s to %s without changing marketplace independence",
+    (sector, canonical) => {
+      const plan = buildAdminStoreCreationPlan({ requestedActive: true, marketplaceSector: null, primaryLanguage: "AR-SA", sector });
+      expect(plan.sector).toBe(canonical);
+      expect(plan.primaryLanguage).toBe("ar");
+      expect(plan.canCreateStore).toBe(true);
+      expect(plan.isPublished).toBe(false);
+      expect(plan.languages).toEqual(["ar", "en", "fr"]);
+    },
+  );
+
+  it("gives the restaurants alias the same restaurant modules", () => {
+    const plan = buildAdminStoreCreationPlan({ requestedActive: true, marketplaceSector: null, primaryLanguage: "en-US", sector: "restaurants" });
+    expect(plan.modules).toContain("reservations");
+    expect(plan.modules).toContain("restaurant_tables");
+    expect(plan.modules).toContain("kitchen");
+  });
+
+  it("falls back unsupported primary locales to Arabic while retaining AR/EN/FR", () => {
+    const plan = buildAdminStoreCreationPlan({ requestedActive: true, marketplaceSector: null, primaryLanguage: "de-DE", sector: "grocery" });
+    expect(plan.primaryLanguage).toBe("ar");
+    expect(plan.languages).toEqual(["ar", "en", "fr"]);
+  });
+
   it("keeps an inactive activity private even when its marketplace sector is active", () => {
     const plan = buildAdminStoreCreationPlan({
       requestedActive: false,
