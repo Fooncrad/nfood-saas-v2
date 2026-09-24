@@ -35,6 +35,6 @@ export function buildRegistrationRuntimePlan(input: RegistrationRuntimePlanInput
   return {
     normalizedEmail: account.normalizedEmail,
     account: decision.account,
-    sector: decision.sector,
+    sector: input.sector,
   } as const;
 }
