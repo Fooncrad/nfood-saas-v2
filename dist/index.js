@@ -3326,8 +3326,13 @@ async function getUserByOpenId(openId) {
 async function getUserByEmail(email) {
   const db = await getDb();
   if (!db) return void 0;
-  const result = await db.select().from(users).where(eq2(users.email, email.trim().toLowerCase())).limit(1);
-  return result[0];
+  const normalizedEmail = email.trim().toLowerCase();
+  const result = await db.select().from(users).where(eq2(users.email, normalizedEmail));
+  if (!result.length) return void 0;
+  return result.sort((a, b) => {
+    const priority = (user) => user.role === "admin" || user.accountRole === "admin" ? 3 : user.accountRole === "restaurant_admin" ? 2 : 1;
+    return priority(b) - priority(a) || a.id - b.id;
+  })[0];
 }
 async function listRestaurants(restaurantId) {
   const db = await getDb();
@@ -5015,8 +5020,8 @@ function registerOAuthRoutes(app) {
       const cookieOptions = getSessionCookieOptions(req);
       res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      if (user?.role === "admin") return res.redirect(302, "/admin");
-      if (returnTo) return res.redirect(302, returnTo);
+      if (user?.role === "admin" || user?.accountRole === "admin") return res.redirect(302, "/admin");
+      if (returnTo && !/^\/login(?:[/?#]|$)/.test(returnTo)) return res.redirect(302, returnTo);
       const restaurantId = user ? await getMerchantRestaurantId(user.id) : null;
       return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/customer-portal?oauth=google");
     } catch (error) {
@@ -7705,7 +7710,7 @@ async function smtpRuntimeConfig() {
 async function transporter() {
   const config = await smtpRuntimeConfig();
   if (!config) return null;
-  return { mailer: nodemailer.createTransport({ host: config.host, port: config.port, secure: config.secure, requireTLS: config.port === 587, auth: { user: config.user, pass: config.pass } }), config };
+  return { mailer: nodemailer.createTransport({ host: config.host, port: config.port, secure: config.secure, requireTLS: config.port === 587, auth: { user: config.user, pass: config.pass }, connectionTimeout: 15e3, greetingTimeout: 15e3, socketTimeout: 2e4 }), config };
 }
 function escape(value) {
   return String(value ?? "").replace(/[&<>\"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
@@ -7738,8 +7743,14 @@ async function sendTemplatedEmail(input) {
   if (!transport) return { sent: false, skipped: "smtp-not-configured" };
   const template = await getEffectiveEmailTemplate(input);
   if (!template || "isEnabled" in template && template.isEnabled === false) return { sent: false, skipped: "template-disabled" };
-  await transport.mailer.sendMail({ from: transport.config.fromName ? `"${transport.config.fromName.replace(/"/g, "")}" <${transport.config.fromEmail}>` : transport.config.fromEmail, to: input.to, subject: renderEmailTemplate(template.subject, input.data), text: renderEmailTemplate(template.textBody, input.data), html: renderEmailTemplate(template.htmlBody, input.data) });
-  return { sent: true };
+  try {
+    const info = await transport.mailer.sendMail({ from: transport.config.fromName ? `"${transport.config.fromName.replace(/"/g, "")}" <${transport.config.fromEmail}>` : transport.config.fromEmail, to: input.to, subject: renderEmailTemplate(template.subject, input.data), text: renderEmailTemplate(template.textBody, input.data), html: renderEmailTemplate(template.htmlBody, input.data) });
+    console.info("[Email] delivered", { eventKey: input.eventKey, recipientDomain: input.to.split("@")[1] ?? "unknown", messageId: info.messageId });
+    return { sent: true };
+  } catch (error) {
+    console.error("[Email] delivery failed", { eventKey: input.eventKey, recipientDomain: input.to.split("@")[1] ?? "unknown", error: error instanceof Error ? error.message : String(error) });
+    return { sent: false, skipped: "delivery-failed" };
+  }
 }
 
 // server/reservationEmail.ts
@@ -9296,6 +9307,7 @@ var appRouter = router({
       if (ownerPlan.mode === "create_identity" && emailVerificationToken) {
         const verificationDelivery = await sendEmailVerificationEmail({ to: email, customerName: `\u0645\u062F\u064A\u0631 ${input.restaurantName}`, verifyUrl: `${origin}/register?verify=${emailVerificationToken}`, restaurantId });
         verificationEmailDelivered = verificationDelivery.sent;
+        if (!verificationDelivery.sent) console.error("[Registration] verification email was not delivered", { restaurantId, recipientDomain: email.split("@")[1] ?? "unknown", reason: "skipped" in verificationDelivery ? verificationDelivery.skipped : "unknown" });
       }
       return { success: true, restaurantId, entityId, sector: input.sector, plan: input.plan, temporaryPassword, emailVerified: ownerPlan.mode === "reuse_verified_identity", emailVerificationRequired: ownerPlan.requiresEmailVerification, verificationEmailDelivered, reusedIdentity: ownerPlan.mode === "reuse_verified_identity" };
     }),
