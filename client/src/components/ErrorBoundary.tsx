@@ -1,6 +1,7 @@
 import { AlertTriangle, Copy, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { LANGUAGE_STORAGE_KEY } from "@/contexts/LanguageContext";
 
 type Props = { children: ReactNode };
 type State = { hasError: boolean; error: Error | null; requestId: string };
@@ -15,7 +16,7 @@ const errorCopy: Record<ErrorLanguage, { dir: "rtl" | "ltr"; eyebrow: string; ti
 
 function getErrorLanguage(): ErrorLanguage {
   if (typeof window === "undefined") return "ar";
-  const stored = window.localStorage.getItem("nfood-dashboard-language");
+  const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
   return stored === "en" || stored === "fr" || stored === "ur" ? stored : "ar";
 }
 
