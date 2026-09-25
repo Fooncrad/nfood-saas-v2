@@ -24,7 +24,7 @@ type AddonDraft = {
 const emptyDraft: AddonDraft = {
   menuItemId: "",
   name: "",
-  groupName: "الإضافات الاختيارية",
+  groupName: "Optional add-ons",
   price: "0",
   stockQuantity: "0",
   isRequired: false,
