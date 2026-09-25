@@ -3,7 +3,7 @@ import {
   Activity, Bell, ChefHat, ChevronDown, CircleDollarSign, Clock3, Eye, LayoutDashboard,
   Menu as MenuIcon, Package, Plus, Search, Settings2, ShoppingBag, Store, Table2,
   Users, Utensils, WalletCards, Zap, CheckCircle2, ArrowUpLeft, MoreHorizontal,
-  Truck, Megaphone, Boxes, ShieldCheck, TrendingDown
+  Truck, Megaphone, Boxes, ShieldCheck, TrendingDown, ImagePlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
