@@ -115,23 +115,36 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
 
+      const normalizedEmail = userInfo.email?.trim().toLowerCase();
+      const existingEmailUser = normalizedEmail ? await db.getUserByEmail(normalizedEmail) : undefined;
+      const sessionOpenId = existingEmailUser?.openId ?? userInfo.openId;
+
+      // Reuse an existing NFOOD identity for the same email instead of creating
+      // a second customer row (especially for the platform administrator).
       await db.upsertUser({
-        openId: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+        openId: sessionOpenId,
+        name: userInfo.name || existingEmailUser?.name || null,
+        email: normalizedEmail ?? null,
+        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? existingEmailUser?.loginMethod ?? null,
         lastSignedIn: new Date(),
       });
 
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || "",
+      const user = await db.getUserByOpenId(sessionOpenId);
+      const sessionToken = await sdk.createSessionToken(sessionOpenId, {
+        name: userInfo.name || user?.name || "",
         expiresInMs: ONE_YEAR_MS,
       });
 
       const cookieOptions = getSessionCookieOptions(req);
+      // Never allow an older password/test session to shadow the newly selected
+      // OAuth identity when users switch accounts or roles.
+      res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
+      res.clearCookie(COOKIE_NAME, cookieOptions);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/");
+      if (user?.role === "admin") return res.redirect(302, "/admin");
+      const restaurantId = user ? await db.getMerchantRestaurantId(user.id) : null;
+      return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/customer-portal");
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });
