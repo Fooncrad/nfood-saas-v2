@@ -42,7 +42,11 @@ export function getSessionCookieOptions(
   return {
     httpOnly: true,
     path: "/",
-    sameSite: isSecureRequest(req) ? "none" : "lax",
+    // Authentication is same-origin after the OAuth callback. Lax is sufficient
+    // for top-level OAuth redirects and is more reliable across browsers/proxies
+    // than SameSite=None, which some clients reject when TLS termination metadata
+    // is inconsistent.
+    sameSite: "lax",
     secure: isSecureRequest(req),
   };
 }
