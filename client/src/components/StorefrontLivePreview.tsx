@@ -61,8 +61,8 @@ function cardColor(settings: StorefrontSettings) {
   if (settings.menuTemplate === "glass") return "rgba(255,255,255,.08)";
   if (settings.themeMode === "dark") return "#1b2432";
   if (settings.menuTemplate === "bistro") return "#fffaf4";
-  if (settings.menuTemplate === "market") return settings.themeMode === "dark" ? "#172033" : "#ffffff";
-  if (settings.menuTemplate === "signature") return settings.themeMode === "dark" ? "#1f2937" : "#ffffff";
+  if (settings.menuTemplate === "market") return "#ffffff";
+  if (settings.menuTemplate === "signature") return "#ffffff";
   return "#ffffff";
 }
 
