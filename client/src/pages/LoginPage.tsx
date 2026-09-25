@@ -100,7 +100,7 @@ const loginCopy = {
 export default function LoginPage() {
   const { language, direction } = useLanguage();
   const copy = language === "fr" ? loginCopy.fr : language === "en" ? loginCopy.en : loginCopy.ar;
-  const { user, loading } = useAuth();
+  const { user, loading, refresh } = useAuth();
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -110,28 +110,25 @@ export default function LoginPage() {
   const [resetConfirm, setResetConfirm] = useState("");
   const requestReset = trpc.auth.requestPasswordReset.useMutation({ onSuccess: () => toast.success(copy.resetSent), onError: (error) => toast.error(error.message) });
   const completeReset = trpc.auth.resetPassword.useMutation({ onSuccess: () => { toast.success(copy.resetDone); setResetMode(false); window.history.replaceState({}, "", "/login"); }, onError: (error) => toast.error(error.message) });
-  const login = trpc.auth.testLogin.useMutation({ onSuccess: (result) => {
+  const login = trpc.auth.testLogin.useMutation({ onSuccess: async (result) => {
     toast.success(copy.toastSignedIn);
+    // The login mutation sets the session cookie on the response, but auth.me may
+    // still contain the pre-login anonymous cache. Refresh it before leaving the
+    // login route, then use a document navigation so every route guard starts from
+    // the newly authenticated server session.
+    await refresh();
     const next = new URLSearchParams(window.location.search).get("next");
     const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : result.next ?? (result.role === "admin" ? "/admin" : "/dashboard");
-    setLocation(safeNext);
-  }, onError: (error) => {
-    if (error.message === "VERIFY_EMAIL_REQUIRED") { toast.error(language === "ar" ? "تحقق من بريدك الإلكتروني أولًا ثم ارجع لتسجيل الدخول." : language === "fr" ? "Vérifiez d’abord votre e-mail, puis reconnectez-vous." : "Verify your email first, then return to sign in."); return; }
-    if (error.message === "PASSWORD_SETUP_REQUIRED") {
-      toast.info(language === "ar" ? "هذا حساب قديم أو مرتبط بتسجيل خارجي. أرسلنا لك مسارًا آمنًا لتعيين كلمة المرور." : language === "fr" ? "Ce compte doit définir un mot de passe. Demandez un lien sécurisé de réinitialisation." : "This account needs a password. Request a secure reset link.");
-      setResetMode(false);
-      if (email.trim()) requestReset.mutate({ email: email.trim() });
-      return;
-    }
-    toast.error(error.message || copy.toastInvalid);
-  } });
+    window.location.assign(safeNext);
+  }, onError: (error) => { if (error.message === "VERIFY_EMAIL_REQUIRED") { toast.error(language === "ar" ? "تحقق من بريدك الإلكتروني أولًا ثم ارجع لتسجيل الدخول." : language === "fr" ? "Vérifiez d’abord votre e-mail, puis reconnectez-vous." : "Verify your email first, then return to sign in."); return; } toast.error(error.message || copy.toastInvalid); } });
   const features = [copy.feat1, copy.feat2, copy.feat3];
   useEffect(() => {
     if (loading || !user) return;
     const next = new URLSearchParams(window.location.search).get("next");
     if (next?.startsWith("/") && !next.startsWith("//")) { setLocation(next); return; }
-    if (user.role === "admin") { setLocation("/admin"); return; }
-    setLocation("/dashboard");
+    if (user.role === "admin" || user.accountRole === "admin") { setLocation("/admin"); return; }
+    if (user.accountRole === "restaurant_admin") { setLocation("/restaurant/dashboard"); return; }
+    setLocation("/customer-portal");
   }, [loading, user, setLocation]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#071525] text-white">{copy.checking}</div>;
