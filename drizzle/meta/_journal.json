@@ -1338,6 +1338,13 @@
       "when": 1790006000000,
       "tag": "0190_users_native_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 191,
+      "version": "5",
+      "when": 1790470000000,
+      "tag": "0191_menu_template_options",
+      "breakpoints": true
     }
   ]
 }
