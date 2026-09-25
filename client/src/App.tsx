@@ -7,7 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { DatabaseTranslationBridge } from "./components/DatabaseTranslationBridge";
 import NfoodsLoadingScreen from "./components/NfoodsLoadingScreen";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_STORAGE_KEY, LanguageProvider, languageStorageKey, isUiLanguage, useLanguage, type Language } from "./contexts/LanguageContext";
+import { LANGUAGE_STORAGE_KEY, LanguageProvider, isUiLanguage, useLanguage, type Language } from "./contexts/LanguageContext";
 const routeLoaders = {
   Home: () => import("./pages/Home"),
   SuperAdminApp: () => import("./pages/SuperAdminApp"),
@@ -115,14 +115,10 @@ function AppContent() {
     // Keep the branded loader for the first session load only; route changes use Suspense's lightweight bar.
   }, [location]);
   useEffect(() => {
-    const key = languageStorageKey(location);
     const requested = new URLSearchParams(window.location.search).get("lang");
-    if (isUiLanguage(requested)) { setLanguage(requested); window.localStorage.setItem(key, requested); return; }
-    const stored = window.localStorage.getItem(key) as Language | null;
-    const valid = isUiLanguage(stored);
-    const nextLanguage: Language = valid ? stored! : key === DASHBOARD_LANGUAGE_STORAGE_KEY ? "en" : language;
-    if (nextLanguage !== language) setLanguage(nextLanguage);
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+    if (isUiLanguage(requested)) { setLanguage(requested); return; }
+    const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null;
+    if (isUiLanguage(stored) && stored !== language) setLanguage(stored, false);
   }, [location]);
   return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<RouteLoading />}><Router /></Suspense>{showGlobalLoader && <NfoodsLoadingScreen key={loaderKey} onComplete={completeGlobalLoader} />}</div>;
 }
