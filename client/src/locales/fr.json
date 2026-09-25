@@ -58,5 +58,6 @@
   "errors": {
     "missingTranslation": "Traduction indisponible",
     "generic": "Une erreur inattendue est survenue"
-  }
+  },
+  "admin.customer_center.title": "Centre clients"
 }
