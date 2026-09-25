@@ -58,5 +58,6 @@
   "errors": {
     "missingTranslation": "الترجمة غير متوفرة بعد",
     "generic": "حدث خطأ غير متوقع"
-  }
+  },
+  "admin.customer_center.title": "مركز العملاء"
 }
