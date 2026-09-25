@@ -16,7 +16,6 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { MonthlyReservationCalendar } from "@/components/MonthlyReservationCalendar";
-import { GTranslateWidget } from "@/components/GTranslateWidget";
 import { toast } from "sonner";
 import { normalizeMenuDisplaySettings, type MenuDisplayToolKey, type MenuButtonStyle } from "@shared/menuDisplaySettings";
 import { getDeviceFingerprint, getDeviceLabel } from "@/lib/deviceFingerprint";
@@ -514,7 +513,6 @@ export default function RestaurantPublic() {
 
 
   return <div dir={direction} data-menu-theme={menuDark ? "dark" : "light"} data-theme-preset={themePreset} data-menu-template={menuTemplate} style={menuThemeStyle} className={`nfood-menu-theme nfood-customer-redesign nfood-menu-template-${menuTemplate} nfood-menu-shell ${menuItemLayout === "grid" ? "nfood-menu-grid" : menuItemLayout === "cardless" ? "nfood-menu-cardless" : "nfood-menu-cards"} flex flex-col pb-32 sm:pb-0 text-[color:var(--menu-ink)] selection:bg-orange-200 ${menuDark ? "nfood-menu-dark" : ""} ${drawerOpen ? "nfood-menu-drawer-open" : ""}`} data-menu-item-layout={menuItemLayout}>
-    <GTranslateWidget />
     <header className="nfood-menu-header sticky top-0 z-30 shrink-0 border-b border-slate-200/80 bg-white text-slate-900 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
       <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-8">
         <div className="flex min-w-0 items-center gap-2.5">
