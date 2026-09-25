@@ -5829,3 +5829,107 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   .nfood-menu-theme .nfood-menu-image-add { right: .35rem !important; bottom: .35rem !important; }
   .nfood-menu-theme .nfood-menu-image-add button { width: 1.8rem !important; height: 1.8rem !important; }
 }
+
+
+/* NFOOD MENU ENGINE V1 — unified premium storefront, 5-theme ready */
+.nfood-menu-theme.nfood-menu-shell {
+  --nfood-menu-radius: 18px;
+  --nfood-menu-gap: clamp(.45rem, 1vw, .9rem);
+  min-height: 100dvh;
+  background: var(--menu-background, var(--menu-page, #f7f8fa)) !important;
+}
+.nfood-menu-theme .nfood-menu-cover { isolation: isolate; box-shadow: 0 24px 70px -42px rgba(15,23,42,.65); }
+.nfood-menu-theme .nfood-menu-cover-content { min-height: clamp(13.5rem, 34vw, 23rem); }
+.nfood-menu-theme .nfood-menu-header {
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+.nfood-menu-theme .nfood-menu-category-bar {
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--menu-ink, #172033) 10%, transparent);
+}
+.nfood-menu-theme .nfood-menu-category-bar::-webkit-scrollbar { display:none; }
+.nfood-menu-theme .category-results {
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:var(--nfood-menu-gap) !important;
+  align-items:start !important;
+}
+.nfood-menu-theme .category-results > .nfood-menu-item-card {
+  position:relative !important;
+  display:flex !important;
+  flex-direction:column !important;
+  min-width:0 !important;
+  width:100% !important;
+  overflow:hidden !important;
+  border-radius:var(--nfood-menu-radius) !important;
+  background:var(--menu-card-background, var(--menu-surface, #fff)) !important;
+  color:var(--menu-card-text, var(--menu-ink, #172033)) !important;
+  border:1px solid var(--menu-card-border, color-mix(in srgb, var(--menu-ink, #172033) 10%, transparent)) !important;
+  box-shadow:0 12px 30px -24px rgba(15,23,42,.55) !important;
+  transform:translateZ(0);
+}
+.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-image {
+  width:100% !important;
+  aspect-ratio:1/1 !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  border-radius:calc(var(--nfood-menu-radius) - 1px) calc(var(--nfood-menu-radius) - 1px) 0 0 !important;
+}
+.nfood-menu-theme .nfood-menu-item-photo { width:100% !important; height:100% !important; object-fit:cover !important; transition:transform .35s ease; }
+.nfood-menu-theme .nfood-menu-item-card:hover .nfood-menu-item-photo { transform:scale(1.035); }
+.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+  display:flex !important;
+  flex-direction:column !important;
+  min-width:0 !important;
+  padding:.65rem .7rem .75rem !important;
+  background:transparent !important;
+  color:inherit !important;
+}
+.nfood-menu-theme .nfood-menu-item-category { color:var(--menu-primary) !important; font-weight:800 !important; }
+.nfood-menu-theme .nfood-menu-item-title { color:inherit !important; font-weight:850 !important; letter-spacing:-.015em; }
+.nfood-menu-theme .nfood-menu-price-current { color:var(--menu-primary) !important; font-weight:950 !important; }
+.nfood-menu-theme .nfood-menu-image-add button {
+  background:var(--menu-primary) !important; color:#fff !important; border:0 !important;
+  box-shadow:0 8px 18px -10px var(--menu-primary) !important;
+}
+.nfood-menu-theme .nfood-menu-card-summary { color:var(--menu-muted, #64748b) !important; }
+
+/* Template personalities share one DOM and behavior engine. */
+.nfood-menu-template-editorial { --nfood-menu-radius:16px; }
+.nfood-menu-template-editorial .nfood-menu-item-card { box-shadow:0 10px 26px -23px rgba(15,23,42,.42) !important; }
+.nfood-menu-template-bistro { --nfood-menu-radius:22px; }
+.nfood-menu-template-bistro .nfood-menu-item-card { border-color:color-mix(in srgb,var(--menu-primary) 18%,transparent) !important; }
+.nfood-menu-template-glass .nfood-menu-item-card {
+  background:color-mix(in srgb,var(--menu-surface,#fff) 76%,transparent) !important;
+  backdrop-filter:blur(18px) saturate(1.2); -webkit-backdrop-filter:blur(18px) saturate(1.2);
+}
+.nfood-menu-template-market { --nfood-menu-radius:12px; --nfood-menu-gap:.45rem; }
+.nfood-menu-template-market .nfood-menu-item-content { padding:.5rem .55rem .6rem !important; }
+.nfood-menu-template-signature { --nfood-menu-radius:24px; }
+.nfood-menu-template-signature .nfood-menu-item-card { box-shadow:0 20px 45px -32px color-mix(in srgb,var(--menu-primary) 70%,#0f172a) !important; }
+
+/* Phone: intentionally high-density 4-up grid; details live in the product sheet. */
+@media (max-width:599px) {
+  .nfood-menu-theme { --nfood-menu-radius:12px; --nfood-menu-gap:.32rem; }
+  .nfood-menu-theme .category-results { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+  .nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-content { padding:.4rem .38rem .48rem !important; }
+  .nfood-menu-theme .nfood-menu-item-category { font-size:7.5px !important; line-height:.8rem !important; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nfood-menu-theme .nfood-menu-item-title { font-size:9px !important; line-height:1.05rem !important; min-height:2.1rem !important; -webkit-line-clamp:2 !important; overflow:hidden !important; }
+  .nfood-menu-theme .nfood-menu-price-current { font-size:9.5px !important; line-height:1rem !important; padding:0 !important; }
+  .nfood-menu-theme .nfood-menu-price-compare,.nfood-menu-theme .nfood-menu-discount { font-size:7px !important; }
+  .nfood-menu-theme .nfood-menu-card-summary { display:none !important; }
+  .nfood-menu-theme .nfood-menu-image-add button { width:1.65rem !important; height:1.65rem !important; min-width:1.65rem !important; }
+  .nfood-menu-theme .nfood-menu-availability { font-size:7px !important; padding:.15rem .3rem !important; }
+}
+@media (min-width:600px) and (max-width:1023px) {
+  .nfood-menu-theme .category-results { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+}
+@media (min-width:1024px) {
+  .nfood-menu-theme .category-results { grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:.9rem !important; }
+  .nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-content { padding:.8rem .85rem .95rem !important; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .nfood-menu-theme .nfood-menu-item-photo { transition:none !important; transform:none !important; }
+}
