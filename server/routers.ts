@@ -227,7 +227,8 @@ export const appRouter = router({
         });
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "تعذر الاتصال بقاعدة بيانات تسجيل الدخول" });
       }
-      if (!account || account.deletedAt || !account.passwordHash) throw new TRPCError({ code: "UNAUTHORIZED", message: "الحساب غير مفعل أو بيانات الدخول غير صحيحة" });
+      if (!account || account.deletedAt) throw new TRPCError({ code: "UNAUTHORIZED", message: "الحساب غير مفعل أو بيانات الدخول غير صحيحة" });
+      if (!account.passwordHash) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "PASSWORD_SETUP_REQUIRED" });
       const [scheme, salt, storedKey] = account.passwordHash.split("$");
       if (scheme !== "scrypt" || !salt || !storedKey) throw new TRPCError({ code: "UNAUTHORIZED", message: "بيانات الدخول غير صحيحة" });
       const derivedKey = scryptSync(input.password, Buffer.from(salt, "base64"), 64);
@@ -237,8 +238,14 @@ export const appRouter = router({
       if (effectiveRole !== "admin" && input.deviceFingerprintHash) { const device = (await db.select({ status: trustedDevices.status }).from(trustedDevices).where(and(eq(trustedDevices.userId, account.id), eq(trustedDevices.fingerprintHash, input.deviceFingerprintHash))).limit(1))[0]; if (!device || device.status !== "active") throw new TRPCError({ code: "FORBIDDEN", message: "الجهاز غير معتمد لهذا الحساب. اطلب اعتماد الجهاز من إدارة المنصة." }); }
       const token = await sdk.signSession({ openId: account.openId, appId: `local_${nanoid(12)}`, name: account.name ?? account.email ?? "NFOOD" });
       await db.update(users).set({ lastSignedIn: new Date(), loginMethod: "local" }).where(eq(users.id, account.id));
+      // A fresh local sign-in replaces stale sessions for this account so a
+      // previous role/account cannot shadow the newly authenticated identity.
+      await db.delete(authSessions).where(eq(authSessions.userId, account.id));
       await db.insert(authSessions).values({ userId: account.id, sessionTokenHash: createHash("sha256").update(token).digest("hex"), deviceLabel: input.deviceLabel ?? "تسجيل دخول", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 12) });
-      ctx.res.cookie(TEST_SESSION_COOKIE, token, { ...getSessionCookieOptions(ctx.req), httpOnly: true, maxAge: 1000 * 60 * 60 * 12 });
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie(COOKIE_NAME, cookieOptions);
+      ctx.res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
+      ctx.res.cookie(TEST_SESSION_COOKIE, token, { ...cookieOptions, httpOnly: true, maxAge: 1000 * 60 * 60 * 12 });
       const membership = effectiveRole === "admin" ? undefined : (await db.select({ restaurantId: restaurantMembers.restaurantId }).from(restaurantMembers).where(eq(restaurantMembers.userId, account.id)).limit(1))[0];
        return { success: true, role: effectiveRole, name: account.name ?? account.email ?? "NFOOD", onboardingRequired: effectiveRole !== "admin" && !membership?.restaurantId, next: effectiveRole === "admin" ? "/admin" : membership?.restaurantId ? "/restaurant/dashboard" : "/register" };
     }),
