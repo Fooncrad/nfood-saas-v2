@@ -102,8 +102,8 @@ export default function RestaurantPublic() {
       try { primaryLanguage = JSON.parse(page.data?.restaurant.languagesJson || "[\"ar\"]")[0]; } catch { primaryLanguage = "ar"; }
     }
     if (!primaryLanguage || !["ar", "en", "fr", "ur", "es", "de", "tr"].includes(primaryLanguage)) return;
-    const hasManualLanguage = typeof window !== "undefined" && Boolean(window.localStorage.getItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY));
-    if (!hasManualLanguage && language !== primaryLanguage) setLanguage(primaryLanguage as Language, false);
+    const hasExplicitLanguage = typeof window !== "undefined" && Boolean(window.localStorage.getItem("nfood-language"));
+    if (!hasExplicitLanguage && language !== primaryLanguage) setLanguage(primaryLanguage as Language, false);
   }, [language, page.data?.restaurant.primaryLanguage, page.data?.restaurant.languagesJson, setLanguage]);
   const menuSourceLanguage = useMemo<Language>(() => {\n    const primary = page.data?.restaurant.primaryLanguage;\n    if (primary && ["ar", "en", "fr", "ur", "es", "de", "tr"].includes(primary)) return primary as Language;\n    try {\n      const configured = JSON.parse(page.data?.restaurant.languagesJson || "[\\\"ar\\\"]") as string[];\n      const first = configured.find((entry) => ["ar", "en", "fr", "ur", "es", "de", "tr"].includes(entry));\n      return (first ?? "ar") as Language;\n    } catch { return "ar"; }\n  }, [page.data?.restaurant.primaryLanguage, page.data?.restaurant.languagesJson]);\n  const translatedMenu = trpc.platform.translatePublicMenu.useQuery({ slug, language }, { enabled: Boolean(slug && page.data?.restaurant && language !== menuSourceLanguage), retry: false });
   const runtimeTranslations = useMemo(() => new Map((translatedMenu.data?.translations ?? []).map((entry) => [`${entry.entityType}:${entry.entityId}:${entry.language}`, entry] as const)), [translatedMenu.data?.translations]);
