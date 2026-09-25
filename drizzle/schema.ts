@@ -449,6 +449,7 @@ export const menuCategories = mysqlTable("menuCategories", {
   imageUrl: text("imageUrl"),
   translationsJson: text("translationsJson"),
   sortOrder: int("sortOrder").default(0).notNull(),
+  isVisible: boolean("isVisible").default(true).notNull(),
 });
 
 export const menuItems = mysqlTable("menuItems", {
