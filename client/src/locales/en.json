@@ -58,5 +58,6 @@
   "errors": {
     "missingTranslation": "Translation is not available yet",
     "generic": "An unexpected error occurred"
-  }
+  },
+  "admin.customer_center.title": "Customer center"
 }
