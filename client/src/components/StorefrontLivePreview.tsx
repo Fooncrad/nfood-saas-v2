@@ -2,7 +2,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { BadgeCheck, Clock3, MapPin, QrCode, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export type StorefrontMenuTemplate = "editorial" | "bistro" | "glass" | "customer";
+export type StorefrontMenuTemplate = "editorial" | "bistro" | "glass" | "market" | "signature";
 
 export type StorefrontSettings = {
   brandName: string;
@@ -37,12 +37,16 @@ function coverGradient(settings: StorefrontSettings) {
 function dressColor(settings: StorefrontSettings) {
   if (settings.menuTemplate === "glass") return "#0b0f17";
   if (settings.menuTemplate === "bistro") return "#b86b45";
+  if (settings.menuTemplate === "market") return "#2563eb";
+  if (settings.menuTemplate === "signature") return "#d97706";
   return `${settings.brandColor}cc`;
 }
 
 function surfaceColor(settings: StorefrontSettings) {
   if (settings.menuTemplate === "glass") return "#10151f";
   if (settings.menuTemplate === "bistro") return "#f3ebe2";
+  if (settings.menuTemplate === "market") return settings.themeMode === "dark" ? "#0f172a" : "#f8fafc";
+  if (settings.menuTemplate === "signature") return settings.themeMode === "dark" ? "#111827" : "#fffbeb";
   if (settings.themeMode === "dark") return "#181522";
   return "#fffaf5";
 }
@@ -57,6 +61,8 @@ function cardColor(settings: StorefrontSettings) {
   if (settings.menuTemplate === "glass") return "rgba(255,255,255,.08)";
   if (settings.themeMode === "dark") return "#1b2432";
   if (settings.menuTemplate === "bistro") return "#fffaf4";
+  if (settings.menuTemplate === "market") return settings.themeMode === "dark" ? "#172033" : "#ffffff";
+  if (settings.menuTemplate === "signature") return settings.themeMode === "dark" ? "#1f2937" : "#ffffff";
   return "#ffffff";
 }
 
