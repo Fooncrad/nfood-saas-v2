@@ -1314,18 +1314,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyLanguageDocumentAttributes(language);
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
-    // Structured translations are the source of truth. The legacy DOM translator is kept only for Arabic
-    // restoration; non-Arabic screens must not be mutated word-by-word because that mixes languages.
-    if (language === "ar") applyLegacyUiTranslations(language);
-    const observer = new MutationObserver((mutations) => mutations.forEach((mutation) => {
-      if (mutation.type === "characterData" && mutation.target instanceof CharacterData) {
-        if (language === "ar") scheduleLegacyUiTranslations(language, mutation.target.parentNode ?? document);
-      } else {
-        if (language === "ar") mutation.addedNodes.forEach((node) => scheduleLegacyUiTranslations(language, node));
-      }
-    }));
-    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
-    return () => { observer.disconnect(); };
+    // Structured translation keys are the only runtime source of truth.
+    // Never mutate rendered DOM text: legacy mutation-based translation leaked text between
+    // routes/components and could leave Arabic/English/French fragments mixed after navigation.
+    // Legacy dictionaries remain available to explicit t()/translation-editor flows only.
+    return undefined;
   }, [language, meta.dir]);
   const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, isLanguageChanging, setLanguage: (next, persist = true) => { if (next !== language) { animateLanguageChange(); setIsLanguageChanging(true); if (typeof window !== "undefined") window.setTimeout(() => setIsLanguageChanging(false), 420); } setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(LANGUAGE_STORAGE_KEY, next); window.localStorage.setItem(DASHBOARD_LANGUAGE_STORAGE_KEY, next); window.localStorage.setItem(MENU_LANGUAGE_STORAGE_KEY, next); window.localStorage.setItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY, next); } }, t: createTranslator(language), formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language)   }), [language, meta.dir, meta.locale, isLanguageChanging]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
