@@ -45,9 +45,9 @@ function dressColor(settings: StorefrontSettings) {
 function surfaceColor(settings: StorefrontSettings) {
   if (settings.menuTemplate === "glass") return "#10151f";
   if (settings.menuTemplate === "bistro") return "#f3ebe2";
-  if (settings.menuTemplate === "market") return settings.themeMode === "dark" ? "#0f172a" : "#f8fafc";
-  if (settings.menuTemplate === "signature") return settings.themeMode === "dark" ? "#111827" : "#fffbeb";
   if (settings.themeMode === "dark") return "#181522";
+  if (settings.menuTemplate === "market") return "#f8fafc";
+  if (settings.menuTemplate === "signature") return "#fffbeb";
   return "#fffaf5";
 }
 
