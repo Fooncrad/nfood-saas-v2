@@ -20,6 +20,8 @@ const menuTemplates: { key: StorefrontMenuTemplate; label: string; description: 
   { key: "editorial", label: "Editorial", description: "فاخر وواضح", swatch: "linear-gradient(135deg, #fff8f2, #f4c7a1)" },
   { key: "bistro", label: "Bistro", description: "دافئ وحميم", swatch: "linear-gradient(135deg, #f3ebe2, #b86b45)" },
   { key: "glass", label: "NFOOD Glass", description: "داكن وزجاجي", swatch: "linear-gradient(135deg, #0b0f17, #f97316)" },
+  { key: "market", label: "Market", description: "سريع وكثيف للمنيو الكبير", swatch: "linear-gradient(135deg, #f8fafc, #2563eb)" },
+  { key: "signature", label: "Signature", description: "بريميوم فاخر للصور والأسعار", swatch: "linear-gradient(135deg, #111827, #d97706)" },
 ];
 
 const visibleSections: { key: string; label: string; description: string; tools: (typeof MENU_DISPLAY_TOOL_KEYS)[number][] }[] = [
@@ -177,7 +179,7 @@ export function StorefrontCustomizationPanel({ restaurantId = 1 }: { restaurantI
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="mb-3 flex items-center justify-between"><div><h3 className="text-xs font-black text-slate-700">قالب المنيو</h3><p className="mt-1 text-[10px] leading-5 text-slate-400">يُطبق تلقائيًا على زوار رابط المنيو. يمكن للزائر تبديله مؤقتًا في حال تفعيل المبدّل.</p></div></div>
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 {menuTemplates.map((item) => (
                   <button key={item.key} type="button" onClick={() => { setMenuTemplate(item.key); setDirty(true); }} aria-pressed={menuTemplate === item.key} className={`group rounded-xl border p-2 text-right transition ${menuTemplate === item.key ? "border-orange-400 bg-orange-50 shadow-sm" : "border-slate-200 bg-slate-50 hover:border-orange-200"}`}>
                     <span className="mb-2 block h-9 rounded-lg shadow-inner" style={{ background: item.swatch }} />
