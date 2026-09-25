@@ -115,7 +115,16 @@ export default function LoginPage() {
     const next = new URLSearchParams(window.location.search).get("next");
     const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : result.next ?? (result.role === "admin" ? "/admin" : "/dashboard");
     setLocation(safeNext);
-  }, onError: (error) => { if (error.message === "VERIFY_EMAIL_REQUIRED") { toast.error(language === "ar" ? "تحقق من بريدك الإلكتروني أولًا ثم ارجع لتسجيل الدخول." : language === "fr" ? "Vérifiez d’abord votre e-mail, puis reconnectez-vous." : "Verify your email first, then return to sign in."); return; } toast.error(error.message || copy.toastInvalid); } });
+  }, onError: (error) => {
+    if (error.message === "VERIFY_EMAIL_REQUIRED") { toast.error(language === "ar" ? "تحقق من بريدك الإلكتروني أولًا ثم ارجع لتسجيل الدخول." : language === "fr" ? "Vérifiez d’abord votre e-mail, puis reconnectez-vous." : "Verify your email first, then return to sign in."); return; }
+    if (error.message === "PASSWORD_SETUP_REQUIRED") {
+      toast.info(language === "ar" ? "هذا حساب قديم أو مرتبط بتسجيل خارجي. أرسلنا لك مسارًا آمنًا لتعيين كلمة المرور." : language === "fr" ? "Ce compte doit définir un mot de passe. Demandez un lien sécurisé de réinitialisation." : "This account needs a password. Request a secure reset link.");
+      setResetMode(false);
+      if (email.trim()) requestReset.mutate({ email: email.trim() });
+      return;
+    }
+    toast.error(error.message || copy.toastInvalid);
+  } });
   const features = [copy.feat1, copy.feat2, copy.feat3];
   useEffect(() => {
     if (loading || !user) return;
