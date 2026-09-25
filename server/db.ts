@@ -510,8 +510,16 @@ export async function getUserByOpenId(openId: string) {
 
 export async function getUserByEmail(email: string) {
   const db = await getDb(); if (!db) return undefined;
-  const result = await db.select().from(users).where(eq(users.email, email.trim().toLowerCase())).limit(1);
-  return result[0];
+  const normalizedEmail = email.trim().toLowerCase();
+  const result = await db.select().from(users).where(eq(users.email, normalizedEmail));
+  if (!result.length) return undefined;
+  // Legacy OAuth could create a second customer row for an email that already
+  // belongs to the Super Admin. Identity resolution must prefer the privileged
+  // canonical account instead of whichever duplicate MySQL happens to return.
+  return result.sort((a, b) => {
+    const priority = (user: typeof a) => user.role === "admin" || user.accountRole === "admin" ? 3 : user.accountRole === "restaurant_admin" ? 2 : 1;
+    return priority(b) - priority(a) || a.id - b.id;
+  })[0];
 }
 
 export async function listRestaurants(restaurantId?: number) { const db = await getDb(); if (!db) return []; return restaurantId ? db.select().from(restaurants).where(eq(restaurants.id, restaurantId)).orderBy(desc(restaurants.createdAt)) : db.select().from(restaurants).orderBy(desc(restaurants.createdAt)); }
