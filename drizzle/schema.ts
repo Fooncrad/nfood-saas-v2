@@ -114,7 +114,7 @@ export const restaurants = mysqlTable("restaurants", {
   brandHeadingFontFamily: varchar("brandHeadingFontFamily", { length: 120 }).default("IBM Plex Sans Arabic").notNull(),
   themeMode: mysqlEnum("themeMode", ["light", "dark", "system"]).default("light").notNull(),
   themePreset: varchar("themePreset", { length: 40 }).default("nfood-sunset").notNull(),
-  menuTemplate: mysqlEnum("menuTemplate", ["editorial", "bistro", "glass", "customer"]).default("editorial").notNull(),
+  menuTemplate: mysqlEnum("menuTemplate", ["editorial", "bistro", "glass", "customer", "market", "signature"]).default("editorial").notNull(),
   brandLogoUrl: varchar("brandLogoUrl", { length: 500 }),
   coverUrl: varchar("coverUrl", { length: 500 }),
   pwaInstallMessage: varchar("pwaInstallMessage", { length: 180 }),
