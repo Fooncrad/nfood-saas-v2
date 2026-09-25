@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DASHBOARD_LANGUAGE_STORAGE_KEY, LANGUAGE_STORAGE_KEY, MENU_LANGUAGE_MANUAL_STORAGE_KEY, applyLanguageDocumentAttributes, autoTranslateText, createTranslator, detectVisitorLanguage, findUntranslatedArabic, formatCurrencyAmount, formatGregorianDate, formatLatinNumber, interpolateTranslation, isPublicLanguagePath, languageMeta, legacyUiTranslations, resolveStructuredTranslation, translations } from "./LanguageContext";
+import { LANGUAGE_STORAGE_KEY, applyLanguageDocumentAttributes, autoTranslateText, createTranslator, detectVisitorLanguage, findUntranslatedArabic, formatCurrencyAmount, formatGregorianDate, formatLatinNumber, interpolateTranslation, isPublicLanguagePath, languageMeta, legacyUiTranslations, resolveStructuredTranslation, translations } from "./LanguageContext";
 import arLocale from "@/locales/ar.json";
 import enLocale from "@/locales/en.json";
 import frLocale from "@/locales/fr.json";
@@ -115,10 +115,8 @@ describe("language configuration", () => {
     expect(formattedNumber).toContain("111");
   });
 
-  it("uses separate dashboard and public manual-language storage keys", () => {
+  it("uses one persisted language source across dashboard and public menu", () => {
     expect(LANGUAGE_STORAGE_KEY).toBe("nfood-language");
-    expect(DASHBOARD_LANGUAGE_STORAGE_KEY).toBe("nfood-dashboard-language");
-    expect(MENU_LANGUAGE_MANUAL_STORAGE_KEY).toBe("nfood-menu-language-manual");
   });
 
   it("detects supported visitor languages from navigator.language", () => {
