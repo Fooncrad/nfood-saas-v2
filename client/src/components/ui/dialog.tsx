@@ -79,7 +79,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/35 backdrop-blur-[2px]",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[99] bg-black/45 backdrop-blur-[2px]",
         className
       )}
       {...props}
@@ -124,7 +124,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed !left-1/2 !right-auto !top-1/2 z-50 grid w-[calc(100vw-1rem)] max-w-[30rem] max-h-[calc(100dvh-1rem)] !-translate-x-1/2 !-translate-y-1/2 !m-0 gap-4 overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border p-4 sm:w-[calc(100vw-2rem)] sm:p-6 shadow-2xl duration-200 sm:max-w-lg",
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed left-1/2 top-1/2 z-[100] flex w-[calc(100%-1rem)] max-w-lg max-h-[calc(100dvh-1rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-0 overflow-hidden overscroll-contain rounded-2xl border p-0 shadow-2xl duration-150 sm:w-[calc(100%-2rem)]",
           className
         )}
         onEscapeKeyDown={handleEscapeKeyDown}
@@ -149,7 +149,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-start", className)}
+      className={cn("shrink-0 flex flex-col gap-2 border-b px-5 py-4 text-center sm:px-6 sm:text-start", className)}
       {...props}
     />
   );
@@ -160,7 +160,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        "shrink-0 flex flex-col-reverse gap-2 border-t bg-background/95 px-5 py-4 sm:flex-row sm:justify-end sm:px-6",
         className
       )}
       {...props}
