@@ -5978,3 +5978,36 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
  .nfood-menu-template-glass .category-results > .nfood-menu-item-card { aspect-ratio:3/4 !important; }
  .nfood-menu-template-glass .nfood-menu-item-content { padding:.65rem !important; }
 }
+
+
+/* NFOOD RESPONSIVE HOTFIX V3 — desktop proportions + template isolation */
+@media (min-width:1024px) {
+  .nfood-menu-theme .nfood-menu-cover-content,
+  .nfood-menu-theme main,
+  .nfood-menu-theme .nfood-menu-header > div,
+  .nfood-menu-theme footer > div { width:min(100% - 48px,1440px) !important; max-width:1440px !important; margin-inline:auto !important; }
+  .nfood-menu-theme .nfood-menu-cover-content { min-height:clamp(18rem,28vw,30rem) !important; }
+  .nfood-menu-theme .menu-category-group { width:100% !important; max-width:none !important; }
+  .nfood-menu-template-editorial .category-results { grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:1rem !important; }
+  .nfood-menu-template-bistro .category-results { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:1rem !important; }
+  .nfood-menu-template-market .category-results { grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:.65rem !important; }
+  .nfood-menu-template-glass .category-results { grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:1rem !important; }
+}
+@media (min-width:1440px) {
+  .nfood-menu-template-market .category-results { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+  .nfood-menu-template-glass .category-results { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+}
+@media (max-width:1023px) {
+  .nfood-menu-theme .nfood-menu-cover-content,
+  .nfood-menu-theme main { width:100% !important; max-width:none !important; }
+}
+@media (max-width:599px) {
+  .nfood-menu-theme .nfood-menu-cover { border-radius:0 !important; }
+  .nfood-menu-theme .nfood-menu-cover-content { min-height:15rem !important; padding-inline:1rem !important; }
+  .nfood-menu-template-editorial .category-results { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:.55rem !important; }
+  .nfood-menu-template-bistro .category-results,
+  .nfood-menu-template-market .category-results { grid-template-columns:1fr !important; }
+  .nfood-menu-template-glass .category-results { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  .nfood-menu-theme .nfood-menu-item-title { font-size:12px !important; line-height:1.15rem !important; min-height:auto !important; }
+  .nfood-menu-theme .nfood-menu-price-current { font-size:12px !important; }
+}
