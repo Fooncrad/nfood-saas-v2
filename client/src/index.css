@@ -6674,3 +6674,36 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     aspect-ratio:1 / 1 !important;
   }
 }
+
+
+/* NFOOD MOBILE TWO-UP HARD LOCK — preserve full-width image inside each half-width card. */
+@media (max-width:767px) {
+  .nfood-menu-shell.nfood-menu-theme .menu-category-group .category-results.nfood-menu-grid {
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+    grid-auto-flow:row !important;
+    width:100% !important;
+    max-width:100% !important;
+    gap:.5rem !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .menu-category-group .category-results.nfood-menu-grid > .nfood-menu-item-card {
+    grid-column:auto !important;
+    width:auto !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    justify-self:stretch !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .menu-category-group .category-results.nfood-menu-grid > .nfood-menu-item-card > .nfood-menu-item-image {
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    aspect-ratio:1 / 1 !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .menu-category-group .category-results.nfood-menu-grid > .nfood-menu-item-card > .nfood-menu-item-image > .nfood-menu-item-photo,
+  .nfood-menu-shell.nfood-menu-theme .menu-category-group .category-results.nfood-menu-grid > .nfood-menu-item-card > .nfood-menu-item-image > img {
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    height:100% !important;
+  }
+}
