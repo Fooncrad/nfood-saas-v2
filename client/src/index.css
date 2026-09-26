@@ -6875,3 +6875,43 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   color:#F8F3E9 !important;
   border:1px solid rgba(255,255,255,.10) !important;
 }
+
+
+/* NFOOD SERVICE CENTER V1 — one predictable centered zone for customer actions. */
+.nfood-service-center-overlay {
+  align-items:center !important;
+  justify-content:center !important;
+  padding:max(1rem,env(safe-area-inset-top)) 1rem max(1rem,env(safe-area-inset-bottom)) !important;
+}
+.nfood-service-center {
+  position:relative !important;
+  top:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  left:auto !important;
+  margin:0 auto !important;
+  transform:none !important;
+  width:min(calc(100vw - 1.5rem),28rem) !important;
+  max-width:28rem !important;
+  max-height:min(82dvh,46rem) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+}
+[data-radix-dialog-content].nfood-service-center,
+.nfood-service-center[data-state] {
+  position:fixed !important;
+  top:50% !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:auto !important;
+  margin:0 !important;
+  transform:translate(-50%,-50%) !important;
+}
+@media (max-width:599px) {
+  .nfood-service-center {
+    width:calc(100vw - 1.25rem) !important;
+    max-height:80dvh !important;
+    border-radius:1.25rem !important;
+  }
+}
