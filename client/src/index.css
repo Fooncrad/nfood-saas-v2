@@ -3807,15 +3807,8 @@ html[dir="rtl"] .nfood-notification-popover { transform-origin: top left; }
   padding-inline: .35rem !important;
 }
 @media (max-width: 640px) {
-  .nfood-menu-shell .nfood-product-detail-dialog {
-    width: min(92vw, 25rem) !important;
-    max-height: 82dvh !important;
-  }
   .nfood-menu-shell .nfood-cart-modal {
     padding: .5rem !important;
-  }
-  .nfood-menu-shell .nfood-cart-modal > * {
-    max-height: 78dvh !important;
   }
   .nfood-menu-shell .nfood-menu-recommendation-item {
     min-width: 8.75rem !important;
@@ -4020,7 +4013,6 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
 }
 @media (max-width: 640px) {
   .nfood-menu-shell .nfood-menu-cover-content { min-height: 11rem !important; }
-  .nfood-menu-shell .nfood-cart-modal > * { max-height: 72dvh !important; }
 }
 
 
