@@ -6806,3 +6806,40 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     max-width:100% !important;
   }
 }
+
+
+/* NFOOD HEADER CONTRAST V1 — explicit light/dark header readability. */
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header {
+  background:#FFFFFF !important;
+  color:#1C1B18 !important;
+  border-bottom-color:#E7E1D8 !important;
+}
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header nav a,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header button,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header label,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header span {
+  color:#1C1B18 !important;
+}
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header svg {
+  color:currentColor !important;
+}
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header .nfood-menu-language,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header .nfood-menu-language button {
+  background:#F7F4EE !important;
+  color:#1C1B18 !important;
+  border-color:#DDD6CA !important;
+}
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header button:hover {
+  background:#F7F4EE !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header {
+  background:#171613 !important;
+  color:#F8F3E9 !important;
+  border-bottom-color:rgba(255,255,255,.10) !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header nav a,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header button,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header label,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header span {
+  color:#F8F3E9 !important;
+}
