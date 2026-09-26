@@ -540,19 +540,19 @@ export default function RestaurantPublic() {
       </div>
     </header>
 
-    <section className="nfood-menu-cover mx-auto mt-0 w-full max-w-7xl overflow-hidden rounded-none sm:mt-5 sm:w-[calc(100%-3rem)] sm:rounded-[1.75rem]" style={{ backgroundImage: page.data.restaurant.coverUrl ? `linear-gradient(90deg, rgba(12, 13, 18, .9), rgba(12, 13, 18, .42)), url(${page.data.restaurant.coverUrl})` : "linear-gradient(135deg, #181a22, #3d3a42 55%, #8b6c55)" }}>
-      <div className="nfood-menu-cover-content relative flex min-h-[14rem] items-center justify-center px-5 py-7 text-center sm:min-h-[19rem] sm:px-10 sm:py-9 lg:min-h-[22rem]">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-black/25" aria-hidden="true" />
-        <div className="relative z-10 flex w-full max-w-2xl flex-col items-center gap-2.5">
-          <RestaurantLogo src={page.data.restaurant.brandLogoUrl} alt={restaurantName} imageClassName="nfood-cover-logo h-20 w-20 rounded-none bg-[#111217] object-contain p-2 shadow-2xl ring-1 ring-white/25 sm:h-24 sm:w-24" fallbackClassName="nfood-cover-logo h-20 w-20 rounded-none bg-white/90 p-3 text-[var(--menu-primary)]" />
-          <p className="mt-1 text-xs font-black uppercase tracking-[.32em] text-white/75">NFOOD MENU</p>
-          <h1 className="text-3xl font-black text-white drop-shadow-[0_2px_12px_rgba(0,0,0,.65)] sm:text-5xl">{restaurantName}</h1>
-          <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] font-bold text-white/85 sm:text-xs"><span className="rounded-full bg-black/25 px-2.5 py-1">{currencyLabel}</span>{page.data.restaurant.city && <span className="rounded-full bg-black/25 px-2.5 py-1">{page.data.restaurant.city}</span>}{page.data.restaurant.address && <span className="max-w-[18rem] truncate rounded-full bg-black/25 px-2.5 py-1">{page.data.restaurant.address}</span>}{page.data.restaurant.taxNumber && <span className="rounded-full bg-black/25 px-2.5 py-1">الرقم الضريبي: {page.data.restaurant.taxNumber}</span>}{page.data.restaurant.locationUrl && <a href={page.data.restaurant.locationUrl} target="_blank" rel="noreferrer" className="rounded-full bg-white/15 px-2.5 py-1 underline underline-offset-2">الموقع</a>}</div>
-          <button type="button" onClick={() => toast.info(language === "ar" ? "سيظهر الفيديو التعريفي عند إضافته من إعدادات المطعم" : language === "fr" ? "La vidéo de présentation apparaîtra après son ajout dans les réglages." : "The intro video will appear after it is added in restaurant settings.")} className="mt-1 inline-flex items-center gap-2 text-xs font-black text-white/85 underline decoration-white/50 underline-offset-4 transition hover:text-white"><Eye className="h-4 w-4" />{language === "ar" ? "شاهد الفيديو" : language === "fr" ? "Voir la vidéo" : "Watch video"}</button>
-          <div className="mt-4 grid w-full max-w-xl grid-cols-3 gap-3 border-t border-white/15 pt-4 text-white/90">
-            <div className="flex flex-col items-center gap-1.5"><Zap className="h-5 w-5 text-amber-300" /><span className="text-[10px] font-black sm:text-xs">{copy.orderNow}</span></div>
-            <div className="flex flex-col items-center gap-1.5"><Utensils className="h-5 w-5 text-amber-300" /><span className="text-[10px] font-black sm:text-xs">{copy.menu}</span></div>
-            <div className="flex flex-col items-center gap-1.5"><Clock3 className="h-5 w-5 text-amber-300" /><span className="text-[10px] font-black sm:text-xs">{copy.workingHours}</span>{page.data.restaurant.reservationEnabled && <Button type="button" onClick={() => (setReservationStep(1), setReservationOpen(true))} className="mt-1 h-8 rounded-full bg-orange-500 px-3 text-[10px] font-black text-white shadow-lg shadow-orange-950/30 ring-1 ring-orange-200/60 transition hover:-translate-y-0.5 hover:bg-orange-400">{copy.reservation}</Button>}</div>
+    <section className="nfood-menu-cover mx-auto mt-0 w-full max-w-[1440px] overflow-hidden rounded-none sm:mt-5 sm:w-[calc(100%-3rem)] sm:rounded-[1.75rem]" style={{ backgroundImage: page.data.restaurant.coverUrl ? `linear-gradient(90deg, rgba(12, 13, 18, .78), rgba(12, 13, 18, .18)), url(${page.data.restaurant.coverUrl})` : "linear-gradient(135deg, #181a22, #3d3a42 55%, #8b6c55)" }}>
+      <div className="nfood-menu-cover-content relative flex min-h-[12rem] items-end px-5 py-5 sm:min-h-[17rem] sm:px-8 sm:py-7 lg:min-h-[20rem]">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/10" aria-hidden="true" />
+        <div className="relative z-10 flex w-full max-w-3xl items-end gap-3 text-start sm:gap-4">
+          <RestaurantLogo src={page.data.restaurant.brandLogoUrl} alt={restaurantName} imageClassName="nfood-cover-logo h-16 w-16 shrink-0 rounded-2xl bg-white object-contain p-1.5 shadow-xl ring-1 ring-white/40 sm:h-20 sm:w-20" fallbackClassName="nfood-cover-logo h-16 w-16 shrink-0 rounded-2xl bg-white p-2 text-[var(--menu-primary)] sm:h-20 sm:w-20" />
+          <div className="min-w-0 pb-0.5">
+            <h1 className="truncate text-2xl font-black text-white drop-shadow sm:text-4xl">{restaurantName}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold text-white/85 sm:text-xs">
+              {page.data.restaurant.city && <span>{page.data.restaurant.city}</span>}
+              {page.data.restaurant.address && <span className="max-w-[18rem] truncate">{page.data.restaurant.address}</span>}
+              <span dir="ltr">{currencyLabel}</span>
+              {page.data.restaurant.locationUrl && <a href={page.data.restaurant.locationUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2">{language === "ar" ? "الموقع" : language === "fr" ? "Localisation" : "Location"}</a>}
+            </div>
           </div>
         </div>
       </div>
