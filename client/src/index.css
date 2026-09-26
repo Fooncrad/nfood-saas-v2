@@ -7409,3 +7409,56 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     height:auto !important;
   }
 }
+
+
+/* NFOOD WAITER DIALOG PORTAL FIX V1 — Radix portals live outside .nfood-menu-shell. */
+body [data-slot="dialog-content"].nfood-waiter-dialog,
+body [data-slot="dialog-content"].nfood-waiter-dialog[data-state="open"] {
+  position: fixed !important;
+  top: 50dvh !important;
+  left: 50vw !important;
+  right: auto !important;
+  bottom: auto !important;
+  inset: auto !important;
+  width: min(calc(100vw - 1rem), 28rem) !important;
+  min-width: 0 !important;
+  max-width: min(calc(100vw - 1rem), 28rem) !important;
+  max-height: calc(100dvh - 1rem) !important;
+  margin: 0 !important;
+  transform: translate(-50%, -50%) !important;
+  translate: none !important;
+  overflow: hidden !important;
+  border-radius: 1.25rem !important;
+  box-sizing: border-box !important;
+}
+body [data-slot="dialog-content"].nfood-waiter-dialog > div:first-child {
+  flex: 0 0 auto !important;
+}
+body [data-slot="dialog-content"].nfood-waiter-dialog > div:last-child {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+body [data-slot="dialog-content"].nfood-waiter-dialog > div:last-child > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+body [data-slot="dialog-content"].nfood-waiter-dialog button,
+body [data-slot="dialog-content"].nfood-waiter-dialog input,
+body [data-slot="dialog-content"].nfood-waiter-dialog select {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+@media (max-width: 640px) {
+  body [data-slot="dialog-content"].nfood-waiter-dialog,
+  body [data-slot="dialog-content"].nfood-waiter-dialog[data-state="open"] {
+    width: calc(100vw - 1rem) !important;
+    max-width: calc(100vw - 1rem) !important;
+    max-height: calc(100dvh - 1rem) !important;
+  }
+}
