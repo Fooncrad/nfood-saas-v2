@@ -66,7 +66,7 @@ type AccessRecord = FeatureDefinition & {
 export function SuperAdminRestaurantCatalog() {
   const { language } = useLanguage();
   const ui = language === "ar"
-    ? { center: "مركز المطاعم", title: "قائمة المطاعم", subtitle: "إدارة المطاعم المسجلة والباقات والحالة والروابط العامة من شاشة واحدة.", add: "إضافة مطعم جديد", search: "ابحث باسم المطعم أو المعرّف أو الباقة", all: "الكل", active: "نشط", trial: "تجربة", pending: "معلّق", plans: "كل الباقات", actions: "إجراءات", retry: "إعادة المحاولة", empty: "لا توجد مطاعم مطابقة للبحث الحالي.", report: "تفاصيل التقرير", branches: "فروع", account: "حساب", statusActive: "نشط", statusTrial: "تجربة", statusPending: "معلّق", plan: "الباقة", publicLink: "الرابط العام", details: "التفاصيل", login: "دخول المطعم", pause: "إيقاف مؤقت", activate: "تفعيل المطعم", editPlan: "تعديل الباقة", resetPassword: "إعادة تعيين كلمة المرور", unspecified: "غير محددة" }
+    ? { center: "منشآت المنصة", title: "إدارة المنشآت والمطاعم", subtitle: "إدارة الدخول الإداري، الباقات والحزم والمميزات وحالة كل منشأة من شاشة واحدة.", add: "إضافة مطعم جديد", search: "ابحث باسم المطعم أو المعرّف أو الباقة", all: "الكل", active: "نشط", trial: "تجربة", pending: "معلّق", plans: "كل الباقات", actions: "إجراءات", retry: "إعادة المحاولة", empty: "لا توجد مطاعم مطابقة للبحث الحالي.", report: "تفاصيل التقرير", branches: "فروع", account: "حساب", statusActive: "نشط", statusTrial: "تجربة", statusPending: "معلّق", plan: "الباقة", publicLink: "الرابط العام", details: "التفاصيل", login: "دخول المطعم", pause: "إيقاف مؤقت", activate: "تفعيل المطعم", editPlan: "الباقة والحزم", resetPassword: "إعادة تعيين كلمة المرور", unspecified: "غير محددة" }
     : language === "fr"
       ? { center: "Centre des restaurants", title: "Liste des restaurants", subtitle: "Gérez les restaurants, offres, statuts et liens publics depuis un seul espace.", add: "Ajouter un restaurant", search: "Rechercher par nom, identifiant ou offre", all: "Tous", active: "Actif", trial: "Essai", pending: "En attente", plans: "Toutes les offres", actions: "Actions", retry: "Réessayer", empty: "Aucun restaurant ne correspond à la recherche.", report: "Détails du rapport", branches: "succursales", account: "Compte", statusActive: "Actif", statusTrial: "Essai", statusPending: "En attente", plan: "Offre", publicLink: "Lien public", details: "Détails", login: "Ouvrir le restaurant", pause: "Suspendre", activate: "Activer", editPlan: "Modifier l’offre", resetPassword: "Réinitialiser le mot de passe", unspecified: "Non définie" }
       : language === "ur"
@@ -234,11 +234,10 @@ export function SuperAdminRestaurantCatalog() {
         >
           <DialogHeader className="text-right">
             <DialogTitle className="text-xl font-black text-slate-900">
-              تعديل باقة المطعم
+              إدارة باقة وحزم المطعم
             </DialogTitle>
             <DialogDescription>
-              اختر الباقة التي ستصبح فعالة لهذا المطعم. التغيير يحفظ مباشرة في
-              حساب المطعم.
+              اختر الباقة الجديدة للمطعم. يمكنك الترقية أو التخفيض، وتظهر الحزم والمميزات المرتبطة بكل باقة قبل الحفظ.
             </DialogDescription>
           </DialogHeader>
           {planEditor && (
@@ -253,9 +252,7 @@ export function SuperAdminRestaurantCatalog() {
                 </p>
               </div>
               <label className="block space-y-2">
-                <span className="text-sm font-bold text-slate-700">
-                  الباقة الجديدة
-                </span>
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">الباقة الجديدة</span>
                 <select
                   value={planDraft}
                   onChange={event => setPlanDraft(event.target.value)}
@@ -266,7 +263,7 @@ export function SuperAdminRestaurantCatalog() {
                   ) : (
                     planOptionsForEditor.map(plan => (
                       <option key={plan.id} value={plan.key}>
-                        {plan.name} · {plan.monthlyPrice} SAR شهريًا
+                        {plan.name} · {plan.monthlyPrice} SAR شهريًا · {plan.features.filter(feature => feature.enabled).length} مميزات
                       </option>
                     ))
                   )}
@@ -298,7 +295,7 @@ export function SuperAdminRestaurantCatalog() {
               }}
               className="rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]"
             >
-              {updateRestaurant.isPending ? "جارٍ الحفظ..." : "حفظ الباقة"}
+              {updateRestaurant.isPending ? "جارٍ الحفظ..." : "تطبيق تغيير الباقة"}
             </Button>
           </DialogFooter>
         </DialogContent>
