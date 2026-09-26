@@ -230,11 +230,11 @@ export function SuperAdminRestaurantCatalog() {
       >
         <DialogContent
           dir="rtl"
-          className="rounded-3xl border-slate-200 bg-white sm:max-w-lg"
+          className="max-h-[90dvh] overflow-y-auto rounded-3xl border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:max-w-xl"
         >
           <DialogHeader className="text-right">
-            <DialogTitle className="text-xl font-black text-slate-900">
-              إدارة باقة وحزم المطعم
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">
+              إدارة الباقة والحزم
             </DialogTitle>
             <DialogDescription>
               اختر الباقة الجديدة للمطعم. يمكنك الترقية أو التخفيض، وتظهر الحزم والمميزات المرتبطة بكل باقة قبل الحفظ.
@@ -242,9 +242,9 @@ export function SuperAdminRestaurantCatalog() {
           </DialogHeader>
           {planEditor && (
             <div className="space-y-4">
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-xs text-slate-500">المطعم</p>
-                <p className="mt-1 font-bold text-slate-900">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-xs text-slate-500 dark:text-slate-400">المنشأة</p>
+                <p className="mt-1 font-bold text-slate-900 dark:text-white">
                   {planEditor.name}
                 </p>
                 <p className="mt-1 font-mono text-xs text-slate-400">
@@ -256,7 +256,7 @@ export function SuperAdminRestaurantCatalog() {
                 <select
                   value={planDraft}
                   onChange={event => setPlanDraft(event.target.value)}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#e76f3c]"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#e76f3c] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 >
                   {planOptionsForEditor.length === 0 ? (
                     <option value="">لا توجد باقات نشطة</option>
@@ -269,6 +269,23 @@ export function SuperAdminRestaurantCatalog() {
                   )}
                 </select>
               </label>
+              {planDraft ? (() => {
+                const selected = planOptionsForEditor.find(plan => plan.key === planDraft);
+                if (!selected) return null;
+                const active = selected.features.filter(feature => feature.enabled);
+                const limited = active.filter(feature => feature.featureLimit !== null);
+                return (
+                  <div className="grid gap-3 rounded-2xl border border-orange-200 bg-orange-50/70 p-4 dark:border-orange-900/60 dark:bg-orange-950/20 sm:grid-cols-3">
+                    <div><p className="text-[11px] font-bold text-slate-500 dark:text-slate-400">المميزات</p><p className="mt-1 text-xl font-black dark:text-white">{active.length}</p></div>
+                    <div><p className="text-[11px] font-bold text-slate-500 dark:text-slate-400">حدود مخصصة</p><p className="mt-1 text-xl font-black dark:text-white">{limited.length}</p></div>
+                    <div><p className="text-[11px] font-bold text-slate-500 dark:text-slate-400">شهريًا</p><p className="mt-1 text-xl font-black text-[#e76f3c]">{selected.monthlyPrice} SAR</p></div>
+                    <div className="flex flex-wrap gap-1.5 border-t border-orange-200/70 pt-3 dark:border-orange-900/50 sm:col-span-3">
+                      {active.slice(0, 10).map(feature => <Badge key={feature.key} variant="outline" className="rounded-lg bg-white/80 text-[10px] dark:bg-slate-900">{definitions.find(item => item.key === feature.key)?.label ?? feature.key}{feature.featureLimit !== null ? ` · ${feature.featureLimit}` : ""}</Badge>)}
+                      {active.length > 10 ? <Badge className="rounded-lg text-[10px]">+{active.length - 10}</Badge> : null}
+                    </div>
+                  </div>
+                );
+              })() : null}
             </div>
           )}
           <DialogFooter>
