@@ -6782,3 +6782,53 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     line-height:1rem !important;
   }
 }
+
+
+/* NFOOD TWO-COLOR THEME V1 — exactly two visual colors per mode. */
+.nfood-menu-shell[data-menu-theme="dark"] {
+  --nfood-bg:#171613;
+  --nfood-fg:#E2A93B;
+  background:var(--nfood-bg) !important;
+  color:var(--nfood-fg) !important;
+}
+.nfood-menu-shell[data-menu-theme="light"] {
+  --nfood-bg:#F7F4EE;
+  --nfood-fg:#1C1B18;
+  background:var(--nfood-bg) !important;
+  color:var(--nfood-fg) !important;
+}
+.nfood-menu-shell .nfood-menu-header,
+.nfood-menu-shell .nfood-menu-category-bar,
+.nfood-menu-shell .nfood-final-category-heading,
+.nfood-menu-shell .nfood-menu-item-card,
+.nfood-menu-shell .nfood-menu-item-content,
+.nfood-menu-shell .nfood-product-detail-dialog,
+.nfood-menu-shell .nfood-product-detail-media,
+.nfood-menu-shell .nfood-product-detail-body {
+  background:var(--nfood-bg) !important;
+  color:var(--nfood-fg) !important;
+  border-color:color-mix(in srgb,var(--nfood-fg) 24%,transparent) !important;
+}
+.nfood-menu-shell .nfood-menu-item-title,
+.nfood-menu-shell .nfood-menu-card-summary,
+.nfood-menu-shell .nfood-menu-price-current,
+.nfood-menu-shell .nfood-menu-price-compare,
+.nfood-menu-shell .nfood-final-category-heading h3,
+.nfood-menu-shell .nfood-final-category-heading > span {
+  color:var(--nfood-fg) !important;
+}
+.nfood-menu-shell .nfood-menu-discount,
+.nfood-menu-shell .nfood-menu-card-add,
+.nfood-menu-shell .nfood-menu-category-bar > button[style] {
+  background:var(--nfood-fg) !important;
+  color:var(--nfood-bg) !important;
+  border-color:var(--nfood-fg) !important;
+}
+.nfood-menu-shell .nfood-menu-category-bar > button:not([style]) {
+  background:var(--nfood-bg) !important;
+  color:var(--nfood-fg) !important;
+  border-color:color-mix(in srgb,var(--nfood-fg) 32%,transparent) !important;
+}
+.nfood-menu-shell .nfood-final-category-heading div > div {
+  background:var(--nfood-fg) !important;
+}
