@@ -6707,3 +6707,78 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     height:100% !important;
   }
 }
+
+
+/* NFOOD COMPACT CARD V1 — improve price/cart/background without increasing card height. */
+@media (max-width:767px) {
+  .nfood-menu-shell.nfood-menu-theme .menu-category-group .category-results.nfood-menu-grid > .nfood-menu-item-card {
+    background:#24221e !important;
+    border-color:rgba(255,255,255,.10) !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .menu-category-group .category-results.nfood-menu-grid > .nfood-menu-item-card > .nfood-menu-item-content {
+    min-height:0 !important;
+    padding:.48rem .52rem .52rem !important;
+    gap:.18rem !important;
+    background:#24221e !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .nfood-menu-item-heading {
+    flex:0 0 auto !important;
+    gap:.16rem !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .nfood-menu-item-title {
+    min-height:1.05rem !important;
+    margin:0 !important;
+    color:#F8F3E9 !important;
+    font-size:.78rem !important;
+    line-height:1.05rem !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .nfood-menu-card-summary {
+    min-height:.88rem !important;
+    max-height:.88rem !important;
+    margin:0 !important;
+    color:#AAA59B !important;
+    font-size:.62rem !important;
+    line-height:.88rem !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .nfood-menu-price-block {
+    display:flex !important;
+    min-height:1.35rem !important;
+    margin-top:.12rem !important;
+    gap:.28rem !important;
+    flex-wrap:nowrap !important;
+    overflow:hidden !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .nfood-menu-price-current {
+    flex:0 0 auto !important;
+    color:#E2A93B !important;
+    font-size:.88rem !important;
+    line-height:1.15rem !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .nfood-menu-price-compare {
+    flex:0 1 auto !important;
+    min-width:0 !important;
+    overflow:hidden !important;
+    color:#AAA59B !important;
+    font-size:.58rem !important;
+    text-overflow:ellipsis !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .nfood-menu-discount {
+    flex:0 0 auto !important;
+    padding:.12rem .28rem !important;
+    font-size:.56rem !important;
+    line-height:.9rem !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .nfood-menu-card-add {
+    width:100% !important;
+    min-height:1.9rem !important;
+    height:1.9rem !important;
+    margin-top:.28rem !important;
+    padding:.3rem .35rem !important;
+    border-radius:10px !important;
+    background:#E2A93B !important;
+    color:#171613 !important;
+    font-size:.66rem !important;
+    font-weight:900 !important;
+    line-height:1rem !important;
+  }
+}
