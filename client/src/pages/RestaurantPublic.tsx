@@ -547,12 +547,11 @@ export default function RestaurantPublic() {
         <div className="relative z-10 flex w-full max-w-3xl items-end gap-3 text-start sm:gap-4">
           <RestaurantLogo src={page.data.restaurant.brandLogoUrl} alt={restaurantName} imageClassName="nfood-cover-logo h-12 w-12 shrink-0 rounded-xl bg-white object-contain p-1 shadow-xl ring-1 ring-white/40 sm:h-20 sm:w-20 sm:rounded-2xl sm:p-1.5" fallbackClassName="nfood-cover-logo h-12 w-12 shrink-0 rounded-xl bg-white p-1.5 text-[var(--menu-primary)] sm:h-20 sm:w-20 sm:rounded-2xl sm:p-2" />
           <div className="min-w-0 pb-0.5">
-            <h1 className="truncate text-xl font-black text-white drop-shadow sm:text-4xl">{restaurantName}</h1>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-bold text-white/85 sm:mt-2 sm:gap-x-3 sm:gap-y-1 sm:text-xs">
-              {page.data.restaurant.city && <span>{page.data.restaurant.city}</span>}
-              {page.data.restaurant.address && <span className="max-w-[18rem] truncate">{page.data.restaurant.address}</span>}
-              <span dir="ltr">{currencyLabel}</span>
-              {page.data.restaurant.locationUrl && <a href={page.data.restaurant.locationUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2">{language === "ar" ? "الموقع" : language === "fr" ? "Localisation" : "Location"}</a>}
+            <h1 className="truncate text-xl font-black leading-tight text-white drop-shadow sm:text-4xl">{restaurantName}</h1>
+            <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5 text-[10px] font-extrabold sm:mt-2 sm:text-xs">
+              {page.data.restaurant.city && <span className="nfood-cover-meta-chip max-w-[11rem] truncate">{page.data.restaurant.city}</span>}
+              <span dir="ltr" className="nfood-cover-meta-chip">{currencyLabel}</span>
+              {page.data.restaurant.locationUrl && <a href={page.data.restaurant.locationUrl} target="_blank" rel="noreferrer" className="nfood-cover-meta-chip transition hover:bg-white/20">{language === "ar" ? "الموقع" : language === "fr" ? "Localisation" : "Location"}</a>}
             </div>
           </div>
         </div>
