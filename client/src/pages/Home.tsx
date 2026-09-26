@@ -152,7 +152,9 @@ export default function Home() {
   useEffect(() => { const onKeyDown = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setCommandOpen(true); } if (event.key === "Escape") setCommandOpen(false); }; window.addEventListener("keydown", onKeyDown); return () => window.removeEventListener("keydown", onKeyDown); }, []);
   const notificationsQuery = trpc.notifications.mine.useQuery(undefined, { enabled: Boolean(user), retry: false, refetchInterval: 5000 });
   const markNotificationRead = trpc.notifications.markRead.useMutation({ onSuccess: () => notificationsQuery.refetch() });
-  const [branch, setBranch] = useState("");\n  const activeBranchId = workspaceBranches.data?.find((item) => item.name === branch)?.id ?? workspaceBranches.data?.[0]?.id;\n  const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId, branchId: user?.testRole === "waiter" ? activeBranchId : undefined }, { enabled: workspaceReady && (user?.testRole !== "waiter" || Boolean(activeBranchId)), retry: false, refetchInterval: 5000 });
+  const [branch, setBranch] = useState("");
+  const activeBranchId = workspaceBranches.data?.find((item) => item.name === branch)?.id ?? workspaceBranches.data?.[0]?.id;
+  const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId, branchId: user?.testRole === "waiter" ? activeBranchId : undefined }, { enabled: workspaceReady && (user?.testRole !== "waiter" || Boolean(activeBranchId)), retry: false, refetchInterval: 5000 });
   const updateOrderStatus = trpc.platform.updateOrderStatus.useMutation({ onSuccess: () => { remoteOrders.refetch(); toast.success("تم حفظ حالة الطلب في قاعدة البيانات"); }, onError: (error) => toast.error(`تعذر تحديث الطلب: ${error.message}`) });
   useEffect(() => { const firstBranch = workspaceBranches.data?.[0]; setBranch((current) => current && workspaceBranches.data?.some((item) => item.name === current) ? current : firstBranch?.name ?? ""); }, [workspaceBranches.data]);
   const [query, setQuery] = useState("");
