@@ -6254,3 +6254,81 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 @media (min-width:1024px) {
   .nfood-menu-theme .category-results { grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:1rem !important; }
 }
+
+
+/* SAFRA V2 — hard reset conflicting legacy card/template rules. */
+.nfood-menu-shell.nfood-menu-theme .nfood-menu-category-bar {
+  background:#171613 !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  border-radius:18px !important;
+  padding:.55rem !important;
+}
+.nfood-menu-shell.nfood-menu-theme .category-results {
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+.nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card {
+  display:flex !important;
+  flex-direction:column !important;
+  grid-template-columns:none !important;
+  grid-template-rows:none !important;
+  width:100% !important;
+  min-height:0 !important;
+  height:auto !important;
+  background:#24221e !important;
+}
+.nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-image {
+  position:relative !important;
+  inset:auto !important;
+  grid-column:auto !important;
+  grid-row:auto !important;
+  order:0 !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  aspect-ratio:1/1 !important;
+}
+.nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+  position:relative !important;
+  inset:auto !important;
+  grid-column:auto !important;
+  grid-row:auto !important;
+  order:1 !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  padding:.8rem !important;
+  background:#24221e !important;
+}
+.nfood-menu-shell.nfood-menu-theme .nfood-menu-item-heading { min-height:0 !important; }
+.nfood-menu-shell.nfood-menu-theme .nfood-menu-item-title { color:#F8F3E9 !important; }
+.nfood-menu-shell.nfood-menu-theme .nfood-menu-card-summary {
+  display:-webkit-box !important;
+  color:#AAA59B !important;
+  -webkit-box-orient:vertical !important;
+  -webkit-line-clamp:1 !important;
+}
+.nfood-menu-shell.nfood-menu-theme .nfood-menu-price-block { margin-top:.45rem !important; }
+.nfood-menu-shell.nfood-menu-theme .nfood-menu-card-add {
+  width:100%;
+  min-height:2.35rem;
+  margin-top:.7rem;
+  border:0;
+  border-radius:12px;
+  background:#E2A93B;
+  color:#171613;
+  font-size:.78rem;
+  font-weight:900;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.nfood-menu-shell.nfood-menu-theme .nfood-menu-card-add:hover { filter:brightness(1.06); }
+.nfood-menu-shell.nfood-menu-theme .nfood-menu-image-add { display:none !important; }
+@media (max-width:599px) {
+  .nfood-menu-shell.nfood-menu-theme .category-results { gap:.5rem !important; }
+  .nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-content { padding:.6rem !important; }
+  .nfood-menu-shell.nfood-menu-theme .nfood-menu-card-add { min-height:2.2rem; font-size:.7rem; margin-top:.55rem; }
+}
+@media (min-width:1024px) {
+  .nfood-menu-shell.nfood-menu-theme .category-results { grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:1rem !important; }
+}
