@@ -32,6 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { filterRestaurantRows, formatCatalogMoney } from "@/lib/restaurantCatalog";
+import { sectorFeatureCatalog } from "../../../shared/sectorFeatureCatalog";
 
 type Filter = "الكل" | "نشط" | "تجربة" | "معلّق";
 
@@ -237,7 +238,7 @@ export function SuperAdminRestaurantCatalog() {
               إدارة الباقة والحزم
             </DialogTitle>
             <DialogDescription>
-              اختر الباقة الجديدة للمطعم. يمكنك الترقية أو التخفيض، وتظهر الحزم والمميزات المرتبطة بكل باقة قبل الحفظ.
+              مركز تكوين المنشأة: قارن الباقة والحزم والحدود قبل التطبيق. أي تغيير في الاستحقاقات ينعكس على الأدوات المتاحة للمنشأة.
             </DialogDescription>
           </DialogHeader>
           {planEditor && (
@@ -282,6 +283,11 @@ export function SuperAdminRestaurantCatalog() {
                     <div className="flex flex-wrap gap-1.5 border-t border-orange-200/70 pt-3 dark:border-orange-900/50 sm:col-span-3">
                       {active.slice(0, 10).map(feature => <Badge key={feature.key} variant="outline" className="rounded-lg bg-white/80 text-[10px] dark:bg-slate-900">{definitions.find(item => item.key === feature.key)?.label ?? feature.key}{feature.featureLimit !== null ? ` · ${feature.featureLimit}` : ""}</Badge>)}
                       {active.length > 10 ? <Badge className="rounded-lg text-[10px]">+{active.length - 10}</Badge> : null}
+                      <div className="mt-2 w-full rounded-xl border border-dashed border-orange-300/70 bg-white/60 p-3 dark:border-orange-900 dark:bg-slate-950/50">
+                        <p className="text-[11px] font-black text-slate-700 dark:text-slate-200">حزمة الضيافة الذكية</p>
+                        <p className="mt-1 text-[10px] leading-5 text-slate-500 dark:text-slate-400">للمطاعم والمقاهي: المنيو الرقمي، QR/NFC، الطلبات، POS/KDS، الطاولات، نداء النادل، الحجوزات، الطابور، التوصيل، الموظفون، المخزون والمشتريات.</p>
+                        <p className="mt-2 text-[10px] font-bold text-[#e76f3c]">{sectorFeatureCatalog.hospitality.length} قدرة تشغيلية قابلة للربط بالباقة والحزم</p>
+                      </div>
                     </div>
                   </div>
                 );
