@@ -188,6 +188,8 @@ export const restaurants = mysqlTable("restaurants", {
   waiterCallEnabled: boolean("waiterCallEnabled").default(true).notNull(),
   waiterCallCooldownMinutes: int("waiterCallCooldownMinutes").default(10).notNull(),
   waiterCallAlertMode: mysqlEnum("waiterCallAlertMode", ["none", "sound", "vibrate", "both"]).default("both").notNull(),
+  waiterCallInAppEnabled: boolean("waiterCallInAppEnabled").default(true).notNull(),
+  waiterCallEmailEnabled: boolean("waiterCallEmailEnabled").default(false).notNull(),
   reservationHelpText: text("reservationHelpText"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({ menuTemplateScheduleTaskIdx: index("restaurants_menu_template_schedule_task_idx").on(table.menuTemplateScheduleCronTaskUid) }));
