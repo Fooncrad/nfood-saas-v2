@@ -7329,3 +7329,83 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     border-radius:1.25rem !important;
   }
 }
+
+
+/* NFOOD SERVICE CENTER V3 — one visual system for account, waiter, cart, addons and product detail. */
+.nfood-menu-shell .nfood-service-center {
+  scrollbar-width:thin;
+  scrollbar-color:rgba(226,169,59,.55) transparent;
+}
+.nfood-menu-shell .nfood-service-center::-webkit-scrollbar { width:5px; }
+.nfood-menu-shell .nfood-service-center::-webkit-scrollbar-track { background:transparent; }
+.nfood-menu-shell .nfood-service-center::-webkit-scrollbar-thumb {
+  background:rgba(226,169,59,.55);
+  border-radius:999px;
+}
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-service-center {
+  background:#FFFFFF !important;
+  color:#1C1B18 !important;
+  border:1px solid #E7E1D8 !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center {
+  background:#171613 !important;
+  color:#F8F3E9 !important;
+  border:1px solid rgba(226,169,59,.28) !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center .text-slate-950,
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center .text-slate-900,
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center .text-slate-800 {
+  color:#F8F3E9 !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center .text-slate-700,
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center .text-slate-600,
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center .text-slate-500,
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center .text-slate-400 {
+  color:#AAA59B !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center .bg-white,
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center .bg-slate-50,
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center .bg-slate-100 {
+  background:#24221E !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center input,
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center select,
+.nfood-menu-shell.nfood-menu-dark .nfood-service-center textarea {
+  background:#24221E !important;
+  color:#F8F3E9 !important;
+  border-color:rgba(255,255,255,.10) !important;
+}
+.nfood-menu-shell .nfood-product-detail-dialog {
+  width:min(calc(100vw - 1.5rem),56rem) !important;
+  max-width:56rem !important;
+  max-height:min(86dvh,48rem) !important;
+}
+.nfood-menu-shell .nfood-product-detail-panel {
+  width:100% !important;
+  max-height:inherit !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-product-detail-media,
+.nfood-menu-shell.nfood-menu-dark .nfood-product-detail-body {
+  background:#171613 !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-product-detail-dialog section {
+  border-color:rgba(255,255,255,.08) !important;
+}
+.nfood-menu-shell .nfood-addon-dialog {
+  width:min(calc(100vw - 1.5rem),32rem) !important;
+  max-width:32rem !important;
+}
+@media (max-width:640px) {
+  .nfood-menu-shell .nfood-product-detail-dialog,
+  .nfood-menu-shell .nfood-addon-dialog,
+  .nfood-menu-shell .nfood-account,
+  .nfood-menu-shell .nfood-waiter-dialog,
+  .nfood-menu-shell .nfood-content-cart {
+    width:calc(100vw - 1rem) !important;
+    max-width:calc(100vw - 1rem) !important;
+    max-height:calc(100dvh - 1rem) !important;
+  }
+  .nfood-menu-shell .nfood-product-detail-dialog {
+    height:auto !important;
+  }
+}
