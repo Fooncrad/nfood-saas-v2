@@ -7069,3 +7069,87 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     padding-top:.75rem !important;
   }
 }
+
+
+/* NFOOD PUBLIC IDENTITY V3 — authoritative storefront palette; legacy teal/green cannot leak past this point. */
+.nfood-menu-shell:not(.nfood-menu-dark) {
+  --menu-page:#F7F4EE !important;
+  --menu-surface:#FFFFFF !important;
+  --menu-ink:#1C1B18 !important;
+  --menu-muted:#6F6A62 !important;
+  --menu-primary:#E2A93B !important;
+  --menu-accent:#E2A93B !important;
+  background:#F7F4EE !important;
+  background-image:none !important;
+  color:#1C1B18 !important;
+}
+.nfood-menu-shell.nfood-menu-dark {
+  --menu-page:#171613 !important;
+  --menu-surface:#24221E !important;
+  --menu-ink:#F8F3E9 !important;
+  --menu-muted:#AAA59B !important;
+  --menu-primary:#E2A93B !important;
+  --menu-accent:#E2A93B !important;
+  background:#171613 !important;
+  background-image:none !important;
+  color:#F8F3E9 !important;
+}
+.nfood-menu-shell:not(.nfood-menu-dark) main,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-section,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-section h1,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-section h2,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-section h3,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-section .text-slate-950,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-section .text-slate-900,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-section .text-slate-800 {
+  color:#1C1B18 !important;
+}
+.nfood-menu-shell.nfood-menu-dark main,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-section,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-section h1,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-section h2,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-section h3 {
+  color:#F8F3E9 !important;
+}
+.nfood-menu-shell .nfood-menu-header,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header {
+  background:#171613 !important;
+  background-image:none !important;
+  border-color:rgba(255,255,255,.10) !important;
+  color:#F8F3E9 !important;
+}
+.nfood-menu-shell .nfood-menu-header *,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header *,
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-header * {
+  border-color:rgba(255,255,255,.10);
+}
+.nfood-menu-shell .nfood-menu-header nav a,
+.nfood-menu-shell .nfood-menu-header button,
+.nfood-menu-shell .nfood-menu-header label,
+.nfood-menu-shell .nfood-menu-header span {
+  color:#F8F3E9 !important;
+}
+.nfood-menu-shell:not(.nfood-menu-dark) .nfood-menu-category-bar {
+  background:#FFFFFF !important;
+  background-image:none !important;
+  border-color:#E8E1D7 !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-category-bar {
+  background:#24221E !important;
+  background-image:none !important;
+  border-color:rgba(255,255,255,.10) !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-card,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-item-content,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-info-card {
+  background:#24221E !important;
+  border-color:rgba(255,255,255,.10) !important;
+}
+.nfood-menu-shell.nfood-menu-dark input,
+.nfood-menu-shell.nfood-menu-dark select {
+  background:#24221E !important;
+  border-color:rgba(255,255,255,.12) !important;
+  color:#F8F3E9 !important;
+}
+.nfood-menu-shell.nfood-menu-dark input::placeholder { color:#AAA59B !important; }
