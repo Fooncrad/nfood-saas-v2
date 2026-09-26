@@ -68,7 +68,9 @@ export const TEAM_PERMISSION_CATALOG = [
 ] as const;
 
 export type TeamPermission = (typeof TEAM_PERMISSION_CATALOG)[number]["key"];
-export const DEFAULT_TEAM_ROLE_PERMISSIONS: Record<string, TeamPermission[]> = {\n  owner: TEAM_PERMISSION_CATALOG.map((permission) => permission.key),\n  restaurant_admin: TEAM_PERMISSION_CATALOG.map((permission) => permission.key),
+export const DEFAULT_TEAM_ROLE_PERMISSIONS: Record<string, TeamPermission[]> = {
+  owner: TEAM_PERMISSION_CATALOG.map((permission) => permission.key),
+  restaurant_admin: TEAM_PERMISSION_CATALOG.map((permission) => permission.key),
   manager: ["orders.read","orders.create","orders.update","orders.transfer","orders.cancel_item","orders.cancel","orders.discount","orders.print","pos.manage","pos.shift_open","pos.shift_close","kds.manage","bar.manage","tables.manage","tables.assign","tables.transfer","queue.manage","reception.manage","reservations.read","reservations.manage","waiter_calls.read","waiter_calls.update","menu.read","menu.manage","menu.availability","inventory.read","inventory.manage","purchases.read","purchases.manage","delivery.manage","notifications.read","reports.read","finance.read","team.manage","hr.manage","attendance.manage","assignments.manage","permissions.manage","customers.read","settings.manage","printers.manage"],
   supervisor: ["orders.read","orders.create","orders.update","orders.transfer","orders.cancel_item","orders.print","pos.manage","kds.manage","bar.manage","tables.manage","tables.assign","queue.manage","reception.manage","reservations.read","reservations.manage","waiter_calls.read","waiter_calls.update","menu.read","menu.availability","inventory.read","delivery.manage","notifications.read","reports.read","attendance.manage","assignments.manage","customers.read"],
   receptionist: ["orders.read","tables.manage","queue.manage","reception.manage","reservations.read","reservations.manage","waiter_calls.read","notifications.read","customers.read"],
