@@ -404,8 +404,9 @@ export default function RestaurantPublic() {
   const callWaiter = () => { if (waiterCallCooldownActive && waiterCallState?.tableName === (tableName || waiterCallTableName)) { toast.info(language === "ar" ? "انتظر انتهاء المؤقت قبل إرسال نداء جديد" : language === "fr" ? "Attendez la fin du minuteur avant un nouvel appel" : "Wait for the timer to finish before sending another request"); return; } const firstTable = publicTableOptions.find((table) => table.branchId === (selectedBranchId ?? branches[0]?.id)); setWaiterCallTableName((current) => current || tableName || firstTable?.name || ""); setWaiterCallDialogOpen(true); };
   const previewQuery = new URLSearchParams(window.location.search);
   const isPreviewHex = (value: string | null): value is string => Boolean(value && /^#[0-9A-Fa-f]{6}$/.test(value));
-  const brandColor = isPreviewHex(previewQuery.get("brandColor")) ? previewQuery.get("brandColor")! : page.data?.restaurant.brandColor ?? palette.primary;
-  const brandAccentColor = isPreviewHex(previewQuery.get("brandAccentColor")) ? previewQuery.get("brandAccentColor")! : page.data?.restaurant.brandAccentColor ?? palette.accent;
+  // Public menu uses one locked visual identity; legacy restaurant palettes (forest/ocean/etc.) must not leak into the storefront.
+  const brandColor = "#E2A93B";
+  const brandAccentColor = "#E2A93B";
   const brandTextColor = isPreviewHex(previewQuery.get("brandTextColor")) ? previewQuery.get("brandTextColor")! : page.data?.restaurant.brandTextColor ?? menuDisplaySettings.cardTextColor;
   const brandFontFamily = previewQuery.get("brandFont") || page.data?.restaurant.brandFontFamily || "IBM Plex Sans Arabic";
   const brandHeadingFontFamily = previewQuery.get("brandHeadingFont") || page.data?.restaurant.brandHeadingFontFamily || brandFontFamily;
