@@ -6590,3 +6590,24 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     gap:1rem !important;
   }
 }
+
+
+/* NFOOD FINAL PRODUCT DETAIL — same visual language as the approved reference. */
+.nfood-product-detail-dialog {
+  border:1px solid rgba(226,169,59,.65) !important;
+  background:#171613 !important;
+  color:#F8F3E9 !important;
+}
+.nfood-product-detail-media { background:#171613 !important; }
+.nfood-product-detail-body { background:#171613 !important; color:#F8F3E9 !important; }
+.nfood-product-detail-dialog .nfood-product-detail-image { border:1px solid rgba(255,255,255,.10) !important; }
+.nfood-product-detail-dialog [class*="text-slate-950"],
+.nfood-product-detail-dialog [class*="text-slate-900"],
+.nfood-product-detail-dialog [class*="text-slate-800"],
+.nfood-product-detail-dialog [class*="text-slate-700"] { color:#F8F3E9 !important; }
+.nfood-product-detail-dialog [class*="text-slate-600"],
+.nfood-product-detail-dialog [class*="text-slate-500"],
+.nfood-product-detail-dialog [class*="text-slate-400"] { color:#AAA59B !important; }
+.nfood-product-detail-dialog [class*="bg-slate-50"],
+.nfood-product-detail-dialog [class*="bg-white"] { background:#24221e !important; }
+.nfood-product-detail-dialog [class*="border-slate"] { border-color:rgba(255,255,255,.10) !important; }
