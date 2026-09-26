@@ -6832,3 +6832,46 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 .nfood-menu-shell .nfood-final-category-heading div > div {
   background:var(--nfood-fg) !important;
 }
+
+
+/* NFOOD PUBLIC PALETTE V1 — one five-color system for menu chrome and overlays. */
+.nfood-menu-shell {
+  --nfood-bg:#171613;
+  --nfood-surface:#24221e;
+  --nfood-gold:#E2A93B;
+  --nfood-text:#F8F3E9;
+  --nfood-muted:#AAA59B;
+}
+.nfood-menu-shell .nfood-menu-header,
+.nfood-menu-shell .nfood-menu-footer,
+.nfood-menu-shell .nfood-mobile-bottom-nav {
+  background:#171613 !important;
+  color:#F8F3E9 !important;
+  border-color:rgba(255,255,255,.10) !important;
+}
+.nfood-menu-shell .nfood-menu-header nav,
+.nfood-menu-shell .nfood-menu-header nav a,
+.nfood-menu-shell .nfood-menu-header button { color:#F8F3E9 !important; }
+.nfood-menu-shell .nfood-menu-header button:hover { background:#24221e !important; }
+.nfood-menu-shell .nfood-menu-language,
+.nfood-menu-shell .nfood-menu-language button {
+  background:#24221e !important;
+  color:#F8F3E9 !important;
+  border-color:rgba(255,255,255,.10) !important;
+}
+.nfood-menu-shell .nfood-menu-footer {
+  margin-top:2rem !important;
+}
+.nfood-menu-shell .nfood-menu-footer p,
+.nfood-menu-shell .nfood-menu-footer a,
+.nfood-menu-shell .nfood-menu-footer button,
+.nfood-menu-shell .nfood-menu-footer span { color:#AAA59B !important; }
+.nfood-menu-shell .nfood-menu-footer h3,
+.nfood-menu-shell .nfood-menu-footer .font-black { color:#F8F3E9 !important; }
+.nfood-menu-shell .nfood-mobile-bottom-nav button { color:#F8F3E9 !important; }
+.nfood-menu-shell .nfood-mobile-bottom-nav svg { color:#E2A93B !important; }
+.nfood-menu-shell [data-sonner-toast] {
+  background:#24221e !important;
+  color:#F8F3E9 !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+}
