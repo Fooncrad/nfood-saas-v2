@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BadgeCheck, Check, Download, Eye, FileJson, LockKeyhole, Palette, QrCode, Save, Store, Upload, Wrench } from "lucide-react";
+import { BadgeCheck, Check, Download, Eye, LockKeyhole, Monitor, QrCode, Save, Smartphone, Store, Upload, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { MENU_DISPLAY_TOOL_KEYS, normalizeMenuDisplaySettings, serializeMenuDisplaySettings } from "@shared/menuDisplaySettings";
 import type { MenuDisplaySettings } from "@shared/menuDisplaySettings";
 import { StorefrontLivePreview, type StorefrontMenuTemplate, type StorefrontSettings } from "@/components/StorefrontLivePreview";
+import { trpc } from "@/lib/trpc";
 
 const colorPresets = [
   { key: "nfood-sunset", label: "Sunset", color: "#e76f3c" },
@@ -21,7 +22,6 @@ const menuTemplates: { key: StorefrontMenuTemplate; label: string; description: 
   { key: "bistro", label: "Bistro", description: "دافئ وحميم", swatch: "linear-gradient(135deg, #f3ebe2, #b86b45)" },
   { key: "glass", label: "NFOOD Glass", description: "داكن وزجاجي", swatch: "linear-gradient(135deg, #0b0f17, #f97316)" },
   { key: "market", label: "Market", description: "سريع وكثيف للمنيو الكبير", swatch: "linear-gradient(135deg, #f8fafc, #2563eb)" },
-  { key: "signature", label: "Signature", description: "بريميوم فاخر للصور والأسعار", swatch: "linear-gradient(135deg, #111827, #d97706)" },
 ];
 
 const visibleSections: { key: string; label: string; description: string; tools: (typeof MENU_DISPLAY_TOOL_KEYS)[number][] }[] = [
@@ -54,6 +54,9 @@ function toStorefrontSettings(restaurantName: string, display: MenuDisplaySettin
 }
 
 export function StorefrontCustomizationPanel({ restaurantId = 1 }: { restaurantId?: number }) {
+  const utils = trpc.useUtils();
+  const branding = trpc.platform.branding.useQuery({ restaurantId });
+  const updateBranding = trpc.platform.updateBranding.useMutation({ onSuccess: async () => { setDirty(false); await utils.platform.branding.invalidate({ restaurantId }); toast.success("تم حفظ القالب ونشره على المنيو العام"); }, onError: (error) => toast.error(error.message || "تعذر نشر تخصيص المنيو") });
   const [restaurantName, setRestaurantName] = useState("مطعم واحة المذاق");
   const [displayJson, setDisplayJson] = useState<string | null>(null);
   const display = useMemo(() => normalizeMenuDisplaySettings(displayJson), [displayJson]);
@@ -68,6 +71,9 @@ export function StorefrontCustomizationPanel({ restaurantId = 1 }: { restaurantI
   const [qrGeneratedAt, setQrGeneratedAt] = useState("بعد تفعيل المتجر مباشرة");
   const [dirty, setDirty] = useState(false);
   const [backupPayload, setBackupPayload] = useState<string>("");
+  const [previewDevice, setPreviewDevice] = useState<"mobile" | "desktop">("mobile");
+
+  useEffect(() => { if (!branding.data) return; setRestaurantName(branding.data.brandName || "المتجر"); setDisplayJson(branding.data.menuDisplaySettingsJson ?? null); setPreset(branding.data.themePreset ?? "nfood-sunset"); setBrandColor(branding.data.brandColor ?? "#e76f3c"); const configured = branding.data.menuTemplate; setMenuTemplate(configured === "bistro" || configured === "glass" || configured === "market" ? configured : "editorial"); setMode(branding.data.themeMode ?? "light"); setReservationEnabled(branding.data.reservationEnabled !== false); setShowBranchesOnMenu(branding.data.showBranchesOnMenu !== false); setDirty(false); }, [branding.data]);
 
   const settings: StorefrontSettings = toStorefrontSettings(restaurantName, display, { brandColor, themePreset: preset, menuTemplate, themeMode: mode, verifiedStorefront, reservationEnabled, showBranchesOnMenu, qrValue });
 
@@ -89,11 +95,7 @@ export function StorefrontCustomizationPanel({ restaurantId = 1 }: { restaurantI
     if (chosen) setBrandColor(chosen.color);
     setDirty(true);
   };
-  const save = () => {
-    setDirty(false);
-    toast.success("تم حفظ تخصيص المتجر ونشر التغييرات على الصفحة العامة");
-    window.dispatchEvent(new CustomEvent("nfood:storefront-saved", { detail: { restaurantId } }));
-  };
+  const save = () => { if (!branding.data) { toast.error("تعذر تحميل بيانات المتجر"); return; } updateBranding.mutate({ ...branding.data, restaurantId, brandName: restaurantName.trim() || branding.data.brandName, brandColor, themePreset: preset, themeMode: mode, menuTemplate, reservationEnabled, showBranchesOnMenu, menuDisplaySettingsJson: serializeMenuDisplaySettings(display), brandLogoUrl: branding.data.brandLogoUrl ?? "", pwaInstallIconUrl: branding.data.pwaInstallIconUrl ?? "" }); };
 
   const buildBackupPayload = () => JSON.stringify({
     app: "nfood-restaurant-saas",
@@ -168,7 +170,7 @@ export function StorefrontCustomizationPanel({ restaurantId = 1 }: { restaurantI
           </div>
           <Badge className="gap-1 rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-700"><BadgeCheck className="h-3.5 w-3.5" /> QR المنيو التلقائي {qrGeneratedAt}</Badge>
         </CardHeader>
-        <CardContent className="grid gap-6 p-5 lg:grid-cols-[1fr_340px]">
+        <CardContent className="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_460px]">
           <div className="space-y-5">
             <section>
               <div className="mb-2 flex items-center justify-between gap-3">
@@ -177,17 +179,9 @@ export function StorefrontCustomizationPanel({ restaurantId = 1 }: { restaurantI
               </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="mb-3 flex items-center justify-between"><div><h3 className="text-xs font-black text-slate-700">قالب المنيو</h3><p className="mt-1 text-[10px] leading-5 text-slate-400">يُطبق تلقائيًا على زوار رابط المنيو. يمكن للزائر تبديله مؤقتًا في حال تفعيل المبدّل.</p></div></div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                {menuTemplates.map((item) => (
-                  <button key={item.key} type="button" onClick={() => { setMenuTemplate(item.key); setDirty(true); }} aria-pressed={menuTemplate === item.key} className={`group rounded-xl border p-2 text-right transition ${menuTemplate === item.key ? "border-orange-400 bg-orange-50 shadow-sm" : "border-slate-200 bg-slate-50 hover:border-orange-200"}`}>
-                    <span className="mb-2 block h-9 rounded-lg shadow-inner" style={{ background: item.swatch }} />
-                    <span className="block text-[11px] font-black text-slate-800">{item.label}</span>
-                    <span className="mt-0.5 block text-[10px] text-slate-500">{item.description}</span>
-                  </button>
-                ))}
-              </div>
+            <section className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-5 text-white shadow-xl">
+              <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><Badge className="mb-2 bg-orange-500 text-white">NFOOD Menu Studio</Badge><h3 className="text-lg font-black">اختر تجربة المنيو</h3><p className="mt-1 text-xs text-slate-400">4 قوالب متقدمة للبحث والتنقل السريع في أكثر من 500 صنف.</p></div><span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] text-slate-300">500+ صنف جاهز</span></div>
+              <div className="grid gap-4 sm:grid-cols-2">{menuTemplates.map((item) => <button key={item.key} type="button" onClick={() => { setMenuTemplate(item.key); setDirty(true); }} className={`group overflow-hidden rounded-2xl border text-right transition-all ${menuTemplate === item.key ? "border-orange-400 bg-white/10 ring-2 ring-orange-400/20" : "border-white/10 bg-white/[0.04] hover:border-white/25"}`}><div className="relative h-36 overflow-hidden p-3" style={{ background: item.swatch }}><div className="absolute inset-x-3 top-3 flex items-center justify-between"><span className="h-5 w-20 rounded-full bg-white/90 shadow" /><span className="h-7 w-7 rounded-full bg-white/90 shadow" /></div><div className="absolute inset-x-3 top-12 flex gap-1">{["القهوة","الحلى","الوجبات","جديد"].map((x) => <span key={x} className="rounded-full bg-white/90 px-2 py-1 text-[8px] font-black text-slate-700 shadow">{x}</span>)}</div><div className="absolute inset-x-3 bottom-3 grid grid-cols-4 gap-1.5">{[1,2,3,4].map((n) => <span key={n} className="block aspect-square rounded-lg border border-white/60 bg-white/85 shadow" />)}</div></div><div className="flex items-center justify-between gap-3 p-3"><div><span className="block text-sm font-black">{item.label}</span><span className="mt-1 block text-[10px] text-slate-400">{item.description}</span></div>{menuTemplate === item.key ? <span className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500"><Check className="h-4 w-4" /></span> : null}</div></button>)}</div>
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -271,15 +265,15 @@ export function StorefrontCustomizationPanel({ restaurantId = 1 }: { restaurantI
             </section>
 
             <div className="flex items-center gap-3">
-              <Button type="button" onClick={save} disabled={!dirty} className="rounded-xl bg-[#e76f3c] text-white hover:bg-[#d85f2e]"><Save className="me-2 h-4 w-4" />{dirty ? "حفظ التغييرات" : "لا توجد تغييرات"}</Button>
+              <Button type="button" onClick={save} disabled={!dirty || updateBranding.isPending || branding.isLoading} className="rounded-xl bg-[#e76f3c] text-white hover:bg-[#d85f2e]"><Save className="me-2 h-4 w-4" />{updateBranding.isPending ? "جارٍ النشر..." : dirty ? "حفظ ونشر" : "منشور"}</Button>
               <span className="text-[10px] text-slate-400">{dirty ? "التغييرات لم تُنشر بعد" : "الإعدادات منشورة على الصفحة العامة"}</span>
             </div>
           </div>
 
-          <aside className="lg:sticky lg:top-24 self-start">
+          <aside className="xl:sticky xl:top-24 self-start">
             <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-              <div className="mb-3 flex items-center justify-between px-1"><p className="text-xs font-black text-slate-700">معاينة حية على الهاتف</p><span className="text-[10px] font-bold text-emerald-600">{menuTemplate === "glass" ? "NFOOD Glass" : menuTemplate === "bistro" ? "Bistro" : "Editorial"}</span></div>
-              <StorefrontLivePreview settings={settings} />
+              <div className="mb-3 flex items-center justify-between gap-3 px-1"><div><p className="text-sm font-black text-slate-800">المعاينة الحية</p><p className="text-[10px] text-slate-400">Mobile / Desktop</p></div><div className="flex rounded-xl bg-slate-100 p-1"><button type="button" onClick={() => setPreviewDevice("mobile")} className={`rounded-lg p-2 ${previewDevice === "mobile" ? "bg-white shadow-sm" : "text-slate-400"}`}><Smartphone className="h-4 w-4" /></button><button type="button" onClick={() => setPreviewDevice("desktop")} className={`rounded-lg p-2 ${previewDevice === "desktop" ? "bg-white shadow-sm" : "text-slate-400"}`}><Monitor className="h-4 w-4" /></button></div></div>
+              <div className={previewDevice === "desktop" ? "origin-top scale-[0.86] -mb-14" : ""}><StorefrontLivePreview settings={settings} /></div>
               <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-[10px] text-slate-500"><span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500" /> تتحدث المعاينة فورًا قبل الحفظ</div>
             </div>
           </aside>
