@@ -228,6 +228,28 @@ export const appRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "تعذر الاتصال بقاعدة بيانات تسجيل الدخول" });
       }
       if (!account || account.deletedAt) throw new TRPCError({ code: "UNAUTHORIZED", message: "الحساب غير مفعل أو بيانات الدخول غير صحيحة" });
+      // Team accounts keep their credential and operational role in testAccounts.
+      // The linked users row is the session identity only; never duplicate the password hash there.
+      if (account.openId.startsWith("test_")) {
+        const teamAccountId = Number(account.openId.slice(5));
+        const teamAccount = (await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, role: testAccounts.role, passwordHash: testAccounts.passwordHash, isActive: testAccounts.isActive, displayName: testAccounts.displayName }).from(testAccounts).where(eq(testAccounts.id, teamAccountId)).limit(1))[0];
+        if (!teamAccount || !teamAccount.isActive) throw new TRPCError({ code: "UNAUTHORIZED", message: "الحساب غير مفعل أو بيانات الدخول غير صحيحة" });
+        const [teamScheme, teamSalt, teamStoredKey] = teamAccount.passwordHash.split("$");
+        if (teamScheme !== "scrypt" || !teamSalt || !teamStoredKey) throw new TRPCError({ code: "UNAUTHORIZED", message: "بيانات الدخول غير صحيحة" });
+        const teamDerivedKey = scryptSync(input.password, Buffer.from(teamSalt, "base64"), 64);
+        const teamExpectedKey = Buffer.from(teamStoredKey, "base64");
+        if (teamDerivedKey.length !== teamExpectedKey.length || !timingSafeEqual(teamDerivedKey, teamExpectedKey)) throw new TRPCError({ code: "UNAUTHORIZED", message: "بيانات الدخول غير صحيحة" });
+        const token = await sdk.signSession({ openId: account.openId, appId: `team_${nanoid(12)}`, name: teamAccount.displayName ?? account.name ?? account.email ?? "NFOOD" });
+        await db.update(users).set({ lastSignedIn: new Date(), loginMethod: "local" }).where(eq(users.id, account.id));
+        await db.delete(authSessions).where(eq(authSessions.userId, account.id));
+        await db.insert(authSessions).values({ userId: account.id, sessionTokenHash: createHash("sha256").update(token).digest("hex"), deviceLabel: input.deviceLabel ?? "تسجيل دخول فريق", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 12) });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.clearCookie(COOKIE_NAME, cookieOptions);
+        ctx.res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
+        ctx.res.cookie(TEST_SESSION_COOKIE, token, { ...cookieOptions, httpOnly: true, maxAge: 1000 * 60 * 60 * 12 });
+        await insertAuditLog({ restaurantId: teamAccount.restaurantId ?? null, actorUserId: account.id, actorRole: teamAccount.role, action: "team.account.signed_in", entityType: "team_account", entityId: String(teamAccount.id), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ role: teamAccount.role }) });
+        return { success: true, role: teamAccount.role, name: teamAccount.displayName ?? account.name ?? account.email ?? "NFOOD", onboardingRequired: false, next: "/restaurant/dashboard" };
+      }
       if (!account.passwordHash) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "PASSWORD_SETUP_REQUIRED" });
       const [scheme, salt, storedKey] = account.passwordHash.split("$");
       if (scheme !== "scrypt" || !salt || !storedKey) throw new TRPCError({ code: "UNAUTHORIZED", message: "بيانات الدخول غير صحيحة" });
