@@ -44,7 +44,7 @@ export const DEFAULT_TEAM_ROLE_PERMISSIONS: Record<string, TeamPermission[]> = {
   waiter: ["orders.read","orders.update","tables.manage","menu.read","reservations.manage","waiter_calls.read","waiter_calls.update","notifications.read"],
   kitchen: ["orders.read","orders.update","kds.manage","menu.read","inventory.manage","notifications.read"],
   bar: ["orders.read","orders.update","bar.manage","menu.read","inventory.manage","notifications.read"],
-  cashier: ["orders.read","orders.update","orders.cancel","pos.manage","menu.read","finance.read","notifications.read"],
+  cashier: ["orders.read","orders.update","orders.cancel","pos.manage","menu.read","notifications.read"],
   driver: ["orders.read","orders.update","delivery.manage","notifications.read"],
   inventory: ["inventory.manage","purchases.manage","reports.read","notifications.read"],
   purchasing: ["inventory.manage","purchases.manage","finance.read","reports.read","notifications.read"],
