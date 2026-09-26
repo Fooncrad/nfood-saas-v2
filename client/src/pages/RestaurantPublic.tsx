@@ -454,7 +454,8 @@ export default function RestaurantPublic() {
     setDetailSizeId(parsed.sizes?.[0]?.id ?? null);
     setDetailQuantity(1);
   }, [selectedMenuItem]);
-  const publicTableOptions = useMemo(\n    () => Array.from(new Map([...(page.data?.availableTables ?? []), ...(page.data?.serviceTables ?? [])].map((table) => [table.id, table])).values()),\n    [page.data?.availableTables, page.data?.serviceTables],\n  );\n  const serviceBranchId = selectedBranchId ?? allBranches[0]?.id ?? publicTableOptions[0]?.branchId ?? null;
+  const publicTableOptions = useMemo(() => Array.from(new Map([...(page.data?.availableTables ?? []), ...(page.data?.serviceTables ?? [])].map((table) => [table.id, table])).values()), [page.data?.availableTables, page.data?.serviceTables]);
+  const serviceBranchId = selectedBranchId ?? allBranches[0]?.id ?? publicTableOptions[0]?.branchId ?? null;
   const serviceTableOptions = useMemo(() => serviceBranchId == null ? publicTableOptions : publicTableOptions.filter((table) => table.branchId === serviceBranchId), [publicTableOptions, serviceBranchId]);
   const showBranches = Boolean(page.data?.restaurant.showBranchesOnMenu) && allBranches.length > 1;
   const branches = showBranches ? allBranches : [];
