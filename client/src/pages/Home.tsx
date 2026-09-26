@@ -220,12 +220,12 @@ function ModuleView({ active, orders, advanceOrder, setActive, restaurantId, ord
   if (active === "orders" || active === "kds") return <div><div className="mb-6 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-[#e76f3c]"><Icon className="h-6 w-6" /></div><div><h2 className="text-xl font-bold">{info.title}</h2><p className="text-sm text-slate-500">{info.description}</p></div></div>{ordersLoading && <div className="mb-4 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-500">جارٍ تحميل الطلبات من قاعدة البيانات...</div>}{ordersError && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">تعذر تحميل الطلبات. Request ID: orders-{restaurantId}</div>}{!ordersLoading && !ordersError && orders.length === 0 && <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">لا توجد طلبات محفوظة لهذا الفرع بعد.</div>}<div className="grid gap-4 md:grid-cols-4">{(["new", "preparing", "ready", "completed"] as OrderStatus[]).map((status) => <Card key={status} className="rounded-2xl border-slate-200 bg-white shadow-sm"><CardHeader className="px-4 pb-2 pt-4"><CardTitle className="flex items-center justify-between text-sm">{statusLabels[status]}<span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{orders.filter((o) => o.status === status).length}</span></CardTitle></CardHeader><CardContent className="space-y-3 p-4 pt-2">{orders.filter((o) => o.status === status).map((order) => <div key={order.id} className="rounded-xl border border-slate-100 bg-slate-50/70 p-3"><div className="flex justify-between text-xs font-bold"><span>{order.id}</span><span className="text-slate-400">{order.time}</span></div><p className="mt-2 text-xs font-medium">{order.table}</p><p className="mt-1 text-[11px] leading-5 text-slate-500">{order.items}</p>{status !== "completed" && <Button onClick={() => advanceOrder(order.id)} size="sm" className="mt-3 h-8 w-full rounded-lg bg-[#e76f3c] text-xs hover:bg-[#d85f2e]">نقل إلى {statusLabels[status === "new" ? "preparing" : status === "preparing" ? "ready" : "completed"]}</Button>}</div>)}</CardContent></Card>)}</div></div>;
   if (active === "pos") return <PosView restaurantId={restaurantId} />;
   if (active === "menu") return <MenuView restaurantId={restaurantId} />;
-  if (active === "tables") return <TablesView restaurantId={restaurantId} />;
+  if (active === "tables") return <ServiceHallCenter restaurantId={restaurantId} initial="tables" />;
   if (active === "inventory") return <InventoryView restaurantId={restaurantId} />;
-  if (active === "team") return <TeamView restaurantId={restaurantId} />;
+  if (active === "team") return <ServiceHallCenter restaurantId={restaurantId} initial="waiters" />;
   if (active === "marketing") return <MarketingView restaurantId={restaurantId} />;
   if (active === "storefront") return <StorefrontCustomizationPanel restaurantId={restaurantId} />;
-  if (active === "reservations") return <ReservationsView restaurantId={restaurantId} />;
+  if (active === "reservations") return <ServiceHallCenter restaurantId={restaurantId} initial="reservations" />;
   if (active === "admin") return <SuperAdminView />;
   if (active === "branches") return <BranchesView restaurantId={restaurantId} />;
   if (active === "remote") return <RemoteWorkView restaurantId={restaurantId} />;
@@ -329,6 +329,22 @@ function SecurityView({ restaurantId }: { restaurantId?: number }) {
 }
 
 function SectionHeading({ title, description, action, onAction }: { title: string; description: string; action?: string; onAction?: () => void }) { return <div className="mb-6 flex items-center justify-between"><div><h2 className="text-xl font-bold">{title}</h2><p className="mt-1 text-sm text-slate-500">{description}</p></div>{action && onAction ? <Button onClick={onAction} className="gap-2 rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]"><Plus className="h-4 w-4" /> {action}</Button> : null}</div>; }
+
+function ServiceHallCenter({ restaurantId, initial = "tables" }: { restaurantId: number; initial?: "tables" | "reservations" | "waiters" }) {
+  const [section, setSection] = useState<"tables" | "reservations" | "waiters">(initial);
+  return <div className="space-y-4">
+    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div><p className="text-xs font-black text-[#e76f3c]">NFOOD FLOOR SERVICE</p><h2 className="mt-1 text-xl font-black text-slate-950">مركز خدمة الصالة</h2><p className="mt-1 text-sm text-slate-500">الطاولات والحجوزات والنوادل والتوزيع في مساحة تشغيل واحدة.</p></div>
+        <div className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
+          {([{ key:"tables", label:"الطاولات" },{ key:"reservations", label:"الحجوزات" },{ key:"waiters", label:"النوادل" }] as const).map((item)=><button key={item.key} type="button" onClick={()=>setSection(item.key)} className={`min-h-10 rounded-xl px-3 text-xs font-black transition ${section===item.key?"bg-white text-slate-950 shadow-sm":"text-slate-500 hover:text-slate-900"}`}>{item.label}</button>)}
+        </div>
+      </div>
+      <div className="mt-4 grid gap-2 sm:grid-cols-3"><div className="rounded-2xl bg-amber-50 p-3"><p className="text-[11px] font-bold text-amber-700">التوزيع</p><p className="mt-1 text-sm font-black text-slate-900">حسب الفرع · القسم · الوردية · الطاولة</p></div><div className="rounded-2xl bg-blue-50 p-3"><p className="text-[11px] font-bold text-blue-700">الصلاحيات</p><p className="mt-1 text-sm font-black text-slate-900">أكثر من دور + سماح/حجب فردي</p></div><div className="rounded-2xl bg-emerald-50 p-3"><p className="text-[11px] font-bold text-emerald-700">نداء العميل</p><p className="mt-1 text-sm font-black text-slate-900">يوجّه للنادل المسؤول عن الطاولة</p></div></div>
+    </div>
+    {section === "tables" ? <TablesView restaurantId={restaurantId} /> : section === "reservations" ? <ReservationsView restaurantId={restaurantId} /> : <TeamView restaurantId={restaurantId} />}
+  </div>;
+}
 
 function TablesView({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
