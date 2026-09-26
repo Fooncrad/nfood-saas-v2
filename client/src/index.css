@@ -6332,3 +6332,86 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 @media (min-width:1024px) {
   .nfood-menu-shell.nfood-menu-theme .category-results { grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:1rem !important; }
 }
+
+
+/* SAFRA V3 MOBILE — final specificity reset for legacy template overrides. */
+@media (max-width:599px) {
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-editorial .category-results,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-bistro .category-results,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-market .category-results,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-glass .category-results,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-signature .category-results {
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:.5rem !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-bistro .category-results > .nfood-menu-item-card,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-market .category-results > .nfood-menu-item-card,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-glass .category-results > .nfood-menu-item-card {
+    position:relative !important;
+    display:flex !important;
+    flex-direction:column !important;
+    grid-template-columns:none !important;
+    grid-template-rows:none !important;
+    width:100% !important;
+    min-width:0 !important;
+    min-height:0 !important;
+    height:auto !important;
+    aspect-ratio:auto !important;
+    overflow:hidden !important;
+    border-radius:16px !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-image,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-bistro .category-results > .nfood-menu-item-card > .nfood-menu-item-image,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-market .category-results > .nfood-menu-item-card > .nfood-menu-item-image,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-glass .category-results > .nfood-menu-item-card > .nfood-menu-item-image {
+    position:relative !important;
+    inset:auto !important;
+    display:block !important;
+    grid-column:auto !important;
+    grid-row:auto !important;
+    flex:none !important;
+    width:100% !important;
+    height:auto !important;
+    min-width:100% !important;
+    min-height:0 !important;
+    aspect-ratio:1/1 !important;
+    border-radius:15px 15px 0 0 !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-content,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-bistro .category-results > .nfood-menu-item-card > .nfood-menu-item-content,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-market .category-results > .nfood-menu-item-card > .nfood-menu-item-content,
+  .nfood-menu-shell.nfood-menu-theme.nfood-menu-template-glass .category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+    position:relative !important;
+    inset:auto !important;
+    display:flex !important;
+    flex:1 1 auto !important;
+    flex-direction:column !important;
+    grid-column:auto !important;
+    grid-row:auto !important;
+    width:100% !important;
+    min-width:0 !important;
+    min-height:8rem !important;
+    padding:.6rem !important;
+    background:#24221e !important;
+    color:#F8F3E9 !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .nfood-menu-price-block {
+    display:flex !important;
+    align-items:center !important;
+    gap:.35rem !important;
+    flex-wrap:wrap !important;
+  }
+  .nfood-menu-shell.nfood-menu-theme .nfood-menu-card-add {
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    min-height:2.25rem !important;
+    margin-top:.55rem !important;
+    padding:.45rem .35rem !important;
+    white-space:nowrap !important;
+    line-height:1rem !important;
+    text-align:center !important;
+  }
+}
