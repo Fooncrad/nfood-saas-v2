@@ -7153,3 +7153,19 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   color:#F8F3E9 !important;
 }
 .nfood-menu-shell.nfood-menu-dark input::placeholder { color:#AAA59B !important; }
+
+
+/* NFOOD COVER IDENTITY V1 — compact restaurant identity anchored to the cover. */
+.nfood-menu-shell .nfood-cover-meta-chip {
+  display:inline-flex;
+  align-items:center;
+  min-height:1.35rem;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:999px;
+  background:rgba(17,18,23,.38);
+  padding:.18rem .5rem;
+  color:rgba(255,255,255,.92) !important;
+  line-height:1;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
