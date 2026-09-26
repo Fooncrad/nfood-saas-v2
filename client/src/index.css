@@ -6011,3 +6011,87 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   .nfood-menu-theme .nfood-menu-item-title { font-size:12px !important; line-height:1.15rem !important; min-height:auto !important; }
   .nfood-menu-theme .nfood-menu-price-current { font-size:12px !important; }
 }
+
+
+/* NFOOD MENU LEGIBILITY HOTFIX V4 — keep real menu data readable across templates. */
+.nfood-menu-theme .category-results > .nfood-menu-item-card {
+  height: auto !important;
+  max-height: none !important;
+}
+.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+  min-height: 7.25rem !important;
+  justify-content: flex-start !important;
+}
+.nfood-menu-theme .nfood-menu-item-heading {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: .42rem !important;
+}
+.nfood-menu-theme .nfood-menu-item-category {
+  font-size: .72rem !important;
+  line-height: 1rem !important;
+}
+.nfood-menu-theme .nfood-menu-item-title {
+  display: -webkit-box !important;
+  min-height: 1.5rem !important;
+  max-height: 3rem !important;
+  overflow: hidden !important;
+  color: var(--menu-card-text, var(--menu-ink, #172033)) !important;
+  font-size: .98rem !important;
+  font-weight: 900 !important;
+  line-height: 1.4rem !important;
+  white-space: normal !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+.nfood-menu-theme .nfood-menu-price-block {
+  min-height: 1.15rem !important;
+  flex-wrap: wrap !important;
+}
+.nfood-menu-theme .nfood-menu-price-current {
+  font-size: 1rem !important;
+  line-height: 1.3rem !important;
+}
+.nfood-menu-theme .nfood-menu-price-compare,
+.nfood-menu-theme .nfood-menu-discount {
+  font-size: .7rem !important;
+}
+.nfood-menu-theme .nfood-menu-item-image {
+  min-height: 9rem !important;
+}
+.nfood-menu-theme .nfood-menu-availability {
+  background: rgba(15,23,42,.82) !important;
+  color: #fff !important;
+}
+@media (min-width: 1024px) {
+  .nfood-menu-template-editorial .category-results {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+  .nfood-menu-template-editorial .category-results > .nfood-menu-item-card > .nfood-menu-item-image {
+    aspect-ratio: 4 / 3 !important;
+    min-height: 11rem !important;
+  }
+}
+@media (max-width: 599px) {
+  .nfood-menu-template-editorial .category-results {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+    min-height: 6.25rem !important;
+    padding: .55rem !important;
+  }
+  .nfood-menu-theme .nfood-menu-item-image {
+    min-height: 7rem !important;
+  }
+  .nfood-menu-theme .nfood-menu-item-category {
+    font-size: .64rem !important;
+  }
+  .nfood-menu-theme .nfood-menu-item-title {
+    font-size: .8rem !important;
+    line-height: 1.1rem !important;
+    min-height: 1.15rem !important;
+  }
+  .nfood-menu-theme .nfood-menu-price-current {
+    font-size: .82rem !important;
+  }
+}
