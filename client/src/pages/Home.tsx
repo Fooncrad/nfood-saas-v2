@@ -413,10 +413,12 @@ function WaitersView({ restaurantId }: { restaurantId: number }) {
     onError: (error) => toast.error(error.message || "تعذر إضافة النادل")
   });
   const remove = trpc.platform.archiveTeamAccount.useMutation({
-    onSuccess: async () => { await utils.platform.teamAccounts.invalidate({ restaurantId }); setSelectedAccountId(null); setDeleteAccountId(null); toast.success("تم إنهاء خدمة النادل وإلغاء وصوله مع الاحتفاظ بهويته وسجل نشاطه"); },
+    onSuccess: async () => { await utils.platform.teamAccounts.invalidate({ restaurantId }); setSelectedAccountId(null); setDeleteAccountId(null); setTerminationReason(""); setTerminationConfirm(""); toast.success("تم إنهاء خدمة النادل وإلغاء وصوله مع الاحتفاظ بهويته وسجل نشاطه"); },
     onError: (error) => toast.error(error.message || "تعذر إنهاء خدمة النادل")
   });
   const [deleteAccountId, setDeleteAccountId] = useState<number | null>(null);
+  const [terminationReason, setTerminationReason] = useState("");
+  const [terminationConfirm, setTerminationConfirm] = useState("");
   const waiters = (accounts.data ?? []).filter((account) => account.role === "waiter");
   const openCreate = () => { setForm({ displayName: "", email: "", phone: "", password: "", branchId: branches.data?.[0]?.id ?? 0 }); setOpen(true); };
   const submit = () => {
@@ -433,7 +435,7 @@ function WaitersView({ restaurantId }: { restaurantId: number }) {
     <Dialog open={Boolean(deleteAccountId)} onOpenChange={(value) => { if (!value) setDeleteAccountId(null); }}>
       <DialogContent className="w-[calc(100vw-24px)] max-w-md rounded-3xl">
         <DialogHeader><DialogTitle>إنهاء خدمة النادل؟</DialogTitle><DialogDescription>سيتم إلغاء جلسات الدخول وفصل النادل عن الطاولات وإيقاف وصوله للمطعم. سيبقى البريد وهوية الشخص وسجل النداءات والنشاط محفوظًا، ولن يصبح البريد ملكًا للمطعم.</DialogDescription></DialogHeader>
-        <DialogFooter className="gap-2"><Button type="button" variant="outline" onClick={() => setDeleteAccountId(null)}>إلغاء</Button><Button type="button" disabled={remove.isPending} onClick={() => deleteAccountId && remove.mutate({ restaurantId, id: deleteAccountId })} className="bg-red-600 text-white hover:bg-red-700">{remove.isPending ? "جارٍ إنهاء الخدمة..." : "إنهاء الخدمة"}</Button></DialogFooter>
+        <div className="grid gap-3"><label className="grid gap-2 text-sm font-semibold">سبب إنهاء الخدمة<textarea value={terminationReason} onChange={(e) => setTerminationReason(e.target.value)} maxLength={500} placeholder="اكتب السبب بوضوح..." className="min-h-24 rounded-xl border border-slate-200 p-3 text-sm" /></label><label className="grid gap-2 text-sm font-semibold">للحماية من الضغط التلقائي اكتب: إنهاء الخدمة<Input value={terminationConfirm} onChange={(e) => setTerminationConfirm(e.target.value)} autoComplete="off" /></label></div><DialogFooter className="gap-2"><Button type="button" variant="outline" onClick={() => { setDeleteAccountId(null); setTerminationReason(""); setTerminationConfirm(""); }}>إلغاء</Button><Button type="button" disabled={remove.isPending || terminationReason.trim().length < 10 || terminationConfirm.trim() !== "إنهاء الخدمة"} onClick={() => deleteAccountId && remove.mutate({ restaurantId, id: deleteAccountId, reason: terminationReason.trim() })} className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-40">{remove.isPending ? "جارٍ إنهاء الخدمة..." : "تأكيد إنهاء الخدمة"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
     <Dialog open={Boolean(selectedAccountId)} onOpenChange={(value) => { if (!value) setSelectedAccountId(null); }}>
