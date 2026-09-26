@@ -6684,3 +6684,125 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 .nfood-menu-shell.nfood-menu-dark .nfood-product-detail-dialog section {
   border-color:rgba(255,255,255,.08) !important;
 }
+
+
+/* NFOOD MOBILE UX REBUILD V1 — screenshot-driven single-flow mobile layout. */
+@media (max-width: 640px) {
+  .nfood-mobile-rebuild {
+    overflow-x:hidden !important;
+    padding-bottom:calc(5.75rem + env(safe-area-inset-bottom)) !important;
+  }
+  .nfood-mobile-rebuild .nfood-menu-header > div {
+    height:3.5rem !important;
+    padding-inline:.65rem !important;
+    gap:.35rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-menu-header button {
+    width:2.35rem !important;
+    height:2.35rem !important;
+    padding:0 !important;
+  }
+  .nfood-mobile-rebuild .nfood-menu-language {
+    max-width:7.25rem !important;
+    height:2.35rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-menu-cover-content {
+    min-height:11.75rem !important;
+    padding:1rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-menu-cover-content h1 {
+    font-size:1.75rem !important;
+    line-height:2rem !important;
+  }
+  .nfood-mobile-rebuild main {
+    padding-inline:.75rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-menu-section {
+    padding-top:.75rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-menu-category-bar {
+    position:relative !important;
+    top:auto !important;
+    margin:.5rem 0 .75rem !important;
+    padding:.45rem !important;
+    overflow-x:auto !important;
+    scrollbar-width:none;
+  }
+  .nfood-mobile-rebuild .nfood-menu-category-bar::-webkit-scrollbar { display:none; }
+  .nfood-mobile-rebuild .menu-category-groups { gap:1.25rem !important; }
+  .nfood-mobile-rebuild .nfood-final-category-heading { margin-bottom:.55rem !important; }
+  .nfood-mobile-rebuild .category-results {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:.65rem !important;
+  }
+  .nfood-mobile-rebuild .category-results > .nfood-menu-item-card {
+    min-width:0 !important;
+    border-radius:1.1rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-menu-item-image {
+    min-height:0 !important;
+    aspect-ratio:1/1 !important;
+  }
+  .nfood-mobile-rebuild .category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+    min-height:5.75rem !important;
+    padding:.55rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-menu-card-summary { display:none !important; }
+  .nfood-mobile-rebuild .nfood-menu-price-block {
+    gap:.2rem !important;
+    align-items:baseline !important;
+  }
+  .nfood-mobile-rebuild .nfood-menu-price-current { font-size:.82rem !important; }
+  .nfood-mobile-rebuild .nfood-menu-price-compare { font-size:.62rem !important; }
+  .nfood-mobile-rebuild .nfood-mobile-bottom-nav {
+    inset-inline:.75rem !important;
+    bottom:calc(.65rem + env(safe-area-inset-bottom)) !important;
+    height:4.25rem !important;
+    padding:.35rem .75rem !important;
+    border-radius:1.25rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-mobile-bottom-nav button {
+    min-width:7rem !important;
+    min-height:3.35rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-menu-footer {
+    padding-bottom:5rem !important;
+  }
+  .nfood-mobile-rebuild > button[aria-label="افتح لعبة الانتظار"] {
+    display:none !important;
+  }
+  .nfood-mobile-rebuild > button[aria-label="العودة للأعلى"] {
+    display:none !important;
+  }
+  .nfood-mobile-rebuild .nfood-product-detail-dialog,
+  .nfood-mobile-rebuild .nfood-waiter-dialog,
+  .nfood-mobile-rebuild .nfood-service-center {
+    position:fixed !important;
+    inset:auto 0 0 0 !important;
+    width:100vw !important;
+    max-width:100vw !important;
+    max-height:92dvh !important;
+    margin:0 !important;
+    transform:none !important;
+    border-radius:1.5rem 1.5rem 0 0 !important;
+    padding-bottom:env(safe-area-inset-bottom) !important;
+  }
+  .nfood-mobile-rebuild .nfood-product-detail-panel {
+    max-height:92dvh !important;
+  }
+  .nfood-mobile-rebuild .nfood-product-detail-media {
+    padding:.75rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-product-detail-image {
+    height:min(34dvh,250px) !important;
+    max-height:250px !important;
+    border-radius:1rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-product-detail-body > div:first-child {
+    padding:1rem !important;
+  }
+  .nfood-mobile-rebuild .nfood-product-detail-dialog [role="dialog"],
+  .nfood-mobile-rebuild .nfood-waiter-dialog [role="dialog"] {
+    max-width:100% !important;
+  }
+}
