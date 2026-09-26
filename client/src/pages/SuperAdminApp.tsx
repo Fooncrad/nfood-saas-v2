@@ -10,6 +10,7 @@ import MarketplaceStoresView from "@/components/MarketplaceStoresView";
 import ContentMarketplace from "@/pages/ContentMarketplace";
 import VcardCardsAdmin from "@/pages/VcardCardsAdmin";
 import ActivitiesSectorsAdmin from "@/components/ActivitiesSectorsAdmin";
+import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";
 import { SecurityView } from "@/components/SecurityView";
 import { SystemHealthView } from "@/components/SystemHealthView";
 import NfoodDevelopmentAgent from "@/components/NfoodDevelopmentAgent";
@@ -29,6 +30,7 @@ export default function SuperAdminApp() {
       case "languages": return <UiTranslationAdminPanel />;
       case "files": return <MediaLibraryPanel isCentralAdmin />;
       case "stores": return <MarketplaceStoresView />;
+      case "packages": return <SuperAdminRestaurantCatalog />;
       case "trend": return <ContentMarketplace />;
       case "nfc": return <VcardCardsAdmin />;
       case "security": return <SecurityView />;
