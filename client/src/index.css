@@ -7279,3 +7279,53 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     margin-bottom:.7rem !important;
   }
 }
+
+
+/* NFOOD SERVICE CENTER V2 — Radix-safe true viewport centering. */
+[data-slot="dialog-content"].nfood-service-center,
+.nfood-service-center[data-slot="dialog-content"] {
+  position:fixed !important;
+  top:50% !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:auto !important;
+  margin:0 !important;
+  width:min(calc(100vw - 1.5rem),28rem) !important;
+  max-width:28rem !important;
+  max-height:min(82dvh,44rem) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  transform:translate(-50%,-50%) !important;
+  translate:none !important;
+  border-radius:1.5rem !important;
+  overscroll-behavior:contain !important;
+}
+.nfood-service-center.nfood-waiter-dialog {
+  border:1px solid rgba(226,169,59,.24) !important;
+}
+.nfood-service-center.nfood-waiter-dialog button[class*="violet"],
+.nfood-service-center.nfood-waiter-dialog .bg-violet-600,
+.nfood-service-center.nfood-waiter-dialog .bg-violet-500 {
+  background:#E2A93B !important;
+  color:#171613 !important;
+  border-color:#E2A93B !important;
+}
+.nfood-service-center.nfood-waiter-dialog .text-violet-700,
+.nfood-service-center.nfood-waiter-dialog .text-violet-800 {
+  color:#8A6518 !important;
+}
+.nfood-service-center.nfood-waiter-dialog .bg-violet-50,
+.nfood-service-center.nfood-waiter-dialog .bg-violet-100 {
+  background:#FFF7E5 !important;
+}
+.nfood-service-center.nfood-waiter-dialog input:checked {
+  accent-color:#E2A93B !important;
+}
+@media (max-width:640px) {
+  [data-slot="dialog-content"].nfood-service-center,
+  .nfood-service-center[data-slot="dialog-content"] {
+    width:calc(100vw - 1rem) !important;
+    max-height:calc(100dvh - 1rem) !important;
+    border-radius:1.25rem !important;
+  }
+}
