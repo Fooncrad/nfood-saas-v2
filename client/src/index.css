@@ -7021,3 +7021,51 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     line-height:.6rem !important;
   }
 }
+
+
+/* NFOOD DESKTOP MENU FLOW V3 — screenshot-driven spacing correction. */
+.nfood-menu-shell .nfood-menu-header,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header,
+.nfood-menu-template-editorial .nfood-menu-header,
+.nfood-menu-template-editorial.nfood-menu-dark .nfood-menu-header {
+  background:#171613 !important;
+  color:#F8F3E9 !important;
+  border-bottom-color:rgba(255,255,255,.10) !important;
+}
+.nfood-menu-shell .nfood-menu-header *,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header *,
+.nfood-menu-template-editorial .nfood-menu-header * {
+  border-color:rgba(255,255,255,.10);
+}
+.nfood-menu-shell .nfood-menu-header nav a,
+.nfood-menu-shell .nfood-menu-header button,
+.nfood-menu-shell .nfood-menu-header label,
+.nfood-menu-shell .nfood-menu-header span,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header nav a,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header button,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header label,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header span {
+  color:#F8F3E9 !important;
+}
+.nfood-menu-shell main > div {
+  padding-top:0 !important;
+}
+.nfood-menu-shell .nfood-menu-section {
+  margin-top:0 !important;
+  padding-top:.65rem !important;
+}
+.nfood-menu-shell .nfood-menu-section > #menu > div:first-child {
+  margin-bottom:.6rem !important;
+}
+.nfood-menu-shell .nfood-menu-category-bar {
+  margin-top:0 !important;
+  margin-bottom:.75rem !important;
+}
+@media (min-width:641px) {
+  .nfood-menu-shell .nfood-menu-cover {
+    margin-bottom:0 !important;
+  }
+  .nfood-menu-shell .nfood-menu-section {
+    padding-top:.75rem !important;
+  }
+}
