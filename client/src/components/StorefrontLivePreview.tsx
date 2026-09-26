@@ -2,7 +2,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { BadgeCheck, Clock3, MapPin, QrCode, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export type StorefrontMenuTemplate = "editorial" | "bistro" | "glass" | "market" | "signature";
+export type StorefrontMenuTemplate = "editorial" | "bistro" | "glass" | "market";
 
 export type StorefrontSettings = {
   brandName: string;
@@ -38,7 +38,6 @@ function dressColor(settings: StorefrontSettings) {
   if (settings.menuTemplate === "glass") return "#0b0f17";
   if (settings.menuTemplate === "bistro") return "#b86b45";
   if (settings.menuTemplate === "market") return "#2563eb";
-  if (settings.menuTemplate === "signature") return "#d97706";
   return `${settings.brandColor}cc`;
 }
 
@@ -47,7 +46,6 @@ function surfaceColor(settings: StorefrontSettings) {
   if (settings.menuTemplate === "bistro") return "#f3ebe2";
   if (settings.themeMode === "dark") return "#181522";
   if (settings.menuTemplate === "market") return "#f8fafc";
-  if (settings.menuTemplate === "signature") return "#fffbeb";
   return "#fffaf5";
 }
 
@@ -62,7 +60,6 @@ function cardColor(settings: StorefrontSettings) {
   if (settings.themeMode === "dark") return "#1b2432";
   if (settings.menuTemplate === "bistro") return "#fffaf4";
   if (settings.menuTemplate === "market") return "#ffffff";
-  if (settings.menuTemplate === "signature") return "#ffffff";
   return "#ffffff";
 }
 
@@ -73,10 +70,10 @@ export function StorefrontLivePreview({ settings, showDeviceFrame = true }: { se
   const showTool = (key: string) => settings.tools[key] !== false;
   return (
     <div dir="rtl" style={{ background: surface, color: ink }} className={showDeviceFrame ? "mx-auto w-full max-w-[300px] overflow-hidden rounded-[1.5rem] border border-black/10 shadow-xl" : "w-full overflow-hidden rounded-2xl"}>
-      <div className="relative h-28" style={{ background: coverGradient(settings) }}>
+      <div className="relative h-32" style={{ background: coverGradient(settings) }}>
         {settings.coverUrl ? <img src={settings.coverUrl} alt="" className="h-full w-full object-cover opacity-80" /> : null}
         <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
-        <div className="absolute bottom-3 start-3 end-3 flex items-center gap-2">
+        <div className="absolute bottom-3 start-3 end-3 flex items-end gap-2">
           <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-white/50 bg-white/90 shadow" style={{ color: settings.brandColor }}>
             {settings.brandLogoUrl ? <img src={settings.brandLogoUrl} alt="" className="h-full w-full object-contain" /> : <span className="text-sm font-black">{settings.brandName.slice(0, 1)}</span>}
           </span>
