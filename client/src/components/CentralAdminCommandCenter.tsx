@@ -34,9 +34,9 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { trpc } from "@/lib/trpc";
 import type { Order } from "@/components/homeNavigation";
 
-export type CentralAdminNavKey = "overview" | "admin" | "activities" | "nfc" | "site" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend" | "security" | "health" | "devAgent";
+export type CentralAdminNavKey = "overview" | "admin" | "activities" | "nfc" | "site" | "accounts" | "settings" | "languages" | "files" | "stores" | "packages" | "trend" | "security" | "health" | "devAgent";
 
-const NAV_ORDER: CentralAdminNavKey[] = ["overview", "admin", "activities", "stores", "accounts", "site", "nfc", "trend", "settings", "languages", "files", "devAgent", "security", "health"];
+const NAV_ORDER: CentralAdminNavKey[] = ["overview", "admin", "activities", "stores", "packages", "accounts", "site", "nfc", "trend", "settings", "languages", "files", "devAgent", "security", "health"];
 
 const NAV_LABELS: Record<CentralAdminNavKey, { ar: string; en: string }> = {
   overview: { ar: "نظرة عامة", en: "Overview" },
@@ -49,6 +49,7 @@ const NAV_LABELS: Record<CentralAdminNavKey, { ar: string; en: string }> = {
   languages: { ar: "اللغة والترجمة", en: "Languages" },
   files: { ar: "مكتبة الملفات", en: "Media library" },
   stores: { ar: "جميع المتاجر", en: "All stores" },
+  packages: { ar: "الباقات والحزم والأسعار", en: "Plans, packages & pricing" },
   trend: { ar: "Trend Kitchen · سوق نفود", en: "Trend Kitchen" },
   security: { ar: "أمان الحساب والجلسات", en: "Security" },
   health: { ar: "صحة النظام", en: "System health" },
@@ -66,6 +67,7 @@ const NAV_ICONS: Record<CentralAdminNavKey, LucideIcon> = {
   languages: Languages,
   files: HardDrive,
   stores: Store,
+  packages: WalletCards,
   trend: Sparkles,
   security: ShieldCheck,
   health: Activity,
