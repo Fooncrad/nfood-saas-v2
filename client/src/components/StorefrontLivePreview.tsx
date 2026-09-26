@@ -2,7 +2,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { BadgeCheck, Clock3, MapPin, QrCode, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export type StorefrontMenuTemplate = "editorial" | "bistro" | "glass" | "market";
+export type StorefrontMenuTemplate = "editorial" | "bistro" | "glass" | "market" | "signature";
 
 export type StorefrontSettings = {
   brandName: string;
@@ -38,6 +38,7 @@ function dressColor(settings: StorefrontSettings) {
   if (settings.menuTemplate === "glass") return "#0b0f17";
   if (settings.menuTemplate === "bistro") return "#b86b45";
   if (settings.menuTemplate === "market") return "#2563eb";
+  if (settings.menuTemplate === "signature") return "#d97706";
   return `${settings.brandColor}cc`;
 }
 
@@ -46,6 +47,7 @@ function surfaceColor(settings: StorefrontSettings) {
   if (settings.menuTemplate === "bistro") return "#f3ebe2";
   if (settings.themeMode === "dark") return "#181522";
   if (settings.menuTemplate === "market") return "#f8fafc";
+  if (settings.menuTemplate === "signature") return "#fffbeb";
   return "#fffaf5";
 }
 
@@ -59,6 +61,7 @@ function cardColor(settings: StorefrontSettings) {
   if (settings.menuTemplate === "glass") return "rgba(255,255,255,.08)";
   if (settings.themeMode === "dark") return "#1b2432";
   if (settings.menuTemplate === "bistro") return "#fffaf4";
+  if (settings.menuTemplate === "signature") return "#ffffff";
   if (settings.menuTemplate === "market") return "#ffffff";
   return "#ffffff";
 }
