@@ -6876,3 +6876,46 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     scroll-behavior: auto !important;
   }
 }
+
+
+/* NFOOD RESPONSIVE MENU V1 — phones, foldables, tablets, laptops and wide displays. */
+.nfood-menu-shell { width:100%; min-width:0; overflow-x:clip; }
+.nfood-menu-shell img, .nfood-menu-shell video, .nfood-menu-shell svg { max-width:100%; }
+.nfood-menu-shell .category-results { min-width:0; }
+.nfood-menu-shell .nfood-menu-item-card { min-width:0; }
+
+@media (max-width: 359px) {
+  .nfood-menu-shell .nfood-menu-header > div { padding-inline:.45rem !important; gap:.3rem !important; }
+  .nfood-menu-shell .nfood-menu-header button { min-width:2.25rem; }
+  .nfood-mobile-rebuild .category-results.nfood-menu-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:.42rem !important; }
+  .nfood-mobile-rebuild .nfood-mobile-bottom-nav { inset-inline:.35rem !important; padding-inline:.35rem !important; }
+  .nfood-mobile-rebuild .nfood-mobile-bottom-nav button { min-width:0 !important; flex:1 1 0 !important; }
+}
+@media (min-width: 360px) and (max-width: 767px) {
+  .nfood-mobile-rebuild .category-results.nfood-menu-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .nfood-menu-shell .category-results.nfood-menu-grid { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
+  .nfood-menu-shell .nfood-menu-cover { width:calc(100% - 2rem) !important; }
+}
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .nfood-menu-shell .category-results.nfood-menu-grid { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+}
+@media (min-width: 1440px) {
+  .nfood-menu-shell .category-results.nfood-menu-grid { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .nfood-menu-shell .nfood-menu-cover-content { min-height:7rem !important; }
+  .nfood-menu-shell .nfood-product-detail-dialog,
+  .nfood-menu-shell .nfood-waiter-dialog,
+  .nfood-menu-shell .nfood-service-center { max-height:96dvh !important; }
+}
+@supports (padding: max(0px)) {
+  .nfood-menu-shell .nfood-menu-header > div {
+    padding-left:max(.75rem, env(safe-area-inset-left));
+    padding-right:max(.75rem, env(safe-area-inset-right));
+  }
+  .nfood-mobile-bottom-nav {
+    padding-bottom:max(.35rem, env(safe-area-inset-bottom));
+  }
+}
