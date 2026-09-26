@@ -3319,50 +3319,6 @@ html[dir="rtl"] .nfood-notification-popover { transform-origin: top left; }
   padding: 0 !important;
 }
 
-/* Last-mile dialog centering: override saved side-panel settings for the public customer modal. */
-[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"][data-detail-width="wide"],
-[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"][data-detail-width="compact"],
-[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"][data-detail-width="full"],
-[data-slot="dialog-content"].nfood-product-detail-dialog.nfood-product-detail-from-right {
-  position: fixed !important;
-  inset: 50% auto auto 50% !important;
-  top: 50% !important;
-  right: auto !important;
-  bottom: auto !important;
-  left: 50% !important;
-  width: min(calc(100dvw - 2rem), 30rem) !important;
-  min-width: 0 !important;
-  max-width: 30rem !important;
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: 85dvh !important;
-  margin: 0 !important;
-  transform: translate(-50%, -50%) !important;
-  translate: none !important;
-  animation: none !important;
-  transition: none !important;
-}
-[data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"] .nfood-product-detail-panel {
-  height: auto !important;
-  max-height: 85dvh !important;
-}
-@media (max-width: 639px) {
-  [data-slot="dialog-content"].nfood-product-detail-dialog[data-detail-position="side"],
-  [data-slot="dialog-content"].nfood-product-detail-dialog.nfood-product-detail-from-right {
-    width: calc(100dvw - 1rem) !important;
-    max-width: 30rem !important;
-    max-height: 85dvh !important;
-  }
-}
-[data-slot="dialog-overlay"],
-body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="dialog-overlay"] {
-  background: rgb(0 0 0 / .35) !important;
-  background-color: rgb(0 0 0 / .35) !important;
-  backdrop-filter: blur(2px) !important;
-  opacity: 1 !important;
-}
-
-
 /* Mobile customer card layout: match the supplied reference with a fixed image column on the right. */
 @media (max-width: 767px) {
   .nfood-customer-redesign.nfood-menu-cards .nfood-menu-grid .nfood-menu-item-card {
@@ -3691,19 +3647,6 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
   .nfood-menu-shell .nfood-mobile-bottom-nav > button > span[style] {
     background: #b87920 !important;
   }
-
-  .nfood-menu-shell .nfood-waiter-dialog {
-    width: min(calc(100vw - 2rem), 20rem) !important;
-    max-height: 76dvh !important;
-    border-radius: 1rem !important;
-  }
-  .nfood-menu-shell .nfood-waiter-dialog > div:first-child {
-    padding: .85rem 1rem !important;
-  }
-  .nfood-menu-shell .nfood-waiter-dialog > div:last-child {
-    gap: .65rem !important;
-    padding: 1rem !important;
-  }
 }
 
 
@@ -3821,16 +3764,6 @@ body:has([data-slot="dialog-content"].nfood-product-detail-dialog) [data-slot="d
   width: min(100%, 30rem) !important;
   max-height: 82dvh !important;
   border-radius: 1.25rem !important;
-}
-.nfood-menu-shell .nfood-waiter-dialog {
-  max-height: 76dvh !important;
-}
-.nfood-menu-shell .nfood-waiter-dialog > div:first-child {
-  padding: .85rem 1rem !important;
-}
-.nfood-menu-shell .nfood-waiter-dialog > div:last-child {
-  gap: .7rem !important;
-  padding: 1rem !important;
 }
 .nfood-menu-shell .nfood-install-banner {
   position: fixed;
@@ -4070,14 +4003,6 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
   color: #f8fafc !important;
   border: 1px solid rgba(245, 158, 11, .45) !important;
 }
-.nfood-menu-shell .nfood-waiter-dialog,
-.nfood-menu-shell [data-slot="dialog-content"] {
-  width: min(calc(100vw - 1rem), 25rem) !important;
-  max-width: 25rem !important;
-  max-height: 78dvh !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-}
 .nfood-menu-shell .nfood-waiter-dialog input,
 .nfood-menu-shell .nfood-waiter-dialog select,
 .nfood-menu-shell [data-slot="dialog-content"] input,
@@ -4093,13 +4018,9 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
   color: #dbe4e5 !important;
   opacity: 1;
 }
-.nfood-menu-shell .nfood-waiter-dialog > div:first-child { padding: .75rem 1rem !important; }
-.nfood-menu-shell .nfood-waiter-dialog > div:last-child { padding: .8rem !important; }
 @media (max-width: 640px) {
   .nfood-menu-shell .nfood-menu-cover-content { min-height: 11rem !important; }
   .nfood-menu-shell .nfood-cart-modal > * { max-height: 72dvh !important; }
-  .nfood-menu-shell .nfood-waiter-dialog,
-  .nfood-menu-shell [data-slot="dialog-content"] { max-height: 74dvh !important; }
 }
 
 
@@ -4183,128 +4104,6 @@ html, body, #root { max-width: 100%; overflow-x: clip; }
     padding: .65rem .75rem !important;
   }
 }
-/* Compact, high-contrast mobile account dialog. */
-[data-slot="dialog-content"].nfood-account {
-  width: min(calc(100dvw - 2rem), 24rem) !important;
-  max-width: 24rem !important;
-  max-height: 72dvh !important;
-  border: 1px solid rgba(245, 158, 11, .55) !important;
-  background: #111827 !important;
-  color: #f8fafc !important;
-  border-radius: 1.25rem !important;
-}
-[data-slot="dialog-content"].nfood-account > div:first-child {
-  background: linear-gradient(135deg, #111827 0%, #1f2937 62%, #78350f 100%) !important;
-  border-bottom: 1px solid rgba(245, 158, 11, .42) !important;
-  padding: .9rem 1rem !important;
-}
-[data-slot="dialog-content"].nfood-account > form {
-  background: #111827 !important;
-  color: #f8fafc !important;
-  gap: .65rem !important;
-  padding: .85rem 1rem !important;
-}
-[data-slot="dialog-content"].nfood-account input {
-  background: #1f2937 !important;
-  color: #f8fafc !important;
-  border-color: rgba(245, 158, 11, .35) !important;
-}
-[data-slot="dialog-content"].nfood-account input::placeholder {
-  color: #cbd5e1 !important;
-  opacity: 1 !important;
-}
-[data-slot="dialog-content"].nfood-account [role="tablist"] {
-  background: #1f2937 !important;
-}
-[data-slot="dialog-content"].nfood-account [role="tablist"] button {
-  color: #e5e7eb !important;
-}
-[data-slot="dialog-content"].nfood-account [role="tablist"] button[class*="bg-white"] {
-  background: #f59e0b !important;
-  color: #111827 !important;
-}
-[data-slot="dialog-content"].nfood-account > form > p {
-  background: rgba(245, 158, 11, .12) !important;
-  color: #fde68a !important;
-  border: 1px solid rgba(245, 158, 11, .24) !important;
-}
-@media (max-width: 639px) {
-  [data-slot="dialog-content"].nfood-account {
-    width: calc(100dvw - 2rem) !important;
-    max-width: 24rem !important;
-    max-height: 72dvh !important;
-  }
-}
-
-
-/* Extra-compact account form for mobile screens. */
-@media (max-width: 639px) {
-  [data-slot="dialog-content"].nfood-account {
-    width: calc(100dvw - 1.25rem) !important;
-    max-width: 22rem !important;
-    max-height: calc(100dvh - .75rem) !important;
-    border-radius: 1rem !important;
-  }
-  [data-slot="dialog-content"].nfood-account > div:first-child {
-    padding: .6rem .8rem !important;
-  }
-  [data-slot="dialog-content"].nfood-account > div:first-child p {
-    font-size: .58rem !important;
-    line-height: 1rem !important;
-  }
-  [data-slot="dialog-content"].nfood-account > div:first-child [data-slot="dialog-title"] {
-    margin-top: .2rem !important;
-    font-size: 1.15rem !important;
-    line-height: 1.35 !important;
-  }
-  [data-slot="dialog-content"].nfood-account > div:first-child [data-slot="dialog-description"] {
-    display: none !important;
-  }
-  [data-slot="dialog-content"].nfood-account > form {
-    gap: .4rem !important;
-    padding: .6rem .75rem !important;
-  }
-  [data-slot="dialog-content"].nfood-account > form > label,
-  [data-slot="dialog-content"].nfood-account > form > div > label {
-    font-size: .68rem !important;
-    line-height: 1rem !important;
-  }
-  [data-slot="dialog-content"].nfood-account input,
-  [data-slot="dialog-content"].nfood-account select,
-  [data-slot="dialog-content"].nfood-account .h-11 {
-    height: 2.25rem !important;
-    min-height: 2.25rem !important;
-    margin-top: .15rem !important;
-    border-radius: .7rem !important;
-    padding-block: .25rem !important;
-  }
-  [data-slot="dialog-content"].nfood-account [role="tablist"] {
-    border-radius: .7rem !important;
-    padding: .15rem !important;
-  }
-  [data-slot="dialog-content"].nfood-account [role="tablist"] button {
-    padding-block: .35rem !important;
-    font-size: .68rem !important;
-  }
-  [data-slot="dialog-content"].nfood-account > form > p {
-    margin: 0 !important;
-    padding: .45rem .6rem !important;
-    font-size: .62rem !important;
-    line-height: 1.15rem !important;
-  }
-  [data-slot="dialog-content"].nfood-account > form > div:last-child button {
-    min-height: 2.35rem !important;
-    padding-block: .35rem !important;
-    font-size: .72rem !important;
-  }
-}
-@media (max-height: 740px) and (max-width: 639px) {
-  [data-slot="dialog-content"].nfood-account > form > p {
-    display: none !important;
-  }
-}
-
-
 /* Optional restaurant template: two menu cards side by side, matching recommendation cards. */
 .nfood-menu-shell.nfood-menu-grid .nfood-menu-grid.category-results {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -6892,18 +6691,4 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 }
 .nfood-menu-shell.nfood-menu-dark .nfood-product-detail-dialog section {
   border-color:rgba(255,255,255,.08) !important;
-}
-@media (max-width:640px) {
-  .nfood-menu-shell .nfood-product-detail-dialog,
-  .nfood-menu-shell .nfood-addon-dialog,
-  .nfood-menu-shell .nfood-account,
-  .nfood-menu-shell .nfood-waiter-dialog,
-  .nfood-menu-shell .nfood-content-cart {
-    width:calc(100vw - 1rem) !important;
-    max-width:calc(100vw - 1rem) !important;
-    max-height:calc(100dvh - 1rem) !important;
-  }
-  .nfood-menu-shell .nfood-product-detail-dialog {
-    height:auto !important;
-  }
 }
