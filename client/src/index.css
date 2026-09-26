@@ -6627,3 +6627,50 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   background:#E2A93B !important;
   color:#171613 !important;
 }
+
+
+/* NFOOD FINAL IMAGE FIX — product media owns the full card width. */
+.nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card {
+  padding-inline-start:0 !important;
+}
+.nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-image,
+.nfood-menu-shell.nfood-menu-theme[class*="nfood-menu-template-"] .category-results > .nfood-menu-item-card > .nfood-menu-item-image {
+  display:block !important;
+  align-self:stretch !important;
+  flex:0 0 auto !important;
+  width:100% !important;
+  min-width:100% !important;
+  max-width:none !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  aspect-ratio:1 / 1 !important;
+  padding:0 !important;
+  margin:0 !important;
+  border-radius:19px 19px 0 0 !important;
+}
+.nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-image > .nfood-menu-item-photo,
+.nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-image > img {
+  display:block !important;
+  width:100% !important;
+  min-width:100% !important;
+  max-width:none !important;
+  height:100% !important;
+  min-height:100% !important;
+  max-height:none !important;
+  aspect-ratio:1 / 1 !important;
+  padding:0 !important;
+  margin:0 !important;
+  object-fit:cover !important;
+  object-position:center !important;
+}
+@media (max-width:599px) {
+  .nfood-menu-shell.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-image,
+  .nfood-menu-shell.nfood-menu-theme[class*="nfood-menu-template-"] .category-results > .nfood-menu-item-card > .nfood-menu-item-image {
+    width:100% !important;
+    min-width:100% !important;
+    max-width:none !important;
+    height:auto !important;
+    aspect-ratio:1 / 1 !important;
+  }
+}
