@@ -454,7 +454,9 @@ export default function RestaurantPublic() {
     setDetailSizeId(parsed.sizes?.[0]?.id ?? null);
     setDetailQuantity(1);
   }, [selectedMenuItem]);
-  const publicTableOptions = useMemo(() => Array.from(new Map([...(page.data?.availableTables ?? []), ...(page.data?.serviceTables ?? [])].map((table) => [table.id, table])).values()), [page.data?.availableTables, page.data?.serviceTables]);\n  const serviceBranchId = selectedBranchId ?? allBranches[0]?.id ?? publicTableOptions[0]?.branchId ?? null;\n  const serviceTableOptions = useMemo(() => serviceBranchId == null ? publicTableOptions : publicTableOptions.filter((table) => table.branchId === serviceBranchId), [publicTableOptions, serviceBranchId]);
+  const publicTableOptions = useMemo(() => Array.from(new Map([...(page.data?.availableTables ?? []), ...(page.data?.serviceTables ?? [])].map((table) => [table.id, table])).values()), [page.data?.availableTables, page.data?.serviceTables]);
+  const serviceBranchId = selectedBranchId ?? allBranches[0]?.id ?? publicTableOptions[0]?.branchId ?? null;
+  const serviceTableOptions = useMemo(() => serviceBranchId == null ? publicTableOptions : publicTableOptions.filter((table) => table.branchId === serviceBranchId), [publicTableOptions, serviceBranchId]);
   const showBranches = Boolean(page.data?.restaurant.showBranchesOnMenu) && allBranches.length > 1;
   const branches = showBranches ? allBranches : [];
   const categoryCounts = useMemo(() => items.reduce<Record<string, number>>((counts, item) => { if (item.categoryId != null) counts[String(item.categoryId)] = (counts[String(item.categoryId)] ?? 0) + 1; return counts; }, {}), [items]);
