@@ -6611,3 +6611,19 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 .nfood-product-detail-dialog [class*="bg-slate-50"],
 .nfood-product-detail-dialog [class*="bg-white"] { background:#24221e !important; }
 .nfood-product-detail-dialog [class*="border-slate"] { border-color:rgba(255,255,255,.10) !important; }
+
+
+/* NFOOD FINAL MARKUP GUARD — layout now originates in RestaurantPublic markup. */
+.nfood-menu-shell .nfood-final-category-heading {
+  padding:.35rem .15rem !important;
+  background:transparent !important;
+  border:0 !important;
+  color:#F8F3E9 !important;
+}
+.nfood-menu-shell .nfood-final-category-heading h3 { color:#F8F3E9 !important; }
+.nfood-menu-shell .nfood-final-category-heading > span { color:#AAA59B !important; }
+.nfood-menu-shell .nfood-menu-card-add {
+  border-radius:999px !important;
+  background:#E2A93B !important;
+  color:#171613 !important;
+}
