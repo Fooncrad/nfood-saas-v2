@@ -31,7 +31,7 @@ export default function AdminBusinessOnboarding() {
     <div className="grid gap-3 md:grid-cols-4">
       {["الدولة والعملات","النشاط والوحدات","المالك والباقة","النشر والإدارة"].map((x,i)=><div key={x} className="rounded-2xl border border-slate-200 bg-white p-4"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-50 text-xs font-black text-[#e76f3c]">{i+1}</span><p className="mt-3 text-sm font-bold">{x}</p><p className="mt-1 text-xs text-slate-500">{i===0?"تعيين تلقائي للعملة":i===1?"مطعم، متجر، صالون وغيرها":i===2?"ربط بيانات الاشتراك": "جاهز للظهور في السوق"}</p></div>)}
     </div>
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent dir="rtl" className="max-h-[90vh] overflow-y-auto rounded-3xl sm:max-w-2xl">
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent dir="rtl" className="max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-3xl sm:max-w-2xl">
       <DialogHeader><DialogTitle>إضافة منشأة إلى NFOOD</DialogTitle><DialogDescription>إنشاء المنشأة وربط إعدادات الدولة والنشاط من خطوة واحدة.</DialogDescription></DialogHeader>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm font-semibold">اسم المنشأة<Input className="mt-2 rounded-xl" value={draft.customerName} onChange={e=>setDraft({...draft,customerName:e.target.value})}/></label>
