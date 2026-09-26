@@ -6967,3 +6967,57 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     margin-bottom:.75rem !important;
   }
 }
+
+
+/* NFOOD PRODUCT CARD TYPOGRAPHY V1 — clarity without increasing card geometry. */
+.nfood-menu-shell .nfood-menu-card-summary {
+  display:-webkit-box !important;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden !important;
+  min-height:2.25rem !important;
+  max-height:2.25rem !important;
+  margin:0 !important;
+  color:#6f6a62 !important;
+  font-size:.75rem !important;
+  font-weight:650 !important;
+  line-height:1.125rem !important;
+  letter-spacing:0 !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-card-summary {
+  color:#AAA59B !important;
+}
+.nfood-menu-shell .nfood-menu-price-block {
+  min-height:2rem !important;
+  line-height:1 !important;
+}
+.nfood-menu-shell .nfood-menu-price-stack {
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  gap:.1rem;
+}
+.nfood-menu-shell .nfood-menu-tax-note {
+  color:#8a857d !important;
+  font-size:.56rem !important;
+  font-weight:700 !important;
+  line-height:.7rem !important;
+}
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-tax-note {
+  color:#AAA59B !important;
+}
+@media (max-width:640px) {
+  .nfood-menu-shell .nfood-menu-card-summary {
+    min-height:2rem !important;
+    max-height:2rem !important;
+    font-size:.68rem !important;
+    line-height:1rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-price-current {
+    font-size:.875rem !important;
+  }
+  .nfood-menu-shell .nfood-menu-tax-note {
+    font-size:.5rem !important;
+    line-height:.6rem !important;
+  }
+}
