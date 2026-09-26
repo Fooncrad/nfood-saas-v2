@@ -6915,3 +6915,55 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     border-radius:1.25rem !important;
   }
 }
+
+
+/* NFOOD PUBLIC MENU CLEANUP V2 — final overrides after legacy template rules. */
+.nfood-menu-shell .nfood-menu-header,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header {
+  background:#171613 !important;
+  border-color:rgba(255,255,255,.10) !important;
+  color:#F8F3E9 !important;
+}
+.nfood-menu-shell .nfood-menu-header nav a,
+.nfood-menu-shell .nfood-menu-header span,
+.nfood-menu-shell .nfood-menu-header button,
+.nfood-menu-shell .nfood-menu-header label,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header nav a,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header span,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header button,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header label,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header .text-slate-900,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header .text-slate-800,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header .text-slate-700,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header .text-slate-600,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header .text-slate-500 {
+  color:#F8F3E9 !important;
+}
+.nfood-menu-shell .nfood-menu-header svg,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header svg {
+  color:currentColor !important;
+}
+.nfood-menu-shell .nfood-menu-header .nfood-menu-language,
+.nfood-menu-shell.nfood-menu-dark .nfood-menu-header .nfood-menu-language {
+  background:#24221e !important;
+  color:#F8F3E9 !important;
+}
+.nfood-menu-shell .nfood-menu-price-current {
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0 !important;
+  word-spacing:0 !important;
+  white-space:nowrap !important;
+}
+@media (max-width:640px) {
+  .nfood-menu-shell .nfood-menu-cover + .nfood-account + .nfood-waiter-dialog,
+  .nfood-menu-shell main {
+    margin-top:0 !important;
+  }
+  .nfood-menu-shell .nfood-menu-section {
+    margin-top:0 !important;
+    padding-top:0 !important;
+  }
+  .nfood-menu-shell .nfood-menu-category-bar {
+    margin-bottom:.75rem !important;
+  }
+}
