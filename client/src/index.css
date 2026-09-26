@@ -6095,3 +6095,162 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     font-size: .82rem !important;
   }
 }
+
+
+/* SAFRA RTL LUXURY MENU — approved dark saffron visual direction. */
+.nfood-menu-theme.nfood-menu-shell {
+  --safra-bg:#171613;
+  --safra-card:#24221e;
+  --safra-gold:#E2A93B;
+  --safra-text:#F8F3E9;
+  --safra-muted:#AAA59B;
+  --safra-border:rgba(255,255,255,.10);
+  background:var(--safra-bg) !important;
+  color:var(--safra-text) !important;
+}
+.nfood-menu-theme .nfood-menu-category-bar {
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  gap:.55rem !important;
+  overflow-x:auto !important;
+  padding:.5rem .15rem .75rem !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  scroll-snap-type:x proximity;
+}
+.nfood-menu-theme .nfood-menu-category-bar > button {
+  flex:0 0 auto !important;
+  min-height:2.75rem !important;
+  border:1px solid var(--safra-border) !important;
+  border-radius:999px !important;
+  background:transparent !important;
+  color:var(--safra-text) !important;
+  box-shadow:none !important;
+  scroll-snap-align:start;
+}
+.nfood-menu-theme .nfood-menu-category-bar > button[style] {
+  background:var(--safra-gold) !important;
+  border-color:var(--safra-gold) !important;
+  color:#171613 !important;
+}
+.nfood-menu-theme .menu-category-group > div:first-child h3 { color:var(--safra-text) !important; }
+.nfood-menu-theme .menu-category-group > div:first-child span { color:var(--safra-muted) !important; }
+.nfood-menu-theme .category-results {
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:.75rem !important;
+}
+.nfood-menu-theme .category-results > .nfood-menu-item-card {
+  display:flex !important;
+  flex-direction:column !important;
+  height:auto !important;
+  max-height:none !important;
+  border:1px solid var(--safra-border) !important;
+  border-radius:20px !important;
+  background:var(--safra-card) !important;
+  color:var(--safra-text) !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.16) !important;
+  transition:transform .2s ease,box-shadow .2s ease !important;
+}
+.nfood-menu-theme .category-results > .nfood-menu-item-card:hover {
+  transform:translateY(-4px) !important;
+  box-shadow:0 18px 34px rgba(0,0,0,.24) !important;
+}
+.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-image {
+  position:relative !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  aspect-ratio:1/1 !important;
+  border-radius:19px 19px 0 0 !important;
+  overflow:hidden !important;
+  background:#1d1c19 !important;
+}
+.nfood-menu-theme .nfood-menu-item-photo {
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  transition:transform .25s ease !important;
+}
+.nfood-menu-theme .nfood-menu-item-card:hover .nfood-menu-item-photo { transform:scale(1.05) !important; }
+.nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+  display:flex !important;
+  flex:1 1 auto !important;
+  flex-direction:column !important;
+  min-height:9.5rem !important;
+  padding:.8rem !important;
+  background:var(--safra-card) !important;
+  color:var(--safra-text) !important;
+}
+.nfood-menu-theme .nfood-menu-item-category { color:var(--safra-gold) !important; }
+.nfood-menu-theme .nfood-menu-item-title {
+  display:-webkit-box !important;
+  color:var(--safra-text) !important;
+  font-size:1rem !important;
+  font-weight:900 !important;
+  line-height:1.4rem !important;
+  min-height:1.4rem !important;
+  max-height:2.8rem !important;
+  white-space:normal !important;
+  overflow:hidden !important;
+  -webkit-box-orient:vertical !important;
+  -webkit-line-clamp:2 !important;
+}
+.nfood-menu-theme .nfood-menu-card-summary {
+  display:-webkit-box !important;
+  color:var(--safra-muted) !important;
+  font-size:.76rem !important;
+  line-height:1.2rem !important;
+  min-height:1.2rem !important;
+  max-height:1.2rem !important;
+  overflow:hidden !important;
+  border:0 !important;
+  padding:0 !important;
+  margin:.3rem 0 0 !important;
+  -webkit-box-orient:vertical !important;
+  -webkit-line-clamp:1 !important;
+}
+.nfood-menu-theme .nfood-menu-price-current {
+  color:var(--safra-gold) !important;
+  font-size:1rem !important;
+  font-weight:950 !important;
+}
+.nfood-menu-theme .nfood-menu-price-compare { color:var(--safra-muted) !important; }
+.nfood-menu-theme .nfood-menu-discount { color:#fda4af !important; }
+.nfood-menu-theme .nfood-menu-image-add {
+  left:.65rem !important;
+  right:auto !important;
+  bottom:.65rem !important;
+}
+.nfood-menu-theme .nfood-menu-image-add button {
+  background:var(--safra-gold) !important;
+  color:#171613 !important;
+}
+.nfood-menu-theme .nfood-menu-availability {
+  right:.65rem !important;
+  left:auto !important;
+  bottom:.65rem !important;
+  background:rgba(23,22,19,.82) !important;
+  color:var(--safra-text) !important;
+  border:1px solid var(--safra-border) !important;
+}
+@media (max-width:599px) {
+  .nfood-menu-theme .category-results {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:.5rem !important;
+  }
+  .nfood-menu-theme .category-results > .nfood-menu-item-card { border-radius:16px !important; }
+  .nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-image { border-radius:15px 15px 0 0 !important; }
+  .nfood-menu-theme .category-results > .nfood-menu-item-card > .nfood-menu-item-content {
+    min-height:8.25rem !important;
+    padding:.62rem !important;
+  }
+  .nfood-menu-theme .nfood-menu-item-category { font-size:.62rem !important; line-height:.9rem !important; }
+  .nfood-menu-theme .nfood-menu-item-title { font-size:.82rem !important; line-height:1.12rem !important; max-height:2.24rem !important; }
+  .nfood-menu-theme .nfood-menu-card-summary { font-size:.67rem !important; line-height:1rem !important; min-height:1rem !important; max-height:1rem !important; }
+  .nfood-menu-theme .nfood-menu-price-current { font-size:.86rem !important; }
+  .nfood-menu-theme .nfood-menu-category-bar > button { min-height:2.5rem !important; padding:.45rem .7rem !important; }
+}
+@media (min-width:1024px) {
+  .nfood-menu-theme .category-results { grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:1rem !important; }
+}
