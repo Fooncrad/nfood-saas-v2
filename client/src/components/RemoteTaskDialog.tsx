@@ -21,7 +21,7 @@ export function RemoteTaskDialog({ open, pending = false, workers, onClose, onSu
   const validationMessage = validateRemoteTaskDraft(draft);
   const set = <K extends keyof RemoteTaskDraft>(key: K, value: RemoteTaskDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
   return <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-    <DialogContent dir="rtl" className="max-h-[92vh] overflow-y-auto rounded-3xl border-slate-200 bg-white p-5 shadow-2xl sm:max-w-2xl sm:p-7">
+    <DialogContent dir="rtl" className="max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-3xl border-slate-200 bg-white p-5 shadow-2xl sm:max-w-2xl sm:p-7">
       <DialogHeader className="text-right"><p className="text-xs font-bold text-[#e76f3c]">التوظيف عن بُعد</p><DialogTitle className="text-xl font-black">إنشاء مهمة جديدة</DialogTitle><DialogDescription className="text-sm leading-6 text-slate-500">حدد المطلوب والقيمة والموعد، ثم انشرها للفريق أو عيّنها لموظف محدد.</DialogDescription></DialogHeader>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         <label className="text-xs font-bold sm:col-span-2">نوع المهمة<select value={draft.type} onChange={(event) => set("type", event.target.value as RemoteTaskType)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-orange-300">{types.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
