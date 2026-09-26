@@ -765,10 +765,9 @@ export async function createWaiterCall(input: { restaurantId: number; branchId: 
   const db = await getDb(); if (!db) throw new Error("Database is not available");
   const restaurant = (await db.select({ waiterCallEnabled: restaurants.waiterCallEnabled, waiterCallCooldownMinutes: restaurants.waiterCallCooldownMinutes }).from(restaurants).where(eq(restaurants.id, input.restaurantId)).limit(1))[0];
   if (!restaurant?.waiterCallEnabled) throw new Error("نداء النادل غير متاح حاليًا");
-  const cooldownMinutes = Math.max(1, Math.min(120, Number(restaurant.waiterCallCooldownMinutes ?? 10)));
+  const cooldownMinutes = Math.max(1, Math.min(120, Number(restaurant.waiterCallCooldownMinutes ?? 20)));
   const table = (await db.select({ id: restaurantTables.id, name: restaurantTables.name, status: restaurantTables.status }).from(restaurantTables).innerJoin(branches, eq(restaurantTables.branchId, branches.id)).where(and(eq(restaurantTables.branchId, input.branchId), eq(branches.restaurantId, input.restaurantId), eq(restaurantTables.name, input.tableName.trim()))).limit(1))[0];
   if (!table) throw new Error("الطاولة غير موجودة في هذا الفرع");
-  if (table.status === "available") throw new Error("لا يمكن إرسال نداء إلى طاولة غير مفتوحة");
   const assignments = await db.select({ waiterUserId: waiterTableAssignments.waiterUserId, waiterName: users.name }).from(waiterTableAssignments).innerJoin(users, eq(waiterTableAssignments.waiterUserId, users.id)).where(and(eq(waiterTableAssignments.restaurantId, input.restaurantId), eq(waiterTableAssignments.branchId, input.branchId), eq(waiterTableAssignments.tableId, table.id))).orderBy(users.name);
   if (!assignments.length) throw new Error("لا يوجد نادل معيّن لهذه الطاولة");
   const since = new Date(Date.now() - cooldownMinutes * 60_000);
