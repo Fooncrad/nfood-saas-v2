@@ -269,7 +269,21 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="nfood-dashboard-main min-w-0 flex-1 p-3 sm:p-4">{children}</main><CookieBanner /><FloatingSupportActions />
+        <main className="nfood-dashboard-main min-w-0 flex-1 p-3 sm:p-4">{children}</main>
+        <footer className="border-t border-slate-200/80 bg-background/95 px-4 py-5 text-center text-xs text-muted-foreground dark:border-white/10">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-3 gap-y-2">
+            <span className="font-bold text-foreground">NFOOD</span>
+            <span>© {new Date().getFullYear()}</span>
+            <button type="button" onClick={() => setLocation("/terms")} className="transition hover:text-[#e76f3c]">الشروط</button>
+            <span aria-hidden="true">•</span>
+            <button type="button" onClick={() => setLocation("/privacy")} className="transition hover:text-[#e76f3c]">الخصوصية</button>
+            <span aria-hidden="true">•</span>
+            <button type="button" onClick={() => setLocation("/refund")} className="transition hover:text-[#e76f3c]">الاسترجاع</button>
+            <span aria-hidden="true">•</span>
+            <button type="button" onClick={() => setLocation("/contact")} className="transition hover:text-[#e76f3c]">الدعم والتواصل</button>
+          </div>
+        </footer>
+        <CookieBanner /><FloatingSupportActions />
       </SidebarInset>
     </>
   );
