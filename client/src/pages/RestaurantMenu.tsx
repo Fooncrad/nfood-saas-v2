@@ -37,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { QRCodeSVG } from "qrcode.react";
+// QR Menu is intentionally imported separately from the multi-line Dialog import.
 import {
   Dialog,
   DialogContent,
