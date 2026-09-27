@@ -37,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+import { QRCodeSVG } from "qrcode.react";
   Dialog,
   DialogContent,
   DialogDescription,
@@ -524,8 +525,31 @@ export default function RestaurantMenu() {
 
     {itemCount > 0 && <button onClick={() => setCartOpen(true)} className="fixed bottom-4 start-1/2 z-40 flex w-[calc(100%-24px)] max-w-md -translate-x-1/2 items-center justify-between rounded-2xl px-5 py-4 text-white shadow-2xl" style={{ background:primary }}><span className="flex items-center gap-2 font-black"><ShoppingBag className="h-5 w-5" />{copy.cart} · {itemCount}</span><span className="font-black">{formatMoney(subtotal, currency)}</span></button>}
 
-    <footer className="bg-[#06101b] px-4 py-5 text-center text-xs text-slate-500">
-      <span>Powered by NFOOD</span>
+    <footer className="bg-[#06101b] px-4 py-8 text-slate-300">
+      <div className="mx-auto grid max-w-7xl gap-7 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr]">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            {restaurant.brandLogoUrl ? <img src={restaurant.brandLogoUrl} alt="" className="h-12 w-12 rounded-2xl bg-white/10 object-cover" /> : <div className="grid h-12 w-12 place-items-center rounded-2xl text-lg font-black text-white" style={{ background:primary }}>{(restaurant.brandName || restaurant.name).charAt(0)}</div>}
+            <div className="min-w-0"><p className="truncate text-base font-black text-white">{restaurant.brandName || restaurant.name}</p><p className="mt-1 flex items-center gap-1 text-[11px] text-slate-400"><MapPin className="h-3 w-3" />{selectedBranch?.city || restaurant.city || restaurant.address || "—"}</p></div>
+          </div>
+          {restaurant.brandDescription && <p className="mt-3 max-w-md text-xs leading-6 text-slate-400">{restaurant.brandDescription}</p>}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {restaurant.phone && <a href={`tel:${restaurant.phone}`} className="rounded-full border border-white/10 px-3 py-2 text-[11px] font-bold transition hover:border-orange-400 hover:text-white"><Phone className="me-1 inline h-3 w-3" />{restaurant.phone}</a>}
+            {restaurant.whatsapp && <a href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g,"")}`} target="_blank" rel="noreferrer" className="rounded-full border border-white/10 px-3 py-2 text-[11px] font-bold transition hover:border-orange-400 hover:text-white">WhatsApp</a>}
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-black uppercase tracking-[.14em] text-white">{lang === "ar" ? "روابط سريعة" : lang === "fr" ? "Liens rapides" : "Quick links"}</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {categories.slice(0,8).map((category) => <button key={category.id} onClick={() => { setActiveCategory(category.id); document.getElementById("menu-grid")?.scrollIntoView({ behavior:"smooth" }); }} className="truncate rounded-xl border border-white/10 px-3 py-2 text-start text-[11px] font-bold text-slate-300 transition hover:border-orange-400/60 hover:bg-white/5 hover:text-white">{localize(category.translationsJson, category.name, lang, "name")}</button>)}
+          </div>
+        </div>
+        <div className="flex items-center gap-4 lg:justify-end">
+          <div className="rounded-2xl bg-white p-2 shadow-xl"><QRCodeSVG value={typeof window !== "undefined" ? window.location.href.split("?")[0] : `https://fooncard.com/menu/${slug}`} size={92} level="H" /></div>
+          <div><p className="text-sm font-black text-white">QR Menu</p><p className="mt-1 max-w-32 text-[10px] leading-5 text-slate-400">{lang === "ar" ? "امسح للدخول مباشرة إلى منيو المطعم" : "Scan to open this menu"}</p></div>
+        </div>
+      </div>
+      <div className="mx-auto mt-7 flex max-w-7xl flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4 text-[10px] text-slate-500"><span>Powered by NFOOD</span><span>© {new Date().getFullYear()} {restaurant.brandName || restaurant.name}</span></div>
     </footer>
 
     {drawerOpen && <div className="fixed inset-0 z-[90] bg-slate-950/60 backdrop-blur-sm" onClick={() => setDrawerOpen(false)}><aside onClick={(event) => event.stopPropagation()} className={`absolute top-0 flex h-[100dvh] w-[min(88vw,340px)] flex-col overflow-y-auto p-5 shadow-2xl ${direction === "rtl" ? "end-0" : "start-0"} ${dark ? "bg-[#0b1d35] text-white" : "bg-white text-[#0b1d35]"}`}><div className="flex items-center justify-between"><b className="text-lg">{restaurant.brandName || restaurant.name}</b><button onClick={() => setDrawerOpen(false)} className="grid h-9 w-9 place-items-center rounded-xl bg-slate-500/10"><X className="h-4 w-4" /></button></div>
