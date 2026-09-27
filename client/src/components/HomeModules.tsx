@@ -3019,7 +3019,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   >("thermal");
   const [lastReceipt, setLastReceipt] = useState<{
     orderId: number;
-    paymentStatus: "unpaid" | "paid" | "refunded";
+    paymentStatus: "pending" | "cancelled" | "paid" | "unpaid" | "failed" | "partially_refunded" | "refunded";
     items: Array<{ name: string; quantity: number; unitPrice: number }>;
     pricing: {
       subtotal: string;
