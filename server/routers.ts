@@ -779,7 +779,11 @@ export const appRouter = router({
       const categorySectionById = new Map(categoryRows.map((category) => [category.id, category.kitchenSectionId]));
       const priceById = new Map(ownedItems.map((item) => [item.id, { price: Number(item.price), isAvailable: item.isAvailable, kitchenSectionId: item.kitchenSectionId ?? categorySectionById.get(item.categoryId) ?? null }]));
       const retailVariantIds = Array.from(new Set(retailInputItems.map((item) => item.marketplaceVariantId)));
-      const retailRows = retailVariantIds.length ? await db.select({ variantId: marketplaceListingVariants.id, price: marketplaceListingVariants.price, stockQuantity: marketplaceListingVariants.stockQuantity, listingPrice: marketplaceListings.price, entityId: marketplaceListings.entityId, restaurantId: marketplaceListings.restaurantId, status: marketplaceListings.status, isActive: marketplaceListingVariants.isActive }).from(marketplaceListingVariants).innerJoin(marketplaceListings, eq(marketplaceListingVariants.listingId, marketplaceListings.id)).where(and(eq(marketplaceListings.restaurantId, input.restaurantId), inArray(marketplaceListingVariants.id, retailVariantIds))) : [];
+      const platformEntity = retailVariantIds.length
+        ? (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq(platformEntities.restaurantId, input.restaurantId)).limit(1))[0]
+        : null;
+      if (retailVariantIds.length && !platformEntity) throw new TRPCError({ code: "FORBIDDEN", message: "المطعم غير مرتبط بمنشأة NFOOD؛ تعذر التحقق من منتجات التجزئة" });
+      const retailRows = retailVariantIds.length ? await db.select({ variantId: marketplaceListingVariants.id, price: marketplaceListingVariants.price, stockQuantity: marketplaceListingVariants.stockQuantity, listingPrice: marketplaceListings.price, entityId: marketplaceListings.entityId, restaurantId: marketplaceListings.restaurantId, status: marketplaceListings.status, isActive: marketplaceListingVariants.isActive }).from(marketplaceListingVariants).innerJoin(marketplaceListings, eq(marketplaceListingVariants.listingId, marketplaceListings.id)).where(and(eq(marketplaceListings.entityId, platformEntity!.id), inArray(marketplaceListingVariants.id, retailVariantIds))) : [];
       if (retailRows.length !== retailVariantIds.length) throw new TRPCError({ code: "FORBIDDEN", message: "يوجد منتج تجزئة غير مرتبط بالمتجر" });
       const retailById = new Map(retailRows.map((row) => [row.variantId, row]));
       const authoritativeItems = input.items.map((item) => {
