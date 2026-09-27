@@ -3032,7 +3032,11 @@ function PosView({ restaurantId }: { restaurantId: number }) {
           quantity: item.quantity,
           unitPrice: item.product.price,
         })),
-        pricing: result.pricing,
+        pricing: {
+          ...result.pricing,
+          discountPercent: "discountPercent" in result.pricing ? result.pricing.discountPercent : 0,
+          taxPercent: "taxPercent" in result.pricing ? result.pricing.taxPercent : 0,
+        },
       });
       toast.success(`تم حفظ الطلب #${result.orderId} وإرساله للمطبخ`);
       setCart([]);
