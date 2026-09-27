@@ -429,7 +429,7 @@ export default function RestaurantMenu() {
 
     <section className="relative overflow-hidden bg-[#071525] text-white">
       <div className="mx-auto max-w-7xl">
-        <div className="relative aspect-[16/7] min-h-[220px] overflow-hidden sm:aspect-[16/6] lg:aspect-[16/5]">
+        <div className="relative h-[190px] overflow-hidden sm:h-[240px] md:h-[280px] lg:h-[320px]">
           {restaurant.coverUrl
             ? <img src={restaurant.coverUrl} alt={restaurant.brandName || restaurant.name} className="absolute inset-0 h-full w-full object-cover" />
             : <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d35] via-[#12345a] to-[#071525]" />}
