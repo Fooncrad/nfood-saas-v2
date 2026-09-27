@@ -3664,7 +3664,7 @@ function isBranchAcceptingOrders(branch, channel, now = /* @__PURE__ */ new Date
     const [endHour, endMinute] = window.endTime.split(":").map(Number);
     const start = startHour * 60 + startMinute;
     const end = endHour * 60 + endMinute;
-    return start <= end ? currentMinutes >= start && currentMinutes < end : currentMinutes >= start || currentMinutes < end;
+    return start === end || (start < end ? currentMinutes >= start && currentMinutes < end : currentMinutes >= start || currentMinutes < end);
   });
 }
 function getNextBranchOpeningLabel(branch, channel, now = /* @__PURE__ */ new Date()) {
