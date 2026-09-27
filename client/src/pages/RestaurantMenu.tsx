@@ -122,7 +122,7 @@ export default function RestaurantMenu() {
   const [reservationStep, setReservationStep] = useState<1 | 2>(1);
   const [waiterOpen, setWaiterOpen] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState<number | null>(null);
-  const [orderMode, setOrderMode] = useState<OrderMode>("takeaway");
+  const [orderMode, setOrderMode] = useState<OrderMode | null>(null);
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [tableName, setTableName] = useState("");
@@ -229,7 +229,7 @@ export default function RestaurantMenu() {
   }, [restaurant?.orderModesJson, restaurant?.reservationEnabled]);
 
   useEffect(() => {
-    if (!enabledModes.includes(orderMode)) setOrderMode(enabledModes[0] ?? "takeaway");
+    if (orderMode && !enabledModes.includes(orderMode)) setOrderMode(null);
   }, [enabledModes, orderMode]);
 
   const manualPayments = useMemo(() => {
@@ -334,6 +334,10 @@ export default function RestaurantMenu() {
   };
 
   const submitOrder = () => {
+    if (!orderMode) {
+      toast.error(lang === "ar" ? "اختر نوع الطلب أولًا" : lang === "fr" ? "Choisissez d’abord le type de commande" : "Choose an order type first");
+      return;
+    }
     if (!user) {
       toast.info(lang === "ar" ? "سجّل الدخول لإتمام الطلب" : "Sign in to complete your order");
       navigate(`/login?next=${encodeURIComponent(location)}`);
@@ -494,19 +498,9 @@ export default function RestaurantMenu() {
         <label className={`mb-2 block text-[10px] font-black uppercase tracking-[.16em] ${muted}`}>{copy.branch}</label>
         <select value={selectedBranchId ?? ""} onChange={(event) => setSelectedBranchId(Number(event.target.value))} className={`h-11 w-full rounded-xl border px-3 text-sm font-black outline-none ${dark ? "border-white/10 bg-white/5 text-white" : "border-slate-200 bg-white text-slate-900"}`}>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>
       </div>}
-      <div className="mt-5">
-        <p className={`mb-2 text-[10px] font-black uppercase tracking-[.16em] ${muted}`}>{copy.startOrder}</p>
-        <div className="grid grid-cols-2 gap-2">
-          {enabledModes.map((mode) => {
-            const label = mode === "dineIn" ? copy.local : mode === "takeaway" ? copy.takeaway : mode === "delivery" ? copy.delivery : mode === "reservation" ? copy.withReservation : copy.room;
-            const Icon = mode === "dineIn" ? Utensils : mode === "takeaway" ? ShoppingBag : mode === "delivery" ? Truck : mode === "reservation" ? CalendarDays : Hotel;
-            return <button key={mode} onClick={() => { setOrderMode(mode); if (mode === "reservation") setReservationOpen(true); }} className={`flex items-center gap-2 rounded-xl border p-3 text-start text-xs font-black ${orderMode === mode ? "border-transparent text-white" : dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`} style={orderMode === mode ? { background:primary } : undefined}><Icon className="h-4 w-4" />{label}</button>;
-          })}
-        </div>
-      </div>
       <div className="mt-6 grid gap-2">
       {([
-        { label: copy.menu, Icon: Utensils, action: () => { setDrawerOpen(false); document.getElementById("menu-grid")?.scrollIntoView({ behavior:"smooth" }); } },
+        { label: copy.startOrder, Icon: Utensils, action: () => { setDrawerOpen(false); document.getElementById("menu-grid")?.scrollIntoView({ behavior:"smooth" }); } },
         { label: copy.cart, Icon: ShoppingBag, action: () => { setDrawerOpen(false); setCartOpen(true); } },
         { label: copy.reservation, Icon: CalendarDays, action: () => { setDrawerOpen(false); setReservationOpen(true); } },
         { label: copy.waiter, Icon: ConciergeBell, action: () => { setDrawerOpen(false); setWaiterOpen(true); } },
@@ -556,19 +550,33 @@ export default function RestaurantMenu() {
       <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-2xl overflow-y-auto rounded-[26px]">
         <DialogHeader><DialogTitle>{copy.cart}</DialogTitle><DialogDescription>{itemCount} {copy.items}</DialogDescription></DialogHeader>
         <div className="grid gap-3">{cart.map((line) => <div key={line.key} className="flex items-center gap-3 rounded-2xl border border-slate-200 p-3"><div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{line.name}</p><p className="mt-1 text-xs text-slate-500">{formatMoney(line.price + line.addonTotal, currency)}</p></div><div className="flex items-center gap-2"><button onClick={() => updateQty(line.key,-1)} className="grid h-8 w-8 place-items-center rounded-lg border"><Minus className="h-3 w-3" /></button><b>{line.quantity}</b><button onClick={() => updateQty(line.key,1)} className="grid h-8 w-8 place-items-center rounded-lg border"><Plus className="h-3 w-3" /></button></div></div>)}</div>
-        <div className="mt-4 flex gap-2 overflow-x-auto">{enabledModes.filter((mode) => mode !== "reservation").map((mode) => <button key={mode} onClick={() => setOrderMode(mode)} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-black ${orderMode === mode ? "text-white" : ""}`} style={orderMode === mode ? { background:primary, borderColor:primary } : undefined}>{mode === "dineIn" ? copy.local : mode === "takeaway" ? copy.takeaway : mode === "delivery" ? copy.delivery : copy.room}</button>)}</div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder={copy.name} />
-          <Input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} placeholder={copy.phone} dir="ltr" />
-          {orderMode === "dineIn" && <Input value={tableName} onChange={(e) => setTableName(e.target.value)} placeholder={copy.table} />}
-          {orderMode === "takeaway" && pickupOptions.data?.length ? <select value={pickupPoint} onChange={(e) => setPickupPoint(e.target.value)} className="h-10 rounded-md border px-3"><option value="">{copy.takeaway}</option>{pickupOptions.data.map((point:any) => <option key={point.id ?? point.name} value={point.name}>{point.name}</option>)}</select> : null}
-          {orderMode === "delivery" && <><Input value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} placeholder={copy.address} className="sm:col-span-2" /><Button type="button" variant="outline" onClick={askLocation} className="sm:col-span-2"><MapPin className="me-2 h-4 w-4" />{copy.location}</Button></>}
-          {orderMode === "hotel" && <><select value={hotelId ?? ""} onChange={(e) => { setHotelId(Number(e.target.value) || null); setHotelRoomId(null); }} className="h-10 rounded-md border px-3"><option value="">{copy.hotel}</option>{(hotelOptions.data ?? []).map((hotel:any) => <option key={hotel.id} value={hotel.id}>{hotel.name}</option>)}</select><select value={hotelRoomId ?? ""} onChange={(e) => setHotelRoomId(Number(e.target.value) || null)} className="h-10 rounded-md border px-3"><option value="">{copy.roomNumber}</option>{selectedHotelRooms.map((room:any) => <option key={room.id} value={room.id}>{room.roomNumber}{room.floor ? ` · ${room.floor}` : ""}</option>)}</select></>}
-          <Textarea value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} placeholder={copy.notes} className="sm:col-span-2" />
-          {manualPayments.length > 1 && <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as "cash" | "bank_transfer")} className="h-10 rounded-md border px-3 sm:col-span-2"><option value="cash">{copy.cash}</option><option value="bank_transfer">{copy.transfer}</option></select>}
+        <div className="mt-5">
+          <p className="text-xs font-black text-slate-500">{lang === "ar" ? "اختر نوع الطلب" : lang === "fr" ? "Choisissez le type de commande" : "Choose order type"}</p>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {enabledModes.map((mode) => {
+              const label = mode === "dineIn" ? copy.local : mode === "takeaway" ? copy.takeaway : mode === "delivery" ? copy.delivery : mode === "reservation" ? copy.withReservation : copy.room;
+              const Icon = mode === "dineIn" ? Utensils : mode === "takeaway" ? ShoppingBag : mode === "delivery" ? Truck : mode === "reservation" ? CalendarDays : Hotel;
+              return <button key={mode} type="button" onClick={() => setOrderMode(mode)} className={`flex min-h-20 items-center gap-3 rounded-2xl border p-3 text-start text-xs font-black transition ${orderMode === mode ? "border-transparent text-white shadow-lg" : "border-slate-200 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"}`} style={orderMode === mode ? { background:primary } : undefined}><Icon className="h-5 w-5 shrink-0" /><span>{label}</span></button>;
+            })}
+          </div>
         </div>
-        <div className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm dark:bg-slate-900"><div className="flex justify-between"><span>{copy.total}</span><b>{formatMoney(subtotal + deliveryFee, currency)}</b></div>{deliveryFee > 0 && <p className="mt-1 text-xs text-slate-500">{copy.delivery}: {formatMoney(deliveryFee, currency)}</p>}</div>
-        <Button disabled={checkout.isPending || !cart.length || !isOpen} onClick={submitOrder} className="mt-4 h-12 w-full rounded-2xl font-black text-white" style={{ background:primary }}>{isOpen ? copy.checkout : copy.closed}</Button>
+        {orderMode ? <>
+          <div className="mt-5 border-t border-slate-200 pt-5 dark:border-white/10">
+            <p className="mb-3 text-xs font-black text-slate-500">{lang === "ar" ? "أكمل بيانات الطلب" : lang === "fr" ? "Complétez la commande" : "Complete your order"}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder={copy.name} />
+              <Input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} placeholder={copy.phone} dir="ltr" />
+              {orderMode === "dineIn" && <Input value={tableName} onChange={(e) => setTableName(e.target.value)} placeholder={copy.table} />}
+              {orderMode === "takeaway" && pickupOptions.data?.length ? <select value={pickupPoint} onChange={(e) => setPickupPoint(e.target.value)} className="h-10 rounded-md border px-3"><option value="">{copy.takeaway}</option>{pickupOptions.data.map((point:any) => <option key={point.id ?? point.name} value={point.name}>{point.name}</option>)}</select> : null}
+              {orderMode === "delivery" && <><Input value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} placeholder={copy.address} className="sm:col-span-2" /><Button type="button" variant="outline" onClick={askLocation} className="sm:col-span-2"><MapPin className="me-2 h-4 w-4" />{copy.location}</Button></>}
+              {orderMode === "hotel" && <><select value={hotelId ?? ""} onChange={(e) => { setHotelId(Number(e.target.value) || null); setHotelRoomId(null); }} className="h-10 rounded-md border px-3"><option value="">{copy.hotel}</option>{(hotelOptions.data ?? []).map((hotel:any) => <option key={hotel.id} value={hotel.id}>{hotel.name}</option>)}</select><select value={hotelRoomId ?? ""} onChange={(e) => setHotelRoomId(Number(e.target.value) || null)} className="h-10 rounded-md border px-3"><option value="">{copy.roomNumber}</option>{selectedHotelRooms.map((room:any) => <option key={room.id} value={room.id}>{room.roomNumber}{room.floor ? ` · ${room.floor}` : ""}</option>)}</select></>}
+              <Textarea value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} placeholder={copy.notes} className="sm:col-span-2" />
+              {manualPayments.length > 1 && <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as "cash" | "bank_transfer")} className="h-10 rounded-md border px-3 sm:col-span-2"><option value="cash">{copy.cash}</option><option value="bank_transfer">{copy.transfer}</option></select>}
+            </div>
+          </div>
+          <div className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm dark:bg-slate-900"><div className="flex justify-between"><span>{copy.total}</span><b>{formatMoney(subtotal + deliveryFee, currency)}</b></div>{deliveryFee > 0 && <p className="mt-1 text-xs text-slate-500">{copy.delivery}: {formatMoney(deliveryFee, currency)}</p>}</div>
+          <Button disabled={checkout.isPending || !cart.length || !isOpen} onClick={submitOrder} className="mt-4 h-12 w-full rounded-2xl font-black text-white" style={{ background:primary }}>{isOpen ? copy.checkout : copy.closed}</Button>
+        </> : <div className="mt-5 rounded-2xl border border-dashed border-slate-300 p-4 text-center text-xs font-bold text-slate-500 dark:border-white/15">{lang === "ar" ? "بعد اختيار نوع الطلب تظهر لك الخطوات المطلوبة لإكماله." : lang === "fr" ? "Les étapes nécessaires apparaîtront après votre choix." : "The required checkout steps will appear after you choose an order type."}</div>}
       </DialogContent>
     </Dialog>
 
