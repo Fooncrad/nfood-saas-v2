@@ -121,7 +121,7 @@ export default function RestaurantMenu() {
   const [selectedAddonIds, setSelectedAddonIds] = useState<number[]>([]);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [cartStep, setCartStep] = useState<1 | 2>(1);
+  const [cartStep, setCartStep] = useState<1 | 2 | 3>(1);
   const [waiterStep, setWaiterStep] = useState<1 | 2>(1);
   const [reservationOpen, setReservationOpen] = useState(false);
   const [reservationStep, setReservationStep] = useState<1 | 2>(1);
@@ -185,7 +185,7 @@ export default function RestaurantMenu() {
     waiter:"نداء النادل", account:"حسابي", login:"تسجيل الدخول", guest:"تصفح كزائر", contact:"التواصل",
     hours:"الأوقات", install:"تثبيت التطبيق", open:"مفتوح الآن", closed:"مغلق الآن", more:"عرض المزيد",
     empty:"لا توجد أصناف مطابقة.", local:"طلب محلي", takeaway:"سفري", delivery:"توصيل", withReservation:"طلب مع حجز",
-    room:"خدمة غرف", add:"إضافة للسلة", extras:"الإضافات", calories:"سعرة", prep:"دقيقة", total:"الإجمالي",
+    room:"خدمة غرف", add:"إضافة للسلة", extras:"الإضافات", calories:"سعرات حرارية", prep:"دقيقة", total:"الإجمالي",
     checkout:"إتمام الطلب", name:"الاسم", phone:"الجوال", notes:"ملاحظات الطلب", table:"رقم الطاولة",
     address:"عنوان التوصيل", location:"تحديد موقعي", payment:"طريقة الدفع", cash:"نقدي", transfer:"تحويل بنكي",
     hotel:"الفندق", roomNumber:"الغرفة", branch:"الفرع", next:"التالي", back:"رجوع", confirm:"تأكيد الحجز",
@@ -514,8 +514,8 @@ export default function RestaurantMenu() {
             const description = localize(item.translationsJson, item.description || "", lang, "description");
             const discounted = item.compareAtPrice && Number(item.compareAtPrice) > Number(item.price);
             return <button key={item.id} onClick={() => openProduct(item.id)} className={`group min-w-0 overflow-hidden rounded-[22px] border text-start shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${surface}`}>
-              <div className="relative aspect-[4/3] overflow-hidden bg-slate-200/10">{item.imageUrl ? <img src={item.imageUrl} alt={name} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><Utensils className="h-9 w-9 opacity-20" /></div>}{item.calories ? <span className="absolute end-2 top-2 rounded-full bg-[#071525]/80 px-2 py-1 text-[9px] font-black text-white">{item.calories} {copy.calories}</span> : null}</div>
-              <div className="min-w-0 p-3 sm:p-4"><h3 className="line-clamp-2 min-h-10 text-[13px] font-black leading-5 sm:text-sm">{name}</h3>{description && <p className={`mt-1 line-clamp-2 min-h-9 text-[11px] leading-5 ${muted}`}>{description}</p>}<div className="mt-3 flex flex-wrap items-baseline gap-1.5"><span className="text-base font-black">{formatMoney(item.price, currency)}</span>{discounted && <span className={`text-[10px] line-through ${muted}`}>{formatMoney(item.compareAtPrice!, currency)}</span>}</div>{item.prepTimeMinutes ? <p className={`mt-2 flex items-center gap-1 text-[10px] ${muted}`}><Clock3 className="h-3 w-3" />{item.prepTimeMinutes} {copy.prep}</p> : null}</div>
+              <div className="relative aspect-[4/3] overflow-hidden bg-slate-200/10">{item.imageUrl ? <img src={item.imageUrl} alt={name} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><Utensils className="h-9 w-9 opacity-20" /></div>}{item.calories ? <span className="absolute end-2 top-2 rounded-full bg-[#071525]/85 px-2 py-1 text-[9px] font-black text-white">{copy.calories} · {item.calories} kcal</span> : null}</div>
+              <div className="min-w-0 p-3 sm:p-4"><h3 className="line-clamp-2 text-[13px] font-black leading-5 sm:text-sm">{name}</h3>{description && <p className={`mt-1 line-clamp-2 text-[11px] leading-5 ${muted}`}>{description}</p>}<div className="mt-3 flex flex-wrap items-baseline gap-1.5"><span className="text-base font-black">{formatMoney(item.price, currency)}</span>{discounted && <span className={`text-[10px] line-through ${muted}`}>{formatMoney(item.compareAtPrice!, currency)}</span>}</div><span className="mt-3 inline-flex rounded-xl px-3 py-2 text-[10px] font-black text-white" style={{ background:primary }}>{copy.add}</span>{item.prepTimeMinutes ? <p className={`mt-2 flex items-center gap-1 text-[10px] ${muted}`}><Clock3 className="h-3 w-3" />{item.prepTimeMinutes} {copy.prep}</p> : null}</div>
             </button>;
           })}
         </div>
@@ -598,7 +598,7 @@ export default function RestaurantMenu() {
         {selectedItem && <>
           <div className="aspect-[16/10] overflow-hidden bg-slate-100">{selectedItem.imageUrl ? <img src={selectedItem.imageUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center"><Utensils className="h-10 w-10 text-slate-300" /></div>}</div>
           <div className="p-5"><DialogHeader><DialogTitle>{localize(selectedItem.translationsJson, selectedItem.name, lang, "name")}</DialogTitle><DialogDescription>{localize(selectedItem.translationsJson, selectedItem.description || "", lang, "description")}</DialogDescription></DialogHeader>
-            <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500">{selectedItem.calories ? <span>{selectedItem.calories} {copy.calories}</span> : null}{selectedItem.prepTimeMinutes ? <span>{selectedItem.prepTimeMinutes} {copy.prep}</span> : null}</div>
+            <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500">{selectedItem.calories ? <span className="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">{copy.calories} · {selectedItem.calories} kcal</span> : null}{selectedItem.prepTimeMinutes ? <span>{selectedItem.prepTimeMinutes} {copy.prep}</span> : null}</div>
             {itemAddons.length > 0 && <div className="mt-5"><h4 className="text-sm font-black">{copy.extras}</h4><div className="mt-2 grid gap-2">{itemAddons.map((addon) => <label key={addon.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 text-sm"><span className="flex items-center gap-2"><input type="checkbox" checked={selectedAddonIds.includes(addon.id)} onChange={(event) => setSelectedAddonIds((current) => event.target.checked ? [...current, addon.id] : current.filter((id) => id !== addon.id))} />{localize(addon.translationsJson, addon.name, lang, "name")}</span><b>{formatMoney(addon.price, currency)}</b></label>)}</div></div>}
             <Button onClick={addSelectedProduct} className="mt-6 h-12 w-full rounded-2xl font-black text-white" style={{ background:primary }}>{copy.add} · {formatMoney(Number(selectedItem.price) + selectedAddonTotal, currency)}</Button>
           </div>
@@ -607,23 +607,27 @@ export default function RestaurantMenu() {
     </Dialog>
 
     <Dialog open={cartOpen} onOpenChange={(open) => { setCartOpen(open); if (!open) setCartStep(1); }}>
-      <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-2xl overflow-y-auto rounded-[26px]">
-        <DialogHeader><DialogTitle>{copy.cart} · {cartStep}/2</DialogTitle><DialogDescription>{cartStep === 1 ? `${itemCount} ${copy.items} · ${lang === "ar" ? "اختر نوع الطلب" : lang === "fr" ? "Choisissez le service" : "Choose your service"}` : lang === "ar" ? "بيانات الطلب والتأكيد" : lang === "fr" ? "Détails et confirmation" : "Details and confirmation"}</DialogDescription></DialogHeader>
+      <DialogContent className="max-h-[min(720px,calc(100dvh-24px))] w-[calc(100%-24px)] max-w-xl overflow-y-auto rounded-[24px]">
+        <DialogHeader><DialogTitle>{copy.cart} · {cartStep}/3</DialogTitle><DialogDescription>{cartStep === 1 ? `${itemCount} ${copy.items}` : cartStep === 2 ? (lang === "ar" ? "اختر نوع الطلب" : lang === "fr" ? "Choisissez le service" : "Choose your service") : (lang === "ar" ? "بيانات الطلب والتأكيد" : lang === "fr" ? "Détails et confirmation" : "Details and confirmation")}</DialogDescription></DialogHeader>
         {cartStep === 1 ? <>
         <div className="grid gap-3">{cart.map((line) => <div key={line.key} className="flex items-center gap-3 rounded-2xl border border-slate-200 p-3"><div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{line.name}</p><p className="mt-1 text-xs text-slate-500">{formatMoney(line.price + line.addonTotal, currency)}</p></div><div className="flex items-center gap-2"><button onClick={() => updateQty(line.key,-1)} className="grid h-8 w-8 place-items-center rounded-lg border"><Minus className="h-3 w-3" /></button><b>{line.quantity}</b><button onClick={() => updateQty(line.key,1)} className="grid h-8 w-8 place-items-center rounded-lg border"><Plus className="h-3 w-3" /></button></div></div>)}</div>
+        <Button disabled={!cart.length} onClick={() => setCartStep(2)} className="mt-4 h-11 w-full text-white" style={{ background:primary }}>{copy.next}</Button>
+        </> : cartStep === 2 ? <>
+        <Button variant="outline" onClick={() => setCartStep(1)} className="mb-3 h-10">{copy.back}</Button>
         <div className="mt-5">
           <p className="text-xs font-black text-slate-500">{lang === "ar" ? "اختر نوع الطلب" : lang === "fr" ? "Choisissez le type de commande" : "Choose order type"}</p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {enabledModes.map((mode) => {
               const label = mode === "dineIn" ? copy.local : mode === "takeaway" ? copy.takeaway : mode === "delivery" ? copy.delivery : mode === "reservation" ? copy.withReservation : copy.room;
               const Icon = mode === "dineIn" ? Utensils : mode === "takeaway" ? ShoppingBag : mode === "delivery" ? Truck : mode === "reservation" ? CalendarDays : Hotel;
-              return <button key={mode} type="button" onClick={() => setOrderMode(mode)} className={`flex min-h-20 items-center gap-3 rounded-2xl border p-3 text-start text-xs font-black transition ${orderMode === mode ? "border-transparent text-white shadow-lg" : "border-slate-200 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"}`} style={orderMode === mode ? { background:primary } : undefined}><Icon className="h-5 w-5 shrink-0" /><span>{label}</span></button>;
+              return <button key={mode} type="button" onClick={() => setOrderMode(mode)} className={`flex min-h-16 items-center gap-2 rounded-2xl border p-3 text-start text-xs font-black transition ${orderMode === mode ? "border-transparent text-white shadow-lg" : "border-slate-200 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"}`} style={orderMode === mode ? { background:primary } : undefined}><Icon className="h-5 w-5 shrink-0" /><span>{label}</span></button>;
             })}
           </div>
         </div>
-        <Button disabled={!orderMode || !cart.length} onClick={() => setCartStep(2)} className="mt-5 h-12 w-full text-white" style={{ background:primary }}>{copy.next}</Button>
+
+        <Button disabled={!orderMode} onClick={() => setCartStep(3)} className="mt-4 h-11 w-full text-white" style={{ background:primary }}>{copy.next}</Button>
         </> : <>
-        <Button variant="outline" onClick={() => setCartStep(1)} className="mb-3">{copy.back}</Button>
+        <Button variant="outline" onClick={() => setCartStep(2)} className="mb-3 h-10">{copy.back}</Button>
         {orderMode ? <>
           <div className="mt-5 border-t border-slate-200 pt-5 dark:border-white/10">
             <p className="mb-3 text-xs font-black text-slate-500">{lang === "ar" ? "أكمل بيانات الطلب" : lang === "fr" ? "Complétez la commande" : "Complete your order"}</p>
@@ -684,7 +688,7 @@ export default function RestaurantMenu() {
       <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-xl overflow-y-auto rounded-[26px]">
         <DialogHeader><DialogTitle>{copy.reservation} · {reservationStep}/2</DialogTitle><DialogDescription>{reservationStep === 1 ? `${copy.date} · ${copy.section}` : `${copy.name} · ${copy.phone}`}</DialogDescription></DialogHeader>
         {reservationStep === 1 ? <div className="grid gap-3 sm:grid-cols-2">
-          <Input type="datetime-local" value={reservationDate} onChange={(e) => setReservationDate(e.target.value)} />
+          <Input type="datetime-local" lang="en" dir="ltr" value={reservationDate} onChange={(e) => setReservationDate(e.target.value)} />
           {reservationSlots.data?.length ? <select value={reservationSlotId ?? ""} onChange={(e) => setReservationSlotId(Number(e.target.value) || undefined)} className="h-10 rounded-md border px-3"><option value="">{copy.date}</option>{reservationSlots.data.map((slot:any) => <option key={slot.id} value={slot.id}>{slot.label ?? slot.startTime ?? slot.id}</option>)}</select> : <div />}
           <select value={seatingSectionId ?? ""} onChange={(e) => setSeatingSectionId(Number(e.target.value) || undefined)} className="h-10 rounded-md border px-3"><option value="">{copy.section}</option>{seatingSections.filter((section) => !selectedBranchId || section.branchId === selectedBranchId).map((section) => <option key={section.id} value={section.id}>{section.name}</option>)}</select>
           <Input type="number" min={1} max={50} value={reservationPartySize} onChange={(e) => setReservationPartySize(Math.max(1,Number(e.target.value)||1))} placeholder={copy.party} />
