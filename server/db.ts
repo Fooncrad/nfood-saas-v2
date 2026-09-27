@@ -841,8 +841,16 @@ async function loadFeatureAccessContext(restaurantId: number): Promise<FeatureAc
   const definitions = await db.select().from(featureDefinitions);
   const overrides = await db.select().from(restaurantFeatures).where(eq(restaurantFeatures.restaurantId, restaurantId));
   const restaurant = (await db.select({ plan: restaurants.plan }).from(restaurants).where(eq(restaurants.id, restaurantId)).limit(1))[0];
-  const subscription = (await db.select({ plan: subscriptions.plan }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), eq(subscriptions.status, "active"))).orderBy(desc(subscriptions.id)).limit(1))[0];
-  const activePlan = subscription?.plan ?? restaurant?.plan ?? "Starter";
+  const subscription = (await db.select({ plan: subscriptions.plan }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), inArray(subscriptions.status, ["active", "trial"]))).orderBy(desc(subscriptions.id)).limit(1))[0];
+  const legacyPlanMap: Record<string, string> = {
+    Free: "hospitality_basic",
+    Starter: "hospitality_basic",
+    Growth: "hospitality_pro",
+    Enterprise: "hospitality_enterprise",
+    "All Features": "hospitality_enterprise",
+  };
+  const rawPlan = subscription?.plan ?? restaurant?.plan ?? "Free";
+  const activePlan = legacyPlanMap[rawPlan] ?? rawPlan;
   const configuredPlanRows = await db.select({ key: featureDefinitions.key, enabled: packagePlanFeatures.enabled, featureLimit: packagePlanFeatures.featureLimit }).from(packagePlanFeatures).innerJoin(packagePlans, eq(packagePlanFeatures.planId, packagePlans.id)).innerJoin(featureDefinitions, eq(packagePlanFeatures.featureId, featureDefinitions.id)).where(and(or(eq(packagePlans.key, activePlan), eq(packagePlans.name, activePlan)), eq(packagePlans.isActive, true)));
   return {
     definitions,
