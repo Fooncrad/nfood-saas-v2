@@ -126,6 +126,7 @@ export default function RestaurantMenu() {
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [tableName, setTableName] = useState("");
+  const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
   const [pickupPoint, setPickupPoint] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryLatitude, setDeliveryLatitude] = useState<number | undefined>();
@@ -232,6 +233,14 @@ export default function RestaurantMenu() {
     if (orderMode && !enabledModes.includes(orderMode)) setOrderMode(null);
   }, [enabledModes, orderMode]);
 
+  useEffect(() => {
+    setSelectedTableId(null);
+    setTableName("");
+    setPickupPoint("");
+    setHotelId(null);
+    setHotelRoomId(null);
+  }, [selectedBranchId, orderMode]);
+
   const manualPayments = useMemo(() => {
     const parsed = parseJson<string[]>(restaurant?.manualPaymentMethodsJson, ["cash","bank_transfer"]);
     return parsed.filter((value): value is "cash" | "bank_transfer" => value === "cash" || value === "bank_transfer");
@@ -263,6 +272,10 @@ export default function RestaurantMenu() {
   const pickupOptions = trpc.platform.pickupPoints.useQuery(
     { slug, branchId: selectedBranchId ?? 0 },
     { enabled: orderMode === "takeaway" && Boolean(selectedBranchId), retry:false }
+  );
+  const availableTables = trpc.platform.publicAvailableTables.useQuery(
+    { slug, branchId: selectedBranchId ?? 0 },
+    { enabled: orderMode === "dineIn" && Boolean(selectedBranchId), retry:false }
   );
   const reservationSlots = trpc.platform.reservationSlots.useQuery(
     { slug, branchId: selectedBranchId ?? 0 },
@@ -347,7 +360,8 @@ export default function RestaurantMenu() {
       toast.error(lang === "ar" ? "أكمل بيانات الطلب الأساسية" : "Complete the required order details");
       return;
     }
-    if (orderMode === "dineIn" && !tableName.trim()) return toast.error(copy.table);
+    if (orderMode === "dineIn" && (!selectedTableId || !tableName.trim())) return toast.error(lang === "ar" ? "اختر طاولة متاحة" : lang === "fr" ? "Choisissez une table disponible" : "Choose an available table");
+    if (orderMode === "takeaway" && pickupOptions.data?.length && !pickupPoint.trim()) return toast.error(lang === "ar" ? "اختر نقطة الاستلام" : "Choose pickup point");
     if (orderMode === "delivery" && (!deliveryAddress.trim() || deliveryLatitude === undefined || deliveryLongitude === undefined)) return toast.error(copy.address);
     const selectedRoom = selectedHotel?.rooms?.find((room:any) => room.id === hotelRoomId);
     if (orderMode === "hotel" && (!hotelId || !hotelRoomId)) return toast.error(copy.roomNumber);
@@ -396,6 +410,9 @@ export default function RestaurantMenu() {
       durationMinutes:60,
     });
   };
+
+  const mapsEmbedUrl = (query: string) => `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+  const mapsOpenUrl = (query: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 
   const installApp = async () => {
     if (!installPrompt) {
@@ -566,10 +583,36 @@ export default function RestaurantMenu() {
             <div className="grid gap-3 sm:grid-cols-2">
               <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder={copy.name} />
               <Input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} placeholder={copy.phone} dir="ltr" />
-              {orderMode === "dineIn" && <Input value={tableName} onChange={(e) => setTableName(e.target.value)} placeholder={copy.table} />}
-              {orderMode === "takeaway" && pickupOptions.data?.length ? <select value={pickupPoint} onChange={(e) => setPickupPoint(e.target.value)} className="h-10 rounded-md border px-3"><option value="">{copy.takeaway}</option>{pickupOptions.data.map((point:any) => <option key={point.id ?? point.name} value={point.name}>{point.name}</option>)}</select> : null}
-              {orderMode === "delivery" && <><Input value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} placeholder={copy.address} className="sm:col-span-2" /><Button type="button" variant="outline" onClick={askLocation} className="sm:col-span-2"><MapPin className="me-2 h-4 w-4" />{copy.location}</Button></>}
-              {orderMode === "hotel" && <><select value={hotelId ?? ""} onChange={(e) => { setHotelId(Number(e.target.value) || null); setHotelRoomId(null); }} className="h-10 rounded-md border px-3"><option value="">{copy.hotel}</option>{(hotelOptions.data ?? []).map((hotel:any) => <option key={hotel.id} value={hotel.id}>{hotel.name}</option>)}</select><select value={hotelRoomId ?? ""} onChange={(e) => setHotelRoomId(Number(e.target.value) || null)} className="h-10 rounded-md border px-3"><option value="">{copy.roomNumber}</option>{selectedHotelRooms.map((room:any) => <option key={room.id} value={room.id}>{room.roomNumber}{room.floor ? ` · ${room.floor}` : ""}</option>)}</select></>}
+              {orderMode === "dineIn" && <div className="sm:col-span-2">
+                <p className="mb-2 text-xs font-black text-slate-500">{lang === "ar" ? "اختر طاولتك" : lang === "fr" ? "Choisissez votre table" : "Choose your table"}</p>
+                {availableTables.isLoading ? <div className="rounded-xl border border-dashed p-4 text-center text-xs text-slate-500">{lang === "ar" ? "جارٍ تحميل الطاولات..." : "Loading tables..."}</div> : availableTables.data?.length ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {availableTables.data.map((table) => <button key={table.id} type="button" onClick={() => { setSelectedTableId(table.id); setTableName(table.name); }} className={`rounded-2xl border p-3 text-start text-xs font-black transition ${selectedTableId === table.id ? "border-transparent text-white shadow-lg" : "border-slate-200 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"}`} style={selectedTableId === table.id ? { background:primary } : undefined}><span className="block">{table.name}</span><span className="mt-1 block text-[10px] opacity-70">{table.seats} {lang === "ar" ? "مقاعد" : lang === "fr" ? "places" : "seats"}</span></button>)}
+                </div> : <div className="rounded-xl border border-dashed p-4 text-center text-xs text-slate-500">{lang === "ar" ? "لا توجد طاولات متاحة الآن" : lang === "fr" ? "Aucune table disponible" : "No tables available right now"}</div>}
+              </div>}
+              {orderMode === "takeaway" && <div className="sm:col-span-2">
+                <p className="mb-2 text-xs font-black text-slate-500">{lang === "ar" ? "اختر نقطة الاستلام" : lang === "fr" ? "Choisissez le point de retrait" : "Choose pickup point"}</p>
+                {pickupOptions.data?.length ? <div className="grid gap-2">{pickupOptions.data.map((point:any) => {
+                  const selected = pickupPoint === point.name;
+                  const mapQuery = point.address || point.name;
+                  return <div key={point.id ?? point.name} className={`overflow-hidden rounded-2xl border ${selected ? "border-orange-400" : "border-slate-200 dark:border-white/10"}`}>
+                    <button type="button" onClick={() => setPickupPoint(point.name)} className={`w-full p-3 text-start ${selected ? "bg-orange-500/10" : "bg-slate-50 dark:bg-white/5"}`}>
+                      <span className="block text-sm font-black">{point.name}</span>
+                      {point.address && <span className="mt-1 block text-xs text-slate-500">{point.address}</span>}
+                      {(point.openingTime || point.closingTime) && <span className="mt-1 block text-[10px] text-slate-400">{point.openingTime || "—"}–{point.closingTime || "—"}</span>}
+                    </button>
+                    {selected && mapQuery && <div className="border-t border-slate-200 dark:border-white/10"><iframe title={point.name} src={mapsEmbedUrl(mapQuery)} className="h-40 w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" /><a href={mapsOpenUrl(mapQuery)} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-3 py-2 text-xs font-black text-blue-600"><MapPin className="h-4 w-4" />{lang === "ar" ? "فتح الموقع في الخريطة" : lang === "fr" ? "Ouvrir sur la carte" : "Open in map"}</a></div>}
+                  </div>;
+                })}</div> : <div className="rounded-xl border border-dashed p-4 text-center text-xs text-slate-500">{lang === "ar" ? "لم يضف المطعم نقاط استلام لهذا الفرع" : lang === "fr" ? "Aucun point de retrait" : "No pickup points configured"}</div>}
+              </div>}
+              {orderMode === "delivery" && <div className="sm:col-span-2 space-y-3">
+                <Input value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} placeholder={lang === "ar" ? "عنوان السكن / الحي / الشارع / رقم المبنى" : copy.address} />
+                <Button type="button" variant="outline" onClick={askLocation} className="w-full"><MapPin className="me-2 h-4 w-4" />{copy.location}</Button>
+                {deliveryLatitude !== undefined && deliveryLongitude !== undefined && <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10">
+                  <iframe title="delivery-location" src={mapsEmbedUrl(`${deliveryLatitude},${deliveryLongitude}`)} className="h-48 w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+                  <div className="flex items-center justify-between gap-3 p-3 text-[10px] text-slate-500"><span>{deliveryLatitude.toFixed(5)}, {deliveryLongitude.toFixed(5)}</span><a href={mapsOpenUrl(`${deliveryLatitude},${deliveryLongitude}`)} target="_blank" rel="noreferrer" className="font-black text-blue-600">{lang === "ar" ? "فتح الخريطة" : "Open map"}</a></div>
+                </div>}
+              </div>}
+              {orderMode === "hotel" && <><select value={hotelId ?? ""} onChange={(e) => { setHotelId(Number(e.target.value) || null); setHotelRoomId(null); }} className="h-10 rounded-md border px-3"><option value="">{lang === "ar" ? "اختر الفندق المسجل" : lang === "fr" ? "Choisissez l’hôtel" : "Choose registered hotel"}</option>{(hotelOptions.data ?? []).map((hotel:any) => <option key={hotel.id} value={hotel.id}>{hotel.name}</option>)}</select><select value={hotelRoomId ?? ""} onChange={(e) => setHotelRoomId(Number(e.target.value) || null)} className="h-10 rounded-md border px-3"><option value="">{lang === "ar" ? "اختر رقم الغرفة" : lang === "fr" ? "Choisissez la chambre" : "Choose room number"}</option>{selectedHotelRooms.map((room:any) => <option key={room.id} value={room.id}>{room.roomNumber}{room.floor ? ` · ${room.floor}` : ""}</option>)}</select></>}
               <Textarea value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} placeholder={copy.notes} className="sm:col-span-2" />
               {manualPayments.length > 1 && <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as "cash" | "bank_transfer")} className="h-10 rounded-md border px-3 sm:col-span-2"><option value="cash">{copy.cash}</option><option value="bank_transfer">{copy.transfer}</option></select>}
             </div>
