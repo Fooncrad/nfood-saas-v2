@@ -231,8 +231,8 @@ export default function RegisterScreen() {
   };
 
   if (done && register.data) return (
-    <div dir={direction} className="min-h-screen bg-[#071525] text-slate-900">
-      <div className="mx-auto grid min-h-screen max-w-[1500px] lg:grid-cols-[.75fr_1.25fr]">
+    <div dir={direction} className="min-h-screen w-full min-w-0 overflow-x-hidden bg-[#071525] text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <div className="mx-auto grid min-h-screen w-full min-w-0 max-w-[1500px] overflow-x-hidden lg:grid-cols-[.75fr_1.25fr]">
         <aside className="relative hidden overflow-hidden bg-gradient-to-br from-orange-600 via-orange-500 to-amber-400 p-10 text-white lg:flex lg:flex-col lg:justify-between">
           <div className="absolute -left-24 -top-20 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
           <div className="relative">
@@ -272,8 +272,8 @@ export default function RegisterScreen() {
   );
 
   return (
-    <div dir={direction} className="min-h-screen bg-[#071525] text-slate-900">
-      <div className="mx-auto grid min-h-screen max-w-[1500px] lg:grid-cols-[.75fr_1.25fr]">
+    <div dir={direction} className="min-h-screen w-full min-w-0 overflow-x-hidden bg-[#071525] text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <div className="mx-auto grid min-h-screen w-full min-w-0 max-w-[1500px] overflow-x-hidden lg:grid-cols-[.75fr_1.25fr]">
         <aside className="relative hidden overflow-hidden bg-gradient-to-br from-orange-600 via-orange-500 to-amber-400 p-10 text-white lg:flex lg:flex-col lg:justify-between">
           <div className="absolute -left-24 -top-20 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
           <div className="relative">
