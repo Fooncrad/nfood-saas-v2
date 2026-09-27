@@ -10,6 +10,7 @@ import ContentMarketplace from "@/pages/ContentMarketplace";
 import VcardCardsAdmin from "@/pages/VcardCardsAdmin";
 import ActivitiesSectorsAdmin from "@/components/ActivitiesSectorsAdmin";
 import { SuperAdminRestaurantCatalog } from "@/components/SuperAdminRestaurantCatalog";
+import { PlatformOverview } from "@/components/PlatformOverview";
 import PackagePricingCenter from "@/components/PackagePricingCenter";
 import { SecurityView } from "@/components/SecurityView";
 import { SystemHealthView } from "@/components/SystemHealthView";
@@ -22,6 +23,7 @@ export default function SuperAdminApp() {
   const [active, setActive] = useState<CentralAdminNavKey>(() => location === "/admin/account" ? "accounts" : "overview");
   const panel = useMemo(() => {
     switch (active) {
+      case "superAdmin": return <PlatformOverview onNavigate={() => setActive("superAdmin")} />;
       case "activities": return <ActivitiesSectorsAdmin />;
       case "accounts": return <AccountManagementPanel />;
       case "settings": return <PlatformSettingsPanel initialSection="advanced" />;
