@@ -217,7 +217,7 @@ export const marketplaceRouter = router({
     for (const entity of entityRows) {
       if (searchTerm && !(entity.customerName.toLowerCase().includes(searchTerm) || entity.email.toLowerCase().includes(searchTerm))) continue;
       const entityListings = listings.filter((listing) => listing.entityId === entity.id);
-      const restaurantMatch = await db.select({ id: restaurants.id, brandName: restaurants.brandName, brandLogoUrl: restaurants.brandLogoUrl, coverUrl: restaurants.coverUrl, city: restaurants.city, brandColor: restaurants.brandColor, brandAccentColor: restaurants.brandAccentColor }).from(restaurants).where(eq(restaurants.brandName, entity.customerName)).limit(1);
+      const restaurantMatch = await db.select({ id: restaurants.id, slug: restaurants.slug, brandName: restaurants.brandName, brandLogoUrl: restaurants.brandLogoUrl, coverUrl: restaurants.coverUrl, city: restaurants.city, brandColor: restaurants.brandColor, brandAccentColor: restaurants.brandAccentColor }).from(restaurants).where(entity.restaurantId ? eq(restaurants.id, entity.restaurantId) : eq(restaurants.brandName, entity.customerName)).limit(1);
       const storefront = (await db.select().from(marketplaceStorefrontSettings).where(and(eq(marketplaceStorefrontSettings.entityId, entity.id), eq(marketplaceStorefrontSettings.isPublished, true))).limit(1))[0] ?? null;
       result.push({
         entityId: entity.id,
@@ -249,7 +249,7 @@ export const marketplaceRouter = router({
     const loyaltySettings = (await db.select().from(storeLoyaltySettings).where(eq(storeLoyaltySettings.entityId, input.entityId)).limit(1))[0] ?? null;
     const now = new Date();
     const coupons = await db.select().from(storeCoupons).where(and(eq(storeCoupons.entityId, input.entityId), eq(storeCoupons.isActive, true), or(isNull(storeCoupons.startsAt), lte(storeCoupons.startsAt, now)), or(isNull(storeCoupons.endsAt), gte(storeCoupons.endsAt, now)))).orderBy(desc(storeCoupons.createdAt));
-    const restaurant = (await db.select().from(restaurants).where(eq(restaurants.brandName, entity.customerName)).limit(1))[0] ?? null;
+    const restaurant = (await db.select().from(restaurants).where(entity.restaurantId ? eq(restaurants.id, entity.restaurantId) : eq(restaurants.brandName, entity.customerName)).limit(1))[0] ?? null;
     const storefront = (await db.select().from(marketplaceStorefrontSettings).where(and(eq(marketplaceStorefrontSettings.entityId, entity.id), eq(marketplaceStorefrontSettings.isPublished, true))).limit(1))[0] ?? null;
     return { entity, listings, loyaltySettings, coupons, restaurant, storefront };
   }),

@@ -8,12 +8,13 @@ import { trpc } from "@/lib/trpc";
 import { ArrowRight, Copy, Gift, Loader2, MapPin, Package, Sparkles, Tag, TrendingUp, Home, ChevronLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Link, useParams } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function MarketplaceStore() {
   const { direction } = useLanguage(); // QA: use global RTL/LTR direction.
   const { entityId } = useParams<{ entityId: string }>();
+  const [, navigate] = useLocation();
   const { user } = useAuth();
   const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const country = params.get("country") || (typeof window !== "undefined" ? localStorage.getItem("nfood-market-country") : null) || "SA";
@@ -38,6 +39,9 @@ export default function MarketplaceStore() {
 
   const entity = store.data?.entity;
   const restaurant = store.data?.restaurant;
+  useEffect(() => {
+    if (store.data?.entity.sector === "restaurant" && restaurant?.slug) navigate(`/menu/${encodeURIComponent(restaurant.slug)}`, { replace: true });
+  }, [store.data?.entity.sector, restaurant?.slug, navigate]);
   const listings = store.data?.listings ?? [];
   const coupons = store.data?.coupons ?? [];
   const loyaltySettings = store.data?.loyaltySettings;
@@ -81,7 +85,7 @@ export default function MarketplaceStore() {
       {store.isLoading && <div className="mx-auto flex max-w-7xl items-center justify-center py-32"><Loader2 className="h-8 w-8 animate-spin text-orange-400" /></div>}
       {store.isError && <div className="mx-auto max-w-7xl py-32 text-center"><h1 className="text-2xl font-black">المتجر غير موجود</h1><p className="mt-2 text-sm text-slate-400">قد يكون المعطول أو غير موجود.</p><Link href={`/marketplace?country=${country}`}><Button type="button" className="mt-6 rounded-xl bg-[#E76F3C]">العودة للسوق</Button></Link></div>}
 
-      {entity && (
+      {entity && !(entity.sector === "restaurant" && restaurant?.slug) && (
         <div className="mx-auto max-w-7xl space-y-8 px-5 py-8 md:px-8">
           <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-200 dark:border-white/10 bg-white/5"><div className="absolute inset-x-0 top-0 h-32 bg-cover bg-center opacity-35" style={restaurant?.coverUrl ? { backgroundImage: `linear-gradient(to bottom,transparent,#0b0f17),url(${restaurant.coverUrl})` } : { background: `linear-gradient(135deg, ${restaurant?.brandColor ?? "#111927"}, ${restaurant?.brandAccentColor ?? "#0b1d35"})` }} /><div className="relative flex flex-col gap-6 p-6 pt-16 md:flex-row md:items-center md:gap-10">
             <div className="flex shrink-0 items-center gap-4">
