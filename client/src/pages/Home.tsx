@@ -297,7 +297,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const remoteBranches = trpc.platform.branches.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
   const branchId = remoteBranches.data?.[0]?.id;
   const posProducts: MenuProduct[] = (remoteMenu.data ?? []).map((item) => ({ id: item.id, name: item.name, category: String(item.categoryId), price: Number(item.price), available: item.isAvailable }));
-  const [cart, setCart] = useState<{ product: MenuProduct; quantity: number }[]>([]);
+  type PosCartItem = { sourceType: "menu_item" | "marketplace_variant"; sourceId: number; product: MenuProduct; quantity: number };\n  const [cart, setCart] = useState<PosCartItem[]>([]);
   const [isOnline, setIsOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
   const [queuedCount, setQueuedCount] = useState(0);
   const [deadLetterCount, setDeadLetterCount] = useState(0);
@@ -354,7 +354,7 @@ function RestaurantSubscriptionCenter({ restaurantId }: { restaurantId: number }
   if (catalog.isLoading) return <Card className="rounded-3xl border-slate-200 bg-white"><CardContent className="p-8 text-center text-sm text-slate-500">جارٍ تحميل الباقة وخيارات الترقية...</CardContent></Card>;
   if (catalog.isError) return <Card className="rounded-3xl border-red-200 bg-red-50"><CardContent className="p-8 text-center text-sm text-red-700">تعذر تحميل بيانات الباقة. حاول مرة أخرى.</CardContent></Card>;
   const data = catalog.data;
-  const current = data?.plans.find((plan) => plan.key === data.activePlanKey);
+  const current = data?.plans.find((plan) => plan.key === data?.activePlanKey);
   const statusLabel = data?.subscription?.status === "trial" ? "فترة تجريبية" : data?.subscription?.status === "active" ? "نشط" : data?.subscription?.status === "past_due" ? "مستحق الدفع" : data?.subscription?.status ?? "غير محدد";
   return <div className="space-y-6" dir="rtl">
     <div className="overflow-hidden rounded-3xl bg-[#102039] p-6 text-white shadow-xl md:p-8">
