@@ -19,10 +19,11 @@ function amount(value: number, currencyCode: string) {
 }
 
 export default function PosCustomerDisplay() {
-  const [state, setState] = useState<CustomerFacingState>(() => readCustomerFacingState() ?? empty);
+  const sessionId = new URLSearchParams(window.location.search).get("session") ?? "";
+  const [state, setState] = useState<CustomerFacingState>(() => readCustomerFacingState(sessionId) ?? empty);
   const [online, setOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
 
-  useEffect(() => subscribeCustomerFacingState(setState), []);
+  useEffect(() => subscribeCustomerFacingState(sessionId, setState), [sessionId]);
   useEffect(() => {
     const refresh = () => setOnline(navigator.onLine);
     window.addEventListener("online", refresh);
@@ -30,7 +31,9 @@ export default function PosCustomerDisplay() {
     return () => { window.removeEventListener("online", refresh); window.removeEventListener("offline", refresh); };
   }, []);
 
-  return <main dir="rtl" className="min-h-screen bg-[#07111f] p-4 text-white md:p-8">
+  if (!sessionId) return <main className="flex min-h-screen items-center justify-center bg-[#07111f] p-6 text-center text-white"><div><p className="text-xl font-black">شاشة العميل غير مرتبطة</p><p className="mt-2 text-sm text-slate-400">افتح الشاشة من نقطة البيع لبدء جلسة آمنة.</p></div></main>;
+
+  return <main dir={document.documentElement.dir === "ltr" ? "ltr" : "rtl"} className="min-h-screen bg-[#07111f] p-4 text-white md:p-8">
     <header className="mx-auto flex max-w-7xl items-center justify-between gap-4 border-b border-white/10 pb-5">
       <div><p className="text-xs font-black tracking-[0.22em] text-orange-400">NFOOD CUSTOMER DISPLAY</p><h1 className="mt-2 text-2xl font-black md:text-4xl">مشترياتك</h1></div>
       <div className={`flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${online ? "bg-emerald-400/10 text-emerald-300" : "bg-amber-400/10 text-amber-300"}`}>{online ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}{online ? "متصل" : "يعمل دون اتصال"}</div>
