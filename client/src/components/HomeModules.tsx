@@ -78,6 +78,7 @@ import {
 } from "@/lib/menuLanguageDraft";
 import { getMissingTranslationTasks } from "@/lib/menuBulkTranslation";
 import { detectMenuSourceLanguage } from "@/lib/translationSource";
+import type { ReceiptSummary } from "@/components/ReceiptDeliveryPanel";
 import { useLanguage } from "@/contexts/LanguageContext";
 const MenuAddonsPanel = lazy(() => import("@/components/MenuAddonsPanel").then(({ MenuAddonsPanel }) => ({ default: MenuAddonsPanel })));
 const TranslationGlossaryPanel = lazy(() => import("@/components/TranslationGlossaryPanel").then(({ TranslationGlossaryPanel }) => ({ default: TranslationGlossaryPanel })));
