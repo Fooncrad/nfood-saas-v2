@@ -85,7 +85,7 @@ export const defaultMenuDisplaySettings: MenuDisplaySettings = {
   darkTextColor: "#fff8f2",
   menuBorderColor: "#eadfce",
   cartButtonStyle: "filled",
-  itemLayout: "cardless",
+  itemLayout: "cards",
   detailWindow: {
     direction: "auto",
     position: "side",
@@ -117,7 +117,7 @@ export function normalizeMenuDisplaySettings(raw?: string | null): MenuDisplaySe
     const imageRatio = parsed.imageRatio === "portrait" || parsed.imageRatio === "landscape" || parsed.imageRatio === "square" ? parsed.imageRatio : "square";
     const isHex = (value: unknown): value is string => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
     const cartButtonStyle = parsed.cartButtonStyle === "outline" || parsed.cartButtonStyle === "soft" || parsed.cartButtonStyle === "filled" ? parsed.cartButtonStyle : "filled";
-    const itemLayout: MenuItemLayout = parsed.itemLayout === "cards" || parsed.itemLayout === "cardless" || parsed.itemLayout === "grid" ? parsed.itemLayout : "cardless";
+    const itemLayout: MenuItemLayout = parsed.itemLayout === "cardless" || parsed.itemLayout === "cards" ? parsed.itemLayout : "cards";
     const rawDetailWindow = parsed.detailWindow && typeof parsed.detailWindow === "object" ? parsed.detailWindow as Partial<MenuDetailWindowSettings> : {};
     const overlayOpacity = Number(rawDetailWindow.overlayOpacity);
     const detailWindow: MenuDetailWindowSettings = {

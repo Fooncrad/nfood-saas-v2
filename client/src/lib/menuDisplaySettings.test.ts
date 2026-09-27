@@ -5,7 +5,7 @@ describe("menu customization settings", () => {
   it("provides safe defaults for image ratio, item-name wrapping, and layout choice", () => {
     expect(defaultMenuDisplaySettings.imageRatio).toBe("square");
     expect(defaultMenuDisplaySettings.oneLineItemName).toBe(false);
-    expect(defaultMenuDisplaySettings.itemLayout).toBe("cardless");
+    expect(defaultMenuDisplaySettings.itemLayout).toBe("cards");
   });
 
   it("provides advanced product-detail window defaults and normalizes unsafe values", () => {
@@ -26,11 +26,13 @@ describe("menu customization settings", () => {
     expect(legacy.gridColumns).toBe(3);
     expect(legacy.imageRatio).toBe("square");
     expect(legacy.oneLineItemName).toBe(false);
-    expect(legacy.itemLayout).toBe("cardless");
+    expect(legacy.itemLayout).toBe("cards");
 
     const customized = normalizeMenuDisplaySettings(JSON.stringify({ imageRatio: "portrait", oneLineItemName: true, itemLayout: "cards" }));
     expect(customized.imageRatio).toBe("portrait");
     expect(customized.oneLineItemName).toBe(true);
     expect(customized.itemLayout).toBe("cards");
+    expect(normalizeMenuDisplaySettings(JSON.stringify({ itemLayout: "cardless" })).itemLayout).toBe("cardless");
+    expect(normalizeMenuDisplaySettings(JSON.stringify({ itemLayout: "grid" })).itemLayout).toBe("cards");
   });
 });

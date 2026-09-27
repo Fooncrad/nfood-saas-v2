@@ -543,7 +543,22 @@ export default function RestaurantPublic() {
       </div>
     </header>
 
-    <section className="nfood-menu-cover mx-auto mt-0 w-full max-w-[1440px] overflow-hidden rounded-none sm:mt-5 sm:w-[calc(100%-3rem)] sm:rounded-[1.75rem]" style={{ backgroundImage: page.data.restaurant.coverUrl ? `linear-gradient(90deg, rgba(12, 13, 18, .78), rgba(12, 13, 18, .18)), url(${page.data.restaurant.coverUrl})` : "linear-gradient(135deg, #181a22, #3d3a42 55%, #8b6c55)" }}>
+    <div className="nfood-menu-quick-header" aria-label={copy.quickLinks}>
+      <nav className="nfood-menu-quick-categories" aria-label={copy.categories}>
+        <button type="button" onClick={() => selectCategoryAndScroll("all")}>{copy.all}</button>
+        {categories.filter((category) => categoryCounts[String(category.id)]).map((category) => <button key={category.id} type="button" onClick={() => selectCategoryAndScroll(Number(category.id))}>{category.name}</button>)}
+      </nav>
+      <div className="nfood-menu-quick-contact">
+        {page.data.restaurant.phone && <a href={`tel:${page.data.restaurant.phone}`} dir="ltr"><Phone className="h-3.5 w-3.5" />{page.data.restaurant.phone}</a>}
+        {socialLinks.map(({ href, icon: Icon, label }) => <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} title={label}><Icon className="h-4 w-4" /></a>)}
+        {optionalPages.map((item) => <button key={item.slug} type="button" onClick={() => setCustomPageSlug(item.slug)}>{item.title}</button>)}
+        <a href="/terms">{language === "ar" ? "الشروط والحقوق" : language === "fr" ? "Conditions" : "Terms"}</a>
+        <a href="/privacy">{language === "ar" ? "الخصوصية" : language === "fr" ? "Confidentialité" : "Privacy"}</a>
+        <span className="nfood-menu-quick-copyright">© {new Date().getFullYear()} {restaurantName}</span>
+      </div>
+    </div>
+
+    <section id="home" className="nfood-menu-cover mx-auto mt-0 w-full max-w-[1440px] overflow-hidden rounded-none sm:mt-5 sm:w-[calc(100%-3rem)] sm:rounded-[1.75rem]" style={{ backgroundImage: page.data.restaurant.coverUrl ? `linear-gradient(90deg, rgba(12, 13, 18, .78), rgba(12, 13, 18, .18)), url(${page.data.restaurant.coverUrl})` : "linear-gradient(135deg, #181a22, #3d3a42 55%, #8b6c55)" }}>
       <div className="nfood-menu-cover-content relative flex min-h-[8.5rem] items-end px-4 py-3 sm:min-h-[13rem] sm:px-8 sm:py-5 lg:min-h-[15rem]">
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/10" aria-hidden="true" />
         <div className="relative z-10 flex w-full max-w-3xl items-end gap-3 text-start sm:gap-4">
