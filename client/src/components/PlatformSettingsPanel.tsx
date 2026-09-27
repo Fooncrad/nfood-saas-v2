@@ -65,7 +65,8 @@ const categories = ["الدفع", "الرسائل", "الهوية", "الخرا�
 
 function Field({ label, value, onChange, placeholder, dir }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; dir?: "rtl" | "ltr" }) { return <label className="space-y-2 text-xs font-semibold text-slate-600">{label}<Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="mt-1 rounded-xl" dir={dir} /></label>; }
 
-export function PlatformSettingsPanel({ initialSection = "site" }: { initialSection?: "site" | "advanced" }) {
+export function PlatformSettingsPanel({
+  const { direction } = useLanguage(); // QA fix: dynamic RTL/LTR from the central language context. initialSection = "site" }: { initialSection?: "site" | "advanced" }) {
   const settingsQuery = trpc.platform.platformSettings.useQuery(undefined, { retry: false });
   const integrationQuery = trpc.platform.integrationSettings.useQuery({ scope: "platform" }, { retry: false });
   const auditQuery = trpc.platform.auditLogs.useQuery({ limit: 50 }, { retry: false });
