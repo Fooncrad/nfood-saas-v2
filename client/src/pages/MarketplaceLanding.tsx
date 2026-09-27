@@ -219,7 +219,7 @@ export default function MarketplaceLanding() {
       </div>
     </section>
 
-    <section id="stores" className="mx-auto max-w-7xl px-4 py-10 md:px-8">
+    <section id="stores" className="mx-auto max-w-7xl px-4 pb-6 pt-7 md:px-8 md:pb-7 md:pt-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-black text-orange-500">NFOOD SELECT</p><h2 className="mt-1 text-2xl font-black sm:text-3xl">{t.stores}</h2><p className={`mt-2 text-sm ${muted}`}>{t.storesHint}</p></div></div>
       {featuredStores.isLoading || stores.isLoading ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{Array.from({ length: 5 }).map((_, index) => <div key={index} className={`h-60 animate-pulse border ${surface}`} style={{ borderRadius: radius }} />)}</div> : featuredRows.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{featuredRows.slice(0, 5).map((store) => {
         const fullStore = storeRows.find((item) => item.entityId === store.entityId);
@@ -227,13 +227,13 @@ export default function MarketplaceLanding() {
         const cover = restaurant?.coverUrl || store.imageUrl;
         const meta = sectorMeta(store.sector);
         return <Link key={store.entityId} href={`/store/${store.entityId}?country=${country}`} className={`group overflow-hidden border shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${surface}`} style={{ borderRadius: radius }}>
-          <div className="relative aspect-[4/3] overflow-hidden bg-slate-200/10">{cover ? <img src={cover} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-5xl">{meta.icon}</div>}<span className="absolute end-3 top-3 rounded-full bg-[#071525]/75 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur">{meta.icon}</span></div>
+          <div className="relative aspect-[16/10] overflow-hidden bg-slate-200/10">{cover ? <img src={cover} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-5xl">{meta.icon}</div>}<span className="absolute end-3 top-3 rounded-full bg-[#071525]/75 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur">{meta.icon}</span></div>
           <div className="p-4"><h3 className="truncate font-black">{store.customerName}</h3><p className={`mt-1 flex items-center gap-1 text-xs ${muted}`}><MapPin className="h-3 w-3" />{restaurant?.city || countryInfo[lang]}</p><div className="mt-3 flex items-center justify-between gap-2"><span className="truncate text-xs font-bold text-orange-500">{lang === "ar" ? store.sectorLabelAr : lang === "fr" ? store.sectorLabelFr : store.sectorLabelEn}</span><span className={`shrink-0 text-[10px] ${muted}`}>{store.listingCount} {t.items}</span></div></div>
         </Link>;
       })}</div> : <div className={`border border-dashed p-10 text-center ${surface}`} style={{ borderRadius: radius }}><Store className="mx-auto h-10 w-10 opacity-30" /><p className="mt-3 font-bold">{t.emptyStores}</p></div>}
     </section>
 
-    <section id="sectors" className={`border-y py-5 ${dark ? "border-white/10 bg-[#091a2e]" : "border-slate-200 bg-white"}`}>
+    <section id="sectors" className={`border-y py-3 ${dark ? "border-white/10 bg-[#091a2e]" : "border-slate-200 bg-white"}`}>
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <div className="flex items-center gap-2 overflow-x-auto pb-1">{filteredSectors.map((sector) => {
           const meta = sectorMeta(sector.slug);
@@ -242,7 +242,7 @@ export default function MarketplaceLanding() {
       </div>
     </section>
 
-    <div className="mx-auto w-full max-w-7xl space-y-14 overflow-x-hidden px-3 py-10 sm:px-4 md:px-8 md:py-12">
+    <div className="mx-auto w-full max-w-7xl space-y-10 overflow-x-hidden px-3 pb-10 pt-7 sm:px-4 md:px-8 md:pb-12 md:pt-8">
       {highlights.isLoading ? Array.from({ length: 2 }).map((_, index) => <div key={index} className={`h-80 animate-pulse border ${surface}`} style={{ borderRadius: radius }} />) : highlightRows.map((group) => {
         const meta = sectorMeta(group.sector.slug);
         const sectorName = lang === "ar" ? group.sector.labelAr : lang === "fr" ? group.sector.labelFr : group.sector.labelEn;
@@ -251,8 +251,8 @@ export default function MarketplaceLanding() {
           {items.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{items.map((item) => {
             const displayTitle = lang === "ar" ? item.title : item.titleEn || item.title;
             const sales = kind === "trending" ? item.recentSales : item.totalSales;
-            return <Link key={item.id} href={`/store/${item.entityId}?country=${country}`} className={`group overflow-hidden border shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${surface}`} style={{ borderRadius: radius }}>
-              <div className="relative aspect-[4/3] overflow-hidden bg-slate-200/10">{item.imageUrl ? <img src={item.imageUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><ShoppingBag className="h-10 w-10 opacity-25" /></div>}{item.isFeatured && <span className="absolute start-3 top-3 rounded-full bg-orange-500 px-2.5 py-1 text-[10px] font-black text-white">{t.curated}</span>}</div>
+            return <Link key={item.id} href={item.targetPath || `/store/${item.entityId}?country=${country}`} className={`group overflow-hidden border shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${surface}`} style={{ borderRadius: radius }}>
+              <div className="relative aspect-[16/10] overflow-hidden bg-slate-200/10">{item.imageUrl ? <img src={item.imageUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><ShoppingBag className="h-10 w-10 opacity-25" /></div>}{item.isFeatured && <span className="absolute start-3 top-3 rounded-full bg-orange-500 px-2.5 py-1 text-[10px] font-black text-white">{t.curated}</span>}</div>
               <div className="min-w-0 p-3 sm:p-4"><p className={`truncate text-[10px] font-bold sm:text-[11px] ${muted}`}>{item.sellerName}</p><h4 className="mt-1 line-clamp-2 min-h-9 break-words text-[13px] font-black leading-5 sm:min-h-10 sm:text-sm">{displayTitle}</h4><div className="mt-3 flex min-w-0 items-end justify-between gap-2"><div className="min-w-0"><div className="flex min-w-0 flex-wrap items-baseline gap-x-1 gap-y-0.5"><span className="text-sm font-black sm:text-base">{Number(item.price).toLocaleString("en-US")}</span><span className={`text-[9px] sm:text-[10px] ${muted}`}>{item.currencyCode}</span>{item.compareAtPrice && Number(item.compareAtPrice) > Number(item.price) && <span className="text-[9px] text-slate-400 line-through sm:text-[10px]">{Number(item.compareAtPrice).toLocaleString("en-US")}</span>}</div></div>{sales > 0 && <span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black sm:text-[10px] ${kind === "trending" ? "bg-orange-500/10 text-orange-500" : "bg-blue-500/10 text-blue-500"}`}>{sales}</span>}</div></div>
             </Link>;
           })}</div> : <div className={`rounded-2xl border border-dashed p-6 text-center text-sm ${muted} ${surface}`}>{t.emptyItems}</div>}

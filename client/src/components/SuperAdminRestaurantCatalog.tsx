@@ -105,7 +105,18 @@ export function SuperAdminRestaurantCatalog() {
     { restaurantId: detailsRestaurant?.id ?? 1 },
     { enabled: Boolean(detailsRestaurant), retry: 1 }
   );
+  const marketplacePresentationQuery = trpc.marketplace.adminRestaurantMarketplacePresentation.useQuery(
+    { restaurantId: detailsRestaurant?.id ?? 1 },
+    { enabled: Boolean(detailsRestaurant), retry: 1 }
+  );
   const utils = trpc.useUtils();
+  const updateMarketplacePresentation = trpc.marketplace.adminUpdateRestaurantMarketplacePresentation.useMutation({
+    onSuccess: async () => {
+      if (detailsRestaurant) await utils.marketplace.adminRestaurantMarketplacePresentation.invalidate({ restaurantId: detailsRestaurant.id });
+      toast.success("تم تحديث عدد المنتجات الظاهرة في السوق العام");
+    },
+    onError: error => toast.error(`تعذر تحديث عرض السوق: ${error.message}`),
+  });
   const updateRestaurant = trpc.admin.updateRestaurant.useMutation({
     onSuccess: () => {
       void utils.admin.restaurants.invalidate();
@@ -342,6 +353,26 @@ export function SuperAdminRestaurantCatalog() {
               {detailsRestaurant?.plan || "غير محددة"}
             </DialogDescription>
           </DialogHeader>
+          <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/50 dark:bg-blue-950/20">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-slate-900 dark:text-white">عرض المنتجات في السوق العام</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">حدد أقصى عدد من منتجات هذا المطعم التي يمكن أن تظهر ضمن «الأكثر مبيعًا». اختر 0 لإخفائها من هذا القسم.</p>
+              </div>
+              {marketplacePresentationQuery.isLoading ? <span className="text-xs text-slate-400">جارٍ التحميل...</span> : marketplacePresentationQuery.isError ? <button type="button" onClick={() => void marketplacePresentationQuery.refetch()} className="text-xs font-bold text-red-600 underline">إعادة المحاولة</button> : (
+                <select
+                  aria-label="عدد المنتجات الأكثر مبيعًا في السوق العام"
+                  value={marketplacePresentationQuery.data?.publicBestSellingLimit ?? 5}
+                  disabled={updateMarketplacePresentation.isPending}
+                  onChange={event => detailsRestaurant && updateMarketplacePresentation.mutate({ restaurantId: detailsRestaurant.id, publicBestSellingLimit: Number(event.target.value) })}
+                  className="h-10 rounded-xl border border-blue-200 bg-white px-3 text-sm font-black text-slate-800 outline-none dark:border-blue-800 dark:bg-slate-950 dark:text-white"
+                >
+                  {Array.from({ length: 11 }, (_, value) => <option key={value} value={value}>{value === 0 ? "0 · إخفاء" : `${value} منتج`}</option>)}
+                </select>
+              )}
+            </div>
+            {marketplacePresentationQuery.data ? <p className="mt-2 text-[10px] font-bold text-blue-700 dark:text-blue-300">الحد العام الحالي: {marketplacePresentationQuery.data.inheritedLimit} · إعداد هذا المطعم: {marketplacePresentationQuery.data.publicBestSellingLimit}</p> : null}
+          </div>
           {detailsQuery.isLoading ? (
             <div className="space-y-2">
               <div className="h-12 animate-pulse rounded-xl bg-slate-100" />

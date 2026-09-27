@@ -285,6 +285,22 @@ export const marketplaceRouter = router({
       entities.filter((entity) => entity.restaurantId).map((entity) => [Number(entity.restaurantId), entity])
     );
     const restaurantIds = Array.from(restaurantEntityMap.keys());
+    const restaurantRoutes = restaurantIds.length
+      ? await db.select({ id: restaurants.id, slug: restaurants.slug }).from(restaurants).where(inArray(restaurants.id, restaurantIds))
+      : [];
+    const restaurantSlugMap = new Map(restaurantRoutes.map((restaurant) => [restaurant.id, restaurant.slug]));
+    const storefrontRows = await db.select({
+      entityId: marketplaceStorefrontSettings.entityId,
+      sectorConfigJson: marketplaceStorefrontSettings.sectorConfigJson,
+    }).from(marketplaceStorefrontSettings).where(inArray(marketplaceStorefrontSettings.entityId, entityIds));
+    const bestSellingCaps = new Map<string, number>();
+    for (const storefront of storefrontRows) {
+      try {
+        const config = storefront.sectorConfigJson ? JSON.parse(storefront.sectorConfigJson) as Record<string, unknown> : {};
+        const raw = Number(config.publicBestSellingLimit);
+        if (Number.isFinite(raw)) bestSellingCaps.set(storefront.entityId, Math.max(0, Math.min(10, Math.trunc(raw))));
+      } catch {}
+    }
 
     const sectorRows = await db.select({
       id: marketplaceSectors.id,
@@ -338,6 +354,7 @@ export const marketplaceRouter = router({
       countryCode: string | null;
       recentSales: number;
       totalSales: number;
+      targetPath: string;
     }> = [];
 
     if (listings.length) {
@@ -384,6 +401,7 @@ export const marketplaceRouter = router({
           countryCode: seller?.countryCode ?? null,
           recentSales: metric.recentQty,
           totalSales: metric.totalQty,
+          targetPath: listing.actionUrl?.trim() || `/store/${listing.entityId}`,
         });
       }
     }
@@ -452,6 +470,7 @@ export const marketplaceRouter = router({
           countryCode: entity.countryCode,
           recentSales: metric.recentQty,
           totalSales: metric.totalQty,
+          targetPath: restaurantSlugMap.get(item.restaurantId) ? `/menu/${encodeURIComponent(String(restaurantSlugMap.get(item.restaurantId)))}` : `/store/${entity.id}`,
         });
       }
     }
@@ -471,6 +490,16 @@ export const marketplaceRouter = router({
     return sectorRows.map((sector) => {
       const items = highlightItems.filter((item) => item.sectorId === sector.id);
       if (!items.length) return null;
+      const rankedBest = rank(items, "best");
+      const perEntityCounts = new Map<string, number>();
+      const bestSelling = rankedBest.filter((item) => {
+        const cap = bestSellingCaps.get(item.entityId) ?? bestSellingLimit;
+        if (cap <= 0) return false;
+        const current = perEntityCounts.get(item.entityId) ?? 0;
+        if (current >= cap) return false;
+        perEntityCounts.set(item.entityId, current + 1);
+        return true;
+      }).slice(0, bestSellingLimit);
       return {
         sector: {
           id: sector.id,
@@ -480,7 +509,7 @@ export const marketplaceRouter = router({
           labelFr: sector.labelFr,
         },
         trending: rank(items, "trending").slice(0, trendingLimit),
-        bestSelling: rank(items, "best").slice(0, bestSellingLimit),
+        bestSelling,
         trendingWindowDays: windowDays,
       };
     }).filter((row): row is NonNullable<typeof row> => Boolean(row));
@@ -1111,13 +1140,63 @@ export const marketplaceRouter = router({
     });
   }),
 
+  adminRestaurantMarketplacePresentation: platformAdminProcedure.input(z.object({
+    restaurantId: z.number().int().positive(),
+  })).query(async ({ input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const entity = (await db.select({
+      id: platformEntities.id,
+      restaurantId: platformEntities.restaurantId,
+      customerName: platformEntities.customerName,
+    }).from(platformEntities).where(eq(platformEntities.restaurantId, input.restaurantId)).limit(1))[0];
+    if (!entity) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير مرتبط بمتجر NFOOD" });
+    const storefront = (await db.select().from(marketplaceStorefrontSettings).where(eq(marketplaceStorefrontSettings.entityId, entity.id)).limit(1))[0] ?? null;
+    let sectorConfig: Record<string, unknown> = {};
+    try { sectorConfig = storefront?.sectorConfigJson ? JSON.parse(storefront.sectorConfigJson) : {}; } catch { sectorConfig = {}; }
+    const settings = await getPlatformSettings();
+    const appearance = readMarketplaceAppearance(settings.marketplaceAppearanceJson);
+    const inheritedLimit = marketplaceNumber(appearance, "bestSellingPerSector", 5);
+    const raw = Number(sectorConfig.publicBestSellingLimit);
+    const publicBestSellingLimit = Number.isFinite(raw) ? Math.max(0, Math.min(10, Math.trunc(raw))) : inheritedLimit;
+    return { restaurantId: input.restaurantId, entityId: entity.id, name: entity.customerName, publicBestSellingLimit, inheritedLimit };
+  }),
+
+  adminUpdateRestaurantMarketplacePresentation: platformAdminProcedure.input(z.object({
+    restaurantId: z.number().int().positive(),
+    publicBestSellingLimit: z.number().int().min(0).max(10),
+  })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const entity = (await db.select({ id: platformEntities.id, customerName: platformEntities.customerName }).from(platformEntities).where(eq(platformEntities.restaurantId, input.restaurantId)).limit(1))[0];
+    if (!entity) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير مرتبط بمتجر NFOOD" });
+    const existing = (await db.select().from(marketplaceStorefrontSettings).where(eq(marketplaceStorefrontSettings.entityId, entity.id)).limit(1))[0] ?? null;
+    let sectorConfig: Record<string, unknown> = {};
+    try { sectorConfig = existing?.sectorConfigJson ? JSON.parse(existing.sectorConfigJson) : {}; } catch { sectorConfig = {}; }
+    const nextConfig = { ...sectorConfig, publicBestSellingLimit: input.publicBestSellingLimit };
+    const sectorConfigJson = JSON.stringify(nextConfig);
+    if (existing) await db.update(marketplaceStorefrontSettings).set({ sectorConfigJson }).where(eq(marketplaceStorefrontSettings.entityId, entity.id));
+    else await db.insert(marketplaceStorefrontSettings).values({ entityId: entity.id, sectorConfigJson });
+    await insertAuditLog({
+      actorUserId: ctx.user.id,
+      actorRole: "admin",
+      action: "marketplace.restaurant.presentation.updated",
+      entityType: "platform_entity",
+      entityId: entity.id,
+      outcome: "success",
+      requestId: nanoid(12),
+      metadata: JSON.stringify({ restaurantId: input.restaurantId, publicBestSellingLimit: input.publicBestSellingLimit }),
+    });
+    return { success: true, entityId: entity.id, publicBestSellingLimit: input.publicBestSellingLimit };
+  }),
+
   adminStoreOperations: platformAdminProcedure.input(z.object({ id: z.string().trim().min(1).max(30) })).query(async ({ input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const store = (await db.select().from(platformEntities).where(eq(platformEntities.id, input.id)).limit(1))[0];
     if (!store) throw new TRPCError({ code: "NOT_FOUND", message: "المنشأة غير موجودة" });
     const settings = (await db.select().from(marketplaceStorefrontSettings).where(eq(marketplaceStorefrontSettings.entityId, input.id)).limit(1))[0];
-    let sectorConfig: { modules?: string[] } = {};
+    let sectorConfig: { modules?: string[]; publicBestSellingLimit?: number } = {};
     try { sectorConfig = settings?.sectorConfigJson ? JSON.parse(settings.sectorConfigJson) : {}; } catch { sectorConfig = {}; }
     const defaults = store.sector === "restaurant"
       ? ["catalog","orders","reservations","restaurant_tables","kitchen","pos","invoicing","inventory"]
@@ -1134,7 +1213,9 @@ export const marketplaceRouter = router({
     const store = (await db.select().from(platformEntities).where(eq(platformEntities.id, input.id)).limit(1))[0];
     if (!store) throw new TRPCError({ code: "NOT_FOUND", message: "المنشأة غير موجودة" });
     const existing = (await db.select().from(marketplaceStorefrontSettings).where(eq(marketplaceStorefrontSettings.entityId, input.id)).limit(1))[0];
-    const sectorConfigJson = JSON.stringify({ modules: Array.from(new Set(input.modules)) });
+    let currentConfig: Record<string, unknown> = {};
+    try { currentConfig = existing?.sectorConfigJson ? JSON.parse(existing.sectorConfigJson) : {}; } catch { currentConfig = {}; }
+    const sectorConfigJson = JSON.stringify({ ...currentConfig, modules: Array.from(new Set(input.modules)) });
     if (existing) await db.update(marketplaceStorefrontSettings).set({ sectorConfigJson }).where(eq(marketplaceStorefrontSettings.entityId, input.id));
     else await db.insert(marketplaceStorefrontSettings).values({ entityId: input.id, sectorConfigJson });
     await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "marketplace.store.modules.updated", entityType: "platform_entity", entityId: input.id, outcome: "success", requestId: nanoid(12), metadata: sectorConfigJson });
