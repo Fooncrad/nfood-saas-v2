@@ -64,7 +64,7 @@ function parseJson<T>(value: string | null | undefined, fallback: T): T {
   try { return JSON.parse(value) as T; } catch { return fallback; }
 }
 function minuteValue(value?: string | null) {
-  if (!value || !/^\d{2}:\d{2}$/.test(value)) return null;
+  if (!value || !/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(value)) return null;
   const [h, m] = value.split(":").map(Number);
   return h * 60 + m;
 }
@@ -486,7 +486,7 @@ export default function RestaurantMenu() {
           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isOpen ? "bg-emerald-500" : "bg-red-500"}`} />
           <div className="min-w-0">
             <p className="text-sm font-black">{isOpen ? copy.open : copy.closed}</p>
-            {selectedBranch && <p className={`truncate text-[10px] font-bold ${muted}`}>{selectedBranch.name} · {selectedBranch.openingTime && selectedBranch.openingTime === selectedBranch.closingTime ? (lang === "ar" ? "24 ساعة" : "24 hours") : `${selectedBranch.openingTime || "—"}–${selectedBranch.closingTime || "—"}`}</p>}
+            {selectedBranch && <p className={`truncate text-[10px] font-bold ${muted}`}>{selectedBranch.name} · {selectedBranch.openingTime && minuteValue(selectedBranch.openingTime) === minuteValue(selectedBranch.closingTime) ? (lang === "ar" ? "24 ساعة" : "24 hours") : `${selectedBranch.openingTime || "—"}–${selectedBranch.closingTime || "—"}`}</p>}
           </div>
         </div>
         <button onClick={() => setDrawerOpen(true)} className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-black ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`}>{copy.storeInfo}</button>
