@@ -111,7 +111,22 @@ export default function MarketplaceLanding() {
   const countryInfo = marketplaceCountries.find((item) => item.code === country) ?? marketplaceCountries[0];
   const sectorRows = sectors.data ?? [];
   const storeRows = stores.data ?? [];
-  const featuredRows = featuredStores.data?.length ? featuredStores.data : storeRows.slice(0, 5);
+  const featuredRows = featuredStores.data?.length
+    ? featuredStores.data
+    : storeRows.slice(0, 5).map((store) => {
+        const meta = sectorMeta(store.sector);
+        return {
+          entityId: store.entityId,
+          customerName: store.customerName,
+          sector: store.sector,
+          sectorLabelAr: meta.ar,
+          sectorLabelEn: meta.en,
+          sectorLabelFr: meta.fr,
+          imageUrl: store.restaurant?.coverUrl ?? store.restaurant?.brandLogoUrl ?? null,
+          listingCount: store.listingCount,
+          featured: false,
+        };
+      });
   const highlightRows = highlights.data ?? [];
 
   useEffect(() => {
