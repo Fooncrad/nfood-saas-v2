@@ -126,7 +126,24 @@ function AppContent() {
   return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<RouteLoading />}><Router /></Suspense>{showGlobalLoader && <NfoodsLoadingScreen key={loaderKey} onComplete={completeGlobalLoader} />}</div>;
 }
 
-function CustomerAreaGuard({ children }: { children: ReactNode }) { const { loading } = useAuth(); if (loading) return <PageLoading />; return <>{children}</>; }
+function CustomerAreaGuard({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  const [location, navigate] = useLocation();
+  useEffect(() => {
+    if (!loading && !user) navigate(`/login?next=${encodeURIComponent(location)}`);
+  }, [loading, user, location, navigate]);
+  if (loading || !user) return <PageLoading />;
+  return <>{children}</>;
+}
+function CustomerRegisterRoute() {
+  const { user, loading } = useAuth();
+  const [, navigate] = useLocation();
+  useEffect(() => {
+    if (!loading && user) navigate("/customer-portal");
+  }, [loading, user, navigate]);
+  if (loading || user) return <PageLoading />;
+  return <CustomerRegister />;
+}
 function RootRoute() { const { user, loading } = useAuth(); if (loading) return <PageLoading />; return user ? <Home /> : <PublicHome />; }
 function SuperAdminRoute() {
   const { user, loading } = useAuth();
@@ -152,7 +169,7 @@ function Router() {
       <Route path="/restaurant/account" component={RootRoute} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterScreen} />
-      <Route path="/customer-register" component={CustomerRegister} />
+      <Route path="/customer-register" component={CustomerRegisterRoute} />
       <Route path="/content-market" component={() => <LegacyRedirect to="/marketplace" />} />
       <Route path="/creator-content" component={() => <LegacyRedirect to="/customer-studio" />} />
       <Route path="/admin/content-moderation" component={PlatformContentModeration} />

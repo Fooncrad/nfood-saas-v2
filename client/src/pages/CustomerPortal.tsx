@@ -1,64 +1,165 @@
-import { useMemo, useState } from "react";
 import { Link } from "wouter";
-import { Award, CalendarDays, Heart, Library, MapPin, ReceiptText, Search, Share2, ShoppingBag, Sparkles, Store, Trash2, Languages, Camera } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Camera,
+  ChevronLeft,
+  Gift,
+  Heart,
+  Library,
+  LogOut,
+  MapPinned,
+  ReceiptText,
+  Settings,
+  ShoppingBag,
+  Sparkles,
+  Store,
+  UserRound,
+  WalletCards,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { toast } from "sonner";
-import { useLanguage, type Language } from "@/contexts/LanguageContext";
-import CustomerRewardsWalletPanel from "@/components/CustomerRewardsWalletPanel";
-import CustomerNotificationsCenter from "@/components/CustomerNotificationsCenter";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Button } from "@/components/ui/button";
+
+const statusLabel: Record<string, string> = {
+  pending: "قيد المراجعة",
+  confirmed: "مؤكد",
+  preparing: "قيد التحضير",
+  ready: "جاهز",
+  out_for_delivery: "في الطريق",
+  completed: "مكتمل",
+  cancelled: "ملغى",
+};
 
 export default function CustomerPortal() {
-  const { direction } = useLanguage(); // QA: global language controls RTL/LTR.
-  const [query, setQuery] = useState("");
-  const [contentVisible, setContentVisible] = useState(() => { try { return window.localStorage.getItem("nfood.customer.contentVisible") !== "false"; } catch { return true; } });
-  const toggleContentVisibility = () => setContentVisible((visible) => { const next = !visible; try { window.localStorage.setItem("nfood.customer.contentVisible", String(next)); } catch { /* تفضيل محلي اختياري */ } return next; });
-  const { language, setLanguage } = useLanguage();
-  const { logout } = useAuth();
-  const switchAccount = async () => { await logout(); window.location.href = "/login"; };
-  const restaurants = trpc.platform.publicRestaurantDirectory.useQuery();
-  const favoriteRestaurants = trpc.platform.favoriteRestaurants.useQuery();
-  const toggleFavoriteRestaurant = trpc.platform.toggleFavoriteRestaurant.useMutation({ onSuccess: () => void favoriteRestaurants.refetch(), onError: (error) => toast.error(error.message || "تعذر تحديث المفضلة") });
-  const favoriteRestaurantIds = useMemo(() => new Set((favoriteRestaurants.data ?? []).map((restaurant) => restaurant.restaurantId)), [favoriteRestaurants.data]);
-  const preferences = trpc.platform.myPreferences.useQuery();
-  const consent = useMemo(() => { try { const parsed = JSON.parse(preferences.data?.notificationPreferencesJson ?? "{}"); return parsed?.customerConsent ?? { marketing: false, restaurantUpdates: true, channels: { email: true, push: true, sms: false } }; } catch { return { marketing: false, restaurantUpdates: true, channels: { email: true, push: true, sms: false } }; } }, [preferences.data]);
-  const saveConsent = trpc.platform.setCustomerNotificationConsent.useMutation({ onSuccess: () => { void preferences.refetch(); toast.success("تم حفظ موافقات الإشعارات"); }, onError: (error) => toast.error(error.message || "تعذر حفظ الموافقات") });
-  const engagement = trpc.platform.engagement.useQuery();
-  const referrals = trpc.platform.myReferrals.useQuery();
-  const connectedRestaurants = useMemo(() => {
-    const byRestaurant = new Map<number, { restaurantId: number; name: string; slug: string; logo?: string | null; color?: string | null; favorites: number; points?: number; tier?: string }>();
-    for (const item of engagement.data?.favorites ?? []) {
-      const current = byRestaurant.get(item.restaurantId) ?? { restaurantId: item.restaurantId, name: item.restaurantName, slug: item.restaurantSlug, logo: null, color: null, favorites: 0 };
-      current.favorites += 1;
-      byRestaurant.set(item.restaurantId, current);
-    }
-    for (const account of engagement.data?.loyalty ?? []) {
-      const current = byRestaurant.get(account.restaurantId) ?? { restaurantId: account.restaurantId, name: account.restaurantName, slug: account.restaurantSlug, logo: account.brandLogoUrl, color: account.brandColor, favorites: 0 };
-      current.points = account.pointsBalance;
-      current.tier = account.tier;
-      current.logo = account.brandLogoUrl;
-      current.color = account.brandColor;
-      byRestaurant.set(account.restaurantId, current);
-    }
-    return Array.from(byRestaurant.values()).sort((a, b) => (b.points ?? 0) - (a.points ?? 0) || b.favorites - a.favorites);
-  }, [engagement.data]);
-  const createReferralLink = trpc.platform.createMyReferralLink.useMutation();
-  const deleteMyAccount = trpc.auth.deleteMyAccount.useMutation({ onSuccess: () => { toast.success("تم إغلاق حسابك وإخفاء بياناتك الشخصية مع الاحتفاظ بسجل الطلبات"); window.location.href = "/login"; }, onError: (error) => toast.error(error.message || "تعذر إغلاق الحساب") });
-  const shareRestaurant = async (restaurantId: number, restaurantName: string) => {
-    try {
-      const result = await createReferralLink.mutateAsync({ restaurantId });
-      const shareData = { title: `رشّح ${restaurantName} عبر NFOOD`, text: `جرّب ${restaurantName} عبر NFOOD`, url: `${window.location.origin}${result.link}` };
-      if (navigator.share) await navigator.share(shareData);
-      else { await navigator.clipboard.writeText(shareData.url); toast.success("تم نسخ رابط الترشيح"); }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      toast.error("تعذر إنشاء رابط الترشيح");
-    }
+  const { user, logout } = useAuth();
+  const { direction, language } = useLanguage();
+  const lang = language === "ar" ? "ar" : language === "fr" ? "fr" : "en";
+  const orders = trpc.platform.myOrders.useQuery({ limit: 6 }, { enabled: Boolean(user), retry:false });
+  const reservations = trpc.platform.myReservations.useQuery({ limit: 6 }, { enabled: Boolean(user), retry:false });
+  const favorites = trpc.platform.favoriteRestaurants.useQuery(undefined, { enabled:Boolean(user), retry:false });
+  const wallet = trpc.platform.myWallet.useQuery(undefined, { enabled:Boolean(user), retry:false });
+  const engagement = trpc.platform.engagement.useQuery(undefined, { enabled:Boolean(user), retry:false });
+
+  const copy = lang === "ar" ? {
+    title:"حسابي", subtitle:"كل طلباتك وحجوزاتك ومحتواك في مكان واحد.",
+    orders:"الطلبات", reservations:"الحجوزات", invoices:"الفواتير", favorites:"المفضلة",
+    library:"مكتبتي", studio:"الاستوديو", rewards:"المكافآت", profile:"الملف والإعدادات",
+    marketplace:"استكشف السوق", recentOrders:"آخر الطلبات", recentReservations:"آخر الحجوزات",
+    emptyOrders:"لا توجد طلبات بعد.", emptyReservations:"لا توجد حجوزات بعد.",
+    open:"فتح", logout:"تسجيل الخروج", balance:"الرصيد", restaurants:"مطاعمي المفضلة",
+  } : lang === "fr" ? {
+    title:"Mon compte", subtitle:"Commandes, réservations et contenu au même endroit.",
+    orders:"Commandes", reservations:"Réservations", invoices:"Factures", favorites:"Favoris",
+    library:"Ma bibliothèque", studio:"Studio", rewards:"Récompenses", profile:"Profil et paramètres",
+    marketplace:"Explorer le marché", recentOrders:"Dernières commandes", recentReservations:"Dernières réservations",
+    emptyOrders:"Aucune commande.", emptyReservations:"Aucune réservation.",
+    open:"Ouvrir", logout:"Déconnexion", balance:"Solde", restaurants:"Restaurants favoris",
+  } : {
+    title:"My account", subtitle:"Orders, reservations and content in one place.",
+    orders:"Orders", reservations:"Reservations", invoices:"Invoices", favorites:"Favorites",
+    library:"My library", studio:"Studio", rewards:"Rewards", profile:"Profile & settings",
+    marketplace:"Explore marketplace", recentOrders:"Recent orders", recentReservations:"Recent reservations",
+    emptyOrders:"No orders yet.", emptyReservations:"No reservations yet.",
+    open:"Open", logout:"Sign out", balance:"Balance", restaurants:"Favorite restaurants",
   };
-  const rows = useMemo(() => (restaurants.data ?? []).filter((restaurant) => `${restaurant.brandName ?? restaurant.name} ${restaurant.city ?? ""} ${restaurant.address ?? ""}`.toLowerCase().includes(query.toLowerCase())).sort((a, b) => Number(favoriteRestaurantIds.has(b.id)) - Number(favoriteRestaurantIds.has(a.id)) || String(a.brandName ?? a.name).localeCompare(String(b.brandName ?? b.name), "ar")), [restaurants.data, query, favoriteRestaurantIds]);
-  const favoriteRows = useMemo(() => (restaurants.data ?? []).filter((restaurant) => favoriteRestaurantIds.has(restaurant.id)), [restaurants.data, favoriteRestaurantIds]);
-  return <main dir={direction} className="min-h-screen min-w-0 overflow-x-hidden bg-[#f7f8fb] p-3 text-slate-900 dark:bg-slate-950 dark:text-slate-100 sm:p-8"><div className="mx-auto max-w-6xl"><header className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold text-[#e76f3c]">NFOOD · My NFOOD</p><h1 className="mt-2 text-3xl font-black">حساب واحد لكل خدماتك ومحتواك</h1><p className="mt-2 text-sm text-slate-500">استخدم NFOOD كعميل في أي نشاط، ثم ابدأ صناعة وبيع محتوى مستقل في أي مجال من نفس الحساب.</p></div><div className="flex flex-wrap gap-2"><Link href="/customer-orders"><Button variant="outline" className="rounded-xl"><ShoppingBag className="ml-2 h-4 w-4" />سجل الطلبات</Button></Link><Link href="/customer-reservations"><Button variant="outline" className="rounded-xl"><CalendarDays className="ml-2 h-4 w-4" />حجوزاتي</Button></Link><Link href="/customer-rewards"><Button variant="outline" className="rounded-xl"><Award className="ml-2 h-4 w-4" />مكافآتي</Button></Link><Link href="/content-market"><Button variant="outline" className="rounded-xl border-orange-200 text-orange-700"><Store className="ml-2 h-4 w-4" />سوق المحتوى</Button></Link><Link href="/customer-content-library"><Button variant="outline" className="rounded-xl"><Library className="ml-2 h-4 w-4" />مكتبة المشتريات</Button></Link><Link href="/customer-content-orders"><Button variant="outline" className="rounded-xl"><ReceiptText className="ml-2 h-4 w-4" />طلبات المحتوى</Button></Link><Link href="/customer-studio"><Button className="rounded-xl bg-slate-900 text-white"><Camera className="ml-2 h-4 w-4" />ابدأ صناعة المحتوى</Button></Link><Link href="/customer-benefits"><Button variant="outline" className="rounded-xl border-violet-200 text-violet-700">مزايا حسابي</Button></Link><Link href="/customer-profile"><Button variant="outline" className="rounded-xl">ملفي العام</Button></Link><label className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-900 dark:bg-slate-900 px-3 py-2 text-xs font-bold text-slate-600"><Languages className="h-4 w-4 text-[#e76f3c]" /><span className="sr-only">اختيار اللغة</span><select aria-label="اختيار اللغة" value={language} onChange={(event) => setLanguage(event.target.value as Language)} className="bg-transparent text-xs font-bold outline-none"><option value="ar">العربية</option><option value="en">English</option><option value="fr">Français</option><option value="ur">اردو</option></select></label><Button type="button" variant="outline" onClick={() => void switchAccount()} className="rounded-xl">تسجيل الخروج</Button><Link href="/"><Button className="rounded-xl bg-[#e76f3c]">العودة للمنيو</Button></Link></div></header><section className="mb-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Link href="/customer-orders" className="rounded-2xl border border-sky-100 bg-sky-50 p-4 transition hover:-translate-y-0.5"><p className="text-xs font-bold text-sky-700">الطلبات</p><p className="mt-2 text-lg font-black text-sky-950">تتبع طلباتك</p><p className="mt-1 text-xs text-sky-800/70">الحالة، الإعادة، والمحادثة الآمنة.</p></Link><Link href="/customer-rewards" className="rounded-2xl border border-amber-100 bg-amber-50 p-4 transition hover:-translate-y-0.5"><p className="text-xs font-bold text-amber-700">الولاء</p><p className="mt-2 text-lg font-black text-amber-950">مكافآتك</p><p className="mt-1 text-xs text-amber-800/70">النقاط والمستويات لكل مطعم.</p></Link><Link href="/customer-studio" className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 transition hover:-translate-y-0.5"><p className="text-xs font-bold text-emerald-700">Studio</p><p className="mt-2 text-lg font-black text-emerald-950">ابدأ كصانع محتوى</p><p className="mt-1 text-xs text-emerald-800/70">ارفع محتوى مستقلًا للطعام، الأزياء، السفر، السيارات، العقار أو أي مجال؛ ربطه بمتجر اختياري.</p></Link><Link href="/content-market" className="rounded-2xl border border-orange-100 bg-orange-50 p-4 transition hover:-translate-y-0.5"><p className="text-xs font-bold text-orange-700">Content Marketplace</p><p className="mt-2 text-lg font-black text-orange-950">سوق المحتوى</p><p className="mt-1 text-xs text-orange-800/70">تصفح سوق المحتوى. البيع متاح للحسابات المؤهلة فقط.</p></Link><Link href="/customer-content-library" className="rounded-2xl border border-violet-100 bg-violet-50 p-4 transition hover:-translate-y-0.5"><p className="text-xs font-bold text-violet-700">المكتبة</p><p className="mt-2 text-lg font-black text-violet-950">مشتريات المحتوى</p><p className="mt-1 text-xs text-violet-800/70">الملفات الرقمية التي تم تسليمها بعد الدفع.</p></Link></section><section className="mb-7 grid gap-5 xl:grid-cols-[1.15fr_.85fr]"><CustomerRewardsWalletPanel /><CustomerNotificationsCenter /></section><section className="mb-7 rounded-3xl border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-900 dark:bg-slate-900 p-5 shadow-sm"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-black text-slate-500">خصوصية وإشعارات</p><h2 className="mt-1 text-lg font-black">أنت تتحكم في رسائلك</h2><p className="mt-1 max-w-2xl text-xs leading-6 text-slate-500">تحتفظ المنصة ببياناتك الأساسية وتستخدمها لتشغيل الطلبات والحجوزات. لا يرى المطعم أو السائق إلا الحد الأدنى اللازم، ولا نرسل إعلانًا إلا بعد موافقتك ويمكنك السحب في أي وقت.</p></div><div className="grid w-full min-w-0 sm:w-full min-w-0 sm:min-w-[260px] gap-2 text-xs"><label className="flex items-center gap-2 rounded-xl bg-slate-50 dark:bg-slate-900 dark:bg-slate-900 p-3"><input type="checkbox" checked={Boolean(consent.restaurantUpdates)} disabled={saveConsent.isPending} onChange={(event) => saveConsent.mutate({ marketing: Boolean(consent.marketing), restaurantUpdates: event.target.checked, channels: consent.channels ?? { email: true, push: true, sms: false } })} /> تحديثات الطلبات والحجوزات</label><label className="flex items-center gap-2 rounded-xl bg-slate-50 dark:bg-slate-900 dark:bg-slate-900 p-3"><input type="checkbox" checked={Boolean(consent.marketing)} disabled={saveConsent.isPending} onChange={(event) => saveConsent.mutate({ marketing: event.target.checked, restaurantUpdates: Boolean(consent.restaurantUpdates), channels: consent.channels ?? { email: true, push: true, sms: false } })} /> عروض وإعلانات اختيارية</label><div className="rounded-xl border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-900 dark:bg-slate-900 p-3"><p className="mb-2 text-[11px] font-black text-slate-600">القنوات المسموحة</p><div className="grid gap-2 sm:grid-cols-3"><label className="flex items-center gap-2 text-[11px]"><input type="checkbox" checked={Boolean(consent.channels?.email)} disabled={saveConsent.isPending} onChange={(event) => saveConsent.mutate({ marketing: Boolean(consent.marketing), restaurantUpdates: Boolean(consent.restaurantUpdates), channels: { email: event.target.checked, push: Boolean(consent.channels?.push), sms: Boolean(consent.channels?.sms) } })} /> البريد</label><label className="flex items-center gap-2 text-[11px]"><input type="checkbox" checked={Boolean(consent.channels?.push)} disabled={saveConsent.isPending} onChange={(event) => saveConsent.mutate({ marketing: Boolean(consent.marketing), restaurantUpdates: Boolean(consent.restaurantUpdates), channels: { email: Boolean(consent.channels?.email), push: event.target.checked, sms: Boolean(consent.channels?.sms) } })} /> إشعارات التطبيق</label><label className="flex items-center gap-2 text-[11px] text-slate-400"><input type="checkbox" checked={Boolean(consent.channels?.sms)} disabled /> SMS لاحقًا</label></div></div>{saveConsent.isPending && <p className="text-[10px] font-bold text-orange-700">جارٍ حفظ تفضيلاتك...</p>}</div></div></section><section className="mb-7 rounded-3xl border border-red-100 bg-red-50/60 p-5 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="flex items-center gap-2 text-xs font-black text-red-700"><Trash2 className="h-4 w-4" /> أمان الحساب</p><h2 className="mt-1 text-lg font-black text-slate-900">إغلاق حسابي</h2><p className="mt-1 max-w-2xl text-xs leading-6 text-slate-600">لا يستطيع المطعم أو الإدارة حذف حسابك. عند الإغلاق تُخفى بياناتك الشخصية وتُلغى جلساتك، بينما يُحتفظ بسجل الطلبات لأغراض التشغيل والمحاسبة.</p></div><Button type="button" variant="outline" disabled={deleteMyAccount.isPending} onClick={() => { if (window.confirm("سيتم إغلاق حسابك وإخفاء بياناتك الشخصية. اكتب التأكيد في النافذة التالية؟")) { const confirmation = window.prompt("اكتب: حذف حسابي"); if (confirmation === "حذف حسابي") deleteMyAccount.mutate({ confirmation }); } }} className="rounded-xl border-red-200 text-red-700 hover:bg-red-100"><Trash2 className="ml-2 h-4 w-4" />{deleteMyAccount.isPending ? "جارٍ الإغلاق..." : "إغلاق حسابي"}</Button></div></section>{(referrals.data?.length ?? 0) > 0 && <section className="mb-7 rounded-3xl border border-violet-100 bg-violet-50/70 p-5 shadow-sm"><div className="mb-3"><p className="text-xs font-black text-violet-700">ترشيحاتك للمطاعم</p><h2 className="mt-1 text-xl font-black text-slate-900">متابعة المكافآت</h2></div><div className="space-y-2">{(referrals.data ?? []).slice(0, 6).map((referral) => <div key={referral.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-100 bg-white dark:bg-slate-900 dark:bg-slate-900 p-3"><div><p className="font-black">{referral.restaurantName}</p><p className="mt-1 text-[11px] text-slate-500">{new Date(referral.createdAt).toLocaleDateString("ar-SA-u-ca-gregory-nu-latn")} · الرمز {referral.code}</p></div><div className="text-left"><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${referral.status === "rewarded" ? "bg-emerald-100 text-emerald-800" : referral.status === "qualified" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{referral.status === "rewarded" ? "تم صرف المكافأة" : referral.status === "qualified" ? "مؤهل للمكافأة" : referral.status === "cancelled" ? "ملغى" : "بانتظار أول طلب مؤهل"}</span>{referral.qualifiedAt && <p className="mt-1 text-[10px] text-slate-500">تأهل في {new Date(referral.qualifiedAt).toLocaleDateString("ar-SA-u-ca-gregory-nu-latn")}</p>}</div></div>)}</div></section>}{connectedRestaurants.length > 0 && <section className="mb-7 rounded-3xl border border-orange-100 bg-gradient-to-l from-orange-50 via-white to-emerald-50 p-5 shadow-sm"><div className="mb-4 flex items-center justify-between gap-3"><div><p className="flex items-center gap-2 text-xs font-black text-orange-700"><Sparkles className="h-4 w-4" /> مساحتك في NFOOD</p><h2 className="mt-1 text-xl font-black">مطاعمك وتقدم الولاء</h2></div><Heart className="h-5 w-5 text-rose-500" /></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{connectedRestaurants.map((restaurant) => <Card key={restaurant.restaurantId} className="overflow-hidden rounded-2xl border-white/80 bg-white dark:bg-slate-900 dark:bg-slate-900/80 shadow-sm"><CardContent className="p-4"><div className="flex items-center gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-white" style={{ backgroundColor: restaurant.color ?? "#e76f3c" }}>{restaurant.logo ? <img src={restaurant.logo} alt="" onError={(event) => { event.currentTarget.style.display = "none"; }} className="h-full w-full object-contain p-1" /> : <Store className="h-5 w-5" />}</div><div className="min-w-0"><p className="truncate font-black">{restaurant.name}</p><p className="mt-1 text-[11px] text-slate-500">{restaurant.favorites ? `${restaurant.favorites} أصناف محفوظة` : "تفاعل محفوظ"}</p></div></div>{restaurant.points !== undefined && <div className="mt-4 flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2"><span className="flex items-center gap-1 text-xs font-bold text-amber-800"><Award className="h-4 w-4" />{restaurant.tier === "gold" ? "ذهبي" : restaurant.tier === "silver" ? "فضي" : "قياسي"}</span><strong className="text-sm text-amber-900">{restaurant.points} نقطة</strong></div>}<Link href={`/restaurant/${restaurant.slug}`}><Button variant="outline" className="mt-3 w-full rounded-xl text-xs">فتح منيو المطعم</Button></Link></CardContent></Card>)}</div></section>}{contentVisible && <section className="mb-7 rounded-3xl border border-violet-200 bg-gradient-to-l from-violet-50 via-white to-orange-50 p-5 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.14em] text-violet-700">NFOOD · محتوى مختار</p><h2 className="mt-1 text-xl font-black text-slate-900">صور ووصفات بين مطاعمك</h2><p className="mt-1 max-w-2xl text-xs leading-6 text-slate-600">محتوى غذائي مختار يظهر لك داخل حسابك مباشرة، مستقل عن منيو المطاعم. يمكنك استكشافه أو متابعة المطاعم دون مغادرة البوابة.</p></div><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={toggleContentVisibility} className="rounded-xl border-violet-200 text-violet-700">إخفاء المحتوى</Button><Link href="/content-market"><Button variant="outline" className="rounded-xl border-violet-200 text-violet-700"><Store className="ml-2 h-4 w-4" />استكشاف المحتوى</Button></Link></div></div></section>}{!contentVisible && <div className="mb-7 flex items-center justify-between gap-3 rounded-2xl border border-violet-100 bg-violet-50/70 px-4 py-3 text-sm"><span className="font-bold text-violet-900">تم إخفاء محتوى السوق من لوحة العميل.</span><Button type="button" variant="outline" onClick={toggleContentVisibility} className="rounded-xl border-violet-200 text-violet-700">إظهار المحتوى</Button></div>}{favoriteRows.length > 0 && <section className="mb-7 rounded-3xl border border-rose-100 bg-gradient-to-l from-rose-50 via-white to-orange-50 p-5 shadow-sm"><div className="mb-4 flex items-center justify-between gap-3"><div><p className="flex items-center gap-2 text-xs font-black text-rose-700"><Heart className="h-4 w-4 fill-rose-500" /> مطاعمي المفضلة</p><h2 className="mt-1 text-xl font-black text-slate-900">عودة أسرع إلى اختياراتك</h2></div><span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-black text-rose-700">{favoriteRows.length} مطاعم</span></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{favoriteRows.map((restaurant) => <Link key={restaurant.id} href={`/restaurant/${restaurant.slug}`} className="flex items-center gap-3 rounded-2xl border border-rose-100 bg-white dark:bg-slate-900 dark:bg-slate-900 p-3 transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100">{restaurant.brandLogoUrl ? <img src={restaurant.brandLogoUrl} alt="" className="h-full w-full object-contain" /> : <Store className="h-5 w-5 text-slate-400" />}</div><div className="min-w-0"><p className="truncate font-black text-slate-900">{restaurant.brandName ?? restaurant.name}</p><p className="mt-1 truncate text-xs text-slate-500">{restaurant.city ?? restaurant.address ?? "مطعم نشط"}</p></div><Heart className="mr-auto h-4 w-4 fill-rose-500 text-rose-500" /></Link>)}</div></section>}<div className="mb-6 flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-900 dark:bg-slate-900 px-4 py-3 shadow-sm"><Search className="h-5 w-5 text-slate-400" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث باسم المطعم أو المدينة" className="h-8 border-0 p-0 shadow-none focus-visible:ring-0" /></div>{restaurants.isLoading ? <div className="grid gap-4 md:grid-cols-3">{[1,2,3].map((item) => <div key={item} className="h-56 animate-pulse rounded-3xl bg-white dark:bg-slate-900 dark:bg-slate-900" />)}</div> : restaurants.isError ? <Card className="rounded-3xl"><CardContent className="p-8 text-center text-sm text-red-600">تعذر تحميل دليل المطاعم. Request ID: customer-directory</CardContent></Card> : rows.length === 0 ? <Card className="rounded-3xl"><CardContent className="p-12 text-center"><Store className="mx-auto h-10 w-10 text-slate-300" /><p className="mt-3 text-sm text-slate-500">لا توجد مطاعم مطابقة حاليًا.</p></CardContent></Card> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{rows.map((restaurant) => <Card key={restaurant.id} className="group overflow-hidden rounded-3xl border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-900 dark:bg-slate-900 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-100/60"><div className="h-28" style={{ background: `linear-gradient(135deg, ${restaurant.brandColor ?? "#e76f3c"}, #101d31)` }}>{restaurant.brandLogoUrl && <img src={restaurant.brandLogoUrl} alt="" onError={(event) => { event.currentTarget.style.display = "none"; }} className="h-full w-full object-contain p-6" />}</div><CardContent className="p-5"><div className="flex items-start justify-between gap-3"><h2 className="text-lg font-black">{restaurant.brandName ?? restaurant.name}</h2><Button type="button" variant="ghost" aria-label={favoriteRestaurantIds.has(restaurant.id) ? "إزالة من المطاعم المفضلة" : "إضافة إلى المطاعم المفضلة"} disabled={toggleFavoriteRestaurant.isPending} onClick={() => toggleFavoriteRestaurant.mutate({ restaurantId: restaurant.id })} className="h-9 w-9 shrink-0 rounded-full p-0 text-rose-500 hover:bg-rose-50"><Heart className={`h-5 w-5 ${favoriteRestaurantIds.has(restaurant.id) ? "fill-rose-500" : ""}`} /></Button></div><p className="mt-2 line-clamp-2 text-xs leading-6 text-slate-500">{restaurant.brandDescription || "صفحة مطعم عامة تشمل المنيو والطلب والحجز."}</p>{(restaurant.city || restaurant.address) && <p className="mt-3 flex items-center gap-1 text-xs text-slate-500"><MapPin className="h-4 w-4 text-[#e76f3c]" />{[restaurant.city, restaurant.address].filter(Boolean).join(" · ")}</p>}{restaurant.phone && <p className="mt-2 text-xs font-bold text-slate-500">الجوال: {restaurant.phone}</p>}{restaurant.phone && <p className="mt-2 text-xs font-bold text-slate-500">الجوال: {restaurant.phone}</p>}<div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3"><Link href={`/restaurant/${restaurant.slug}`}><Button className="w-full rounded-xl bg-[#e76f3c]"><ShoppingBag className="ml-1 h-4 w-4" />المنيو</Button></Link><Link href={`/restaurant/${restaurant.slug}#order`}><Button variant="outline" className="w-full rounded-xl"><ShoppingBag className="ml-1 h-4 w-4" />اطلب الآن</Button></Link><Link href={`/restaurant/${restaurant.slug}#reservation`}><Button variant="outline" className="w-full rounded-xl"><CalendarDays className="ml-1 h-4 w-4" />الحجز</Button></Link></div><Button type="button" variant="ghost" disabled={createReferralLink.isPending} onClick={() => void shareRestaurant(restaurant.id, restaurant.brandName ?? restaurant.name)} className="mt-2 w-full rounded-xl text-xs text-orange-700 hover:bg-orange-50"><Share2 className="ml-1 h-4 w-4" />{createReferralLink.isPending ? "جارٍ تجهيز الرابط..." : "رشّح هذا المطعم"}</Button></CardContent></Card>)}</div>}<section className="mb-7 overflow-hidden rounded-3xl border border-orange-200 bg-gradient-to-l from-orange-100 via-white to-amber-50 p-6 shadow-sm"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-black uppercase tracking-[0.14em] text-orange-700">NFOOD · Content Marketplace</p><h2 className="mt-2 text-2xl font-black text-orange-950">سوق المحتوى والوصفات</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-orange-900/75">هذا سوق مستقل عن منيو المطاعم. اكتشف صور الأكل والوصفات المعروضة للمطاعم والحسابات المؤهلة، وراجع مشترياتك الرقمية من مكتبتك.</p></div><Link href="/content-market"><Button className="shrink-0 rounded-xl bg-[#e76f3c] px-6 font-black hover:bg-[#d85f2e]"><Store className="ml-2 h-4 w-4" />دخول Trend Kitchen</Button></Link></div></section></div></main>;
+
+  const quick = [
+    { label:copy.orders, href:"/customer-orders", Icon:ShoppingBag },
+    { label:copy.reservations, href:"/customer-reservations", Icon:CalendarDays },
+    { label:copy.invoices, href:"/customer-orders", Icon:ReceiptText },
+    { label:copy.favorites, href:"/favorites", Icon:Heart },
+    { label:copy.library, href:"/customer-content-library", Icon:Library },
+    { label:copy.studio, href:"/customer-studio", Icon:Camera },
+    { label:copy.rewards, href:"/customer-rewards", Icon:Gift },
+    { label:copy.profile, href:"/customer-profile", Icon:Settings },
+  ];
+
+  const displayName = (user as any)?.name || (user as any)?.displayName || user?.email || copy.title;
+  const points = (engagement.data?.loyalty ?? []).reduce((sum, row) => sum + Number(row.pointsBalance || 0), 0);
+
+  return <main dir={direction} className="min-h-screen overflow-x-hidden bg-[#f6f8fc] text-[#0b1d35] dark:bg-[#071525] dark:text-white">
+    <header className="border-b border-slate-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[#08192b]/95">
+      <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+        <Link href="/marketplace" className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-500 font-black text-white">N</span>
+          <span className="font-black">NFOOD</span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/marketplace"><Button variant="outline" className="rounded-xl text-xs">{copy.marketplace}</Button></Link>
+          <button onClick={() => void logout()} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5" aria-label={copy.logout}><LogOut className="h-4 w-4" /></button>
+        </div>
+      </div>
+    </header>
+
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+      <section className="overflow-hidden rounded-[28px] bg-[#0b1d35] p-5 text-white shadow-xl sm:p-7">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-[.18em] text-orange-400">NFOOD CUSTOMER</p>
+            <h1 className="mt-2 truncate text-2xl font-black sm:text-4xl">{displayName}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{copy.subtitle}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:min-w-[260px]">
+            <div className="rounded-2xl bg-white/10 p-4">
+              <p className="text-[10px] font-bold text-slate-300">{copy.balance}</p>
+              <p className="mt-1 text-lg font-black">{wallet.data?.account.balance ?? "0.00"} SAR</p>
+            </div>
+            <div className="rounded-2xl bg-white/10 p-4">
+              <p className="text-[10px] font-bold text-slate-300">{copy.rewards}</p>
+              <p className="mt-1 text-lg font-black">{points}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {quick.map(({ label, href, Icon }) => <Link key={href+label} href={href} className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-white/10 dark:bg-white/5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400"><Icon className="h-5 w-5" /></span>
+            <ChevronLeft className="h-4 w-4 text-slate-300 transition group-hover:-translate-x-1" />
+          </div>
+          <p className="mt-4 text-sm font-black">{label}</p>
+        </Link>)}
+      </section>
+
+      <div className="mt-6 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
+        <section className="rounded-[26px] border border-slate-200 bg-white p-4 sm:p-5 dark:border-white/10 dark:bg-white/5">
+          <div className="flex items-center justify-between gap-3">
+            <div><h2 className="text-lg font-black">{copy.recentOrders}</h2><p className="mt-1 text-xs text-slate-500">{orders.data?.length ?? 0} {copy.orders}</p></div>
+            <Link href="/customer-orders" className="text-xs font-black text-orange-600">{copy.open}</Link>
+          </div>
+          <div className="mt-4 space-y-2">
+            {orders.isLoading ? <div className="h-24 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/5" /> : orders.data?.length ? orders.data.slice(0,6).map((order:any) => <Link key={order.id} href={`/customer-orders?order=${order.id}`} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 p-3 dark:border-white/10">
+              <div className="min-w-0"><p className="truncate text-sm font-black">#{order.id} · {order.restaurantName || copy.orders}</p><p className="mt-1 text-[11px] text-slate-500">{statusLabel[order.status] || order.status}</p></div>
+              <div className="text-end"><p className="text-sm font-black">{Number(order.total || 0).toLocaleString("en-US")} {order.currencyCode || "SAR"}</p><ArrowLeft className="ms-auto mt-1 h-4 w-4 text-slate-300" /></div>
+            </Link>) : <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-white/10">{copy.emptyOrders}</p>}
+          </div>
+        </section>
+
+        <section className="rounded-[26px] border border-slate-200 bg-white p-4 sm:p-5 dark:border-white/10 dark:bg-white/5">
+          <div className="flex items-center justify-between gap-3">
+            <div><h2 className="text-lg font-black">{copy.recentReservations}</h2><p className="mt-1 text-xs text-slate-500">{reservations.data?.length ?? 0} {copy.reservations}</p></div>
+            <Link href="/customer-reservations" className="text-xs font-black text-blue-600">{copy.open}</Link>
+          </div>
+          <div className="mt-4 space-y-2">
+            {reservations.isLoading ? <div className="h-24 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/5" /> : reservations.data?.length ? reservations.data.slice(0,6).map((row:any) => <Link key={row.id} href="/customer-reservations" className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 p-3 dark:border-white/10">
+              <div className="min-w-0"><p className="truncate text-sm font-black">{row.restaurantName || copy.reservations}</p><p className="mt-1 text-[11px] text-slate-500">{row.status || "—"}</p></div>
+              <div className="text-end text-[11px] text-slate-500">{row.reservedFor ? new Date(row.reservedFor).toLocaleString(lang === "ar" ? "ar-SA" : lang === "fr" ? "fr-FR" : "en-US") : "—"}</div>
+            </Link>) : <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-white/10">{copy.emptyReservations}</p>}
+          </div>
+        </section>
+      </div>
+
+      <section className="mt-5 rounded-[26px] border border-slate-200 bg-white p-4 sm:p-5 dark:border-white/10 dark:bg-white/5">
+        <div className="flex items-center justify-between gap-3"><div><h2 className="text-lg font-black">{copy.restaurants}</h2><p className="mt-1 text-xs text-slate-500">{favorites.data?.length ?? 0}</p></div><Link href="/favorites" className="text-xs font-black text-orange-600">{copy.open}</Link></div>
+        <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+          {(favorites.data ?? []).slice(0,8).map((row:any) => <Link key={row.restaurantId ?? row.id} href={`/menu/${row.slug || row.restaurantSlug}`} className="min-w-[190px] rounded-2xl border border-slate-100 p-3 dark:border-white/10">
+            <div className="flex items-center gap-3">{row.brandLogoUrl ? <img src={row.brandLogoUrl} alt="" className="h-10 w-10 rounded-xl object-cover" /> : <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-600"><Store className="h-5 w-5" /></span>}<div className="min-w-0"><p className="truncate text-sm font-black">{row.brandName || row.name || row.restaurantName}</p><p className="mt-1 truncate text-[10px] text-slate-500">{row.city || ""}</p></div></div>
+          </Link>)}
+        </div>
+      </section>
+    </div>
+  </main>;
 }
