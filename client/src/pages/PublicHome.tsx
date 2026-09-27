@@ -22,6 +22,7 @@ import Home from "@/pages/Home";
 import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { QRCodeSVG } from "qrcode.react";
 
 type HomeFeatureCard = { title: string; body: string };
 type HomeFeatureLocale = { title?: string; subtitle?: string; homeCards?: HomeFeatureCard[] };
@@ -287,6 +288,11 @@ export default function PublicHome() {
           <div className="min-w-0"><h3 className="font-black">{copy.footerSupport}</h3><div className="mt-4 grid gap-3 text-sm text-slate-400"><Link href="/faq" className="break-words hover:text-orange-300">{copy.faq}</Link><Link href="/contact" className="break-words hover:text-orange-300">{copy.contact}</Link>{settings?.supportPhone && <a href={`tel:${settings.supportPhone}`} className="break-all hover:text-orange-300">{settings.supportPhone}</a>}{settings?.supportEmail && <a href={`mailto:${settings.supportEmail}`} className="break-all hover:text-orange-300">{settings.supportEmail}</a>}</div></div>
 
           <div className="min-w-0"><h3 className="font-black">{copy.footerCompany}</h3><div className="mt-4 grid gap-3 text-sm text-slate-400"><Link href="/about" className="break-words hover:text-orange-300">{copy.about}</Link><Link href="/terms" className="break-words hover:text-orange-300">{copy.terms}</Link><Link href="/privacy" className="break-words hover:text-orange-300">{copy.privacy}</Link><Link href="/refund" className="break-words hover:text-orange-300">{copy.refund}</Link></div></div>
+        </div>
+
+        <div className="flex flex-col items-center justify-between gap-4 border-b border-white/10 py-6 sm:flex-row">
+          <div className="text-center sm:text-start"><p className="text-sm font-black text-white">${lang === "ar" ? "QR الموقع" : lang === "fr" ? "QR du site" : "Site QR"}</p><p className="mt-1 text-xs text-slate-400">${lang === "ar" ? "امسح الرمز للدخول إلى موقع NFOOD" : lang === "fr" ? "Scannez pour ouvrir NFOOD" : "Scan to open NFOOD"}</p></div>
+          <a href="/" aria-label="NFOOD QR" className="rounded-2xl bg-white p-2 shadow-xl"><QRCodeSVG value={typeof window !== "undefined" ? window.location.origin : "https://fooncard.com"} size={92} level="H" /></a>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
