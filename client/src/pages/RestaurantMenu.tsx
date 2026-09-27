@@ -417,7 +417,7 @@ export default function RestaurantMenu() {
         <div className="flex min-w-0 items-center gap-3">
           <button onClick={() => setDrawerOpen(true)} className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`} aria-label="Menu"><Menu className="h-5 w-5" /></button>
           {restaurant.brandLogoUrl ? <img src={restaurant.brandLogoUrl} alt="" className="h-10 w-10 shrink-0 rounded-xl object-cover" /> : <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-500 font-black text-white">{restaurant.name.slice(0,1)}</span>}
-          <div className="min-w-0"><h1 className="truncate text-sm font-black sm:text-base">{restaurant.brandName || restaurant.name}</h1><p className={`flex items-center gap-1 text-[10px] font-bold ${isOpen ? "text-emerald-500" : "text-red-500"}`}><span className={`h-1.5 w-1.5 rounded-full ${isOpen ? "bg-emerald-500" : "bg-red-500"}`} />{isOpen ? copy.open : copy.closed}</p></div>
+          <div className="min-w-0"><h1 className="truncate text-sm font-black sm:text-base">{restaurant.brandName || restaurant.name}</h1></div>
         </div>
         <div className="flex items-center gap-1.5">
           <LanguageSwitcher compact />
@@ -428,42 +428,37 @@ export default function RestaurantMenu() {
     </header>
 
     <section className="relative overflow-hidden bg-[#071525] text-white">
-      {restaurant.coverUrl && <img src={restaurant.coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45" />}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#071525] via-[#071525]/75 to-[#071525]/30" />
-      <div className="relative mx-auto flex min-h-[300px] max-w-7xl items-end px-4 pb-8 pt-24 sm:px-6 sm:pb-10">
-        <div className="max-w-3xl">
-          <div className="flex flex-wrap gap-2">
-            <span className={`rounded-full px-3 py-1.5 text-xs font-black ${isOpen ? "bg-emerald-500 text-white" : "bg-red-500 text-white"}`}>{isOpen ? copy.open : copy.closed}</span>
-            {restaurant.city && <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold"><MapPin className="h-3.5 w-3.5" />{restaurant.city}</span>}
-          </div>
-          <h2 className="mt-4 text-3xl font-black sm:text-5xl">{restaurant.brandName || restaurant.name}</h2>
-          {restaurant.brandDescription && <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">{restaurant.brandDescription}</p>}
-          <div className="mt-5 flex flex-wrap gap-2">
-            <button onClick={() => document.getElementById("menu-grid")?.scrollIntoView({ behavior:"smooth" })} className="rounded-xl px-4 py-3 text-sm font-black text-white" style={{ background:primary }}>{copy.startOrder}</button>
-            {restaurant.reservationEnabled && <button onClick={() => setReservationOpen(true)} className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-black">{copy.reservation}</button>}
-            {restaurant.waiterCallEnabled && <button onClick={() => setWaiterOpen(true)} className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-black">{copy.waiter}</button>}
+      <div className="mx-auto max-w-7xl">
+        <div className="relative aspect-[16/7] min-h-[220px] overflow-hidden sm:aspect-[16/6] lg:aspect-[16/5]">
+          {restaurant.coverUrl
+            ? <img src={restaurant.coverUrl} alt={restaurant.brandName || restaurant.name} className="absolute inset-0 h-full w-full object-cover" />
+            : <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d35] via-[#12345a] to-[#071525]" />}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#071525]/55 via-transparent to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:p-6">
+            <div className="min-w-0">
+              <h2 className="truncate text-2xl font-black sm:text-4xl">{restaurant.brandName || restaurant.name}</h2>
+              {restaurant.city && <p className="mt-1 flex items-center gap-1 text-xs font-bold text-slate-200"><MapPin className="h-3.5 w-3.5" />{restaurant.city}</p>}
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section className={`sticky top-16 z-30 border-b py-3 backdrop-blur-xl ${dark ? "border-white/10 bg-[#071525]/94" : "border-slate-200 bg-[#f6f8fc]/94"}`}>
-      <div className="mx-auto max-w-7xl px-3 sm:px-5">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {enabledModes.map((mode) => {
-            const label = mode === "dineIn" ? copy.local : mode === "takeaway" ? copy.takeaway : mode === "delivery" ? copy.delivery : mode === "reservation" ? copy.withReservation : copy.room;
-            const Icon = mode === "dineIn" ? Utensils : mode === "takeaway" ? ShoppingBag : mode === "delivery" ? Truck : mode === "reservation" ? CalendarDays : Hotel;
-            return <button key={mode} onClick={() => { setOrderMode(mode); if (mode === "reservation") setReservationOpen(true); }} className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-black transition ${orderMode === mode ? "border-transparent text-white shadow-lg" : dark ? "border-white/10 bg-white/5 text-slate-300" : "border-slate-200 bg-white text-slate-600"}`} style={orderMode === mode ? { background:primary } : undefined}><Icon className="h-4 w-4" />{label}</button>;
-          })}
+    <section className={`border-b ${dark ? "border-white/10 bg-[#0a1a2d]" : "border-slate-200 bg-white"}`}>
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isOpen ? "bg-emerald-500" : "bg-red-500"}`} />
+          <div className="min-w-0">
+            <p className="text-sm font-black">{isOpen ? copy.open : copy.closed}</p>
+            {selectedBranch && <p className={`truncate text-[10px] font-bold ${muted}`}>{selectedBranch.name} · {selectedBranch.openingTime || "—"}–{selectedBranch.closingTime || "—"}</p>}
+          </div>
         </div>
+        <button onClick={() => setDrawerOpen(true)} className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-black ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`}>{copy.storeInfo}</button>
       </div>
     </section>
 
     <section className="mx-auto max-w-7xl px-3 py-6 sm:px-5 sm:py-8">
-      <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
-        <div className={`flex items-center rounded-2xl border px-3 ${surface}`}><Search className={`h-5 w-5 shrink-0 ${muted}`} /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.search} className="h-12 border-0 bg-transparent shadow-none focus-visible:ring-0" /></div>
-        {branches.length > 1 && <select value={selectedBranchId ?? ""} onChange={(event) => setSelectedBranchId(Number(event.target.value))} className={`h-12 rounded-2xl border px-4 text-sm font-black outline-none ${surface}`}>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>}
-      </div>
+      <div className={`flex items-center rounded-2xl border px-3 ${surface}`}><Search className={`h-5 w-5 shrink-0 ${muted}`} /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.search} className="h-12 border-0 bg-transparent shadow-none focus-visible:ring-0" /></div>
       <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
         <button onClick={() => setActiveCategory("all")} className={`shrink-0 rounded-full px-4 py-2.5 text-xs font-black ${activeCategory === "all" ? "text-white" : surface}`} style={activeCategory === "all" ? { background:accent } : undefined}>{copy.all}</button>
         {categories.map((category) => <button key={category.id} onClick={() => setActiveCategory(category.id)} className={`shrink-0 rounded-full border px-4 py-2.5 text-xs font-black ${activeCategory === category.id ? "border-transparent text-white" : surface}`} style={activeCategory === category.id ? { background:accent } : undefined}>{localize(category.translationsJson, category.name, lang, "name")}</button>)}
@@ -489,17 +484,27 @@ export default function RestaurantMenu() {
 
     {itemCount > 0 && <button onClick={() => setCartOpen(true)} className="fixed bottom-4 start-1/2 z-40 flex w-[calc(100%-24px)] max-w-md -translate-x-1/2 items-center justify-between rounded-2xl px-5 py-4 text-white shadow-2xl" style={{ background:primary }}><span className="flex items-center gap-2 font-black"><ShoppingBag className="h-5 w-5" />{copy.cart} · {itemCount}</span><span className="font-black">{formatMoney(subtotal, currency)}</span></button>}
 
-    <footer className="bg-[#06101b] text-white">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4 sm:px-6">
-        <div className="min-w-0"><div className="flex items-center gap-3">{restaurant.brandLogoUrl ? <img src={restaurant.brandLogoUrl} alt="" className="h-10 w-10 rounded-xl object-cover" /> : <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-500 font-black">{restaurant.name.slice(0,1)}</span>}<strong className="truncate">{restaurant.brandName || restaurant.name}</strong></div><p className="mt-4 break-words text-sm leading-7 text-slate-400">{restaurant.brandDescription || restaurant.address || restaurant.city}</p></div>
-        <div className="min-w-0"><h3 className="font-black">{copy.contact}</h3><div className="mt-4 grid gap-3 text-sm text-slate-400">{restaurant.phone && <a href={`tel:${restaurant.phone}`} className="flex items-center gap-2 break-all"><Phone className="h-4 w-4" />{restaurant.phone}</a>}{restaurant.whatsapp && <a href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g,"")}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 break-all"><Smartphone className="h-4 w-4" />{copy.whatsapp}</a>}{restaurant.email && <span className="break-all">{restaurant.email}</span>}</div></div>
-        <div className="min-w-0"><h3 className="font-black">{copy.hours}</h3><div className="mt-4 grid gap-3 text-sm text-slate-400">{branches.length ? branches.slice(0,6).map((branch) => <div key={branch.id}><b className="text-slate-200">{branch.name}</b><p>{branch.openingTime || "—"} — {branch.closingTime || "—"}</p></div>) : <p>{copy.noBranch}</p>}</div></div>
-        <div className="min-w-0"><h3 className="font-black">{copy.social}</h3><div className="mt-4 flex flex-wrap gap-2">{restaurant.instagramUrl && <a href={restaurant.instagramUrl} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-xl bg-white/5"><Instagram className="h-4 w-4" /></a>}{restaurant.facebookUrl && <a href={restaurant.facebookUrl} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-xl bg-white/5"><Facebook className="h-4 w-4" /></a>}{restaurant.websiteUrl && <a href={restaurant.websiteUrl} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-xl bg-white/5"><Globe2 className="h-4 w-4" /></a>}{restaurant.locationUrl && <a href={restaurant.locationUrl} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-xl bg-white/5"><Navigation className="h-4 w-4" /></a>}</div><button onClick={installApp} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2.5 text-xs font-black"><Smartphone className="h-4 w-4" />{copy.install}</button></div>
-      </div>
-      <div className="border-t border-white/10 px-4 py-5 text-center text-xs text-slate-500">Powered by NFOOD</div>
+    <footer className="bg-[#06101b] px-4 py-5 text-center text-xs text-slate-500">
+      <span>Powered by NFOOD</span>
     </footer>
 
-    {drawerOpen && <div className="fixed inset-0 z-[90] bg-slate-950/60 backdrop-blur-sm" onClick={() => setDrawerOpen(false)}><aside onClick={(event) => event.stopPropagation()} className={`absolute top-0 flex h-[100dvh] w-[min(88vw,340px)] flex-col overflow-y-auto p-5 shadow-2xl ${direction === "rtl" ? "end-0" : "start-0"} ${dark ? "bg-[#0b1d35] text-white" : "bg-white text-[#0b1d35]"}`}><div className="flex items-center justify-between"><b className="text-lg">{restaurant.brandName || restaurant.name}</b><button onClick={() => setDrawerOpen(false)} className="grid h-9 w-9 place-items-center rounded-xl bg-slate-500/10"><X className="h-4 w-4" /></button></div><div className="mt-6 grid gap-2">
+    {drawerOpen && <div className="fixed inset-0 z-[90] bg-slate-950/60 backdrop-blur-sm" onClick={() => setDrawerOpen(false)}><aside onClick={(event) => event.stopPropagation()} className={`absolute top-0 flex h-[100dvh] w-[min(88vw,340px)] flex-col overflow-y-auto p-5 shadow-2xl ${direction === "rtl" ? "end-0" : "start-0"} ${dark ? "bg-[#0b1d35] text-white" : "bg-white text-[#0b1d35]"}`}><div className="flex items-center justify-between"><b className="text-lg">{restaurant.brandName || restaurant.name}</b><button onClick={() => setDrawerOpen(false)} className="grid h-9 w-9 place-items-center rounded-xl bg-slate-500/10"><X className="h-4 w-4" /></button></div>
+      {restaurant.brandDescription && <p className={`mt-3 text-xs leading-6 ${muted}`}>{restaurant.brandDescription}</p>}
+      {branches.length > 0 && <div className="mt-5">
+        <label className={`mb-2 block text-[10px] font-black uppercase tracking-[.16em] ${muted}`}>{copy.branch}</label>
+        <select value={selectedBranchId ?? ""} onChange={(event) => setSelectedBranchId(Number(event.target.value))} className={`h-11 w-full rounded-xl border px-3 text-sm font-black outline-none ${dark ? "border-white/10 bg-white/5 text-white" : "border-slate-200 bg-white text-slate-900"}`}>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>
+      </div>}
+      <div className="mt-5">
+        <p className={`mb-2 text-[10px] font-black uppercase tracking-[.16em] ${muted}`}>{copy.startOrder}</p>
+        <div className="grid grid-cols-2 gap-2">
+          {enabledModes.map((mode) => {
+            const label = mode === "dineIn" ? copy.local : mode === "takeaway" ? copy.takeaway : mode === "delivery" ? copy.delivery : mode === "reservation" ? copy.withReservation : copy.room;
+            const Icon = mode === "dineIn" ? Utensils : mode === "takeaway" ? ShoppingBag : mode === "delivery" ? Truck : mode === "reservation" ? CalendarDays : Hotel;
+            return <button key={mode} onClick={() => { setOrderMode(mode); if (mode === "reservation") setReservationOpen(true); }} className={`flex items-center gap-2 rounded-xl border p-3 text-start text-xs font-black ${orderMode === mode ? "border-transparent text-white" : dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`} style={orderMode === mode ? { background:primary } : undefined}><Icon className="h-4 w-4" />{label}</button>;
+          })}
+        </div>
+      </div>
+      <div className="mt-6 grid gap-2">
       {([
         { label: copy.menu, Icon: Utensils, action: () => { setDrawerOpen(false); document.getElementById("menu-grid")?.scrollIntoView({ behavior:"smooth" }); } },
         { label: copy.cart, Icon: ShoppingBag, action: () => { setDrawerOpen(false); setCartOpen(true); } },
@@ -508,7 +513,31 @@ export default function RestaurantMenu() {
         { label: copy.account, Icon: UserRound, action: () => navigate(user ? "/customer-portal" : `/login?next=${encodeURIComponent(location)}`) },
         { label: copy.install, Icon: Smartphone, action: () => { void installApp(); } },
       ] as const).map(({ label, Icon, action }) => <button key={label} onClick={action} className={`flex items-center justify-between rounded-2xl border p-4 text-start text-sm font-black ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`}><span className="flex items-center gap-3"><Icon className="h-5 w-5" />{label}</span><ChevronDown className="h-4 w-4 -rotate-90 opacity-40" /></button>)}
-    </div><div className="mt-6 rounded-2xl bg-slate-500/10 p-4"><p className="text-xs font-black">{copy.status}</p><p className={`mt-2 text-sm font-black ${isOpen ? "text-emerald-500" : "text-red-500"}`}>{isOpen ? copy.open : copy.closed}</p>{selectedBranch && <p className="mt-1 text-xs opacity-60">{selectedBranch.name} · {selectedBranch.openingTime || "—"}–{selectedBranch.closingTime || "—"}</p>}</div></aside></div>}
+    </div>
+      <div className="mt-6 space-y-5 border-t border-slate-500/15 pt-5">
+        <div>
+          <p className={`text-[10px] font-black uppercase tracking-[.16em] ${muted}`}>{copy.hours}</p>
+          <div className="mt-2 grid gap-2 text-xs">{branches.slice(0,6).map((branch) => <div key={branch.id} className="flex items-center justify-between gap-3"><span className="truncate font-bold">{branch.name}</span><span className={muted}>{branch.openingTime || "—"}–{branch.closingTime || "—"}</span></div>)}</div>
+        </div>
+        <div>
+          <p className={`text-[10px] font-black uppercase tracking-[.16em] ${muted}`}>{copy.contact}</p>
+          <div className="mt-2 grid gap-2 text-xs">
+            {restaurant.phone && <a href={`tel:${restaurant.phone}`} className="flex items-center gap-2"><Phone className="h-4 w-4" />{restaurant.phone}</a>}
+            {restaurant.whatsapp && <a href={`https://wa.me/${restaurant.whatsapp.replace(/\\D/g,"")}`} target="_blank" rel="noreferrer" className="flex items-center gap-2"><Smartphone className="h-4 w-4" />{copy.whatsapp}</a>}
+            {restaurant.email && <span className="break-all">{restaurant.email}</span>}
+          </div>
+        </div>
+        <div>
+          <p className={`text-[10px] font-black uppercase tracking-[.16em] ${muted}`}>{copy.social}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {restaurant.instagramUrl && <a href={restaurant.instagramUrl} target="_blank" rel="noreferrer" className="grid h-9 w-9 place-items-center rounded-xl bg-slate-500/10"><Instagram className="h-4 w-4" /></a>}
+            {restaurant.facebookUrl && <a href={restaurant.facebookUrl} target="_blank" rel="noreferrer" className="grid h-9 w-9 place-items-center rounded-xl bg-slate-500/10"><Facebook className="h-4 w-4" /></a>}
+            {restaurant.websiteUrl && <a href={restaurant.websiteUrl} target="_blank" rel="noreferrer" className="grid h-9 w-9 place-items-center rounded-xl bg-slate-500/10"><Globe2 className="h-4 w-4" /></a>}
+            {restaurant.locationUrl && <a href={restaurant.locationUrl} target="_blank" rel="noreferrer" className="grid h-9 w-9 place-items-center rounded-xl bg-slate-500/10"><Navigation className="h-4 w-4" /></a>}
+          </div>
+        </div>
+      </div>
+    </aside></div>}
 
     <Dialog open={Boolean(selectedItem)} onOpenChange={(open) => { if (!open) { setSelectedItemId(null); setSelectedAddonIds([]); } }}>
       <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-lg overflow-y-auto rounded-[26px] p-0">
