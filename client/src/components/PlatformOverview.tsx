@@ -3,6 +3,9 @@ import {
   CheckCircle2,
   Store,
   TrendingDown,
+  ArrowUpLeft,
+  Crown,
+  IdCard,
   WalletCards,
   XCircle,
 } from "lucide-react";
@@ -218,6 +221,24 @@ export function PlatformOverview({ onNavigate }: { onNavigate: (key: "admin") =>
 
   return (
     <div className="nfood-admin-overview space-y-5">
+      <section className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#0d2038] sm:p-6">
+        <div className="pointer-events-none absolute -end-16 -top-20 h-56 w-56 rounded-full bg-orange-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 start-1/3 h-52 w-52 rounded-full bg-blue-500/10 blur-3xl" />
+        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-[11px] font-black text-orange-600 dark:text-orange-300"><Crown className="h-3.5 w-3.5" />NFOOD · SUPER ADMIN</div>
+            <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">{language === "ar" ? "مركز إدارة الأعمال" : "Business administration center"}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500 dark:text-slate-400">{language === "ar" ? "المتاجر والباقات وعملاء بطاقات الأعمال في مساحة تشغيل واحدة، مع دخول إداري مباشر لكل منشأة." : "Stores, plans and business-card customers in one operational workspace with direct administrative access."}</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
+            {[
+              { icon: Store, label: language === "ar" ? "المتاجر" : "Stores", value: restaurants.length },
+              { icon: WalletCards, label: language === "ar" ? "الباقات" : "Plans", value: subscriptions.length },
+              { icon: IdCard, label: language === "ar" ? "بطاقات الأعمال" : "Business cards", value: language === "ar" ? "إدارة" : "Manage" },
+            ].map(item => <div key={item.label} className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5"><item.icon className="h-4 w-4 text-orange-500" /><p className="mt-3 text-lg font-black text-slate-950 dark:text-white">{item.value}</p><p className="mt-1 text-[10px] font-bold text-slate-500 dark:text-slate-400">{item.label}</p></div>)}
+          </div>
+        </div>
+      </section>
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-950/30 dark:text-red-200">
           {copy.error}
@@ -270,6 +291,7 @@ export function PlatformOverview({ onNavigate }: { onNavigate: (key: "admin") =>
           );
         })}
       </div>
+      <div className="flex items-center justify-between gap-3 pt-1"><div><p className="text-[11px] font-black uppercase tracking-[.16em] text-orange-500">NFOOD OPERATIONS</p><h2 className="mt-1 text-xl font-black text-slate-950 dark:text-white">{language === "ar" ? "إدارة المنشآت والعملاء" : "Businesses & customers"}</h2></div><ArrowUpLeft className="h-5 w-5 text-slate-400" /></div>
       <div className="grid gap-5 xl:grid-cols-2">
         <SuperAdminRestaurantCatalog />
         <SuperAdminCustomerCatalog />
