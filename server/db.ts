@@ -239,7 +239,45 @@ export async function updateCustomerReservation(input: { id: number; customerId:
 }
 
 export async function claimGuestOrders(customerId: number, guestPhone: string) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const phone = guestPhone.trim(); if (phone.length < 7) throw new Error("رقم الجوال غير صالح"); const result = await db.update(orders).set({ customerId, updatedAt: new Date() }).where(and(isNull(orders.customerId), eq(orders.guestPhone, phone))); return { linkedCount: Number(result[0].affectedRows ?? 0) }; }
-export async function listCustomerOrders(customerId: number, limit = 100) { const db = await getDb(); if (!db) return []; const safeLimit = Math.min(Math.max(limit, 1), 100); const rows = await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, status: orders.status, paymentStatus: orders.paymentStatus, channel: orders.channel, total: orders.total, currencyCode: orders.currencyCode, notes: orders.notes, reservationDate: orders.reservationDate, reservationEventType: orders.reservationEventType, createdAt: orders.createdAt, updatedAt: orders.updatedAt, restaurantName: restaurants.name, restaurantSlug: restaurants.slug, brandColor: restaurants.brandColor }).from(orders).leftJoin(restaurants, eq(orders.restaurantId, restaurants.id)).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt)).limit(safeLimit); if (!rows.length) return []; const itemRows = await db.select({ orderId: orderItems.orderId, menuItemId: orderItems.menuItemId, quantity: orderItems.quantity, name: menuItems.name }).from(orderItems).innerJoin(menuItems, eq(orderItems.menuItemId, menuItems.id)).where(inArray(orderItems.orderId, rows.map((row) => row.id))); const itemsByOrder = new Map<number, typeof itemRows>(); for (const item of itemRows) { const current = itemsByOrder.get(item.orderId) ?? []; current.push(item); itemsByOrder.set(item.orderId, current); } return rows.map((row) => ({ ...row, items: itemsByOrder.get(row.id) ?? [] })); }
+export async function listCustomerOrders(customerId: number, limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  const safeLimit = Math.min(Math.max(limit, 1), 100);
+  const rows = await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, status: orders.status, paymentStatus: orders.paymentStatus, channel: orders.channel, total: orders.total, currencyCode: orders.currencyCode, notes: orders.notes, reservationDate: orders.reservationDate, reservationEventType: orders.reservationEventType, createdAt: orders.createdAt, updatedAt: orders.updatedAt, restaurantName: restaurants.name, restaurantSlug: restaurants.slug, brandColor: restaurants.brandColor }).from(orders).leftJoin(restaurants, eq(orders.restaurantId, restaurants.id)).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt)).limit(safeLimit);
+  if (!rows.length) return [];
+  const itemRows = await db.select({
+    orderId: orderItems.orderId,
+    sourceType: orderItems.sourceType,
+    menuItemId: orderItems.menuItemId,
+    marketplaceVariantId: orderItems.marketplaceVariantId,
+    quantity: orderItems.quantity,
+    menuItemName: menuItems.name,
+    marketplaceItemName: marketplaceListings.title,
+    marketplaceSku: marketplaceListingVariants.sku,
+    marketplaceBarcode: marketplaceListingVariants.barcode,
+  }).from(orderItems)
+    .leftJoin(menuItems, eq(orderItems.menuItemId, menuItems.id))
+    .leftJoin(marketplaceListingVariants, eq(orderItems.marketplaceVariantId, marketplaceListingVariants.id))
+    .leftJoin(marketplaceListings, eq(marketplaceListingVariants.listingId, marketplaceListings.id))
+    .where(inArray(orderItems.orderId, rows.map((row) => row.id)));
+  const normalizedItems = itemRows.map((item) => ({
+    orderId: item.orderId,
+    sourceType: item.sourceType,
+    menuItemId: item.menuItemId,
+    marketplaceVariantId: item.marketplaceVariantId,
+    quantity: item.quantity,
+    name: item.sourceType === "marketplace_variant" ? (item.marketplaceItemName ?? "منتج متجر") : (item.menuItemName ?? "صنف منيو"),
+    sku: item.sourceType === "marketplace_variant" ? item.marketplaceSku : null,
+    barcode: item.sourceType === "marketplace_variant" ? item.marketplaceBarcode : null,
+  }));
+  const itemsByOrder = new Map<number, typeof normalizedItems>();
+  for (const item of normalizedItems) {
+    const current = itemsByOrder.get(item.orderId) ?? [];
+    current.push(item);
+    itemsByOrder.set(item.orderId, current);
+  }
+  return rows.map((row) => ({ ...row, items: itemsByOrder.get(row.id) ?? [] }));
+}
 export async function listFavoriteRestaurants(userId: number) { const db = await getDb(); if (!db) return []; return db.select({ id: favoriteRestaurants.id, restaurantId: favoriteRestaurants.restaurantId, name: restaurants.name, brandName: restaurants.brandName, brandColor: restaurants.brandColor, brandLogoUrl: restaurants.brandLogoUrl, city: restaurants.city, address: restaurants.address, phone: restaurants.phone, reservationEnabled: restaurants.reservationEnabled, createdAt: favoriteRestaurants.createdAt }).from(favoriteRestaurants).innerJoin(restaurants, eq(favoriteRestaurants.restaurantId, restaurants.id)).where(and(eq(favoriteRestaurants.userId, userId), ne(restaurants.status, "suspended"))).orderBy(desc(favoriteRestaurants.createdAt)); }
 export async function toggleFavoriteRestaurant(input: { userId: number; restaurantId: number }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and(eq(restaurants.id, input.restaurantId), ne(restaurants.status, "suspended"))).limit(1))[0]; if (!restaurant) throw new Error("المطعم غير متاح حاليًا"); const existing = (await db.select({ id: favoriteRestaurants.id }).from(favoriteRestaurants).where(and(eq(favoriteRestaurants.userId, input.userId), eq(favoriteRestaurants.restaurantId, input.restaurantId))).limit(1))[0]; if (existing) { await db.delete(favoriteRestaurants).where(eq(favoriteRestaurants.id, existing.id)); return { favorite: false }; } await db.insert(favoriteRestaurants).values(input); return { favorite: true }; }
 export async function listAllFavoriteMenuItems(userId: number) { const db = await getDb(); if (!db) return []; return db.select({ id: favoriteMenuItems.id, menuItemId: favoriteMenuItems.menuItemId, restaurantId: favoriteMenuItems.restaurantId, itemName: menuItems.name, description: menuItems.description, price: menuItems.price, compareAtPrice: menuItems.compareAtPrice, imageUrl: menuItems.imageUrl, restaurantName: restaurants.name, restaurantSlug: restaurants.slug, isAvailable: menuItems.isAvailable, createdAt: favoriteMenuItems.createdAt }).from(favoriteMenuItems).innerJoin(menuItems, eq(favoriteMenuItems.menuItemId, menuItems.id)).innerJoin(restaurants, eq(favoriteMenuItems.restaurantId, restaurants.id)).where(and(eq(favoriteMenuItems.userId, userId), eq(restaurants.status, "active"))).orderBy(desc(favoriteMenuItems.createdAt)); }
