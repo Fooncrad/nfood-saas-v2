@@ -97,7 +97,7 @@ export default function RestaurantMenu() {
   const { slug = "" } = useParams<{ slug: string }>();
   const [location, navigate] = useLocation();
   const { language, direction } = useLanguage();
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const lang = language === "ar" ? "ar" : language === "fr" ? "fr" : "en";
   const page = trpc.platform.publicRestaurantPage.useQuery({ slug, lang: language }, { enabled: Boolean(slug), retry: false });
 
@@ -111,6 +111,8 @@ export default function RestaurantMenu() {
 
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [activeCategory, setActiveCategory] = useState<number | "all">("all");
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(40);
@@ -287,6 +289,20 @@ export default function RestaurantMenu() {
   );
   const deliveryFee = orderMode === "delivery" && deliveryQuote.data?.available ? Number(deliveryQuote.data.fee || 0) : 0;
 
+  const inlineLogin = trpc.auth.testLogin.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      toast.success(lang === "ar" ? "تم تسجيل الدخول، يمكنك إكمال الطلب" : lang === "fr" ? "Connexion réussie, vous pouvez terminer la commande" : "Signed in. You can now complete your order");
+    },
+    onError: (error) => {
+      if (error.message === "VERIFY_EMAIL_REQUIRED") {
+        toast.error(lang === "ar" ? "تحقق من بريدك الإلكتروني أولًا" : lang === "fr" ? "Vérifiez d’abord votre e-mail" : "Verify your email first");
+        return;
+      }
+      toast.error(error.message || (lang === "ar" ? "بيانات الدخول غير صحيحة" : "Invalid sign-in credentials"));
+    },
+  });
+
   const checkout = trpc.platform.guestCheckout.useMutation({
     onSuccess: (result) => {
       setCart([]);
@@ -352,8 +368,7 @@ export default function RestaurantMenu() {
       return;
     }
     if (!user) {
-      toast.info(lang === "ar" ? "سجّل الدخول لإتمام الطلب" : "Sign in to complete your order");
-      navigate(`/login?next=${encodeURIComponent(location)}`);
+      toast.info(lang === "ar" ? "سجّل الدخول من داخل السلة لإتمام الطلب" : lang === "fr" ? "Connectez-vous dans le panier pour terminer la commande" : "Sign in inside the cart to complete your order");
       return;
     }
     if (!selectedBranchId || !cart.length || guestName.trim().length < 2 || guestPhone.trim().length < 7) {
@@ -617,8 +632,17 @@ export default function RestaurantMenu() {
               {manualPayments.length > 1 && <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as "cash" | "bank_transfer")} className="h-10 rounded-md border px-3 sm:col-span-2"><option value="cash">{copy.cash}</option><option value="bank_transfer">{copy.transfer}</option></select>}
             </div>
           </div>
+          {!user && <div className="mt-5 rounded-2xl border border-orange-200 bg-orange-50/70 p-4 dark:border-orange-900/40 dark:bg-orange-950/20">
+            <p className="text-sm font-black text-slate-900 dark:text-white">{lang === "ar" ? "سجّل الدخول لإكمال الطلب" : lang === "fr" ? "Connectez-vous pour terminer la commande" : "Sign in to complete your order"}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">{lang === "ar" ? "لن تغادر السلة ولن تفقد الأصناف أو نوع الطلب المختار." : lang === "fr" ? "Vous resterez dans le panier sans perdre vos articles ni le type de commande." : "You will stay in the cart without losing items or your selected order type."}</p>
+            <form onSubmit={(event) => { event.preventDefault(); if (loginEmail && loginPassword) inlineLogin.mutate({ email:loginEmail, password:loginPassword }); }} className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Input type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder={copy.email} dir="ltr" />
+              <Input type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder={lang === "ar" ? "كلمة المرور" : lang === "fr" ? "Mot de passe" : "Password"} dir="ltr" />
+              <Button type="submit" disabled={inlineLogin.isPending} className="h-11 font-black text-white sm:col-span-2" style={{ background:primary }}>{inlineLogin.isPending ? (lang === "ar" ? "جارٍ تسجيل الدخول..." : "Signing in...") : copy.login}</Button>
+            </form>
+          </div>}
           <div className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm dark:bg-slate-900"><div className="flex justify-between"><span>{copy.total}</span><b>{formatMoney(subtotal + deliveryFee, currency)}</b></div>{deliveryFee > 0 && <p className="mt-1 text-xs text-slate-500">{copy.delivery}: {formatMoney(deliveryFee, currency)}</p>}</div>
-          <Button disabled={checkout.isPending || !cart.length || !isOpen} onClick={submitOrder} className="mt-4 h-12 w-full rounded-2xl font-black text-white" style={{ background:primary }}>{isOpen ? copy.checkout : copy.closed}</Button>
+          <Button disabled={checkout.isPending || !cart.length || !isOpen || !user} onClick={submitOrder} className="mt-4 h-12 w-full rounded-2xl font-black text-white" style={{ background:primary }}>{!user ? (lang === "ar" ? "سجّل الدخول أولًا" : lang === "fr" ? "Connectez-vous d’abord" : "Sign in first") : isOpen ? copy.checkout : copy.closed}</Button>
         </> : <div className="mt-5 rounded-2xl border border-dashed border-slate-300 p-4 text-center text-xs font-bold text-slate-500 dark:border-white/15">{lang === "ar" ? "بعد اختيار نوع الطلب تظهر لك الخطوات المطلوبة لإكماله." : lang === "fr" ? "Les étapes nécessaires apparaîtront après votre choix." : "The required checkout steps will appear after you choose an order type."}</div>}
       </DialogContent>
     </Dialog>
