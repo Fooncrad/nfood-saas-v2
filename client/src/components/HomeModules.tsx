@@ -3017,21 +3017,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const [receiptTemplate, setReceiptTemplate] = useState<
     "thermal" | "detailed"
   >("thermal");
-  const [lastReceipt, setLastReceipt] = useState<{
-    orderId: number;
-    paymentStatus: "pending" | "cancelled" | "paid" | "unpaid" | "failed" | "partially_refunded" | "refunded";
-    items: Array<{ name: string; quantity: number; unitPrice: number }>;
-    pricing: {
-      subtotal: string;
-      discountPercent: number;
-      discountAmount: string;
-      taxPercent: number;
-      taxAmount: string;
-      total: string;
-      couponCode?: string | null;
-      discountSource?: "default" | "coupon_or_default";
-    };
-  } | null>(null);
+  const [lastReceipt, setLastReceipt] = useState<ReceiptSummary | null>(null); // CI fix: keep POS receipt state aligned with the delivery panel contract.
   const syncingRef = useRef(false);
   const syncInFlightRef = useRef<Promise<void> | null>(null);
   const createOrder = trpc.platform.createOrder.useMutation({
@@ -3039,7 +3025,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       if (syncingRef.current) return;
       setLastReceipt({
         orderId: result.orderId,
-        paymentStatus: result.paymentStatus,
+        paymentStatus: result.paymentStatus === "paid" || result.paymentStatus === "refunded" ? result.paymentStatus : "unpaid",
         items: cart.map(item => ({
           name: item.product.name,
           quantity: item.quantity,
