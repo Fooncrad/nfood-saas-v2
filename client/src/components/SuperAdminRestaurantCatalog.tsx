@@ -94,6 +94,12 @@ export function SuperAdminRestaurantCatalog() {
     email: string;
     password: string;
   } | null>(null);
+  const [passwordEditor, setPasswordEditor] = useState<{
+    restaurantId: number;
+    restaurantName: string;
+    password: string;
+    confirmPassword: string;
+  } | null>(null);
   const restaurantsQuery = trpc.admin.restaurants.useQuery(undefined, {
     retry: 2,
   });
@@ -146,6 +152,7 @@ export function SuperAdminRestaurantCatalog() {
   });
   const resetPassword = trpc.admin.resetRestaurantPassword.useMutation({
     onSuccess: data => {
+      setPasswordEditor(null);
       setCredentials({ email: data.email, password: data.temporaryPassword });
       toast.success("تم تحديث كلمة المرور وإبطال الجلسات السابقة");
     },
@@ -446,6 +453,107 @@ export function SuperAdminRestaurantCatalog() {
         </DialogContent>
       </Dialog>
       <Dialog
+        open={Boolean(passwordEditor)}
+        onOpenChange={open => {
+          if (!open && !resetPassword.isPending) setPasswordEditor(null);
+        }}
+      >
+        <DialogContent
+          dir="rtl"
+          className="rounded-3xl border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:max-w-md"
+        >
+          <DialogHeader className="text-right">
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">
+              تغيير كلمة مرور المتجر
+            </DialogTitle>
+            <DialogDescription className="leading-6">
+              {passwordEditor?.restaurantName} · سيتم تشفير كلمة المرور الجديدة وإبطال جلسات المتجر السابقة.
+            </DialogDescription>
+          </DialogHeader>
+          {passwordEditor && (
+            <div className="space-y-4">
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                  كلمة المرور الجديدة
+                </span>
+                <Input
+                  type="password"
+                  dir="ltr"
+                  autoComplete="new-password"
+                  value={passwordEditor.password}
+                  onChange={event =>
+                    setPasswordEditor(current =>
+                      current ? { ...current, password: event.target.value } : current
+                    )
+                  }
+                  placeholder="8 أحرف على الأقل"
+                  className="h-11 rounded-xl"
+                />
+              </label>
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                  تأكيد كلمة المرور
+                </span>
+                <Input
+                  type="password"
+                  dir="ltr"
+                  autoComplete="new-password"
+                  value={passwordEditor.confirmPassword}
+                  onChange={event =>
+                    setPasswordEditor(current =>
+                      current ? { ...current, confirmPassword: event.target.value } : current
+                    )
+                  }
+                  placeholder="أعد إدخال كلمة المرور"
+                  className="h-11 rounded-xl"
+                />
+              </label>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+                بعد الحفظ سيتم تسجيل خروج جلسات هذا المتجر السابقة، بينما تبقى جلسة Super Admin محفوظة.
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={resetPassword.isPending}
+              onClick={() => setPasswordEditor(null)}
+              className="rounded-xl"
+            >
+              إلغاء
+            </Button>
+            <Button
+              type="button"
+              disabled={
+                !passwordEditor ||
+                passwordEditor.password.length < 8 ||
+                passwordEditor.password !== passwordEditor.confirmPassword ||
+                resetPassword.isPending
+              }
+              onClick={() => {
+                if (!passwordEditor) return;
+                if (passwordEditor.password.length < 8) {
+                  toast.error("كلمة المرور يجب أن تكون 8 أحرف على الأقل");
+                  return;
+                }
+                if (passwordEditor.password !== passwordEditor.confirmPassword) {
+                  toast.error("كلمتا المرور غير متطابقتين");
+                  return;
+                }
+                resetPassword.mutate({
+                  restaurantId: passwordEditor.restaurantId,
+                  password: passwordEditor.password,
+                });
+              }}
+              className="rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]"
+            >
+              {resetPassword.isPending ? "جارٍ التحديث..." : "حفظ كلمة المرور"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
         open={Boolean(credentials)}
         onOpenChange={open => {
           if (!open) setCredentials(null);
@@ -722,20 +830,14 @@ export function SuperAdminRestaurantCatalog() {
                         size="sm"
                         variant="outline"
                         disabled={resetPassword.isPending}
-                        onClick={() => {
-                          const password = window.prompt(
-                            "أدخل كلمة المرور الجديدة (6 أحرف أو أرقام على الأقل):"
-                          );
-                          if (password && password.length >= 6)
-                            resetPassword.mutate({
-                              restaurantId: restaurant.id,
-                              password,
-                            });
-                          else if (password)
-                            toast.error(
-                              "كلمة المرور يجب أن تتكون من 6 أحرف أو أرقام على الأقل"
-                            );
-                        }}
+                        onClick={() =>
+                          setPasswordEditor({
+                            restaurantId: restaurant.id,
+                            restaurantName: restaurant.name,
+                            password: "",
+                            confirmPassword: "",
+                          })
+                        }
                         className="h-7 max-w-full gap-1 rounded-lg border-slate-200 px-2 text-[10px] font-bold dark:border-slate-700"
                       >
                         <KeyRound className="h-3.5 w-3.5 shrink-0" /> {ui.resetPassword}
