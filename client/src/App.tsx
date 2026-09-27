@@ -11,7 +11,7 @@ import { LANGUAGE_STORAGE_KEY, LanguageProvider, isUiLanguage, useLanguage, type
 const routeLoaders = {
   Home: () => import("./pages/Home"),
   SuperAdminApp: () => import("./pages/SuperAdminApp"),
-  RestaurantPublic: () => import("./pages/RestaurantPublic"),
+  RestaurantMenu: () => import("./pages/RestaurantMenu"),
   CustomerDisplay: () => import("./pages/CustomerDisplay"),
   PosCustomerDisplay: () => import("./pages/PosCustomerDisplay"),
   PublicDisplay: () => import("./pages/PublicDisplay"),
@@ -44,7 +44,7 @@ const routeLoaders = {
 };
 const Home = lazy(routeLoaders.Home);
 const SuperAdminApp = lazy(routeLoaders.SuperAdminApp);
-const RestaurantPublic = lazy(routeLoaders.RestaurantPublic);
+const RestaurantMenu = lazy(routeLoaders.RestaurantMenu);
 const CustomerDisplay = lazy(routeLoaders.CustomerDisplay);
 const PosCustomerDisplay = lazy(routeLoaders.PosCustomerDisplay);
 const PublicDisplay = lazy(routeLoaders.PublicDisplay);
@@ -109,7 +109,7 @@ function AppContent() {
     setShowGlobalLoader(false);
   }, []);
   useEffect(() => {
-    const timer = window.setTimeout(() => { void Promise.all([routeLoaders.Home(), routeLoaders.RestaurantPublic(), routeLoaders.CustomerPortal(), routeLoaders.CustomerOrders()]); }, 1800);
+    const timer = window.setTimeout(() => { void Promise.all([routeLoaders.Home(), routeLoaders.RestaurantMenu(), routeLoaders.CustomerPortal(), routeLoaders.CustomerOrders()]); }, 1800);
     return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => {
@@ -177,8 +177,8 @@ function Router() {
       <Route path="/tv/:token" component={PublicDisplay} />
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
       <Route path="/pos/customer-display" component={PosCustomerDisplay} />
-      <Route path="/restaurant/:slug" component={RestaurantPublic} />
-      <Route path="/menu/:slug" component={RestaurantPublic} />
+      <Route path="/restaurant/:slug" component={RestaurantMenu} />
+      <Route path="/menu/:slug" component={RestaurantMenu} />
       <Route path="/restaurants" component={() => <LegacyRedirect to="/marketplace" />} />
       <Route path="/customer/:slug" component={() => <CustomerAreaGuard><CustomerPublic /></CustomerAreaGuard>} />
       <Route path="/vcard/:slug" component={() => <CustomerAreaGuard><CustomerPublic /></CustomerAreaGuard>} />
