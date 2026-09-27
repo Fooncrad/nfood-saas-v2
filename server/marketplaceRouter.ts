@@ -43,18 +43,30 @@ import { buildAdminStoreRouterPlan } from "./adminStoreRouterPlan";
 async function getProviderEntity(user: AuthUser) {
   const db = await getDb();
   if (!db) return null;
+
+  // The restaurant bridge is the authoritative tenant boundary for restaurant
+  // owners and staff. In particular, a cashier/waiter must resolve the store
+  // through membership rather than through their personal email address.
+  const merchantRestaurantId = await getMerchantRestaurantId(user.id);
+  if (merchantRestaurantId) {
+    const byRestaurant = (await db.select()
+      .from(platformEntities)
+      .where(eq(platformEntities.restaurantId, merchantRestaurantId))
+      .limit(1))[0];
+    if (byRestaurant) return byRestaurant;
+  }
+
+  // Legacy/non-restaurant providers may not have a restaurant bridge yet.
+  // Keep the email fallback for those accounts, but never let it override an
+  // explicit restaurant membership.
   if (user.email) {
-    const byEmail = (await db.select().from(platformEntities).where(eq(platformEntities.email, user.email.trim().toLowerCase())).limit(1))[0];
+    const byEmail = (await db.select()
+      .from(platformEntities)
+      .where(eq(platformEntities.email, user.email.trim().toLowerCase()))
+      .limit(1))[0];
     if (byEmail) return byEmail;
   }
-  const merchantRestaurantId = await getMerchantRestaurantId(user.id);
-  if (!merchantRestaurantId) return null;
-  const members = await db.select({ email: users.email }).from(users).innerJoin(restaurants, eq(restaurants.id, merchantRestaurantId)).where(eq(users.id, user.id)).limit(1);
-  const memberEmail = members[0]?.email;
-  if (memberEmail) {
-    const byMember = (await db.select().from(platformEntities).where(eq(platformEntities.email, memberEmail.trim().toLowerCase())).limit(1))[0];
-    if (byMember) return byMember;
-  }
+
   return null;
 }
 
