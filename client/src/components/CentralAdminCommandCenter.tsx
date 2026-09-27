@@ -346,13 +346,13 @@ export function CentralAdminCommandCenter({
 
   const label = (item: { ar: string; en: string }) => (language === "ar" ? item.ar : item.en);
 
-  const pageBg = dark ? "#071525" : "#f6f8fb";
+  const pageBg = dark ? "#071525" : "#f6f8fc";
   const cardBg = dark ? "#0d2038" : "#ffffff";
   const cardBorder = dark ? "rgba(148,163,184,0.14)" : "rgba(241,245,249,1)";
   const textPrimary = dark ? "#e2e8f0" : "#0f172a";
   const textSecondary = dark ? "#94a3b8" : "#64748b";
   const divider = dark ? "rgba(148,163,184,0.12)" : "rgba(226,232,240,0.9)";
-  const headerBg = dark ? "rgba(7,21,37,0.92)" : "rgba(255,255,255,0.88)";
+  const headerBg = dark ? "rgba(7,21,37,0.94)" : "rgba(255,255,255,0.94)";
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -684,7 +684,7 @@ export function CentralAdminCommandCenter({
   );
 
   return (
-    <div dir={direction} lang={language} className="nfood-command-center h-dvh min-h-0 overflow-hidden bg-[#06111f] text-slate-100" style={{ background: "#06111f" }}>
+    <div dir={direction} lang={language} className="nfood-command-center h-dvh min-h-0 overflow-hidden" style={{ background: pageBg, color: textPrimary }}>
       <aside
         className={`fixed inset-y-0 z-40 hidden w-[232px] flex-col shadow-2xl xl:w-[248px] lg:flex ${direction === "rtl" ? "right-0 border-l" : "left-0 border-r"} border-white/10`}
       >
@@ -713,7 +713,7 @@ export function CentralAdminCommandCenter({
       )}
 
       <div className={`flex min-h-[100dvh] h-[100dvh] min-w-0 flex-col ${direction === "rtl" ? "lg:mr-[232px] xl:mr-[248px]" : "lg:ml-[232px] xl:ml-[248px]"}`}>
-        <header className="sticky top-0 z-20 flex min-h-16 shrink-0 items-center justify-between gap-2 border-b border-white/10 bg-[#07182b]/95 px-3 py-2 backdrop-blur-xl supports-[backdrop-filter]:bg-[#07182b]/90 sm:gap-4 md:min-h-[72px] md:px-6">
+        <header className="sticky top-0 z-20 flex min-h-16 shrink-0 items-center justify-between gap-2 border-b px-3 py-2 backdrop-blur-xl sm:gap-4 md:min-h-[72px] md:px-6" style={{ background: headerBg, borderColor: divider }}>
           <div className="flex min-w-0 items-center gap-3">
             {onOpenTransfers && pendingTransferCount > 0 && !transferBannerDismissed && (
               <button
@@ -862,7 +862,7 @@ export function CentralAdminCommandCenter({
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#06111f] p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:p-4 md:p-5 xl:p-6">
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:p-4 md:p-5 xl:p-6" style={{ background: pageBg }}>
           {pendingTransferCount > 0 && !transferBannerDismissed && onOpenTransfers && (
             <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-xs text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200">
               <ShoppingBag className="h-4 w-4" />
