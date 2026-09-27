@@ -6991,3 +6991,37 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   .nfood-menu-shell .nfood-menu-card-summary { display:-webkit-box !important; -webkit-line-clamp:1; max-height:1rem !important; }
   .nfood-menu-shell .category-results > .nfood-menu-item-card > .nfood-menu-item-content { min-height:0 !important; }
 }
+
+
+/* Light-theme contrast guardrails — keep controls readable across legacy and modern surfaces */
+@layer base {
+  :root:not(.dark) input,
+  :root:not(.dark) textarea,
+  :root:not(.dark) select {
+    color: var(--foreground);
+  }
+  :root:not(.dark) input::placeholder,
+  :root:not(.dark) textarea::placeholder {
+    color: var(--muted-foreground);
+    opacity: .9;
+  }
+}
+@layer components {
+  :root:not(.dark) [data-slot="button"] {
+    color: inherit;
+  }
+  :root:not(.dark) [data-slot="button"].bg-primary,
+  :root:not(.dark) [data-slot="button"][class*="bg-[#e76f3c]"],
+  :root:not(.dark) [data-slot="button"][class*="bg-orange-"] {
+    color: white;
+  }
+  :root:not(.dark) [data-slot="button"]:disabled {
+    opacity: .58;
+  }
+  :root:not(.dark) [data-slot="card"] {
+    color: var(--card-foreground);
+  }
+  :root:not(.dark) .nfood-dashboard-shell .text-slate-400 { color: #64748b; }
+  :root:not(.dark) .nfood-dashboard-shell .text-slate-500 { color: #526176; }
+  :root:not(.dark) .nfood-dashboard-shell .text-slate-600 { color: #3f4d61; }
+}
