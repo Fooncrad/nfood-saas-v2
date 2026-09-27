@@ -297,7 +297,8 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const remoteBranches = trpc.platform.branches.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
   const branchId = remoteBranches.data?.[0]?.id;
   const posProducts: MenuProduct[] = (remoteMenu.data ?? []).map((item) => ({ id: item.id, name: item.name, category: String(item.categoryId), price: Number(item.price), available: item.isAvailable }));
-  type PosCartItem = { sourceType: "menu_item" | "marketplace_variant"; sourceId: number; product: MenuProduct; quantity: number };\n  const [cart, setCart] = useState<PosCartItem[]>([]);
+  type PosCartItem = { sourceType: "menu_item" | "marketplace_variant"; sourceId: number; product: MenuProduct; quantity: number };
+  const [cart, setCart] = useState<PosCartItem[]>([]);
   const [isOnline, setIsOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
   const [queuedCount, setQueuedCount] = useState(0);
   const [deadLetterCount, setDeadLetterCount] = useState(0);
