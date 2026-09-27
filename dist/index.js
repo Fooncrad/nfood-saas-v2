@@ -10541,7 +10541,16 @@ var appRouter = router({
         publicPricingJson: settings.publicPricingJson,
         supportEmail: settings.supportEmail,
         supportPhone: settings.supportPhone,
-        copyrightYear: settings.copyrightYear
+        copyrightYear: settings.copyrightYear,
+        termsOfService: settings.termsOfService,
+        termsOfServiceEn: settings.termsOfServiceEn,
+        termsOfServiceFr: settings.termsOfServiceFr,
+        privacyPolicy: settings.privacyPolicy,
+        privacyPolicyEn: settings.privacyPolicyEn,
+        privacyPolicyFr: settings.privacyPolicyFr,
+        refundPolicy: settings.refundPolicy,
+        refundPolicyEn: settings.refundPolicyEn,
+        refundPolicyFr: settings.refundPolicyFr
       };
     }),
     publicSiteMeta: publicProcedure.query(async () => {
