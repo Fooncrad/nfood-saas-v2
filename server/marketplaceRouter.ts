@@ -20,6 +20,8 @@ import {
   marketplaceListingVariants,
   marketplaceSectors,
   marketplaceStorefrontSettings,
+  orderItems,
+  orders,
   platformEntities,
   restaurants,
   storeCampaigns,
@@ -80,6 +82,18 @@ async function requireProviderEntity(user: AuthUser | null, db: NonNullable<Awai
 
 const entityIdSchema = z.string().trim().min(1).max(30);
 
+function readMarketplaceAppearance(raw: string) {
+  try { return JSON.parse(raw || "{}") as Record<string, unknown>; }
+  catch { return {} as Record<string, unknown>; }
+}
+function isMarketplaceEnabled(appearance: Record<string, unknown>) {
+  return appearance.marketplaceEnabled !== false;
+}
+function marketplaceNumber(appearance: Record<string, unknown>, key: string, fallback: number, max = 10) {
+  const value = Number(appearance[key]);
+  return Math.max(1, Math.min(max, Number.isFinite(value) ? Math.trunc(value) : fallback));
+}
+
 export const marketplaceRouter = router({
   posLookupProduct: protectedProcedure.input(z.object({
     code: z.string().trim().min(1).max(120),
@@ -130,8 +144,11 @@ export const marketplaceRouter = router({
     };
   }),
   // ── Public storefront ────────────────────────────────────────────────
-  publicAppearance: publicProcedure.query(async () => { const settings = await getPlatformSettings(); let appearance: Record<string, unknown> = {}; try { appearance = JSON.parse(settings.marketplaceAppearanceJson || "{}"); } catch {} return { siteName: settings.siteName, siteLogoUrl: settings.siteLogoUrl, socialLinks: settings.socialLinks, appearance }; }),
+  publicAppearance: publicProcedure.query(async () => { const settings = await getPlatformSettings(); const appearance = readMarketplaceAppearance(settings.marketplaceAppearanceJson); return { siteName: settings.siteName, siteLogoUrl: settings.siteLogoUrl, socialLinks: settings.socialLinks, appearance }; }),
   publicSectors: publicProcedure.query(async () => {
+    const settings = await getPlatformSettings();
+    const appearance = readMarketplaceAppearance(settings.marketplaceAppearanceJson);
+    if (!isMarketplaceEnabled(appearance)) return [];
     const db = await getDb();
     if (!db) return [];
     const sectors = await db.select().from(marketplaceSectors).where(eq(marketplaceSectors.isActive, true)).orderBy(marketplaceSectors.sortOrder);
@@ -139,12 +156,18 @@ export const marketplaceRouter = router({
     const countMap = new Map(counts.map((row) => [Number(row.sectorId), Number(row.total)]));
     return sectors.map((sector) => ({ ...sector, listingCount: countMap.get(sector.id) ?? 0 }));
   }),
-  publicFeaturedStores: publicProcedure.query(async () => {
+  publicFeaturedStores: publicProcedure.input(z.object({
+    countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional(),
+  }).optional()).query(async ({ input }) => {
     const db = await getDb(); if (!db) return [];
-    const settings = await getPlatformSettings(); let appearance: any = {}; try { appearance = JSON.parse(settings.marketplaceAppearanceJson || "{}"); } catch {}
+    const settings = await getPlatformSettings();
+    const appearance = readMarketplaceAppearance(settings.marketplaceAppearanceJson);
+    if (!isMarketplaceEnabled(appearance)) return [];
     const limit = Math.min(20, Math.max(1, Number(appearance.homeFeaturedLimit) || 5));
     const preferred = Array.isArray(appearance.homeFeaturedEntityIds) ? appearance.homeFeaturedEntityIds.filter((id: unknown): id is string => typeof id === "string") : [];
-    const entities = await db.select().from(platformEntities).where(eq(platformEntities.status, true));
+    const entityConditions = [eq(platformEntities.status, true)];
+    if (input?.countryCode) entityConditions.push(eq(platformEntities.countryCode, input.countryCode));
+    const entities = await db.select().from(platformEntities).where(and(...entityConditions));
     const listings = await db.select({ entityId: marketplaceListings.entityId, imageUrl: marketplaceListings.imageUrl, sectorId: marketplaceListings.sectorId }).from(marketplaceListings).where(eq(marketplaceListings.status, "active"));
     const sectorRows = await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug, labelAr: marketplaceSectors.labelAr, labelEn: marketplaceSectors.labelEn, labelFr: marketplaceSectors.labelFr }).from(marketplaceSectors).where(eq(marketplaceSectors.isActive, true));
     const sectorMap = new Map(sectorRows.map(s => [s.id, s]));
@@ -157,6 +180,9 @@ export const marketplaceRouter = router({
     sectorSlug: z.string().trim().min(1).max(80).optional(),
     search: z.string().trim().max(120).optional(),
   })).query(async ({ input }) => {
+    const settings = await getPlatformSettings();
+    const appearance = readMarketplaceAppearance(settings.marketplaceAppearanceJson);
+    if (!isMarketplaceEnabled(appearance)) return [];
     const db = await getDb();
     if (!db) return [];
     let sectorIdsBySlug = new Map<number, number>();
@@ -226,7 +252,143 @@ export const marketplaceRouter = router({
     const storefront = (await db.select().from(marketplaceStorefrontSettings).where(and(eq(marketplaceStorefrontSettings.entityId, entity.id), eq(marketplaceStorefrontSettings.isPublished, true))).limit(1))[0] ?? null;
     return { entity, listings, loyaltySettings, coupons, restaurant, storefront };
   }),
+  publicSectorHighlights: publicProcedure.input(z.object({
+    countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional(),
+  }).optional()).query(async ({ input }) => {
+    const settings = await getPlatformSettings();
+    const appearance = readMarketplaceAppearance(settings.marketplaceAppearanceJson);
+    if (!isMarketplaceEnabled(appearance)) return [];
+    const db = await getDb();
+    if (!db) return [];
+
+    const trendingLimit = marketplaceNumber(appearance, "trendingPerSector", 5);
+    const bestSellingLimit = marketplaceNumber(appearance, "bestSellingPerSector", 5);
+    const windowDays = marketplaceNumber(appearance, "trendingWindowDays", 30, 90);
+
+    const entityConditions = [eq(platformEntities.status, true)];
+    if (input?.countryCode) entityConditions.push(eq(platformEntities.countryCode, input.countryCode));
+    const entities = await db.select({
+      id: platformEntities.id,
+      customerName: platformEntities.customerName,
+      sector: platformEntities.sector,
+      countryCode: platformEntities.countryCode,
+    }).from(platformEntities).where(and(...entityConditions));
+    if (!entities.length) return [];
+
+    const entityMap = new Map(entities.map((entity) => [entity.id, entity]));
+    const entityIds = entities.map((entity) => entity.id);
+    const sectorRows = await db.select({
+      id: marketplaceSectors.id,
+      slug: marketplaceSectors.slug,
+      labelAr: marketplaceSectors.labelAr,
+      labelEn: marketplaceSectors.labelEn,
+      labelFr: marketplaceSectors.labelFr,
+      sortOrder: marketplaceSectors.sortOrder,
+    }).from(marketplaceSectors)
+      .where(eq(marketplaceSectors.isActive, true))
+      .orderBy(marketplaceSectors.sortOrder);
+
+    const listings = await db.select({
+      id: marketplaceListings.id,
+      entityId: marketplaceListings.entityId,
+      sectorId: marketplaceListings.sectorId,
+      title: marketplaceListings.title,
+      titleEn: marketplaceListings.titleEn,
+      description: marketplaceListings.description,
+      descriptionEn: marketplaceListings.descriptionEn,
+      imageUrl: marketplaceListings.imageUrl,
+      price: marketplaceListings.price,
+      compareAtPrice: marketplaceListings.compareAtPrice,
+      currencyCode: marketplaceListings.currencyCode,
+      isFeatured: marketplaceListings.isFeatured,
+      sortOrder: marketplaceListings.sortOrder,
+      actionType: marketplaceListings.actionType,
+      actionUrl: marketplaceListings.actionUrl,
+    }).from(marketplaceListings)
+      .where(and(eq(marketplaceListings.status, "active"), inArray(marketplaceListings.entityId, entityIds)));
+
+    if (!listings.length) return [];
+    const listingIds = listings.map((listing) => listing.id);
+    const variants = await db.select({
+      id: marketplaceListingVariants.id,
+      listingId: marketplaceListingVariants.listingId,
+    }).from(marketplaceListingVariants)
+      .where(and(eq(marketplaceListingVariants.isActive, true), inArray(marketplaceListingVariants.listingId, listingIds)));
+
+    const variantIds = variants.map((variant) => variant.id);
+    const variantToListing = new Map(variants.map((variant) => [variant.id, variant.listingId]));
+    const listingMetrics = new Map<number, { recentQty: number; totalQty: number }>();
+
+    if (variantIds.length) {
+      const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+      const salesRows = await db.select({
+        variantId: orderItems.marketplaceVariantId,
+        quantity: orderItems.quantity,
+        createdAt: orders.createdAt,
+      }).from(orderItems)
+        .innerJoin(orders, eq(orderItems.orderId, orders.id))
+        .where(and(
+          eq(orderItems.sourceType, "marketplace_variant"),
+          inArray(orderItems.marketplaceVariantId, variantIds),
+          eq(orders.status, "completed"),
+        ));
+      for (const sale of salesRows) {
+        if (!sale.variantId) continue;
+        const listingId = variantToListing.get(sale.variantId);
+        if (!listingId) continue;
+        const metrics = listingMetrics.get(listingId) ?? { recentQty: 0, totalQty: 0 };
+        const quantity = Number(sale.quantity ?? 0);
+        metrics.totalQty += quantity;
+        if (sale.createdAt >= since) metrics.recentQty += quantity;
+        listingMetrics.set(listingId, metrics);
+      }
+    }
+
+    const decorate = (listing: typeof listings[number]) => {
+      const metrics = listingMetrics.get(listing.id) ?? { recentQty: 0, totalQty: 0 };
+      const seller = entityMap.get(listing.entityId);
+      return {
+        ...listing,
+        sellerName: seller?.customerName ?? "",
+        countryCode: seller?.countryCode ?? null,
+        recentSales: metrics.recentQty,
+        totalSales: metrics.totalQty,
+      };
+    };
+    const rank = (items: ReturnType<typeof decorate>[], mode: "trending" | "best") => [...items].sort((a, b) => {
+      const primaryA = mode === "trending" ? a.recentSales : a.totalSales;
+      const primaryB = mode === "trending" ? b.recentSales : b.totalSales;
+      if (primaryA !== primaryB) return primaryB - primaryA;
+      const secondaryA = mode === "trending" ? a.totalSales : a.recentSales;
+      const secondaryB = mode === "trending" ? b.totalSales : b.recentSales;
+      if (secondaryA !== secondaryB) return secondaryB - secondaryA;
+      if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
+      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+      return a.id - b.id;
+    });
+
+    return sectorRows.map((sector) => {
+      const items = listings.filter((listing) => listing.sectorId === sector.id).map(decorate);
+      if (!items.length) return null;
+      return {
+        sector: {
+          id: sector.id,
+          slug: sector.slug,
+          labelAr: sector.labelAr,
+          labelEn: sector.labelEn,
+          labelFr: sector.labelFr,
+        },
+        trending: rank(items, "trending").slice(0, trendingLimit),
+        bestSelling: rank(items, "best").slice(0, bestSellingLimit),
+        trendingWindowDays: windowDays,
+      };
+    }).filter((row): row is NonNullable<typeof row> => Boolean(row));
+  }),
+
   publicListings: publicProcedure.input(z.object({ sectorId: z.number().int().positive().optional(), featuredOnly: z.boolean().optional(), countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).optional() }).optional()).query(async ({ input }) => {
+    const settings = await getPlatformSettings();
+    const appearance = readMarketplaceAppearance(settings.marketplaceAppearanceJson);
+    if (!isMarketplaceEnabled(appearance)) return [];
     const db = await getDb();
     if (!db) return [];
     const conditions = [eq(marketplaceListings.status, "active")];
