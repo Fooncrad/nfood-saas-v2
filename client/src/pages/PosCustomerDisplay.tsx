@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ShoppingBag, Wifi, WifiOff } from "lucide-react";
+import { CheckCircle2, CreditCard, ShoppingBag, Wifi, WifiOff } from "lucide-react";
 import { readCustomerFacingState, subscribeCustomerFacingState, type CustomerFacingState } from "@/lib/customerFacingDisplay";
 
 const empty: CustomerFacingState = {
@@ -38,6 +38,8 @@ export default function PosCustomerDisplay() {
       <div><p className="text-xs font-black tracking-[0.22em] text-orange-400">NFOOD CUSTOMER DISPLAY</p><h1 className="mt-2 text-2xl font-black md:text-4xl">مشترياتك</h1></div>
       <div className={`flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${online ? "bg-emerald-400/10 text-emerald-300" : "bg-amber-400/10 text-amber-300"}`}>{online ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}{online ? "متصل" : "يعمل دون اتصال"}</div>
     </header>
+    {state.status === "complete" && <section className="mx-auto mt-6 max-w-7xl rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-8 text-center"><CheckCircle2 className="mx-auto h-14 w-14 text-emerald-300" /><h2 className="mt-4 text-3xl font-black">تم تسجيل الطلب بنجاح</h2><p className="mt-2 text-sm text-emerald-100">رقم الطلب # {state.receiptNumber ?? "—"} · شكرًا لك</p></section>}
+    {state.status === "payment" && <section className="mx-auto mt-6 max-w-7xl rounded-3xl border border-orange-400/20 bg-orange-400/10 p-6 text-center"><CreditCard className="mx-auto h-10 w-10 text-orange-300" /><h2 className="mt-3 text-xl font-black">جاري إتمام الدفع</h2><p className="mt-1 text-sm text-slate-300">يرجى متابعة تعليمات جهاز الدفع.</p></section>}
     <section className="mx-auto mt-6 grid max-w-7xl gap-6 lg:grid-cols-[1.5fr_.75fr]">
       <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[.04]">
         <div className="grid grid-cols-[1fr_auto_auto] gap-3 border-b border-white/10 px-5 py-4 text-xs font-bold text-slate-400"><span>الصنف</span><span>الكمية</span><span>الإجمالي</span></div>
