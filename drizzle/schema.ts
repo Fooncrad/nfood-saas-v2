@@ -1802,6 +1802,7 @@ export type PlanTier = (typeof PLAN_TIERS)[number];
 
 export const platformEntities = mysqlTable("platform_entities", {
   id: varchar("id", { length: 30 }).primaryKey(),
+  restaurantId: int("restaurant_id").references(() => restaurants.id),
   customerName: text("customer_name").notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   // Global tenant boundary: every marketplace business belongs to exactly one country.
@@ -1818,6 +1819,7 @@ export const platformEntities = mysqlTable("platform_entities", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
+  platformEntitiesRestaurantUidx: uniqueIndex("platform_entities_restaurant_uidx").on(table.restaurantId),
   platformEntitiesSectorIdx: index("platform_entities_sector_idx").on(table.sector, table.status),
   platformEntitiesCountryIdx: index("platform_entities_country_idx").on(table.countryCode, table.status),
   platformEntitiesCountrySectorIdx: index("platform_entities_country_sector_idx").on(table.countryCode, table.sector, table.status),
