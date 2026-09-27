@@ -19,6 +19,7 @@ import {
   marketplaceListings,
   marketplaceListingVariants,
   marketplaceSectors,
+  menuItems,
   marketplaceStorefrontSettings,
   orderItems,
   orders,
@@ -264,19 +265,27 @@ export const marketplaceRouter = router({
     const trendingLimit = marketplaceNumber(appearance, "trendingPerSector", 5);
     const bestSellingLimit = marketplaceNumber(appearance, "bestSellingPerSector", 5);
     const windowDays = marketplaceNumber(appearance, "trendingWindowDays", 30, 90);
+    const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
 
     const entityConditions = [eq(platformEntities.status, true)];
     if (input?.countryCode) entityConditions.push(eq(platformEntities.countryCode, input.countryCode));
     const entities = await db.select({
       id: platformEntities.id,
+      restaurantId: platformEntities.restaurantId,
       customerName: platformEntities.customerName,
       sector: platformEntities.sector,
       countryCode: platformEntities.countryCode,
+      currencyCode: platformEntities.currencyCode,
     }).from(platformEntities).where(and(...entityConditions));
     if (!entities.length) return [];
 
     const entityMap = new Map(entities.map((entity) => [entity.id, entity]));
     const entityIds = entities.map((entity) => entity.id);
+    const restaurantEntityMap = new Map(
+      entities.filter((entity) => entity.restaurantId).map((entity) => [Number(entity.restaurantId), entity])
+    );
+    const restaurantIds = Array.from(restaurantEntityMap.keys());
+
     const sectorRows = await db.select({
       id: marketplaceSectors.id,
       slug: marketplaceSectors.slug,
@@ -287,6 +296,7 @@ export const marketplaceRouter = router({
     }).from(marketplaceSectors)
       .where(eq(marketplaceSectors.isActive, true))
       .orderBy(marketplaceSectors.sortOrder);
+    const sectorBySlug = new Map(sectorRows.map((sector) => [sector.slug.toLowerCase(), sector]));
 
     const listings = await db.select({
       id: marketplaceListings.id,
@@ -307,55 +317,146 @@ export const marketplaceRouter = router({
     }).from(marketplaceListings)
       .where(and(eq(marketplaceListings.status, "active"), inArray(marketplaceListings.entityId, entityIds)));
 
-    if (!listings.length) return [];
-    const listingIds = listings.map((listing) => listing.id);
-    const variants = await db.select({
-      id: marketplaceListingVariants.id,
-      listingId: marketplaceListingVariants.listingId,
-    }).from(marketplaceListingVariants)
-      .where(and(eq(marketplaceListingVariants.isActive, true), inArray(marketplaceListingVariants.listingId, listingIds)));
+    const highlightItems: Array<{
+      id: number;
+      source: "marketplace" | "menu";
+      entityId: string;
+      sectorId: number;
+      title: string;
+      titleEn: string | null;
+      description: string | null;
+      descriptionEn: string | null;
+      imageUrl: string | null;
+      price: string;
+      compareAtPrice: string | null;
+      currencyCode: string;
+      isFeatured: boolean;
+      sortOrder: number;
+      actionType: string;
+      actionUrl: string | null;
+      sellerName: string;
+      countryCode: string | null;
+      recentSales: number;
+      totalSales: number;
+    }> = [];
 
-    const variantIds = variants.map((variant) => variant.id);
-    const variantToListing = new Map(variants.map((variant) => [variant.id, variant.listingId]));
-    const listingMetrics = new Map<number, { recentQty: number; totalQty: number }>();
-
-    if (variantIds.length) {
-      const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
-      const salesRows = await db.select({
-        variantId: orderItems.marketplaceVariantId,
-        quantity: orderItems.quantity,
-        createdAt: orders.createdAt,
-      }).from(orderItems)
-        .innerJoin(orders, eq(orderItems.orderId, orders.id))
-        .where(and(
-          eq(orderItems.sourceType, "marketplace_variant"),
-          inArray(orderItems.marketplaceVariantId, variantIds),
-          eq(orders.status, "completed"),
-        ));
-      for (const sale of salesRows) {
-        if (!sale.variantId) continue;
-        const listingId = variantToListing.get(sale.variantId);
-        if (!listingId) continue;
-        const metrics = listingMetrics.get(listingId) ?? { recentQty: 0, totalQty: 0 };
-        const quantity = Number(sale.quantity ?? 0);
-        metrics.totalQty += quantity;
-        if (sale.createdAt >= since) metrics.recentQty += quantity;
-        listingMetrics.set(listingId, metrics);
+    if (listings.length) {
+      const listingIds = listings.map((listing) => listing.id);
+      const variants = await db.select({
+        id: marketplaceListingVariants.id,
+        listingId: marketplaceListingVariants.listingId,
+      }).from(marketplaceListingVariants)
+        .where(and(eq(marketplaceListingVariants.isActive, true), inArray(marketplaceListingVariants.listingId, listingIds)));
+      const variantIds = variants.map((variant) => variant.id);
+      const variantToListing = new Map(variants.map((variant) => [variant.id, variant.listingId]));
+      const metrics = new Map<number, { recentQty: number; totalQty: number }>();
+      if (variantIds.length) {
+        const salesRows = await db.select({
+          variantId: orderItems.marketplaceVariantId,
+          quantity: orderItems.quantity,
+          createdAt: orders.createdAt,
+        }).from(orderItems)
+          .innerJoin(orders, eq(orderItems.orderId, orders.id))
+          .where(and(
+            eq(orderItems.sourceType, "marketplace_variant"),
+            inArray(orderItems.marketplaceVariantId, variantIds),
+            eq(orders.status, "completed"),
+          ));
+        for (const sale of salesRows) {
+          if (!sale.variantId) continue;
+          const listingId = variantToListing.get(sale.variantId);
+          if (!listingId) continue;
+          const current = metrics.get(listingId) ?? { recentQty: 0, totalQty: 0 };
+          const quantity = Number(sale.quantity ?? 0);
+          current.totalQty += quantity;
+          if (sale.createdAt >= since) current.recentQty += quantity;
+          metrics.set(listingId, current);
+        }
+      }
+      for (const listing of listings) {
+        const seller = entityMap.get(listing.entityId);
+        const metric = metrics.get(listing.id) ?? { recentQty: 0, totalQty: 0 };
+        highlightItems.push({
+          ...listing,
+          source: "marketplace",
+          actionType: listing.actionType,
+          sellerName: seller?.customerName ?? "",
+          countryCode: seller?.countryCode ?? null,
+          recentSales: metric.recentQty,
+          totalSales: metric.totalQty,
+        });
       }
     }
 
-    const decorate = (listing: typeof listings[number]) => {
-      const metrics = listingMetrics.get(listing.id) ?? { recentQty: 0, totalQty: 0 };
-      const seller = entityMap.get(listing.entityId);
-      return {
-        ...listing,
-        sellerName: seller?.customerName ?? "",
-        countryCode: seller?.countryCode ?? null,
-        recentSales: metrics.recentQty,
-        totalSales: metrics.totalQty,
-      };
-    };
-    const rank = (items: ReturnType<typeof decorate>[], mode: "trending" | "best") => [...items].sort((a, b) => {
+    if (restaurantIds.length) {
+      const restaurantMenuItems = await db.select({
+        id: menuItems.id,
+        restaurantId: menuItems.restaurantId,
+        name: menuItems.name,
+        description: menuItems.description,
+        price: menuItems.price,
+        compareAtPrice: menuItems.compareAtPrice,
+        imageUrl: menuItems.imageUrl,
+      }).from(menuItems)
+        .where(and(inArray(menuItems.restaurantId, restaurantIds), eq(menuItems.isAvailable, true)));
+
+      const menuItemIds = restaurantMenuItems.map((item) => item.id);
+      const menuMetrics = new Map<number, { recentQty: number; totalQty: number }>();
+      if (menuItemIds.length) {
+        const menuSales = await db.select({
+          menuItemId: orderItems.menuItemId,
+          quantity: orderItems.quantity,
+          createdAt: orders.createdAt,
+        }).from(orderItems)
+          .innerJoin(orders, eq(orderItems.orderId, orders.id))
+          .where(and(
+            eq(orderItems.sourceType, "menu_item"),
+            inArray(orderItems.menuItemId, menuItemIds),
+            eq(orders.status, "completed"),
+          ));
+        for (const sale of menuSales) {
+          if (!sale.menuItemId) continue;
+          const current = menuMetrics.get(sale.menuItemId) ?? { recentQty: 0, totalQty: 0 };
+          const quantity = Number(sale.quantity ?? 0);
+          current.totalQty += quantity;
+          if (sale.createdAt >= since) current.recentQty += quantity;
+          menuMetrics.set(sale.menuItemId, current);
+        }
+      }
+
+      for (const item of restaurantMenuItems) {
+        if (!item.restaurantId) continue;
+        const entity = restaurantEntityMap.get(item.restaurantId);
+        if (!entity) continue;
+        const sector = sectorBySlug.get(entity.sector.toLowerCase()) ?? sectorBySlug.get("restaurant");
+        if (!sector) continue;
+        const metric = menuMetrics.get(item.id) ?? { recentQty: 0, totalQty: 0 };
+        highlightItems.push({
+          id: -item.id,
+          source: "menu",
+          entityId: entity.id,
+          sectorId: sector.id,
+          title: item.name,
+          titleEn: null,
+          description: item.description,
+          descriptionEn: null,
+          imageUrl: item.imageUrl,
+          price: item.price,
+          compareAtPrice: item.compareAtPrice,
+          currencyCode: entity.currencyCode,
+          isFeatured: false,
+          sortOrder: item.id,
+          actionType: "order",
+          actionUrl: null,
+          sellerName: entity.customerName,
+          countryCode: entity.countryCode,
+          recentSales: metric.recentQty,
+          totalSales: metric.totalQty,
+        });
+      }
+    }
+
+    const rank = (items: typeof highlightItems, mode: "trending" | "best") => [...items].sort((a, b) => {
       const primaryA = mode === "trending" ? a.recentSales : a.totalSales;
       const primaryB = mode === "trending" ? b.recentSales : b.totalSales;
       if (primaryA !== primaryB) return primaryB - primaryA;
@@ -368,7 +469,7 @@ export const marketplaceRouter = router({
     });
 
     return sectorRows.map((sector) => {
-      const items = listings.filter((listing) => listing.sectorId === sector.id).map(decorate);
+      const items = highlightItems.filter((item) => item.sectorId === sector.id);
       if (!items.length) return null;
       return {
         sector: {
