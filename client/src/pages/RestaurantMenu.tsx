@@ -467,9 +467,9 @@ export default function RestaurantMenu() {
       </div>
     </header>
 
-    <section className="relative overflow-hidden bg-[#071525] text-white">
-      <div className="mx-auto max-w-7xl">
-        <div className="relative h-[150px] overflow-hidden sm:h-[190px] md:h-[230px] lg:h-[260px]">
+    <section className="relative h-[170px] max-h-[170px] overflow-hidden bg-[#071525] text-white sm:h-[190px] sm:max-h-[190px] md:h-[230px] md:max-h-[230px] lg:h-[260px] lg:max-h-[260px]">
+      <div className="mx-auto h-full max-w-7xl">
+        <div className="relative h-full overflow-hidden">
           {restaurant.coverUrl
             ? <img src={restaurant.coverUrl} alt={restaurant.brandName || restaurant.name} className="absolute inset-0 h-full w-full object-cover" />
             : <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d35] via-[#12345a] to-[#071525]" />}
