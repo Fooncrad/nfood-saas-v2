@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import AdminBusinessOnboarding from "@/components/AdminBusinessOnboarding";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type AdminStore = {
   id: string;
@@ -42,6 +43,7 @@ function formatDate(value: AdminStore["createdAt"]) {
 }
 
 export default function MarketplaceStoresView() {
+  const { direction } = useLanguage(); // QA: direction follows the global language.
   const storesQuery = trpc.marketplace.adminStores.useQuery(undefined, { retry: false });
   const utils = trpc.useUtils();
   const updateStore = trpc.marketplace.adminUpdateStore.useMutation({
@@ -91,7 +93,7 @@ export default function MarketplaceStoresView() {
   const toggleStatus = (store: AdminStore) => updateStore.mutate({ id: store.id, status: !store.status });
 
   return (
-    <section dir="rtl" className="space-y-5">
+    <section dir={direction} className="min-w-0 space-y-5 text-slate-900 dark:text-slate-100">
       <AdminBusinessOnboarding />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -190,8 +192,8 @@ export default function MarketplaceStoresView() {
       </Card>
 
       <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
-        <DialogContent dir="rtl" className="rounded-3xl sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent dir={direction} className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-lg flex-col overflow-hidden rounded-3xl bg-white dark:bg-slate-950 dark:text-slate-100">
+          <DialogHeader className="shrink-0">
             <DialogTitle>تعديل المتجر</DialogTitle>
             <DialogDescription>تعديل مباشر من Admin لبيانات المنشأة التشغيلية والاشتراك. الدولة والعملة الحالية: {selected?.countryCode ?? "—"} / {selected?.currencyCode ?? "—"}.</DialogDescription>
           </DialogHeader>
@@ -223,7 +225,8 @@ export default function MarketplaceStoresView() {
               {updateStore.isPending ? "جارٍ الحفظ..." : "حفظ التعديلات"}
             </Button>
           </div>
-        </DialogContent>
+        </div>
+          </DialogContent>
       </Dialog>
     </section>
   );
