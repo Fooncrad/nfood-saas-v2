@@ -70,6 +70,7 @@ export const legacyUiTranslations: Partial<Record<Exclude<Language, "ar">, Recor
   ur: {},
 };
 const legacyNodeSources = new WeakMap<Text, string>();
+const legacyAttributeSources = new WeakMap<HTMLElement, Map<"placeholder" | "aria-label" | "title", string>>();
 let legacyTranslationInProgress = false;
 let legacyTranslationScheduled = false;
 let legacyTranslationLanguage: Language = "en";
@@ -95,6 +96,35 @@ function scheduleLegacyUiTranslations(language: Language, root: Node = document)
 
 export const modernUiTranslations: Partial<Record<Exclude<Language, "ar">, Record<string, string>>> = {
   en: {
+    "نظام تشغيل المطاعم الذي يجمع الإدارة، الطلبات، العملاء والشركاء في تجربة واحدة.": "A restaurant operating system that brings management, orders, customers, and partners into one experience.",
+    "إعداد سريع": "Quick setup",
+    "دعم كامل للعربية": "Full Arabic support",
+    "يعمل على كل الأجهزة": "Works on every device",
+    "نظرة عامة · NFOOD": "Overview · NFOOD",
+    "زمن الاستجابة": "Response time",
+    "أسرع بـ 42%": "42% faster",
+    "أدر المطاعم والفروع": "Manage restaurants and branches",
+    "أنشئ مساحات العمل واضبط الفروع والصلاحيات من مكان واحد.": "Create workspaces and manage branches and permissions from one place.",
+    "انشر المنيو واستقبل الطلبات": "Publish your menu and receive orders",
+    "اجعل الطلب المباشر والحجوزات والتتبع جزءًا من تجربة ضيوفك.": "Make direct ordering, reservations, and tracking part of your guest experience.",
+    "تابع العملاء والفريق": "Track customers and team",
+    "حوّل البيانات اليومية إلى قرارات تشغيلية واضحة.": "Turn daily data into clear operational decisions.",
+    "طلب جديد من فرع العليا": "New order from Al Olaya branch",
+    "منذ 2 دقيقة": "2 minutes ago",
+    "حجز طاولة مؤكد": "Table reservation confirmed",
+    "اشتراك تم تجديده": "Subscription renewed",
+    "متاجر موثوقة": "Trusted stores",
+    "جودة وخدمة مضمونة": "Reliable quality and service",
+    "دفع آمن وسهل": "Safe and easy payments",
+    "خيارات دفع متعددة": "Multiple payment options",
+    "توصيل سريع": "Fast delivery",
+    "إلى باب منزلك": "To your doorstep",
+    "دعم على مدار الساعة": "24/7 support",
+    "نحن دائماً هنا لمساعدتك": "We are always here to help",
+    "صفحة غير موجودة": "Page not found",
+    "عذرًا، الصفحة التي تبحث عنها غير موجودة.": "Sorry, the page you are looking for does not exist.",
+    "قد تكون نُقلت أو حُذفت.": "It may have been moved or deleted.",
+    "العودة للرئيسية": "Go home",
     "مركز المطاعم": "Restaurant center",
     "تخصيص QR والباركود": "QR & barcode customization",
     "قائمة المطاعم": "Restaurant list",
@@ -182,6 +212,35 @@ export const modernUiTranslations: Partial<Record<Exclude<Language, "ar">, Recor
     "العودة للرئيسية": "Back to home"
   },
   fr: {
+    "نظام تشغيل المطاعم الذي يجمع الإدارة، الطلبات، العملاء والشركاء في تجربة واحدة.": "Un système d’exploitation pour restaurants qui réunit gestion, commandes, clients et partenaires dans une seule expérience.",
+    "إعداد سريع": "Configuration rapide",
+    "دعم كامل للعربية": "Prise en charge complète de l’arabe",
+    "يعمل على كل الأجهزة": "Fonctionne sur tous les appareils",
+    "نظرة عامة · NFOOD": "Vue d’ensemble · NFOOD",
+    "زمن الاستجابة": "Temps de réponse",
+    "أسرع بـ 42%": "42 % plus rapide",
+    "أدر المطاعم والفروع": "Gérez les restaurants et les succursales",
+    "أنشئ مساحات العمل واضبط الفروع والصلاحيات من مكان واحد.": "Créez des espaces de travail et gérez succursales et autorisations depuis un seul endroit.",
+    "انشر المنيو واستقبل الطلبات": "Publiez le menu et recevez les commandes",
+    "اجعل الطلب المباشر والحجوزات والتتبع جزءًا من تجربة ضيوفك.": "Intégrez commande directe, réservations et suivi à l’expérience client.",
+    "تابع العملاء والفريق": "Suivez les clients et l’équipe",
+    "حوّل البيانات اليومية إلى قرارات تشغيلية واضحة.": "Transformez les données quotidiennes en décisions opérationnelles claires.",
+    "طلب جديد من فرع العليا": "Nouvelle commande de la succursale Al Olaya",
+    "منذ 2 دقيقة": "Il y a 2 minutes",
+    "حجز طاولة مؤكد": "Réservation de table confirmée",
+    "اشتراك تم تجديده": "Abonnement renouvelé",
+    "متاجر موثوقة": "Boutiques fiables",
+    "جودة وخدمة مضمونة": "Qualité et service fiables",
+    "دفع آمن وسهل": "Paiement simple et sécurisé",
+    "خيارات دفع متعددة": "Plusieurs moyens de paiement",
+    "توصيل سريع": "Livraison rapide",
+    "إلى باب منزلك": "Jusqu’à votre porte",
+    "دعم على مدار الساعة": "Assistance 24 h/24",
+    "نحن دائماً هنا لمساعدتك": "Nous sommes toujours là pour vous aider",
+    "صفحة غير موجودة": "Page introuvable",
+    "عذرًا، الصفحة التي تبحث عنها غير موجودة.": "Désolé, la page recherchée n’existe pas.",
+    "قد تكون نُقلت أو حُذفت.": "Elle a peut-être été déplacée ou supprimée.",
+    "العودة للرئيسية": "Retour à l’accueil",
     "مركز المطاعم": "Centre des restaurants",
     "تخصيص QR والباركود": "Personnalisation QR et codes-barres",
     "قائمة المطاعم": "Liste des restaurants",
@@ -1265,11 +1324,19 @@ function applyLegacyUiTranslations(language: Language, root: Node = document) {
           ? Array.from(root.querySelectorAll<HTMLElement>("input, textarea, [aria-label], [title]"))
           : [];
     for (const element of elements) {
+      let sources = legacyAttributeSources.get(element);
+      if (!sources) {
+        sources = new Map();
+        legacyAttributeSources.set(element, sources);
+      }
       for (const attribute of ["placeholder", "aria-label", "title"] as const) {
-        const source = element.getAttribute(attribute);
-        if (!source) continue;
+        const current = element.getAttribute(attribute);
+        if (!current) continue;
+        const cached = sources.get(attribute);
+        if (!cached || /[\u0600-\u06FF]/.test(current)) sources.set(attribute, current);
+        const source = sources.get(attribute) ?? current;
         const translated = autoTranslateText(source, language);
-        if (translated !== source) element.setAttribute(attribute, translated);
+        if (translated !== current) element.setAttribute(attribute, translated);
       }
     }
   } finally {
@@ -1314,11 +1381,36 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyLanguageDocumentAttributes(language);
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
-    // Structured translation keys are the only runtime source of truth.
-    // Never mutate rendered DOM text: legacy mutation-based translation leaked text between
-    // routes/components and could leave Arabic/English/French fragments mixed after navigation.
-    // Legacy dictionaries remain available to explicit t()/translation-editor flows only.
-    return undefined;
+
+    // Keep old and dynamically-rendered screens in sync with the selected language while
+    // preserving each node's original Arabic source so switching AR/EN/FR never compounds
+    // translated fragments across routes.
+    refreshLegacyUiTranslations(language);
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === "characterData") {
+          scheduleLegacyUiTranslations(language, mutation.target.parentNode ?? mutation.target);
+          continue;
+        }
+        if (mutation.type === "attributes") {
+          scheduleLegacyUiTranslations(language, mutation.target);
+          continue;
+        }
+        for (const node of Array.from(mutation.addedNodes)) {
+          if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+            scheduleLegacyUiTranslations(language, node);
+          }
+        }
+      }
+    });
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["placeholder", "aria-label", "title"],
+    });
+    return () => observer.disconnect();
   }, [language, meta.dir]);
   const value = useMemo<LanguageContextValue>(() => ({ language, direction: meta.dir, locale: meta.locale, isLanguageChanging, setLanguage: (next, persist = true) => { if (next !== language) { animateLanguageChange(); setIsLanguageChanging(true); if (typeof window !== "undefined") window.setTimeout(() => setIsLanguageChanging(false), 420); } setLanguageState(next); if (persist && typeof window !== "undefined") { window.localStorage.setItem(LANGUAGE_STORAGE_KEY, next); window.localStorage.removeItem(DASHBOARD_LANGUAGE_STORAGE_KEY); window.localStorage.removeItem(MENU_LANGUAGE_STORAGE_KEY); window.localStorage.removeItem(MENU_LANGUAGE_MANUAL_STORAGE_KEY); } }, t: createTranslator(language), formatDate: (input) => formatGregorianDate(input, language), formatNumber: (input) => formatLatinNumber(input, language)   }), [language, meta.dir, meta.locale, isLanguageChanging]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
