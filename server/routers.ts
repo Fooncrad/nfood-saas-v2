@@ -930,6 +930,24 @@ export const appRouter = router({
     restaurant: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(({ ctx, input }) => { assertRestaurantAccess(ctx, input.restaurantId); return listRestaurantFeatures(input.restaurantId); }),
     access: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive(), key: z.string().min(1).max(120) })).query(({ ctx, input }) => { assertRestaurantAccess(ctx, input.restaurantId); return getFeatureAccess(input.restaurantId, input.key); }),
     allAccess: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(async ({ ctx, input }) => { assertRestaurantAccess(ctx, input.restaurantId); const definitions = await listFeatureDefinitions(); const accessByKey = await getFeatureAccessMap(input.restaurantId); return definitions.map((definition) => ({ ...definition, access: accessByKey.get(definition.key) ?? { key: definition.key, enabled: false, limit: null, reason: "database_unavailable" as const } })); }),
+    subscriptionCatalog: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive() })).query(async ({ ctx, input }) => {
+      assertRestaurantAccess(ctx, input.restaurantId);
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const restaurant = (await db.select({ plan: restaurants.plan, status: restaurants.status }).from(restaurants).where(eq(restaurants.id, input.restaurantId)).limit(1))[0];
+      const subscription = (await db.select().from(subscriptions).where(eq(subscriptions.restaurantId, input.restaurantId)).orderBy(desc(subscriptions.id)).limit(1))[0] ?? null;
+      const plans = await db.select().from(packagePlans).where(eq(packagePlans.isActive, true)).orderBy(packagePlans.id);
+      const links = await db.select({ planId: packagePlanFeatures.planId, key: featureDefinitions.key, label: featureDefinitions.label, enabled: packagePlanFeatures.enabled, featureLimit: packagePlanFeatures.featureLimit }).from(packagePlanFeatures).innerJoin(featureDefinitions, eq(packagePlanFeatures.featureId, featureDefinitions.id));
+      const legacyPlanMap: Record<string, string> = { Free: "hospitality_basic", Starter: "hospitality_basic", Growth: "hospitality_pro", Enterprise: "hospitality_enterprise", "All Features": "hospitality_enterprise" };
+      const rawPlan = subscription?.plan ?? restaurant?.plan ?? "Free";
+      const activePlanKey = legacyPlanMap[rawPlan] ?? rawPlan;
+      return {
+        subscription,
+        restaurantStatus: restaurant?.status ?? null,
+        activePlanKey,
+        plans: plans.filter((plan) => plan.key.startsWith("hospitality_")).map((plan) => ({ ...plan, features: links.filter((link) => link.planId === plan.id && link.enabled) })),
+      };
+    }),
     setOverride: testRoleProcedure("restaurant_admin").input(z.object({ restaurantId: z.number().int().positive(), featureId: z.number().int().positive(), enabled: z.boolean(), limit: z.number().int().nonnegative().nullable().optional(), value: z.string().max(255).nullable().optional() })).mutation(async ({ ctx, input }) => { assertRestaurantAccess(ctx, input.restaurantId); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" }); const existing = await db.select().from(restaurantFeatures).where(and(eq(restaurantFeatures.restaurantId, input.restaurantId), eq(restaurantFeatures.featureId, input.featureId))).limit(1); const values = { enabled: input.enabled, overrideLimit: input.limit ?? null, overrideValue: input.value ?? null }; if (existing[0]) await db.update(restaurantFeatures).set(values).where(eq(restaurantFeatures.id, existing[0].id)); else await db.insert(restaurantFeatures).values({ restaurantId: input.restaurantId, featureId: input.featureId, ...values }); await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "feature.override.update", entityType: "feature", entityId: String(input.featureId), outcome: "success", requestId: nanoid(12), metadata: JSON.stringify({ enabled: input.enabled, limit: input.limit ?? null }) }); return { success: true }; }),
   }),
   admin: router({
