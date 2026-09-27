@@ -1,4 +1,6 @@
 import { Link } from "wouter";
+import { useEffect, useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   ArrowLeft,
   CalendarDays,
@@ -9,6 +11,7 @@ import {
   Library,
   LogOut,
   MapPinned,
+  Download, Moon, Sun,
   ReceiptText,
   Settings,
   ShoppingBag,
@@ -35,6 +38,17 @@ const statusLabel: Record<string, string> = {
 export default function CustomerPortal() {
   const { user, logout } = useAuth();
   const { direction, language } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
+  const [installPrompt, setInstallPrompt] = useState<(Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }) | null>(null);
+  const [installHelp, setInstallHelp] = useState(false);
+  const [installed, setInstalled] = useState(() => typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches);
+  useEffect(() => {
+    const capture = (event: Event) => { event.preventDefault(); setInstallPrompt(event as Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }); };
+    const complete = () => { setInstalled(true); setInstallPrompt(null); setInstallHelp(false); };
+    window.addEventListener("beforeinstallprompt", capture);
+    window.addEventListener("appinstalled", complete);
+    return () => { window.removeEventListener("beforeinstallprompt", capture); window.removeEventListener("appinstalled", complete); };
+  }, []);
   const lang = language === "ar" ? "ar" : language === "fr" ? "fr" : "en";
   const orders = trpc.platform.myOrders.useQuery({ limit: 6 }, { enabled: Boolean(user), retry:false });
   const reservations = trpc.platform.myReservations.useQuery({ limit: 6 }, { enabled: Boolean(user), retry:false });
@@ -87,12 +101,15 @@ export default function CustomerPortal() {
           <span className="font-black">NFOOD</span>
         </Link>
         <div className="flex items-center gap-2">
+          {!installed && <button type="button" onClick={async () => { if (installPrompt) { await installPrompt.prompt(); const choice = await installPrompt.userChoice; if (choice.outcome === "accepted") setInstallPrompt(null); } else setInstallHelp((value) => !value); }} className="flex h-10 items-center gap-1.5 rounded-xl bg-orange-500 px-3 text-xs font-bold text-white hover:bg-orange-600" aria-label={lang === "ar" ? "تثبيت تطبيق الويب" : lang === "fr" ? "Installer l’application" : "Install web app"}><Download className="h-4 w-4" /><span className="hidden sm:inline">{lang === "ar" ? "تثبيت التطبيق" : lang === "fr" ? "Installer" : "Install app"}</span></button>}
+          <button type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "Light mode" : "Dark mode"} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">{theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
           <Link href="/marketplace"><Button variant="outline" className="rounded-xl text-xs">{copy.marketplace}</Button></Link>
           <button onClick={() => void logout()} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5" aria-label={copy.logout}><LogOut className="h-4 w-4" /></button>
         </div>
       </div>
     </header>
 
+    {installHelp && <div className="mx-auto max-w-7xl px-4 pt-4 text-sm sm:px-6"><div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-orange-950 dark:border-orange-500/30 dark:bg-orange-950/30 dark:text-orange-100">{lang === "ar" ? "للتثبيت: افتح قائمة المتصفح واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية». في Safari استخدم مشاركة ← إضافة إلى الشاشة الرئيسية." : lang === "fr" ? "Ouvrez le menu du navigateur et choisissez « Installer » ou « Ajouter à l’écran d’accueil ». Dans Safari, utilisez Partager." : "Open your browser menu and choose Install app or Add to Home Screen. In Safari, use Share → Add to Home Screen."}</div></div>}
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
       <section className="overflow-hidden rounded-[28px] bg-[#0b1d35] p-5 text-white shadow-xl sm:p-7">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">

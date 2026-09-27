@@ -120,6 +120,8 @@ export default function RestaurantMenu() {
   const [selectedAddonIds, setSelectedAddonIds] = useState<number[]>([]);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [cartStep, setCartStep] = useState<1 | 2>(1);
+  const [waiterStep, setWaiterStep] = useState<1 | 2>(1);
   const [reservationOpen, setReservationOpen] = useState(false);
   const [reservationStep, setReservationStep] = useState<1 | 2>(1);
   const [waiterOpen, setWaiterOpen] = useState(false);
@@ -153,10 +155,12 @@ export default function RestaurantMenu() {
 
   useEffect(() => {
     if (!restaurant) return;
+    const saved = window.localStorage.getItem(`nfood:menu-theme:${slug}`);
+    if (saved === "light" || saved === "dark") { setTheme(saved); return; }
     const configured = restaurant.themeMode;
     if (configured === "light" || configured === "dark") setTheme(configured);
     else setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-  }, [restaurant?.themeMode]);
+  }, [restaurant?.themeMode, slug]);
 
   useEffect(() => {
     if (!selectedBranchId && branches[0]?.id) setSelectedBranchId(branches[0].id);
@@ -447,7 +451,7 @@ export default function RestaurantMenu() {
   const pageBg = dark ? "bg-[#071525] text-white" : "bg-[#f6f8fc] text-[#0b1d35]";
   const selectedHotelRooms = selectedHotel?.rooms ?? [];
 
-  return <main dir={direction} className={`min-h-screen overflow-x-hidden ${pageBg}`} style={{ fontFamily:restaurant.brandFontFamily || undefined, "--restaurant-primary":primary, "--restaurant-accent":accent } as React.CSSProperties}>
+  return <main dir={direction} className={`min-h-screen overflow-x-hidden ${dark ? "dark" : ""} ${pageBg}`} style={{ fontFamily:restaurant.brandFontFamily || undefined, "--restaurant-primary":primary, "--restaurant-accent":accent } as React.CSSProperties}>
     <header className={`sticky top-0 z-40 border-b backdrop-blur-xl ${dark ? "border-white/10 bg-[#071525]/92" : "border-slate-200 bg-white/92"}`}>
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
@@ -457,7 +461,7 @@ export default function RestaurantMenu() {
         </div>
         <div className="flex items-center gap-1.5">
           <LanguageSwitcher compact />
-          <button onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")} className={`grid h-10 w-10 place-items-center rounded-xl border ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`} aria-label="Theme">{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
+          <button onClick={() => setTheme((value) => { const next = value === "dark" ? "light" : "dark"; window.localStorage.setItem(`nfood:menu-theme:${slug}`, next); return next; })} className={`grid h-10 w-10 place-items-center rounded-xl border ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`} aria-label="Theme">{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
           <button onClick={() => user ? navigate("/customer-portal") : navigate(`/login?next=${encodeURIComponent(location)}`)} className="grid h-10 w-10 place-items-center rounded-xl bg-[#0b1d35] text-white" aria-label={copy.account}><UserRound className="h-4 w-4" /></button>
         </div>
       </div>
@@ -578,9 +582,10 @@ export default function RestaurantMenu() {
       </DialogContent>
     </Dialog>
 
-    <Dialog open={cartOpen} onOpenChange={setCartOpen}>
+    <Dialog open={cartOpen} onOpenChange={(open) => { setCartOpen(open); if (!open) setCartStep(1); }}>
       <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-2xl overflow-y-auto rounded-[26px]">
-        <DialogHeader><DialogTitle>{copy.cart}</DialogTitle><DialogDescription>{itemCount} {copy.items}</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{copy.cart} · {cartStep}/2</DialogTitle><DialogDescription>{cartStep === 1 ? `${itemCount} ${copy.items} · ${lang === "ar" ? "اختر نوع الطلب" : lang === "fr" ? "Choisissez le service" : "Choose your service"}` : lang === "ar" ? "بيانات الطلب والتأكيد" : lang === "fr" ? "Détails et confirmation" : "Details and confirmation"}</DialogDescription></DialogHeader>
+        {cartStep === 1 ? <>
         <div className="grid gap-3">{cart.map((line) => <div key={line.key} className="flex items-center gap-3 rounded-2xl border border-slate-200 p-3"><div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{line.name}</p><p className="mt-1 text-xs text-slate-500">{formatMoney(line.price + line.addonTotal, currency)}</p></div><div className="flex items-center gap-2"><button onClick={() => updateQty(line.key,-1)} className="grid h-8 w-8 place-items-center rounded-lg border"><Minus className="h-3 w-3" /></button><b>{line.quantity}</b><button onClick={() => updateQty(line.key,1)} className="grid h-8 w-8 place-items-center rounded-lg border"><Plus className="h-3 w-3" /></button></div></div>)}</div>
         <div className="mt-5">
           <p className="text-xs font-black text-slate-500">{lang === "ar" ? "اختر نوع الطلب" : lang === "fr" ? "Choisissez le type de commande" : "Choose order type"}</p>
@@ -592,6 +597,9 @@ export default function RestaurantMenu() {
             })}
           </div>
         </div>
+        <Button disabled={!orderMode || !cart.length} onClick={() => setCartStep(2)} className="mt-5 h-12 w-full text-white" style={{ background:primary }}>{copy.next}</Button>
+        </> : <>
+        <Button variant="outline" onClick={() => setCartStep(1)} className="mb-3">{copy.back}</Button>
         {orderMode ? <>
           <div className="mt-5 border-t border-slate-200 pt-5 dark:border-white/10">
             <p className="mb-3 text-xs font-black text-slate-500">{lang === "ar" ? "أكمل بيانات الطلب" : lang === "fr" ? "Complétez la commande" : "Complete your order"}</p>
@@ -644,12 +652,13 @@ export default function RestaurantMenu() {
           <div className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm dark:bg-slate-900"><div className="flex justify-between"><span>{copy.total}</span><b>{formatMoney(subtotal + deliveryFee, currency)}</b></div>{deliveryFee > 0 && <p className="mt-1 text-xs text-slate-500">{copy.delivery}: {formatMoney(deliveryFee, currency)}</p>}</div>
           <Button disabled={checkout.isPending || !cart.length || !isOpen || !user} onClick={submitOrder} className="mt-4 h-12 w-full rounded-2xl font-black text-white" style={{ background:primary }}>{!user ? (lang === "ar" ? "سجّل الدخول أولًا" : lang === "fr" ? "Connectez-vous d’abord" : "Sign in first") : isOpen ? copy.checkout : copy.closed}</Button>
         </> : <div className="mt-5 rounded-2xl border border-dashed border-slate-300 p-4 text-center text-xs font-bold text-slate-500 dark:border-white/15">{lang === "ar" ? "بعد اختيار نوع الطلب تظهر لك الخطوات المطلوبة لإكماله." : lang === "fr" ? "Les étapes nécessaires apparaîtront après votre choix." : "The required checkout steps will appear after you choose an order type."}</div>}
+        </>}
       </DialogContent>
     </Dialog>
 
     <Dialog open={reservationOpen} onOpenChange={(open) => { setReservationOpen(open); if (!open) setReservationStep(1); }}>
       <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-xl overflow-y-auto rounded-[26px]">
-        <DialogHeader><DialogTitle>{copy.reservation}</DialogTitle><DialogDescription>{reservationStep === 1 ? `${copy.date} · ${copy.section}` : `${copy.name} · ${copy.phone}`}</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{copy.reservation} · {reservationStep}/2</DialogTitle><DialogDescription>{reservationStep === 1 ? `${copy.date} · ${copy.section}` : `${copy.name} · ${copy.phone}`}</DialogDescription></DialogHeader>
         {reservationStep === 1 ? <div className="grid gap-3 sm:grid-cols-2">
           <Input type="datetime-local" value={reservationDate} onChange={(e) => setReservationDate(e.target.value)} />
           {reservationSlots.data?.length ? <select value={reservationSlotId ?? ""} onChange={(e) => setReservationSlotId(Number(e.target.value) || undefined)} className="h-10 rounded-md border px-3"><option value="">{copy.date}</option>{reservationSlots.data.map((slot:any) => <option key={slot.id} value={slot.id}>{slot.label ?? slot.startTime ?? slot.id}</option>)}</select> : <div />}
@@ -666,11 +675,11 @@ export default function RestaurantMenu() {
       </DialogContent>
     </Dialog>
 
-    <Dialog open={waiterOpen} onOpenChange={setWaiterOpen}>
+    <Dialog open={waiterOpen} onOpenChange={(open) => { setWaiterOpen(open); if (!open) setWaiterStep(1); }}>
       <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-md overflow-y-auto rounded-[26px]">
-        <DialogHeader><DialogTitle>{copy.waiter}</DialogTitle><DialogDescription>{selectedBranch?.name || copy.branch}</DialogDescription></DialogHeader>
-        <div className="grid gap-3"><Input value={waiterTable} onChange={(e) => setWaiterTable(e.target.value)} placeholder={copy.table} /><Input value={waiterName} onChange={(e) => setWaiterName(e.target.value)} placeholder={copy.name} /><select value={waiterReason} onChange={(e) => setWaiterReason(e.target.value as typeof waiterReason)} className="h-10 rounded-md border px-3"><option value="المساعدة">{lang === "ar" ? "مساعدة" : "Help"}</option><option value="الطلب">{lang === "ar" ? "الطلب" : "Order"}</option><option value="الحساب">{lang === "ar" ? "الحساب" : "Account"}</option><option value="الفاتورة">{lang === "ar" ? "الفاتورة" : "Bill"}</option><option value="أخرى">{lang === "ar" ? "أخرى" : "Other"}</option></select></div>
-        <Button disabled={!restaurant.waiterCallEnabled || !selectedBranchId || !waiterTable.trim() || notifyWaiter.isPending} onClick={() => selectedBranchId && notifyWaiter.mutate({ slug, branchId:selectedBranchId, tableName:waiterTable.trim(), reason:waiterReason, customerName:waiterName.trim() || undefined })} className="mt-4 w-full text-white" style={{ background:primary }}>{copy.send}</Button>
+        <DialogHeader><DialogTitle>{copy.waiter} · {waiterStep}/2</DialogTitle><DialogDescription>{waiterStep === 1 ? `${selectedBranch?.name || copy.branch} · ${copy.table}` : `${copy.table}: ${waiterTable} · ${waiterReason}`}</DialogDescription></DialogHeader>
+        {waiterStep === 1 ? <div className="grid gap-3"><Input value={waiterTable} onChange={(e) => setWaiterTable(e.target.value)} placeholder={copy.table} /><select value={waiterReason} onChange={(e) => setWaiterReason(e.target.value as typeof waiterReason)} className="h-10 rounded-md border px-3"><option value="المساعدة">{lang === "ar" ? "مساعدة" : "Help"}</option><option value="الطلب">{lang === "ar" ? "الطلب" : "Order"}</option><option value="الحساب">{lang === "ar" ? "الحساب" : "Account"}</option><option value="الفاتورة">{lang === "ar" ? "الفاتورة" : "Bill"}</option><option value="أخرى">{lang === "ar" ? "أخرى" : "Other"}</option></select><Button disabled={!restaurant.waiterCallEnabled || !selectedBranchId || !waiterTable.trim()} onClick={() => setWaiterStep(2)} className="mt-2 text-white" style={{ background:primary }}>{copy.next}</Button></div> : <div className="grid gap-3"><Input value={waiterName} onChange={(e) => setWaiterName(e.target.value)} placeholder={copy.name} /><Button variant="outline" onClick={() => setWaiterStep(1)}>{copy.back}</Button>
+        <Button disabled={!restaurant.waiterCallEnabled || !selectedBranchId || !waiterTable.trim() || notifyWaiter.isPending} onClick={() => selectedBranchId && notifyWaiter.mutate({ slug, branchId:selectedBranchId, tableName:waiterTable.trim(), reason:waiterReason, customerName:waiterName.trim() || undefined })} className="mt-4 w-full text-white" style={{ background:primary }}>{copy.send}</Button></div>}
       </DialogContent>
     </Dialog>
   </main>;
