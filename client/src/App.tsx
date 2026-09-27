@@ -14,6 +14,7 @@ const routeLoaders = {
   RestaurantPublic: () => import("./pages/RestaurantPublic"),
   RestaurantsDirectory: () => import("./pages/RestaurantsDirectory"),
   CustomerDisplay: () => import("./pages/CustomerDisplay"),
+  PosCustomerDisplay: () => import("./pages/PosCustomerDisplay"),
   PublicDisplay: () => import("./pages/PublicDisplay"),
   CustomerPublic: () => import("./pages/CustomerPublic"),
   CustomerProfileSettings: () => import("./pages/CustomerProfileSettings"),
@@ -49,6 +50,7 @@ const SuperAdminApp = lazy(routeLoaders.SuperAdminApp);
 const RestaurantPublic = lazy(routeLoaders.RestaurantPublic);
 const RestaurantsDirectory = lazy(routeLoaders.RestaurantsDirectory);
 const CustomerDisplay = lazy(routeLoaders.CustomerDisplay);
+const PosCustomerDisplay = lazy(routeLoaders.PosCustomerDisplay);
 const PublicDisplay = lazy(routeLoaders.PublicDisplay);
 const CustomerPublic = lazy(routeLoaders.CustomerPublic);
 const CustomerProfileSettings = lazy(routeLoaders.CustomerProfileSettings);
@@ -172,6 +174,7 @@ function Router() {
       <Route path="/display/:token" component={PublicDisplay} />
       <Route path="/tv/:token" component={PublicDisplay} />
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
+      <Route path="/pos/customer-display" component={PosCustomerDisplay} />
       <Route path="/restaurant/:slug" component={RestaurantPublic} />
       <Route path="/menu/:slug" component={RestaurantPublic} />
       <Route path="/restaurants" component={RestaurantsDirectory} />
