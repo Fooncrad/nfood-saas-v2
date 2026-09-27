@@ -3,16 +3,16 @@ import { TRPCError } from "@trpc/server";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import { requireScopedPermission } from "./rbac";
-import { getDb } from "./db";
+import { getDb, requireRestaurantFeature } from "./db";
 
 vi.mock("./rbac", () => ({ requireScopedPermission: vi.fn() }));
-vi.mock("./db", async (original) => ({ ...await original<typeof import("./db")>(), getDb: vi.fn() }));
+vi.mock("./db", async (original) => ({ ...await original<typeof import("./db")>(), getDb: vi.fn(), requireRestaurantFeature: vi.fn() }));
 
 function context(testRole?: "cashier" | "restaurant_admin" | "admin", role = "user", restaurantId = 1): TrpcContext {
   return { user: { id: 10, role, testRole, restaurantId } as unknown as NonNullable<TrpcContext["user"]>, req: { headers: {} } as TrpcContext["req"], res: {} as TrpcContext["res"] };
 }
 const input = { restaurantId: 1, orderId: 2, pin: "1234" };
-beforeEach(() => { vi.resetAllMocks(); vi.mocked(getDb).mockResolvedValue(null); });
+beforeEach(() => { vi.resetAllMocks(); vi.mocked(getDb).mockResolvedValue(null); vi.mocked(requireRestaurantFeature).mockImplementation(async (_restaurantId, featureKey) => ({ key: featureKey, enabled: true, limit: null, reason: "enabled" })); });
 
 describe("refund permission enforcement", () => {
   it("denies missing permission before reading or mutating order data", async () => {
