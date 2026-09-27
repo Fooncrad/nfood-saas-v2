@@ -90,12 +90,36 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-let isReloadingForServiceWorker = false;
+let pendingServiceWorker: ServiceWorker | null = null;
+
+function announcePwaUpdate(worker: ServiceWorker) {
+  pendingServiceWorker = worker;
+  window.dispatchEvent(new CustomEvent("nfood:pwa-update-ready"));
+}
 
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
-  window.addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").then((registration) => { if (registration.waiting) registration.waiting.postMessage({ type: "SKIP_WAITING" }); registration.addEventListener("updatefound", () => { const worker = registration.installing; worker?.addEventListener("statechange", () => { if (worker.state === "installed" && navigator.serviceWorker.controller) worker.postMessage({ type: "SKIP_WAITING" }); }); }); }).catch((error) => console.warn("[PWA] Service Worker registration failed", error)); });
-  navigator.serviceWorker.addEventListener("message", (event) => { if (event.data?.type === "NFOOD_SYNC_REQUEST") window.dispatchEvent(new CustomEvent("nfood:sync-request")); });
-  navigator.serviceWorker.addEventListener("controllerchange", () => { if (isReloadingForServiceWorker) return; isReloadingForServiceWorker = true; window.location.reload(); });
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").then((registration) => {
+      if (registration.waiting) announcePwaUpdate(registration.waiting);
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        worker?.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) announcePwaUpdate(worker);
+        });
+      });
+    }).catch((error) => console.warn("[PWA] Service Worker registration failed", error));
+  });
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (event.data?.type === "NFOOD_SYNC_REQUEST") window.dispatchEvent(new CustomEvent("nfood:sync-request"));
+  });
+  window.addEventListener("nfood:apply-pwa-update", () => {
+    pendingServiceWorker?.postMessage({ type: "SKIP_WAITING" });
+  });
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    // Never force-reload an active POS sale. The new worker controls the next navigation.
+    pendingServiceWorker = null;
+    window.dispatchEvent(new CustomEvent("nfood:pwa-update-applied"));
+  });
 }
 
 createRoot(document.getElementById("root")!).render(
