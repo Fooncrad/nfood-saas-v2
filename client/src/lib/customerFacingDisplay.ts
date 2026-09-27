@@ -18,14 +18,24 @@ export type CustomerFacingState = {
   receiptNumber?: string;
 };
 
-const KEY = "nfood-pos-customer-facing";
-const CHANNEL = "nfood-pos-customer-facing";
+const PREFIX = "nfood-pos-customer-facing";
 
-export function publishCustomerFacingState(state: CustomerFacingState) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(KEY, JSON.stringify(state));
+function safeSessionId(value: string) {
+  return /^[a-zA-Z0-9_-]{16,80}$/.test(value) ? value : null;
+}
+
+export function createCustomerDisplaySessionId() {
+  return crypto.randomUUID().replaceAll("-", "");
+}
+
+function key(sessionId: string) { return `${PREFIX}:${sessionId}`; }
+function channelName(sessionId: string) { return `${PREFIX}:${sessionId}`; }
+
+export function publishCustomerFacingState(sessionId: string, state: CustomerFacingState) {
+  if (typeof window === "undefined" || !safeSessionId(sessionId)) return;
+  localStorage.setItem(key(sessionId), JSON.stringify(state));
   try {
-    const channel = new BroadcastChannel(CHANNEL);
+    const channel = new BroadcastChannel(channelName(sessionId));
     channel.postMessage(state);
     channel.close();
   } catch {
@@ -33,27 +43,32 @@ export function publishCustomerFacingState(state: CustomerFacingState) {
   }
 }
 
-export function readCustomerFacingState(): CustomerFacingState | null {
-  if (typeof window === "undefined") return null;
+export function clearCustomerFacingState(sessionId: string) {
+  if (typeof window === "undefined" || !safeSessionId(sessionId)) return;
+  localStorage.removeItem(key(sessionId));
+}
+
+export function readCustomerFacingState(sessionId: string): CustomerFacingState | null {
+  if (typeof window === "undefined" || !safeSessionId(sessionId)) return null;
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(key(sessionId));
     return raw ? JSON.parse(raw) as CustomerFacingState : null;
   } catch {
     return null;
   }
 }
 
-export function subscribeCustomerFacingState(onState: (state: CustomerFacingState) => void) {
-  if (typeof window === "undefined") return () => undefined;
+export function subscribeCustomerFacingState(sessionId: string, onState: (state: CustomerFacingState) => void) {
+  if (typeof window === "undefined" || !safeSessionId(sessionId)) return () => undefined;
   let channel: BroadcastChannel | null = null;
   try {
-    channel = new BroadcastChannel(CHANNEL);
+    channel = new BroadcastChannel(channelName(sessionId));
     channel.onmessage = (event) => onState(event.data as CustomerFacingState);
   } catch {
     channel = null;
   }
   const onStorage = (event: StorageEvent) => {
-    if (event.key !== KEY || !event.newValue) return;
+    if (event.key !== key(sessionId) || !event.newValue) return;
     try { onState(JSON.parse(event.newValue) as CustomerFacingState); } catch { /* ignore invalid local state */ }
   };
   window.addEventListener("storage", onStorage);
