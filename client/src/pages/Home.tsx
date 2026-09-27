@@ -323,6 +323,8 @@ function PosView({ restaurantId }: { restaurantId: number }) {
     try {
       const result = await createOrder.mutateAsync(payload);
       toast.success(`تم حفظ الطلب #${result.orderId}`);
+      publishCustomerFacingState(customerDisplaySessionId, { restaurantId, updatedAt: new Date().toISOString(), status: "complete", lines: cart.map((item) => ({ id: item.product.id, name: item.product.name, quantity: item.quantity, unitPrice: item.product.price })), subtotal: Number(result.pricing?.subtotal ?? total), discount: Number(result.pricing?.discountAmount ?? 0), tax: Number(result.pricing?.taxAmount ?? 0), total: Number(result.pricing?.total ?? total), currencyCode: result.currency?.currencyCode ?? "SAR", receiptNumber: String(result.orderId) });
+      window.setTimeout(() => publishCustomerFacingState(customerDisplaySessionId, { restaurantId, updatedAt: new Date().toISOString(), status: "idle", lines: [], subtotal: 0, discount: 0, tax: 0, total: 0, currencyCode: result.currency?.currencyCode ?? "SAR" }), 12000);
       setCart([]);
     } catch (error) {
       // The server may have accepted the request before the response was lost.
