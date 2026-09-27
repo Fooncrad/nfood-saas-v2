@@ -197,14 +197,14 @@ export default function MarketplaceStoresView() {
             <DialogTitle>تعديل المتجر</DialogTitle>
             <DialogDescription>تعديل مباشر من Admin لبيانات المنشأة التشغيلية والاشتراك. الدولة والعملة الحالية: {selected?.countryCode ?? "—"} / {selected?.currencyCode ?? "—"}.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-1">
             <label className="block text-sm font-semibold">
               اسم المنشأة
               <Input value={draft.customerName} onChange={(event) => setDraft({ ...draft, customerName: event.target.value })} className="mt-2 rounded-xl" />
             </label>
             <label className="block text-sm font-semibold">
               الباقة
-              <select value={draft.plan} onChange={(event) => setDraft({ ...draft, plan: event.target.value as (typeof PLAN_TIERS)[number] })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm">
+              <select value={draft.plan} onChange={(event) => setDraft({ ...draft, plan: event.target.value as (typeof PLAN_TIERS)[number] })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                 {PLAN_TIERS.map((plan) => <option key={plan} value={plan}>{plan}</option>)}
               </select>
             </label>
@@ -216,7 +216,7 @@ export default function MarketplaceStoresView() {
               رسوم الترخيص (ر.س)
               <Input value={draft.licensingFee} onChange={(event) => setDraft({ ...draft, licensingFee: event.target.value })} dir="ltr" placeholder="0.00" className="mt-2 rounded-xl" />
             </label>
-            <label className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-sm font-semibold">
+            <label className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-sm font-semibold dark:bg-slate-900">
               المتجر مفعّل
               <input type="checkbox" checked={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.checked })} className="h-4 w-4 accent-[#e76f3c]" />
             </label>
