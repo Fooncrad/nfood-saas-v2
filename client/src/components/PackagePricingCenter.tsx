@@ -16,6 +16,7 @@ export default function PackagePricingCenter() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createDraft, setCreateDraft] = useState({ name: "", description: "", planType: "monthly" as const, monthlyPrice: "0", yearlyPrice: "0" });
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
   const plans = plansQuery.data ?? [];
   const definitions = definitionsQuery.data ?? [];
   const updatePlan = trpc.admin.updatePackagePlan.useMutation({
@@ -31,7 +32,7 @@ export default function PackagePricingCenter() {
     onError: e => toast.error(e.message),
   });
   const deletePlan = trpc.admin.deletePackagePlan.useMutation({
-    onSuccess: async () => { await utils.admin.packagePlans.invalidate(); setDeleteTarget(null); toast.success("تم حذف الباقة"); },
+    onSuccess: async () => { await utils.admin.packagePlans.invalidate(); setDeleteTarget(null); setDeleteReason(""); toast.success("تم حذف الباقة"); },
     onError: e => toast.error(e.message),
   });
   const totals = useMemo(() => ({
@@ -96,6 +97,6 @@ export default function PackagePricingCenter() {
       </CardContent>
     </Card>
     {createOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onMouseDown={e=>{if(e.currentTarget===e.target&&!createPlan.isPending)setCreateOpen(false)}}><div role="dialog" aria-modal="true" className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-950"><div className="flex items-center justify-between"><h2 className="text-lg font-black">إنشاء باقة مطاعم/مقاهي</h2><Button size="icon" variant="ghost" disabled={createPlan.isPending} onClick={()=>setCreateOpen(false)}><X className="h-4 w-4"/></Button></div><div className="mt-4 space-y-3"><label className="text-xs font-bold">اسم الباقة<Input value={createDraft.name} onChange={e=>setCreateDraft(x=>({...x,name:e.target.value}))} className="mt-2"/></label><label className="text-xs font-bold">الوصف<Input value={createDraft.description} onChange={e=>setCreateDraft(x=>({...x,description:e.target.value}))} className="mt-2"/></label><div className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold">السعر الشهري<Input value={createDraft.monthlyPrice} onChange={e=>setCreateDraft(x=>({...x,monthlyPrice:e.target.value}))} className="mt-2"/></label><label className="text-xs font-bold">السعر السنوي<Input value={createDraft.yearlyPrice} onChange={e=>setCreateDraft(x=>({...x,yearlyPrice:e.target.value}))} className="mt-2"/></label></div><Button className="w-full rounded-xl bg-[#e76f3c]" disabled={createPlan.isPending} onClick={createHospitalityPlan}>{createPlan.isPending?"جارٍ إنشاء الباقة…":"إنشاء الباقة"}</Button></div></div></div>}
-    {deleteTarget && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><div role="alertdialog" aria-modal="true" className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-950"><h2 className="text-lg font-black">حذف الباقة؟</h2><p className="mt-2 text-sm text-slate-500">سيتم حذف «{deleteTarget.name}» ومميزاتها. الباقة المرتبطة باشتراكات لن يسمح النظام بحذفها.</p><div className="mt-5 flex gap-2"><Button variant="destructive" disabled={deletePlan.isPending} onClick={()=>deletePlan.mutate({id:deleteTarget.id})}>{deletePlan.isPending?"جارٍ الحذف…":"تأكيد الحذف"}</Button><Button variant="outline" disabled={deletePlan.isPending} onClick={()=>setDeleteTarget(null)}>إلغاء</Button></div></div></div>}
+    {deleteTarget && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><div role="alertdialog" aria-modal="true" aria-labelledby="delete-package-title" className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-5 shadow-2xl dark:border-red-950 dark:bg-slate-950"><h2 id="delete-package-title" className="text-lg font-black text-red-700 dark:text-red-400">تأكيد حذف الباقة</h2><p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">أنت على وشك حذف «{deleteTarget.name}» ومميزاتها نهائيًا. لن يسمح النظام بحذف باقة مرتبطة باشتراكات نشطة أو محفوظة.</p><label className="mt-4 block text-xs font-bold">سبب الحذف <span className="text-red-600">*</span><Input autoFocus value={deleteReason} onChange={e=>setDeleteReason(e.target.value)} placeholder="مثال: باقة تجريبية مكررة تم إنشاؤها بالخطأ" className="mt-2"/></label><p className="mt-2 text-[11px] text-slate-500">يُحفظ السبب في سجل التدقيق للإدارة. الحد الأدنى 5 أحرف.</p><div className="mt-5 flex gap-2"><Button variant="destructive" disabled={deletePlan.isPending || deleteReason.trim().length < 5} onClick={()=>deletePlan.mutate({id:deleteTarget.id,reason:deleteReason.trim()})}>{deletePlan.isPending?"جارٍ الحذف…":"نعم، احذف الباقة"}</Button><Button variant="outline" disabled={deletePlan.isPending} onClick={()=>{setDeleteTarget(null);setDeleteReason("")}}>إلغاء</Button></div></div></div>}
   </div>;
 }
