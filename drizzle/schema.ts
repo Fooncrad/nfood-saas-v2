@@ -759,12 +759,15 @@ export const deliveryLocationAccess = mysqlTable("deliveryLocationAccess", {
 export const orderItems = mysqlTable("orderItems", {
   id: int("id").autoincrement().primaryKey(),
   orderId: int("orderId").notNull(),
-  menuItemId: int("menuItemId").notNull(),
+  menuItemId: int("menuItemId"),
+  sourceType: mysqlEnum("sourceType", ["menu_item", "marketplace_variant"]).default("menu_item").notNull(),
+  marketplaceVariantId: int("marketplaceVariantId"),
   quantity: int("quantity").default(1).notNull(),
   unitPrice: decimal("unitPrice", { precision: 10, scale: 2 }).notNull(),
   selectedAddonsJson: text("selectedAddonsJson"),
 }, (table) => ({
   orderIdIdx: index("orderItems_order_id_idx").on(table.orderId),
+  marketplaceVariantIdx: index("orderItems_marketplace_variant_idx").on(table.marketplaceVariantId),
 }));
 
 export const loyaltyAccounts = mysqlTable("loyaltyAccounts", {
