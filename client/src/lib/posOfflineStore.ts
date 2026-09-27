@@ -1,23 +1,34 @@
 export type PosOfflineEnvelope<T> = {
   id: string;
   createdAt: string;
+  updatedAt: string;
   attempts: number;
+  status: "pending" | "retry" | "dead_letter";
+  lastError: string | null;
+  restaurantId: number | null;
+  branchId: number | null;
   payload: T;
 };
 
 const DB_NAME = "nfood-pos";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = "outbox";
+const MAX_ATTEMPTS = 5;
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
+      let store: IDBObjectStore;
       if (!db.objectStoreNames.contains(STORE)) {
-        const store = db.createObjectStore(STORE, { keyPath: "id" });
-        store.createIndex("createdAt", "createdAt");
+        store = db.createObjectStore(STORE, { keyPath: "id" });
+      } else {
+        store = request.transaction!.objectStore(STORE);
       }
+      if (!store.indexNames.contains("createdAt")) store.createIndex("createdAt", "createdAt");
+      if (!store.indexNames.contains("restaurantId")) store.createIndex("restaurantId", "restaurantId");
+      if (!store.indexNames.contains("status")) store.createIndex("status", "status");
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error("Could not open POS offline database"));
@@ -33,18 +44,35 @@ function transaction<T>(mode: IDBTransactionMode, run: (store: IDBObjectStore, r
   }));
 }
 
-export async function listPosOffline<T>(): Promise<Array<PosOfflineEnvelope<T>>> {
-  if (typeof indexedDB === "undefined") return [];
-  return transaction("readonly", (store, resolve, reject) => {
-    const request = store.index("createdAt").getAll();
-    request.onsuccess = () => resolve(request.result as Array<PosOfflineEnvelope<T>>);
-    request.onerror = () => reject(request.error);
-  });
+function normalizeEnvelope<T>(item: Partial<PosOfflineEnvelope<T>> & { id: string; createdAt: string; payload: T }): PosOfflineEnvelope<T> {
+  const payload = item.payload as T & { restaurantId?: number; branchId?: number };
+  return {
+    id: item.id,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt ?? item.createdAt,
+    attempts: item.attempts ?? 0,
+    status: item.status ?? "pending",
+    lastError: item.lastError ?? null,
+    restaurantId: item.restaurantId ?? payload?.restaurantId ?? null,
+    branchId: item.branchId ?? payload?.branchId ?? null,
+    payload: item.payload,
+  };
 }
 
-export async function enqueuePosOffline<T>(payload: T, id = crypto.randomUUID()): Promise<string> {
+export async function listPosOffline<T>(scope?: { restaurantId?: number; includeDeadLetter?: boolean }): Promise<Array<PosOfflineEnvelope<T>>> {
+  if (typeof indexedDB === "undefined") return [];
+  const rows = await transaction<Array<PosOfflineEnvelope<T>>>("readonly", (store, resolve, reject) => {
+    const request = store.index("createdAt").getAll();
+    request.onsuccess = () => resolve((request.result as Array<PosOfflineEnvelope<T>>).map(normalizeEnvelope));
+    request.onerror = () => reject(request.error);
+  });
+  return rows.filter((item) => (scope?.restaurantId === undefined || item.restaurantId === scope.restaurantId) && (scope?.includeDeadLetter || item.status !== "dead_letter"));
+}
+
+export async function enqueuePosOffline<T extends { restaurantId?: number; branchId?: number }>(payload: T, id = crypto.randomUUID()): Promise<string> {
   if (typeof indexedDB === "undefined") throw new Error("IndexedDB is unavailable");
-  const envelope: PosOfflineEnvelope<T> = { id, payload, createdAt: new Date().toISOString(), attempts: 0 };
+  const now = new Date().toISOString();
+  const envelope: PosOfflineEnvelope<T> = { id, payload, createdAt: now, updatedAt: now, attempts: 0, status: "pending", lastError: null, restaurantId: payload.restaurantId ?? null, branchId: payload.branchId ?? null };
   await transaction<void>("readwrite", (store, resolve, reject) => {
     const request = store.put(envelope);
     request.onsuccess = () => resolve();
@@ -62,10 +90,12 @@ export async function removePosOffline(id: string): Promise<void> {
   });
 }
 
-export async function incrementPosOfflineAttempt<T>(item: PosOfflineEnvelope<T>): Promise<void> {
+async function markPosOfflineFailure<T>(item: PosOfflineEnvelope<T>, error: unknown): Promise<void> {
   if (typeof indexedDB === "undefined") return;
+  const attempts = item.attempts + 1;
+  const message = error instanceof Error ? error.message.slice(0, 500) : "POS sync failed";
   await transaction<void>("readwrite", (store, resolve, reject) => {
-    const request = store.put({ ...item, attempts: item.attempts + 1 });
+    const request = store.put({ ...item, attempts, status: attempts >= MAX_ATTEMPTS ? "dead_letter" : "retry", lastError: message, updatedAt: new Date().toISOString() });
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
@@ -74,19 +104,22 @@ export async function incrementPosOfflineAttempt<T>(item: PosOfflineEnvelope<T>)
 export async function replayPosOffline<T>(
   send: (payload: T) => Promise<unknown>,
   isOnline: () => boolean = () => navigator.onLine,
-): Promise<{ synced: number; remaining: number }> {
-  const queue = await listPosOffline<T>();
+  scope?: { restaurantId?: number },
+): Promise<{ synced: number; remaining: number; deadLetter: number }> {
+  const queue = await listPosOffline<T>({ ...scope, includeDeadLetter: true });
   let synced = 0;
   for (const item of queue) {
     if (!isOnline()) break;
+    if (item.status === "dead_letter") continue;
     try {
       await send(item.payload);
       await removePosOffline(item.id);
       synced += 1;
-    } catch {
-      await incrementPosOfflineAttempt(item);
+    } catch (error) {
+      await markPosOfflineFailure(item, error);
       break;
     }
   }
-  return { synced, remaining: (await listPosOffline<T>()).length };
+  const after = await listPosOffline<T>({ ...scope, includeDeadLetter: true });
+  return { synced, remaining: after.filter((item) => item.status !== "dead_letter").length, deadLetter: after.filter((item) => item.status === "dead_letter").length };
 }
