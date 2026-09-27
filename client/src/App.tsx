@@ -12,7 +12,6 @@ const routeLoaders = {
   Home: () => import("./pages/Home"),
   SuperAdminApp: () => import("./pages/SuperAdminApp"),
   RestaurantPublic: () => import("./pages/RestaurantPublic"),
-  RestaurantsDirectory: () => import("./pages/RestaurantsDirectory"),
   CustomerDisplay: () => import("./pages/CustomerDisplay"),
   PosCustomerDisplay: () => import("./pages/PosCustomerDisplay"),
   PublicDisplay: () => import("./pages/PublicDisplay"),
@@ -30,8 +29,6 @@ const routeLoaders = {
   CustomerStudioPlans: () => import("./pages/CustomerStudioPlans"),
   CustomerBenefits: () => import("./pages/CustomerBenefits"),
   CustomerRegister: () => import("./pages/CustomerRegister"),
-  ContentMarketplace: () => import("./pages/ContentMarketplace"),
-  CreatorContentStatus: () => import("./pages/CreatorContentStatus"),
   PlatformContentModeration: () => import("./pages/PlatformContentModeration"),
   SupportManagement: () => import("./pages/SupportManagement"),
   VcardCardsAdmin: () => import("./pages/VcardCardsAdmin"),
@@ -48,7 +45,6 @@ const routeLoaders = {
 const Home = lazy(routeLoaders.Home);
 const SuperAdminApp = lazy(routeLoaders.SuperAdminApp);
 const RestaurantPublic = lazy(routeLoaders.RestaurantPublic);
-const RestaurantsDirectory = lazy(routeLoaders.RestaurantsDirectory);
 const CustomerDisplay = lazy(routeLoaders.CustomerDisplay);
 const PosCustomerDisplay = lazy(routeLoaders.PosCustomerDisplay);
 const PublicDisplay = lazy(routeLoaders.PublicDisplay);
@@ -66,8 +62,6 @@ const CustomerStudio = lazy(routeLoaders.CustomerStudio);
 const CustomerStudioPlans = lazy(routeLoaders.CustomerStudioPlans);
 const CustomerBenefits = lazy(routeLoaders.CustomerBenefits);
 const CustomerRegister = lazy(routeLoaders.CustomerRegister);
-const ContentMarketplace = lazy(routeLoaders.ContentMarketplace);
-const CreatorContentStatus = lazy(routeLoaders.CreatorContentStatus);
 const PlatformContentModeration = lazy(routeLoaders.PlatformContentModeration);
 const SupportManagement = lazy(routeLoaders.SupportManagement);
 const VcardCardsAdmin = lazy(routeLoaders.VcardCardsAdmin);
@@ -84,8 +78,15 @@ const CustomerProfileSettingsRoute = () => <CustomerProfileSettings />;
 import PublicHome from "./pages/PublicHome";
 import LoginPage from "./pages/LoginPage";
 import RegisterScreen from "./pages/RegisterScreen";
-import { PricingPage, FeaturesPage, HowItWorksPage, LegalPage, ContactPage, SubscriptionStatusPage } from "./pages/PublicInfoPages";
+import { LegalPage, ContactPage, SubscriptionStatusPage } from "./pages/PublicInfoPages";
 import { useAuth } from "./_core/hooks/useAuth";
+
+function LegacyRedirect({ to }: { to: string }) {
+  useEffect(() => {
+    window.location.replace(to);
+  }, [to]);
+  return <PageLoading />;
+}
 
 function PageLoading() {
   return <div className="min-h-screen bg-background px-4 py-4 text-foreground" aria-live="polite"><div className="mx-auto max-w-7xl space-y-3 opacity-80"><div className="h-10 w-48 animate-pulse rounded-2xl bg-muted" /><div className="grid gap-3 sm:grid-cols-3"><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /></div></div></div>;
@@ -108,7 +109,7 @@ function AppContent() {
     setShowGlobalLoader(false);
   }, []);
   useEffect(() => {
-    const timer = window.setTimeout(() => { void Promise.all([routeLoaders.Home(), routeLoaders.RestaurantPublic(), routeLoaders.RestaurantsDirectory(), routeLoaders.CustomerPortal(), routeLoaders.CustomerOrders()]); }, 1800);
+    const timer = window.setTimeout(() => { void Promise.all([routeLoaders.Home(), routeLoaders.RestaurantPublic(), routeLoaders.CustomerPortal(), routeLoaders.CustomerOrders()]); }, 1800);
     return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => {
@@ -152,16 +153,17 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterScreen} />
       <Route path="/customer-register" component={CustomerRegister} />
-      <Route path="/content-market" component={ContentMarketplace} />
-      <Route path="/creator-content" component={CreatorContentStatus} />
+      <Route path="/content-market" component={() => <LegacyRedirect to="/marketplace" />} />
+      <Route path="/creator-content" component={() => <LegacyRedirect to="/customer-studio" />} />
       <Route path="/admin/content-moderation" component={PlatformContentModeration} />
       <Route path="/restaurant/register" component={RegisterScreen} />
-      <Route path="/pricing" component={PricingPage} />
-      <Route path="/features" component={FeaturesPage} />
-      <Route path="/how-it-works" component={HowItWorksPage} />
+      <Route path="/pricing" component={() => <LegacyRedirect to="/#plans" />} />
+      <Route path="/features" component={() => <LegacyRedirect to="/#features" />} />
+      <Route path="/how-it-works" component={() => <LegacyRedirect to="/#how" />} />
       <Route path="/terms" component={() => <LegalPage kind="terms" />} />
       <Route path="/privacy" component={() => <LegalPage kind="privacy" />} />
-      <Route path="/refund-policy" component={() => <LegalPage kind="refund" />} />
+      <Route path="/refund-policy" component={() => <LegacyRedirect to="/refund" />} />
+      <Route path="/refund" component={() => <LegalPage kind="refund" />} />
       <Route path="/contact" component={ContactPage} />
       <Route path="/subscription-status" component={SubscriptionStatusPage} />
       <Route path="/marketplace" component={MarketplaceLanding} />
@@ -177,7 +179,7 @@ function Router() {
       <Route path="/pos/customer-display" component={PosCustomerDisplay} />
       <Route path="/restaurant/:slug" component={RestaurantPublic} />
       <Route path="/menu/:slug" component={RestaurantPublic} />
-      <Route path="/restaurants" component={RestaurantsDirectory} />
+      <Route path="/restaurants" component={() => <LegacyRedirect to="/marketplace" />} />
       <Route path="/customer/:slug" component={() => <CustomerAreaGuard><CustomerPublic /></CustomerAreaGuard>} />
       <Route path="/vcard/:slug" component={() => <CustomerAreaGuard><CustomerPublic /></CustomerAreaGuard>} />
       <Route path="/customer-profile" component={() => <CustomerAreaGuard><CustomerProfileSettingsRoute /></CustomerAreaGuard>} />
