@@ -36,8 +36,8 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
 import { QRCodeSVG } from "qrcode.react";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
