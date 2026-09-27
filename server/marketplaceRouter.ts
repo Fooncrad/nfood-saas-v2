@@ -17,6 +17,7 @@ import {
   branches,
   entityStorageUsage,
   marketplaceListings,
+  marketplaceListingVariants,
   marketplaceSectors,
   marketplaceStorefrontSettings,
   platformEntities,
@@ -68,6 +69,54 @@ async function requireProviderEntity(user: AuthUser | null, db: NonNullable<Awai
 const entityIdSchema = z.string().trim().min(1).max(30);
 
 export const marketplaceRouter = router({
+  posLookupProduct: protectedProcedure.input(z.object({
+    code: z.string().trim().min(1).max(120),
+  })).query(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+    const entity = await requireProviderEntity(ctx.user, db);
+    const code = input.code.trim();
+    const rows = await db.select({
+      variantId: marketplaceListingVariants.id,
+      listingId: marketplaceListings.id,
+      title: marketplaceListings.title,
+      imageUrl: marketplaceListingVariants.imageUrl,
+      fallbackImageUrl: marketplaceListings.imageUrl,
+      sku: marketplaceListingVariants.sku,
+      barcode: marketplaceListingVariants.barcode,
+      variantPrice: marketplaceListingVariants.price,
+      listingPrice: marketplaceListings.price,
+      currencyCode: marketplaceListings.currencyCode,
+      stockQuantity: marketplaceListingVariants.stockQuantity,
+      option1Name: marketplaceListingVariants.option1Name,
+      option1Value: marketplaceListingVariants.option1Value,
+      option2Name: marketplaceListingVariants.option2Name,
+      option2Value: marketplaceListingVariants.option2Value,
+    }).from(marketplaceListingVariants)
+      .innerJoin(marketplaceListings, eq(marketplaceListingVariants.listingId, marketplaceListings.id))
+      .where(and(
+        eq(marketplaceListings.entityId, entity.id),
+        eq(marketplaceListings.status, "active"),
+        eq(marketplaceListingVariants.isActive, true),
+        or(eq(marketplaceListingVariants.barcode, code), eq(marketplaceListingVariants.sku, code)),
+      ))
+      .limit(2);
+    if (!rows.length) throw new TRPCError({ code: "NOT_FOUND", message: "لم يتم العثور على منتج مطابق لهذا الباركود أو SKU" });
+    if (rows.length > 1) throw new TRPCError({ code: "CONFLICT", message: "الباركود أو SKU مكرر داخل المتجر. صحح بيانات المنتجات قبل البيع." });
+    const row = rows[0];
+    return {
+      id: row.variantId,
+      listingId: row.listingId,
+      name: row.title,
+      imageUrl: row.imageUrl ?? row.fallbackImageUrl,
+      sku: row.sku,
+      barcode: row.barcode,
+      price: Number(row.variantPrice ?? row.listingPrice),
+      currencyCode: row.currencyCode,
+      stockQuantity: row.stockQuantity,
+      options: [row.option1Name && row.option1Value ? `${row.option1Name}: ${row.option1Value}` : null, row.option2Name && row.option2Value ? `${row.option2Name}: ${row.option2Value}` : null].filter(Boolean),
+    };
+  }),
   // ── Public storefront ────────────────────────────────────────────────
   publicAppearance: publicProcedure.query(async () => { const settings = await getPlatformSettings(); let appearance: Record<string, unknown> = {}; try { appearance = JSON.parse(settings.marketplaceAppearanceJson || "{}"); } catch {} return { siteName: settings.siteName, siteLogoUrl: settings.siteLogoUrl, socialLinks: settings.socialLinks, appearance }; }),
   publicSectors: publicProcedure.query(async () => {
