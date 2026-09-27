@@ -756,6 +756,54 @@ export const deliveryLocationAccess = mysqlTable("deliveryLocationAccess", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({ deliveryLocationOrderIdx: index("delivery_location_order_driver_idx").on(table.orderId, table.driverUserId, table.expiresAt) }));
 
+export const posRegisters = mysqlTable("posRegisters", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").notNull().references(() => branches.id),
+  name: varchar("name", { length: 120 }).notNull(),
+  deviceKey: varchar("deviceKey", { length: 128 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  branchNameUnique: uniqueIndex("pos_registers_branch_name_unique").on(table.branchId, table.name),
+  restaurantBranchIdx: index("pos_registers_restaurant_branch_idx").on(table.restaurantId, table.branchId),
+}));
+
+export const posShifts = mysqlTable("posShifts", {
+  id: int("id").autoincrement().primaryKey(),
+  registerId: int("registerId").notNull().references(() => posRegisters.id),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").notNull().references(() => branches.id),
+  cashierUserId: int("cashierUserId").notNull().references(() => users.id),
+  status: mysqlEnum("status", ["open", "closed"]).default("open").notNull(),
+  openingCash: decimal("openingCash", { precision: 12, scale: 2 }).default("0.00").notNull(),
+  expectedCash: decimal("expectedCash", { precision: 12, scale: 2 }).default("0.00").notNull(),
+  countedCash: decimal("countedCash", { precision: 12, scale: 2 }),
+  varianceAmount: decimal("varianceAmount", { precision: 12, scale: 2 }),
+  openedAt: timestamp("openedAt").defaultNow().notNull(),
+  closedAt: timestamp("closedAt"),
+  closedByUserId: int("closedByUserId").references(() => users.id),
+  note: varchar("note", { length: 500 }),
+}, (table) => ({
+  registerStatusIdx: index("pos_shifts_register_status_idx").on(table.registerId, table.status),
+  cashierStatusIdx: index("pos_shifts_cashier_status_idx").on(table.cashierUserId, table.status),
+}));
+
+export const posCashMovements = mysqlTable("posCashMovements", {
+  id: int("id").autoincrement().primaryKey(),
+  shiftId: int("shiftId").notNull().references(() => posShifts.id),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  branchId: int("branchId").notNull().references(() => branches.id),
+  type: mysqlEnum("type", ["cash_in", "cash_out"]).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  reason: varchar("reason", { length: 300 }).notNull(),
+  createdByUserId: int("createdByUserId").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  shiftDateIdx: index("pos_cash_movements_shift_date_idx").on(table.shiftId, table.createdAt),
+}));
+
 export const orderItems = mysqlTable("orderItems", {
   id: int("id").autoincrement().primaryKey(),
   orderId: int("orderId").notNull(),
