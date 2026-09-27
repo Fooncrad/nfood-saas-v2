@@ -12,7 +12,7 @@ import FloatingSupportActions from "@/components/FloatingSupportActions";
 
 type PublicFeatureGroup = { title: string; items: string[] };
 type PublicFeatureLocale = { title?: string; subtitle?: string; groups?: PublicFeatureGroup[] };
-type PublicPlan = { name: string; price: string; yearlyPrice?: string; desc: string; items: string[]; featured?: boolean };
+type PublicPlan = { name: string; price: string; yearlyPrice?: string; desc: string; items: readonly string[]; featured?: boolean };
 type PublicPricingLocale = { title?: string; subtitle?: string; monthly?: string; yearly?: string; save?: string; plans?: PublicPlan[] };
 function parsePublicJson<T>(value: string | undefined, fallback: T): T {
   if (!value) return fallback;
