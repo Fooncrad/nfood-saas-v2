@@ -1,4 +1,7 @@
-export type OfflineQueueItem<T> = T & { offlineId?: string; offlineAttempts?: number; offlineLastError?: string };\nexport type OfflineDeadLetterItem<T> = OfflineQueueItem<T> & { deadLetteredAt: string; deadLetterReason: string };\n\nconst TERMINAL_OFFLINE_CODES = new Set(["BAD_REQUEST", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND", "PRECONDITION_FAILED", "UNPROCESSABLE_CONTENT"]);
+export type OfflineQueueItem<T> = T & { offlineId?: string; offlineAttempts?: number; offlineLastError?: string };
+export type OfflineDeadLetterItem<T> = OfflineQueueItem<T> & { deadLetteredAt: string; deadLetterReason: string };
+
+const TERMINAL_OFFLINE_CODES = new Set(["BAD_REQUEST", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND", "PRECONDITION_FAILED", "UNPROCESSABLE_CONTENT"]);
 
 export function readOfflineQueue<T>(storage: Pick<Storage, "getItem">, key: string): Array<OfflineQueueItem<T>> {
   try {
