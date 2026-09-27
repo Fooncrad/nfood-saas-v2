@@ -225,8 +225,7 @@ export default function MarketplaceStoresView() {
               {updateStore.isPending ? "جارٍ الحفظ..." : "حفظ التعديلات"}
             </Button>
           </div>
-        </div>
-          </DialogContent>
+        </DialogContent>
       </Dialog>
     </section>
   );
