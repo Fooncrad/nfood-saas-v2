@@ -500,14 +500,14 @@ export default function RestaurantMenu() {
     </footer>
 
     {drawerOpen && <div className="fixed inset-0 z-[90] bg-slate-950/60 backdrop-blur-sm" onClick={() => setDrawerOpen(false)}><aside onClick={(event) => event.stopPropagation()} className={`absolute top-0 flex h-[100dvh] w-[min(88vw,340px)] flex-col overflow-y-auto p-5 shadow-2xl ${direction === "rtl" ? "end-0" : "start-0"} ${dark ? "bg-[#0b1d35] text-white" : "bg-white text-[#0b1d35]"}`}><div className="flex items-center justify-between"><b className="text-lg">{restaurant.brandName || restaurant.name}</b><button onClick={() => setDrawerOpen(false)} className="grid h-9 w-9 place-items-center rounded-xl bg-slate-500/10"><X className="h-4 w-4" /></button></div><div className="mt-6 grid gap-2">
-      {[
-        [copy.menu, Utensils, () => { setDrawerOpen(false); document.getElementById("menu-grid")?.scrollIntoView({ behavior:"smooth" }); }],
-        [copy.cart, ShoppingBag, () => { setDrawerOpen(false); setCartOpen(true); }],
-        [copy.reservation, CalendarDays, () => { setDrawerOpen(false); setReservationOpen(true); }],
-        [copy.waiter, ConciergeBell, () => { setDrawerOpen(false); setWaiterOpen(true); }],
-        [copy.account, UserRound, () => navigate(user ? "/customer-portal" : `/login?next=${encodeURIComponent(location)}`)],
-        [copy.install, Smartphone, () => void installApp()],
-      ].map(([label, Icon, action]) => <button key={String(label)} onClick={action as () => void} className={`flex items-center justify-between rounded-2xl border p-4 text-start text-sm font-black ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`}><span className="flex items-center gap-3"><Icon className="h-5 w-5" />{String(label)}</span><ChevronDown className="h-4 w-4 -rotate-90 opacity-40" /></button>)}
+      {([
+        { label: copy.menu, Icon: Utensils, action: () => { setDrawerOpen(false); document.getElementById("menu-grid")?.scrollIntoView({ behavior:"smooth" }); } },
+        { label: copy.cart, Icon: ShoppingBag, action: () => { setDrawerOpen(false); setCartOpen(true); } },
+        { label: copy.reservation, Icon: CalendarDays, action: () => { setDrawerOpen(false); setReservationOpen(true); } },
+        { label: copy.waiter, Icon: ConciergeBell, action: () => { setDrawerOpen(false); setWaiterOpen(true); } },
+        { label: copy.account, Icon: UserRound, action: () => navigate(user ? "/customer-portal" : `/login?next=${encodeURIComponent(location)}`) },
+        { label: copy.install, Icon: Smartphone, action: () => { void installApp(); } },
+      ] as const).map(({ label, Icon, action }) => <button key={label} onClick={action} className={`flex items-center justify-between rounded-2xl border p-4 text-start text-sm font-black ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`}><span className="flex items-center gap-3"><Icon className="h-5 w-5" />{label}</span><ChevronDown className="h-4 w-4 -rotate-90 opacity-40" /></button>)}
     </div><div className="mt-6 rounded-2xl bg-slate-500/10 p-4"><p className="text-xs font-black">{copy.status}</p><p className={`mt-2 text-sm font-black ${isOpen ? "text-emerald-500" : "text-red-500"}`}>{isOpen ? copy.open : copy.closed}</p>{selectedBranch && <p className="mt-1 text-xs opacity-60">{selectedBranch.name} · {selectedBranch.openingTime || "—"}–{selectedBranch.closingTime || "—"}</p>}</div></aside></div>}
 
     <Dialog open={Boolean(selectedItem)} onOpenChange={(open) => { if (!open) { setSelectedItemId(null); setSelectedAddonIds([]); } }}>
