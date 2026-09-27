@@ -34,13 +34,12 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { trpc } from "@/lib/trpc";
 import type { Order } from "@/components/homeNavigation";
 
-export type CentralAdminNavKey = "overview" | "admin" | "activities" | "nfc" | "site" | "accounts" | "settings" | "languages" | "files" | "stores" | "packages" | "trend" | "security" | "health" | "devAgent";
+export type CentralAdminNavKey = "overview" | "activities" | "nfc" | "site" | "accounts" | "settings" | "languages" | "files" | "stores" | "packages" | "trend" | "security" | "health" | "devAgent";
 
-const NAV_ORDER: CentralAdminNavKey[] = ["overview", "admin", "activities", "stores", "packages", "accounts", "site", "nfc", "trend", "settings", "languages", "files", "devAgent", "security", "health"];
+const NAV_ORDER: CentralAdminNavKey[] = ["overview", "activities", "stores", "packages", "accounts", "site", "nfc", "trend", "settings", "languages", "files", "devAgent", "security", "health"];
 
 const NAV_LABELS: Record<CentralAdminNavKey, { ar: string; en: string }> = {
   overview: { ar: "نظرة عامة", en: "Overview" },
-  admin: { ar: "Super Admin", en: "Super Admin" },
   activities: { ar: "الأنشطة والقطاعات", en: "Activities & sectors" },
   nfc: { ar: "بطاقات الأعمال NFC", en: "NFC business cards" },
   site: { ar: "صفحات وهوية الموقع", en: "Site pages & identity" },
@@ -58,7 +57,6 @@ const NAV_LABELS: Record<CentralAdminNavKey, { ar: string; en: string }> = {
 
 const NAV_ICONS: Record<CentralAdminNavKey, LucideIcon> = {
   overview: LayoutDashboard,
-  admin: ShieldCheck,
   activities: Layers3,
   nfc: WalletCards,
   site: Globe2,

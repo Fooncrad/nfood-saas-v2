@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNod
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch, useLocation } from "wouter";
+import { Route, Switch, useLocation, useParams } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { DatabaseTranslationBridge } from "./components/DatabaseTranslationBridge";
 import NfoodsLoadingScreen from "./components/NfoodsLoadingScreen";
@@ -81,15 +81,15 @@ import RegisterScreen from "./pages/RegisterScreen";
 import { LegalPage, ContactPage, SubscriptionStatusPage } from "./pages/PublicInfoPages";
 import { useAuth } from "./_core/hooks/useAuth";
 
-function LegacyRedirect({ to }: { to: string }) {
-  useEffect(() => {
-    window.location.replace(to);
-  }, [to]);
-  return <PageLoading />;
-}
-
 function PageLoading() {
   return <div className="min-h-screen bg-background px-4 py-4 text-foreground" aria-live="polite"><div className="mx-auto max-w-7xl space-y-3 opacity-80"><div className="h-10 w-48 animate-pulse rounded-2xl bg-muted" /><div className="grid gap-3 sm:grid-cols-3"><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /></div></div></div>;
+}
+
+function LegacyMenuLink() {
+  const { slug } = useParams<{ slug: string }>();
+  const [, navigate] = useLocation();
+  useEffect(() => { if (slug) navigate(`/menu/${encodeURIComponent(slug)}${window.location.search}`, { replace: true }); }, [slug, navigate]);
+  return <PageLoading />;
 }
 
 function RouteLoading() {
@@ -144,7 +144,7 @@ function CustomerRegisterRoute() {
   if (loading || user) return <PageLoading />;
   return <CustomerRegister />;
 }
-function RootRoute() { const { user, loading } = useAuth(); if (loading) return <PageLoading />; return user ? <Home /> : <PublicHome />; }
+function RootRoute() { const { user, loading } = useAuth(); const [, navigate] = useLocation(); const isAdmin = user?.role === "admin" || user?.testRole === "admin"; useEffect(() => { if (!loading && isAdmin) navigate("/admin"); }, [loading, isAdmin, navigate]); if (loading || isAdmin) return <PageLoading />; return user ? <Home /> : <PublicHome />; }
 function SuperAdminRoute() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
@@ -164,22 +164,15 @@ function Router() {
       <Route path="/" component={RootRoute} />
       <Route path="/admin" component={SuperAdminRoute} />
       <Route path="/admin/account" component={SuperAdminRoute} />
-      <Route path="/dashboard" component={RootRoute} />
       <Route path="/restaurant/dashboard" component={RootRoute} />
       <Route path="/restaurant/account" component={RootRoute} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterScreen} />
       <Route path="/customer-register" component={CustomerRegisterRoute} />
-      <Route path="/content-market" component={() => <LegacyRedirect to="/marketplace" />} />
-      <Route path="/creator-content" component={() => <LegacyRedirect to="/customer-studio" />} />
       <Route path="/admin/content-moderation" component={PlatformContentModeration} />
       <Route path="/restaurant/register" component={RegisterScreen} />
-      <Route path="/pricing" component={() => <LegacyRedirect to="/#plans" />} />
-      <Route path="/features" component={() => <LegacyRedirect to="/#features" />} />
-      <Route path="/how-it-works" component={() => <LegacyRedirect to="/#how" />} />
       <Route path="/terms" component={() => <LegalPage kind="terms" />} />
       <Route path="/privacy" component={() => <LegalPage kind="privacy" />} />
-      <Route path="/refund-policy" component={() => <LegacyRedirect to="/refund" />} />
       <Route path="/refund" component={() => <LegalPage kind="refund" />} />
       <Route path="/contact" component={ContactPage} />
       <Route path="/subscription-status" component={SubscriptionStatusPage} />
@@ -194,9 +187,8 @@ function Router() {
       <Route path="/tv/:token" component={PublicDisplay} />
       <Route path="/restaurant/:slug/display" component={CustomerDisplay} />
       <Route path="/pos/customer-display" component={PosCustomerDisplay} />
-      <Route path="/restaurant/:slug" component={RestaurantMenu} />
+      <Route path="/restaurant/:slug" component={LegacyMenuLink} />
       <Route path="/menu/:slug" component={RestaurantMenu} />
-      <Route path="/restaurants" component={() => <LegacyRedirect to="/marketplace" />} />
       <Route path="/customer/:slug" component={() => <CustomerAreaGuard><CustomerPublic /></CustomerAreaGuard>} />
       <Route path="/vcard/:slug" component={() => <CustomerAreaGuard><CustomerPublic /></CustomerAreaGuard>} />
       <Route path="/customer-profile" component={() => <CustomerAreaGuard><CustomerProfileSettingsRoute /></CustomerAreaGuard>} />

@@ -465,7 +465,7 @@ export default function RestaurantMenu() {
 
     <section className="relative overflow-hidden bg-[#071525] text-white">
       <div className="mx-auto max-w-7xl">
-        <div className="relative h-[190px] overflow-hidden sm:h-[240px] md:h-[280px] lg:h-[320px]">
+        <div className="relative h-[150px] overflow-hidden sm:h-[190px] md:h-[230px] lg:h-[260px]">
           {restaurant.coverUrl
             ? <img src={restaurant.coverUrl} alt={restaurant.brandName || restaurant.name} className="absolute inset-0 h-full w-full object-cover" />
             : <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d35] via-[#12345a] to-[#071525]" />}
@@ -493,12 +493,12 @@ export default function RestaurantMenu() {
       </div>
     </section>
 
-    <section className="mx-auto max-w-7xl px-3 py-6 sm:px-5 sm:py-8">
+    <section aria-label={copy.menu} className="mx-auto max-w-7xl px-3 pb-3 pt-4 sm:px-5 sm:pb-4 sm:pt-5">
       <div className={`flex items-center rounded-2xl border px-3 ${surface}`}><Search className={`h-5 w-5 shrink-0 ${muted}`} /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.search} className="h-12 border-0 bg-transparent shadow-none focus-visible:ring-0" /></div>
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+      <nav aria-label={copy.menu} className="mt-3 flex gap-2 overflow-x-auto pb-2">
         <button onClick={() => setActiveCategory("all")} className={`shrink-0 rounded-full px-4 py-2.5 text-xs font-black ${activeCategory === "all" ? "text-white" : surface}`} style={activeCategory === "all" ? { background:accent } : undefined}>{copy.all}</button>
         {categories.map((category) => <button key={category.id} onClick={() => setActiveCategory(category.id)} className={`shrink-0 rounded-full border px-4 py-2.5 text-xs font-black ${activeCategory === category.id ? "border-transparent text-white" : surface}`} style={activeCategory === category.id ? { background:accent } : undefined}>{localize(category.translationsJson, category.name, lang, "name")}</button>)}
-      </div>
+      </nav>
     </section>
 
     <section id="menu-grid" className="mx-auto max-w-7xl px-3 pb-28 sm:px-5">

@@ -83,7 +83,6 @@ export default function Home() {
   const isCentralAdmin = user?.role === "admin" || user?.testRole === "admin";
   const adminPanelChildren = useMemo(() => {
     switch (active as CentralAdminNavKey) {
-      case "admin": return <SuperAdminView />;
       case "activities": return <ActivitiesSectorsAdmin />;
       case "accounts": return <AccountManagementPanel />;
       case "settings": return <PlatformSettingsPanel initialSection="advanced" />;

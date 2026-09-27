@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { CentralAdminCommandCenter, type CentralAdminNavKey } from "@/components/CentralAdminCommandCenter";
-import { PlatformOverview } from "@/components/PlatformOverview";
 import AccountManagementPanel from "@/components/AccountManagementPanel";
 import { PlatformSettingsPanel } from "@/components/PlatformSettingsPanel";
 import { UiTranslationAdminPanel } from "@/components/UiTranslationAdminPanel";
@@ -23,7 +22,6 @@ export default function SuperAdminApp() {
   const [active, setActive] = useState<CentralAdminNavKey>(() => location === "/admin/account" ? "accounts" : "overview");
   const panel = useMemo(() => {
     switch (active) {
-      case "admin": return <PlatformOverview onNavigate={() => setActive("activities")} />;
       case "activities": return <ActivitiesSectorsAdmin />;
       case "accounts": return <AccountManagementPanel />;
       case "settings": return <PlatformSettingsPanel initialSection="advanced" />;

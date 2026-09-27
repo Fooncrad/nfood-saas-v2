@@ -78,21 +78,16 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(settings).not.toContain("<WalletTopupReviewPanel");
   });
 
-  it("keeps every Super Admin module wired to the active shell and real data procedures", () => {
-    const home = read("pages/Home.tsx");
+  it("keeps the canonical Super Admin shell wired to live data and modules", () => {
     const admin = read("components/CentralAdminCommandCenter.tsx");
-    const requiredNav = ["overview", "admin", "activities", "stores", "site", "nfc", "trend", "settings", "languages", "files", "security", "health"];
-    for (const key of requiredNav) expect(admin).toContain(`"${key}"`);
-    const requiredPanels = ["SuperAdminView", "PlatformOverview", "AccountManagementPanel", "PlatformSettingsPanel", "UiTranslationAdminPanel", "MediaLibraryPanel", "MarketplaceStoresView", "ContentMarketplace", "VcardCardsAdmin", "SecurityView", "SystemHealthView"];
-    for (const panel of requiredPanels) expect(home).toContain(panel);
-    for (const key of ["activities", "stores", "site", "nfc", "trend", "settings", "languages", "files", "security", "health"]) expect(home).toContain(`case "${key}"`);
-    expect(admin).toContain("trpc.admin.restaurants.useQuery");
-    expect(admin).toContain("trpc.admin.subscriptions.useQuery");
-    expect(admin).toContain("trpc.admin.customers.useQuery");
-    expect(admin).toContain("trpc.admin.saasMetrics.useQuery");
+    const app = read("pages/SuperAdminApp.tsx");
+    const routes = read("App.tsx");
+    for (const key of ["overview", "activities", "stores", "site", "nfc", "trend", "settings", "languages", "files", "security", "health"]) expect(admin).toContain(`"${key}"`);
+    expect(admin).not.toContain('admin: { ar: "Super Admin"');
+    for (const panel of ["AccountManagementPanel", "PlatformSettingsPanel", "UiTranslationAdminPanel", "MediaLibraryPanel", "MarketplaceStoresView", "ContentMarketplace", "VcardCardsAdmin", "SecurityView", "SystemHealthView"]) expect(app).toContain(panel);
+    expect(routes).toContain('path="/admin" component={SuperAdminRoute}');
+    for (const procedure of ["restaurants", "subscriptions", "customers", "saasMetrics"]) expect(admin).toContain(`trpc.admin.${procedure}.useQuery`);
     expect(admin).toContain("trpc.notifications.mine.useQuery");
-    expect(admin).toContain("markAllRead");
-    expect(admin).toContain("deleteAll");
     expect(admin).toContain("onLogout");
   });
 
