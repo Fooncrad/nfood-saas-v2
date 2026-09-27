@@ -963,6 +963,7 @@ export async function getFeatureAccessMap(restaurantId: number): Promise<Map<str
 export async function requireRestaurantFeature(restaurantId: number, featureKey: string): Promise<FeatureAccess> {
   const access = await getFeatureAccess(restaurantId, featureKey);
   if (!access.enabled) {
+    if (access.reason === "database_unavailable") throw new Error("Database is not available");
     const error = new Error(`FEATURE_DISABLED:${featureKey}:${access.reason}`);
     Object.assign(error, { code: "FORBIDDEN", featureKey, featureAccess: access });
     throw error;
