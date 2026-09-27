@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type MarketTab = "all" | "food" | "drinks" | "recipes" | "chef";
 const labels: Record<string, string> = { burger: "برجر", desserts: "حلويات", coffee: "قهوة", meals: "وجبات", drinks: "مشروبات", other_food: "أطعمة ومشروبات", food: "أطعمة", events: "لحظات الطعام", offers: "عروض" };
@@ -21,6 +22,7 @@ function readSet(key: string) {
 }
 
 export default function ContentMarketplace() {
+  const { direction } = useLanguage(); // QA: global language controls direction.
   const market = trpc.platform.publicContentMarket.useQuery(undefined, { retry: false });
   const foodTags = trpc.platform.foodTags.useQuery(undefined, { retry: false });
   const { user } = useAuth();
@@ -43,7 +45,7 @@ export default function ContentMarketplace() {
   const toggleSet = (key: string, value: number, setter: Dispatch<SetStateAction<Set<number>>>) => { setter((current: Set<number>) => { const next = new Set<number>(current); next.has(value) ? next.delete(value) : next.add(value); persistSet(key, next); return next; }); };
   const buy = (listingId: number) => { if (!user) return startLogin(); if (!eligibility.data?.canBuy) { toast.info("هذه الميزة للبيع غير متوفرة لحسابك. يمكنك التواصل مع الإدارة عبر مركز الدعم والتشخيص.", { action: { label: "فتح الدعم", onClick: () => { window.location.href = "/support"; } } }); return; } purchase.mutate({ listingId }); };
   const share = async (item: { id: number; title: string }) => { const url = `${window.location.origin}/content-market?item=${item.id}`; try { if (navigator.share) await navigator.share({ title: item.title, text: "اكتشف هذا المحتوى في سوق نفود", url }); else { await navigator.clipboard.writeText(url); toast.success("تم نسخ رابط المعاينة"); } } catch { /* cancelled by user */ } finally { setShareItem(null); } };
-  return <main dir="rtl" className="min-h-screen bg-[#080c14] px-3 py-4 text-white sm:px-6 lg:px-10">
+  return <main dir={direction} className="min-h-screen min-w-0 overflow-x-hidden bg-slate-50 px-3 py-4 text-slate-900 dark:bg-[#080c14] dark:text-white sm:px-6 lg:px-10">
     <div className="mx-auto max-w-7xl">
       <div role="status" className="mb-4 flex items-start gap-3 rounded-2xl border border-orange-300/30 bg-orange-400/10 px-4 py-3 text-sm leading-6 text-orange-100 shadow-lg shadow-orange-950/20"><Info className="mt-1 h-5 w-5 shrink-0 text-orange-300" /><div><p className="font-black text-orange-200">تنبيه سريع: أنت داخل سوق نفود للمحتوى، وليس قائمة Menu.</p><p className="text-xs text-orange-100/75">هذا سوق مستقل لعرض وبيع الصور والوصفات والخدمات الغذائية. العميل يتصفح ويبيع محتواه، بينما الشراء متاح للمطاعم والحسابات المصنفة كتاجر فقط.</p></div></div>
       <header className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#18263a] via-[#101927] to-[#0b0f17] p-5 shadow-2xl sm:p-8">
