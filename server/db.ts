@@ -2,7 +2,7 @@ import { and, count, desc, eq, gte, inArray, isNull, isNotNull, lte, like, ne, o
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
-import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, contentPurchaseEntitlements, contentModerationReviews, commerceFundingAccounts, favoriteRestaurants, waiterTableAssignments, contentFoodTags, contentListingInvites, uiTranslationEntries, uiTranslationHistory, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests, trustedDevices, customerCardRequests, customerBenefitFeatures, customerBenefitPlans, customerBenefitPlanFeatures, customerBenefitSubscriptions, customerBenefitRequests, whiteLabelWorkspaces, restaurantMenuLayoutTemplates, waiterCalls, reservationBlackoutDates } from "../drizzle/schema";
+import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, contentPurchaseEntitlements, contentModerationReviews, commerceFundingAccounts, favoriteRestaurants, waiterTableAssignments, contentFoodTags, contentListingInvites, uiTranslationEntries, uiTranslationHistory, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests, trustedDevices, customerCardRequests, customerBenefitFeatures, customerBenefitPlans, customerBenefitPlanFeatures, customerBenefitSubscriptions, customerBenefitRequests, whiteLabelWorkspaces, restaurantMenuLayoutTemplates, waiterCalls, reservationBlackoutDates, marketplaceListings, marketplaceListingVariants } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { driverSecurityDeposits, driverSecurityDepositTransactions, financialLedgerEntries } from "../drizzle/schema";
 import { normalizeMenuTemplateSchedule, resolveActiveMenuTemplate } from "../shared/menuTemplateSchedule";
@@ -705,10 +705,43 @@ export async function listOrdersByRestaurant(restaurantId: number, limit = 200) 
   if (!db) return [];
   const safeLimit = Math.max(25, Math.min(500, Math.trunc(limit)));
   const rows = await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, kitchenSectionId: orders.kitchenSectionId, customerId: orders.customerId, driverId: orders.driverId, guestName: orders.guestName, guestPhone: orders.guestPhone, tableName: orders.tableName, channel: orders.channel, notes: orders.notes, cashierNotes: orders.cashierNotes, deliveryNote: orders.deliveryNote, reservationDate: orders.reservationDate, reservationEventType: orders.reservationEventType, partySize: orders.partySize, childrenCount: orders.childrenCount, splitBillMode: orders.splitBillMode, paymentMethod: orders.paymentMethod, paymentStatus: orders.paymentStatus, currencyCode: orders.currencyCode, total: orders.total, status: orders.status, createdAt: orders.createdAt, updatedAt: orders.updatedAt }).from(orders).innerJoin(branches, eq(orders.branchId, branches.id)).where(and(eq(orders.restaurantId, restaurantId), eq(branches.restaurantId, restaurantId))).orderBy(desc(orders.createdAt)).limit(safeLimit);
-  if (!rows.length) return rows.map((order) => ({ ...order, items: [] as { orderItemId: number; menuItemId: number; itemName: string; quantity: number; unitPrice: string; categoryName: string | null }[] }));
-  const items = await db.select({ orderItemId: orderItems.id, orderId: orderItems.orderId, menuItemId: orderItems.menuItemId, itemName: menuItems.name, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice, categoryName: menuCategories.name }).from(orderItems).innerJoin(menuItems, eq(orderItems.menuItemId, menuItems.id)).leftJoin(menuCategories, eq(menuItems.categoryId, menuCategories.id)).where(and(eq(menuItems.restaurantId, restaurantId), inArray(orderItems.orderId, rows.map((order) => order.id))));
-  const itemsByOrder = new Map<number, typeof items>();
-  for (const item of items) itemsByOrder.set(item.orderId, [...(itemsByOrder.get(item.orderId) ?? []), item]);
+  if (!rows.length) return [];
+
+  const items = await db.select({
+    orderItemId: orderItems.id,
+    orderId: orderItems.orderId,
+    sourceType: orderItems.sourceType,
+    menuItemId: orderItems.menuItemId,
+    marketplaceVariantId: orderItems.marketplaceVariantId,
+    menuItemName: menuItems.name,
+    marketplaceItemName: marketplaceListings.title,
+    marketplaceSku: marketplaceListingVariants.sku,
+    marketplaceBarcode: marketplaceListingVariants.barcode,
+    quantity: orderItems.quantity,
+    unitPrice: orderItems.unitPrice,
+    categoryName: menuCategories.name,
+  }).from(orderItems)
+    .leftJoin(menuItems, eq(orderItems.menuItemId, menuItems.id))
+    .leftJoin(menuCategories, eq(menuItems.categoryId, menuCategories.id))
+    .leftJoin(marketplaceListingVariants, eq(orderItems.marketplaceVariantId, marketplaceListingVariants.id))
+    .leftJoin(marketplaceListings, eq(marketplaceListingVariants.listingId, marketplaceListings.id))
+    .where(inArray(orderItems.orderId, rows.map((order) => order.id)));
+
+  const normalizedItems = items.map((item) => ({
+    orderItemId: item.orderItemId,
+    orderId: item.orderId,
+    sourceType: item.sourceType,
+    menuItemId: item.menuItemId,
+    marketplaceVariantId: item.marketplaceVariantId,
+    itemName: item.sourceType === "marketplace_variant" ? (item.marketplaceItemName ?? "منتج متجر") : (item.menuItemName ?? "صنف منيو"),
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    categoryName: item.sourceType === "marketplace_variant" ? null : item.categoryName,
+    sku: item.sourceType === "marketplace_variant" ? item.marketplaceSku : null,
+    barcode: item.sourceType === "marketplace_variant" ? item.marketplaceBarcode : null,
+  }));
+  const itemsByOrder = new Map<number, typeof normalizedItems>();
+  for (const item of normalizedItems) itemsByOrder.set(item.orderId, [...(itemsByOrder.get(item.orderId) ?? []), item]);
   return rows.map((order) => ({ ...order, items: itemsByOrder.get(order.id) ?? [] }));
 }
 export async function listOrdersForWaiter(input: { restaurantId: number; branchId: number; waiterUserId: number; limit?: number }) { const assignedTables = await listTablesForWaiter({ restaurantId: input.restaurantId, branchId: input.branchId, waiterUserId: input.waiterUserId }); const assignedNames = new Set(assignedTables.map((table) => table.name)); const ordersForRestaurant = await listOrdersByRestaurant(input.restaurantId, input.limit ?? 200); return ordersForRestaurant.filter((order) => order.branchId === input.branchId && typeof order.tableName === "string" && assignedNames.has(order.tableName)); }
