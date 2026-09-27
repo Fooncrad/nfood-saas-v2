@@ -732,11 +732,12 @@ export function SuperAdminRestaurantCatalog() {
                   <article
                     key={restaurant.id}
                     data-testid={`restaurant-card-${restaurant.id}`}
-                    className="group flex min-h-[200px] min-w-0 flex-col rounded-[18px] border border-slate-200/90 bg-white p-3 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-orange-300/70 hover:shadow-lg dark:border-slate-800 dark:bg-slate-950/60"
+                    className="group relative flex min-h-[230px] min-w-0 flex-col overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,.06)] transition duration-300 hover:-translate-y-1 hover:border-orange-300/70 hover:shadow-[0_18px_45px_rgba(15,23,42,.12)] dark:border-white/10 dark:bg-[#0d2038]"
                   >
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-orange-500 via-orange-400 to-blue-500" />
                     <div className="flex min-w-0 items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-2.5">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#e76f3c] ring-1 ring-orange-100 transition group-hover:bg-orange-100 dark:bg-orange-500/10 dark:ring-orange-500/20">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20 transition group-hover:scale-105">
                           <Store className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
@@ -756,14 +757,14 @@ export function SuperAdminRestaurantCatalog() {
                       </Badge>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
-                      <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/80 px-2.5 py-2 dark:border-slate-800 dark:bg-slate-900/80">
+                    <div className="mt-4 grid grid-cols-2 gap-2.5 text-[10px]">
+                      <div className="min-w-0 rounded-2xl border border-slate-200/70 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900/80">
                         <p className="text-slate-400">{ui.plan}</p>
                         <p className="mt-0.5 truncate font-bold text-slate-800 dark:text-slate-200">
                           {restaurant.plan ?? ui.unspecified}
                         </p>
                       </div>
-                      <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/80 px-2.5 py-2 dark:border-slate-800 dark:bg-slate-900/80">
+                      <div className="min-w-0 rounded-2xl border border-slate-200/70 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900/80">
                         <p className="text-slate-400">{ui.publicLink}</p>
                         <a
                           href={`/menu/${encodeURIComponent(restaurant.slug ?? "")}`}
@@ -777,7 +778,7 @@ export function SuperAdminRestaurantCatalog() {
                       </div>
                     </div>
 
-                    <div className="mt-auto flex min-w-0 flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3 dark:border-slate-800">
+                    <div className="mt-4 grid min-w-0 grid-cols-2 gap-2 border-t border-slate-100 pt-4 dark:border-white/10 sm:grid-cols-3">
                       <a
                         href={`/menu/${encodeURIComponent(restaurant.slug ?? "")}`}
                         target="_blank"
@@ -798,7 +799,7 @@ export function SuperAdminRestaurantCatalog() {
                             plan: restaurant.plan,
                           })
                         }
-                        className="h-7 max-w-full gap-1 rounded-lg border-slate-200 px-2 text-[10px] font-bold dark:border-slate-700"
+                        className="h-9 max-w-full gap-1 rounded-xl border-slate-200 px-3 text-[10px] font-bold dark:border-white/10"
                       >
                         <Eye className="h-3.5 w-3.5 shrink-0" /> {ui.details}
                       </Button>
@@ -809,7 +810,7 @@ export function SuperAdminRestaurantCatalog() {
                         onClick={() =>
                           enterRestaurant.mutate({ id: restaurant.id })
                         }
-                        className="h-7 max-w-full gap-1 rounded-lg bg-[#111c2e] px-2 text-[10px] font-bold text-white shadow-sm hover:bg-[#1b2a43]"
+                        className="h-9 max-w-full gap-1 rounded-xl bg-[#071525] px-3 text-[10px] font-black text-white shadow-sm hover:bg-[#102844] dark:bg-orange-500 dark:hover:bg-orange-600"
                       >
                         <LogIn className="h-3.5 w-3.5 shrink-0" /> {ui.login}
                       </Button>
@@ -819,7 +820,7 @@ export function SuperAdminRestaurantCatalog() {
                         variant="outline"
                         disabled={updateRestaurant.isPending}
                         onClick={() => updateRestaurant.mutate({ id: restaurant.id, status: restaurant.status === "suspended" ? "active" : "suspended" })}
-                        className={`h-7 max-w-full gap-1 rounded-lg px-2 text-[10px] font-bold ${restaurant.status === "suspended" ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-300" : "border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-300"}`}
+                        className={`h-9 max-w-full gap-1 rounded-xl px-3 text-[10px] font-bold ${restaurant.status === "suspended" ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-300" : "border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-300"}`}
                         data-testid={`restaurant-status-toggle-${restaurant.id}`}
                       >
                         {restaurant.status === "suspended" ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0" />}
@@ -838,7 +839,7 @@ export function SuperAdminRestaurantCatalog() {
                             confirmPassword: "",
                           })
                         }
-                        className="h-7 max-w-full gap-1 rounded-lg border-slate-200 px-2 text-[10px] font-bold dark:border-slate-700"
+                        className="h-9 max-w-full gap-1 rounded-xl border-slate-200 px-3 text-[10px] font-bold dark:border-white/10"
                       >
                         <KeyRound className="h-3.5 w-3.5 shrink-0" /> {ui.resetPassword}
                       </Button>
@@ -850,7 +851,7 @@ export function SuperAdminRestaurantCatalog() {
                         aria-disabled="true"
                         data-testid={`restaurant-delete-disabled-${restaurant.id}`}
                         title="حذف المطعم معطل للحماية من الحذف العرضي"
-                        className="h-7 max-w-full cursor-not-allowed gap-1 rounded-lg border-slate-200 px-2 text-[10px] font-bold text-slate-400 opacity-70 dark:border-slate-700 dark:text-slate-500"
+                        className="h-9 max-w-full cursor-not-allowed gap-1 rounded-xl border-slate-200 px-3 text-[10px] font-bold text-slate-400 opacity-60 dark:border-white/10 dark:text-slate-500"
                       >
                         <Trash2 className="h-3.5 w-3.5 shrink-0" /> الحذف معطل
                       </Button>
