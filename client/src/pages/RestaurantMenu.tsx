@@ -69,13 +69,13 @@ function minuteValue(value?: string | null) {
   return h * 60 + m;
 }
 function branchOpenNow(branch: any, timezone = "Asia/Riyadh") {
-  if (!branch) return false;
+  if (!branch || branch.status !== "open") return false;
   const parts = new Intl.DateTimeFormat("en-GB", { timeZone: timezone, hour:"2-digit", minute:"2-digit", hour12:false }).formatToParts(new Date());
   const now = Number(parts.find((part) => part.type === "hour")?.value ?? 0) * 60 + Number(parts.find((part) => part.type === "minute")?.value ?? 0);
   const start = minuteValue(branch.openingTime);
   const end = minuteValue(branch.closingTime);
   if (start === null || end === null) return true;
-  return start <= end ? now >= start && now < end : now >= start || now < end;
+  return start === end || (start < end ? now >= start && now < end : now >= start || now < end);
 }
 function localize(raw: string | null | undefined, fallback: string, lang: string, field: "name" | "description" = "name") {
   if (!raw) return fallback;
@@ -486,7 +486,7 @@ export default function RestaurantMenu() {
           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isOpen ? "bg-emerald-500" : "bg-red-500"}`} />
           <div className="min-w-0">
             <p className="text-sm font-black">{isOpen ? copy.open : copy.closed}</p>
-            {selectedBranch && <p className={`truncate text-[10px] font-bold ${muted}`}>{selectedBranch.name} · {selectedBranch.openingTime || "—"}–{selectedBranch.closingTime || "—"}</p>}
+            {selectedBranch && <p className={`truncate text-[10px] font-bold ${muted}`}>{selectedBranch.name} · {selectedBranch.openingTime && selectedBranch.openingTime === selectedBranch.closingTime ? (lang === "ar" ? "24 ساعة" : "24 hours") : `${selectedBranch.openingTime || "—"}–${selectedBranch.closingTime || "—"}`}</p>}
           </div>
         </div>
         <button onClick={() => setDrawerOpen(true)} className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-black ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`}>{copy.storeInfo}</button>

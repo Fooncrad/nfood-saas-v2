@@ -35,6 +35,8 @@ describe("NFOOD platform schema", () => {
     expect(parseBranchOperatingWindows(windows)).toHaveLength(1);
     expect(isBranchAcceptingOrders({ status: "open", operatingWindowsJson: windows }, "delivery", new Date("2026-08-25T09:00:00.000Z"))).toBe(true);
     expect(isBranchAcceptingOrders({ status: "open", operatingWindowsJson: windows }, "dine_in", new Date("2026-08-25T09:00:00.000Z"))).toBe(false);
+    expect(isBranchAcceptingOrders({ status: "open", openingTime: "06:00", closingTime: "06:00" }, "dine_in", new Date("2026-08-25T02:00:00.000Z"))).toBe(true);
+    expect(isBranchAcceptingOrders({ status: "closed", openingTime: "06:00", closingTime: "06:00" }, "dine_in", new Date("2026-08-25T02:00:00.000Z"))).toBe(false);
     expect(getNextBranchOpeningLabel({ operatingWindowsJson: windows }, "delivery", new Date("2026-08-25T10:00:00.000Z"))).toContain("الثلاثاء");
   });
 
