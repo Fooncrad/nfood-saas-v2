@@ -35,7 +35,7 @@ import { StorefrontCustomizationPanel } from "@/components/StorefrontCustomizati
 import { MenuAddonsPanel } from "@/components/MenuAddonsPanel";
 import { MenuImportReviewPanel } from "@/components/MenuImportReviewPanel";
 import { enqueuePosOffline, listPosOffline, replayPosOffline, shouldRetryPosOffline } from "@/lib/posOfflineStore";
-import { createCustomerDisplaySessionId, publishCustomerFacingState } from "@/lib/customerFacingDisplay";
+import { clearCustomerFacingState, createCustomerDisplaySessionId, publishCustomerFacingState } from "@/lib/customerFacingDisplay";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 
 type OrderStatus = "new" | "preparing" | "ready" | "completed";
