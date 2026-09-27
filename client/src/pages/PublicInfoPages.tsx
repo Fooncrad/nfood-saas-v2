@@ -34,7 +34,12 @@ function PublicShell({ children }: { children: React.ReactNode }) { const { lang
 
 export function PricingPage() {
   const { language } = useLanguage();
-  const c = publicInfoCopy[language === "fr" ? "fr" : language === "en" ? "en" : "ar"];
+  const lang = language === "fr" ? "fr" : language === "en" ? "en" : "ar";
+  const c = publicInfoCopy[lang];
+  const publicContentQuery = trpc.platform.publicSiteContent.useQuery(undefined, { retry: false });
+  const pricingConfig = parsePublicJson<Record<string, PublicPricingLocale>>(publicContentQuery.data?.publicPricingJson, {});
+  const pricingLocale = pricingConfig[lang] ?? {};
+  const plans: PublicPlan[] = pricingLocale.plans?.length ? pricingLocale.plans : c.plans.map((plan) => ({ ...plan, featured: plan.name === "Business" || plan.name === "أعمال" }));
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [transferEmail, setTransferEmail] = useState("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
