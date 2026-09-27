@@ -539,9 +539,9 @@ export default function RestaurantMenu() {
           </div>
         </div>
         <div>
-          <p className="text-xs font-black uppercase tracking-[.14em] text-white">{lang === "ar" ? "روابط سريعة" : lang === "fr" ? "Liens rapides" : "Quick links"}</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {categories.slice(0,8).map((category) => <button key={category.id} onClick={() => { setActiveCategory(category.id); document.getElementById("menu-grid")?.scrollIntoView({ behavior:"smooth" }); }} className="truncate rounded-xl border border-white/10 px-3 py-2 text-start text-[11px] font-bold text-slate-300 transition hover:border-orange-400/60 hover:bg-white/5 hover:text-white">{localize(category.translationsJson, category.name, lang, "name")}</button>)}
+          <p className="text-xs font-black uppercase tracking-[.14em] text-white">{lang === "ar" ? "أقسام المنيو" : lang === "fr" ? "Catégories" : "Menu categories"}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {categories.map((category) => <button key={category.id} onClick={() => { setActiveCategory(category.id); document.getElementById("menu-grid")?.scrollIntoView({ behavior:"smooth" }); }} className="truncate rounded-xl border border-white/10 px-3 py-2 text-start text-[11px] font-bold text-slate-300 transition hover:border-orange-400/60 hover:bg-white/5 hover:text-white">{localize(category.translationsJson, category.name, lang, "name")}</button>)}
           </div>
         </div>
         <div className="flex items-center gap-4 lg:justify-end">
