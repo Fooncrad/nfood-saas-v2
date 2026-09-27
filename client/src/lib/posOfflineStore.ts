@@ -13,7 +13,7 @@ export type PosOfflineEnvelope<T> = {
 const DB_NAME = "nfood-pos";
 const DB_VERSION = 2;
 const STORE = "outbox";
-const MAX_ATTEMPTS = 5;
+const MAX_ATTEMPTS = 5;\nconst TERMINAL_CODES = new Set(["BAD_REQUEST", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND", "PRECONDITION_FAILED", "UNPROCESSABLE_CONTENT"]);\n\nfunction getTrpcErrorCode(error: unknown) {\n  if (!error || typeof error !== "object") return undefined;\n  const candidate = error as { data?: { code?: string }; shape?: { data?: { code?: string } } };\n  return candidate.data?.code ?? candidate.shape?.data?.code;\n}\n\nexport function shouldRetryPosOffline(error: unknown) {\n  const code = getTrpcErrorCode(error);\n  if (!code) return true;\n  return !TERMINAL_CODES.has(code) && code !== "CONFLICT";\n}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -90,12 +90,12 @@ export async function removePosOffline(id: string): Promise<void> {
   });
 }
 
-async function markPosOfflineFailure<T>(item: PosOfflineEnvelope<T>, error: unknown): Promise<void> {
+async function markPosOfflineFailure<T>(item: PosOfflineEnvelope<T>, error: unknown, terminal = false): Promise<void> {
   if (typeof indexedDB === "undefined") return;
   const attempts = item.attempts + 1;
   const message = error instanceof Error ? error.message.slice(0, 500) : "POS sync failed";
   await transaction<void>("readwrite", (store, resolve, reject) => {
-    const request = store.put({ ...item, attempts, status: attempts >= MAX_ATTEMPTS ? "dead_letter" : "retry", lastError: message, updatedAt: new Date().toISOString() });
+    const request = store.put({ ...item, attempts, status: terminal || attempts >= MAX_ATTEMPTS ? "dead_letter" : "retry", lastError: message, updatedAt: new Date().toISOString() });
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
