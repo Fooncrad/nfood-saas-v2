@@ -491,7 +491,7 @@ export function CentralAdminCommandCenter({
         </div>
       ) : (
         <div className="nfood-command-scroll overflow-x-auto rounded-2xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
-          <table className="w-full min-w-[760px] border-collapse text-right text-sm">
+          <table className="w-full min-w-[640px] max-w-full border-collapse text-start text-sm">
             <thead>
               <tr className="border-b" style={{ borderColor: divider }}>
                 {[copy.orderId, copy.channel, copy.items, copy.total, copy.status, copy.time].map((heading) => (
