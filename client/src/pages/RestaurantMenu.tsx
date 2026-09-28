@@ -153,7 +153,7 @@ export default function RestaurantMenu() {
   const [waiterTable, setWaiterTable] = useState("");
   const [waiterReason, setWaiterReason] = useState<"الحساب" | "الطلب" | "المساعدة" | "الفاتورة" | "أخرى">("المساعدة");
   const [waiterName, setWaiterName] = useState("");
-  const [installPrompt, setInstallPrompt] = useState<DeferredInstallPrompt | null>(null);
+  const [installPrompt, setInstallPrompt] = useState<DeferredInstallPrompt | null>(null);\n  const [pageScrolled, setPageScrolled] = useState(false);
 
   useEffect(() => {
     if (!restaurant) return;
@@ -607,7 +607,7 @@ export default function RestaurantMenu() {
       </DialogContent>
     </Dialog>
 
-    <Dialog open={cartOpen} onOpenChange={(open) => { setCartOpen(open); if (!open) setCartStep(1); }}>
+    <button type="button" onClick={() => pageScrolled ? window.scrollTo({ top: 0, behavior: "smooth" }) : document.getElementById("menu-grid")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="fixed bottom-24 end-4 z-30 grid h-11 w-11 place-items-center rounded-full border border-white/25 text-white shadow-xl transition hover:scale-105 active:scale-95 sm:end-6" style={{ backgroundColor: accent }} aria-label={pageScrolled ? copy.back : copy.menu}><ChevronDown className={`h-5 w-5 transition-transform duration-300 ${pageScrolled ? "rotate-180" : ""}`} /></button>\n\n    <Dialog open={cartOpen} onOpenChange={(open) => { setCartOpen(open); if (!open) setCartStep(1); }}>
       <DialogContent className="max-h-[min(720px,calc(100dvh-24px))] w-[calc(100%-24px)] max-w-xl overflow-y-auto rounded-[24px]">
         <DialogHeader><DialogTitle>{copy.cart} · {cartStep}/3</DialogTitle><DialogDescription>{cartStep === 1 ? `${itemCount} ${copy.items}` : cartStep === 2 ? (lang === "ar" ? "اختر نوع الطلب" : lang === "fr" ? "Choisissez le service" : "Choose your service") : (lang === "ar" ? "بيانات الطلب والتأكيد" : lang === "fr" ? "Détails et confirmation" : "Details and confirmation")}</DialogDescription></DialogHeader>
         {cartStep === 1 ? <>
