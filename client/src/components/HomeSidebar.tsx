@@ -189,7 +189,17 @@ export function HomeSidebar({
       items: ["security", "health"].map(key => visibleNavItems.find(item => item.key === key)).filter((item): item is SidebarItem => Boolean(item)),
     },
   ].filter(group => group.items.length > 0), [language, t, visibleNavItems]);
-  const groups = isCentralAdmin ? platformGroups : sidebarGroups;
+  const simplifiedRestaurantGroups = useMemo<SidebarGroup[]>(() => {
+    const allowedGroups = sidebarGroups
+      .map((group, index) => ({
+        ...group,
+        id: group.id ?? `restaurant-group-${index}`,
+        items: group.items.filter(item => visibleNavItems.some(visible => visible.key === item.key)),
+      }))
+      .filter(group => group.items.length > 0);
+    return allowedGroups;
+  }, [sidebarGroups, visibleNavItems]);
+  const groups = isCentralAdmin ? platformGroups : simplifiedRestaurantGroups;
 
   const copy = language === "ar"
     ? { favorites: "المفضلة", pin: "تثبيت", unpin: "إلغاء التثبيت", expand: "توسيع القائمة الجانبية", collapse: "طي القائمة الجانبية", system: "النظام", printers: "الطابعات", ready: "جاهز", checking: "جارٍ الفحص", attention: "يحتاج انتباهًا", workspace: "مساحة العمل" }
