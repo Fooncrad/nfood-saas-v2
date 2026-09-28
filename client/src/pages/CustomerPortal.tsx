@@ -11,7 +11,7 @@ import {
   Library,
   LogOut,
   MapPinned,
-  Download, Moon, Sun,
+  Download, Moon, Sun, Bell,
   ReceiptText,
   Settings,
   ShoppingBag,
@@ -55,24 +55,25 @@ export default function CustomerPortal() {
   const favorites = trpc.platform.favoriteRestaurants.useQuery(undefined, { enabled:Boolean(user), retry:false });
   const wallet = trpc.platform.myWallet.useQuery(undefined, { enabled:Boolean(user), retry:false });
   const engagement = trpc.platform.engagement.useQuery(undefined, { enabled:Boolean(user), retry:false });
+  const notifications = trpc.platform.notifications.useQuery(undefined, { enabled:Boolean(user), retry:false, refetchInterval:user ? 15000 : false });
 
   const copy = lang === "ar" ? {
     title:"حسابي", subtitle:"كل طلباتك وحجوزاتك ومحتواك في مكان واحد.",
-    orders:"الطلبات", reservations:"الحجوزات", invoices:"الفواتير", favorites:"المفضلة",
+    orders:"الطلبات", reservations:"الحجوزات", invoices:"الفواتير", notifications:"الإشعارات", favorites:"المفضلة",
     library:"مكتبتي", studio:"الاستوديو", rewards:"المكافآت", profile:"الملف والإعدادات",
     marketplace:"استكشف السوق", recentOrders:"آخر الطلبات", recentReservations:"آخر الحجوزات",
     emptyOrders:"لا توجد طلبات بعد.", emptyReservations:"لا توجد حجوزات بعد.",
     open:"فتح", logout:"تسجيل الخروج", balance:"الرصيد", restaurants:"مطاعمي المفضلة",
   } : lang === "fr" ? {
     title:"Mon compte", subtitle:"Commandes, réservations et contenu au même endroit.",
-    orders:"Commandes", reservations:"Réservations", invoices:"Factures", favorites:"Favoris",
+    orders:"Commandes", reservations:"Réservations", invoices:"Factures", notifications:"Notifications", favorites:"Favoris",
     library:"Ma bibliothèque", studio:"Studio", rewards:"Récompenses", profile:"Profil et paramètres",
     marketplace:"Explorer le marché", recentOrders:"Dernières commandes", recentReservations:"Dernières réservations",
     emptyOrders:"Aucune commande.", emptyReservations:"Aucune réservation.",
     open:"Ouvrir", logout:"Déconnexion", balance:"Solde", restaurants:"Restaurants favoris",
   } : {
     title:"My account", subtitle:"Orders, reservations and content in one place.",
-    orders:"Orders", reservations:"Reservations", invoices:"Invoices", favorites:"Favorites",
+    orders:"Orders", reservations:"Reservations", invoices:"Invoices", notifications:"Notifications", favorites:"Favorites",
     library:"My library", studio:"Studio", rewards:"Rewards", profile:"Profile & settings",
     marketplace:"Explore marketplace", recentOrders:"Recent orders", recentReservations:"Recent reservations",
     emptyOrders:"No orders yet.", emptyReservations:"No reservations yet.",
@@ -82,7 +83,8 @@ export default function CustomerPortal() {
   const quick = [
     { label:copy.orders, href:"/customer-orders", Icon:ShoppingBag },
     { label:copy.reservations, href:"/customer-reservations", Icon:CalendarDays },
-    { label:copy.invoices, href:"/customer-orders", Icon:ReceiptText },
+    { label:copy.invoices, href:"/customer-orders?view=invoices", Icon:ReceiptText },
+    { label:copy.notifications, href:"/customer-portal#notifications", Icon:Bell },
     { label:copy.favorites, href:"/favorites", Icon:Heart },
     { label:copy.library, href:"/customer-content-library", Icon:Library },
     { label:copy.studio, href:"/customer-studio", Icon:Camera },
@@ -168,6 +170,11 @@ export default function CustomerPortal() {
           </div>
         </section>
       </div>
+
+      <section id="notifications" className="mt-5 rounded-[26px] border border-slate-200 bg-white p-4 sm:p-5 dark:border-white/10 dark:bg-white/5">
+        <div className="flex items-center justify-between gap-3"><div><h2 className="flex items-center gap-2 text-lg font-black"><Bell className="h-5 w-5 text-orange-500" />{copy.notifications}</h2><p className="mt-1 text-xs text-slate-500">{notifications.data?.length ?? 0}</p></div></div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">{notifications.isLoading ? <div className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/5" /> : (notifications.data ?? []).slice(0,8).map((note:any) => <div key={note.id} className="rounded-2xl border border-slate-100 p-3 dark:border-white/10"><p className="text-sm font-black">{note.title}</p><p className="mt-1 text-xs leading-5 text-slate-500">{note.body}</p><p className="mt-2 text-[10px] text-slate-400">{note.createdAt ? new Date(note.createdAt).toLocaleString(lang === "ar" ? "ar-SA" : lang === "fr" ? "fr-FR" : "en-US") : ""}</p></div>)}</div>
+      </section>
 
       <section className="mt-5 rounded-[26px] border border-slate-200 bg-white p-4 sm:p-5 dark:border-white/10 dark:bg-white/5">
         <div className="flex items-center justify-between gap-3"><div><h2 className="text-lg font-black">{copy.restaurants}</h2><p className="mt-1 text-xs text-slate-500">{favorites.data?.length ?? 0}</p></div><Link href="/favorites" className="text-xs font-black text-orange-600">{copy.open}</Link></div>
