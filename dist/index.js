@@ -3890,15 +3890,27 @@ async function getDailyFinancialSummary(restaurantId, from, to, branchId) {
   if (!db) return { totals: [], byPaymentMethod: [], byChannel: [], byBranch: [], orders: 0 };
   const filters = [eq2(orders.restaurantId, restaurantId), eq2(orders.status, "completed"), eq2(orders.paymentStatus, "paid"), gte(orders.createdAt, from), lte(orders.createdAt, to), branchId ? eq2(orders.branchId, branchId) : void 0].filter((condition) => Boolean(condition));
   const rows = await db.select({ id: orders.id, branchId: orders.branchId, channel: orders.channel, paymentMethod: orders.paymentMethod, currencyCode: orders.currencyCode, currencyDecimals: orders.currencyDecimals, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, serviceFeeAmount: orders.serviceFeeAmount, tipAmount: orders.tipAmount, deliveryFee: orders.deliveryFee, total: orders.total, createdAt: orders.createdAt }).from(orders).where(and2(...filters)).orderBy(desc(orders.createdAt));
-  const makeBucket = (currencyCode) => ({ currencyCode, grossSales: 0, discounts: 0, tax: 0, serviceFees: 0, tips: 0, deliveryFees: 0, netRevenue: 0, orders: 0 });
+  const parseMinor = (value, decimals) => {
+    const text2 = String(value ?? "0").trim().replace(/,/g, "");
+    const match = text2.match(/^(-?)(\d+)(?:\.(\d+))?$/);
+    if (!match) throw new Error("Invalid monetary value");
+    const scale = Math.max(0, Math.min(3, decimals));
+    const fraction = (match[3] ?? "").padEnd(scale, "0");
+    if (fraction.length > scale && /[1-9]/.test(fraction.slice(scale))) throw new Error("Monetary value exceeds currency precision");
+    const units = BigInt(match[2]) * BigInt(10) ** BigInt(scale) + BigInt(fraction.slice(0, scale) || "0");
+    return match[1] === "-" ? -units : units;
+  };
+  const toNumber = (units, decimals) => Number(units) / 10 ** decimals;
+  const makeBucket = (currencyCode, currencyDecimals) => ({ currencyCode, currencyDecimals, grossSales: BigInt(0), discounts: BigInt(0), tax: BigInt(0), serviceFees: BigInt(0), tips: BigInt(0), deliveryFees: BigInt(0), netRevenue: BigInt(0), orders: 0 });
   const add = (bucket, row) => {
-    bucket.grossSales += Number(row.subtotal ?? 0);
-    bucket.discounts += Number(row.discountAmount ?? 0);
-    bucket.tax += Number(row.taxAmount ?? 0);
-    bucket.serviceFees += Number(row.serviceFeeAmount ?? 0);
-    bucket.tips += Number(row.tipAmount ?? 0);
-    bucket.deliveryFees += Number(row.deliveryFee ?? 0);
-    bucket.netRevenue += Number(row.total ?? 0);
+    const d = bucket.currencyDecimals;
+    bucket.grossSales += parseMinor(row.subtotal, d);
+    bucket.discounts += parseMinor(row.discountAmount, d);
+    bucket.tax += parseMinor(row.taxAmount, d);
+    bucket.serviceFees += parseMinor(row.serviceFeeAmount, d);
+    bucket.tips += parseMinor(row.tipAmount, d);
+    bucket.deliveryFees += parseMinor(row.deliveryFee, d);
+    bucket.netRevenue += parseMinor(row.total, d);
     bucket.orders += 1;
   };
   const totals = /* @__PURE__ */ new Map();
@@ -3907,14 +3919,14 @@ async function getDailyFinancialSummary(restaurantId, from, to, branchId) {
   const branch = /* @__PURE__ */ new Map();
   for (const row of rows) {
     const currency = row.currencyCode || "SAR";
-    for (const [map, key] of [[totals, currency], [payment, `${row.paymentMethod}:${currency}`], [channel, `${row.channel}:${currency}`], [branch, `${row.branchId}:${currency}`]]) {
-      const current = map.get(key) ?? makeBucket(currency);
+    const decimals = Math.max(0, Math.min(3, Number.isInteger(row.currencyDecimals) ? Number(row.currencyDecimals) : 2));
+    for (const [map, key] of [[totals, `${currency}:${decimals}`], [payment, `${row.paymentMethod}:${currency}:${decimals}`], [channel, `${row.channel}:${currency}:${decimals}`], [branch, `${row.branchId}:${currency}:${decimals}`]]) {
+      const current = map.get(key) ?? makeBucket(currency, decimals);
       add(current, row);
       map.set(key, current);
     }
   }
-  const round = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
-  const normalize = (bucket) => ({ ...bucket, grossSales: round(bucket.grossSales), discounts: round(bucket.discounts), tax: round(bucket.tax), serviceFees: round(bucket.serviceFees), tips: round(bucket.tips), deliveryFees: round(bucket.deliveryFees), netRevenue: round(bucket.netRevenue) });
+  const normalize = (bucket) => ({ currencyCode: bucket.currencyCode, currencyDecimals: bucket.currencyDecimals, grossSales: toNumber(bucket.grossSales, bucket.currencyDecimals), discounts: toNumber(bucket.discounts, bucket.currencyDecimals), tax: toNumber(bucket.tax, bucket.currencyDecimals), serviceFees: toNumber(bucket.serviceFees, bucket.currencyDecimals), tips: toNumber(bucket.tips, bucket.currencyDecimals), deliveryFees: toNumber(bucket.deliveryFees, bucket.currencyDecimals), netRevenue: toNumber(bucket.netRevenue, bucket.currencyDecimals), orders: bucket.orders });
   return { totals: Array.from(totals.values()).map(normalize), byPaymentMethod: Array.from(payment.entries()).map(([key, value]) => ({ paymentMethod: key.split(":")[0], ...normalize(value) })), byChannel: Array.from(channel.entries()).map(([key, value]) => ({ channel: key.split(":")[0], ...normalize(value) })), byBranch: Array.from(branch.entries()).map(([key, value]) => ({ branchId: Number(key.split(":")[0]), ...normalize(value) })), orders: rows.length };
 }
 async function listInventory(restaurantId) {
@@ -4603,8 +4615,12 @@ async function listFinancialLedgerEntries(input) {
 async function createFinancialLedgerEntry(input) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
-  const normalizedAmount = Number(input.amount).toFixed(2);
-  if (!Number.isFinite(Number(input.amount)) || Number(input.amount) <= 0) throw new Error("Ledger amount must be positive");
+  const rawAmount = input.amount.trim();
+  const amountMatch = rawAmount.match(/^(\\d+)(?:\\.(\\d{1,2}))?$/);
+  if (!amountMatch) throw new Error("Ledger amount must be a positive monetary value with at most 2 decimals");
+  const amountMinor = BigInt(amountMatch[1]) * BigInt(100) + BigInt((amountMatch[2] ?? "").padEnd(2, "0"));
+  if (amountMinor <= BigInt(0)) throw new Error("Ledger amount must be positive");
+  const normalizedAmount = `\\${amountMinor / BigInt(100)}.\\${(amountMinor % BigInt(100)).toString().padStart(2, "0")}`;
   if (input.idempotencyKey) {
     const existing = await db.select({ id: financialLedgerEntries.id }).from(financialLedgerEntries).where(eq2(financialLedgerEntries.idempotencyKey, input.idempotencyKey)).limit(1);
     if (existing[0]) return existing[0].id;
