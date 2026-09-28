@@ -65,7 +65,7 @@ async function classifyMarketplaceImage(imageUrl: string) {
   }
 }
 import { sendGuestClaimOtpEmail, sendDriverAssignmentEmail, sendWelcomeEmail, sendEmailVerificationEmail, sendPasswordResetEmail, sendReservationAcceptedEmail, sendReservationRejectedEmail, sendReservationUpdatedEmail, sendReservationCancelledEmail, sendReservationWhatsApp, reservationNotificationText } from "./reservationEmail";
-import { emailTemplateSeeds, listEffectiveEmailTemplates, type EmailEventKey, type EmailLocale } from "./emailTemplates";
+import { emailTemplateSeeds, listEffectiveEmailTemplates, sendTemplatedEmail, type EmailEventKey, type EmailLocale } from "./emailTemplates";
 import { parseReceiptMessageTemplates, resolveReceiptLocale, sendReceiptEmail, sendReceiptSms, sendCustomerOtpSms, type ReceiptDeliveryPayload } from "./receiptDelivery";
 import { COUNTRIES, CURRENCIES } from "@shared/currencies";
 import { BRANDING_FEATURES } from "@shared/brandingFeatures";
@@ -994,6 +994,18 @@ export const appRouter = router({
         if (!otherActive[0]) await db.update(restaurantTables).set({ status: "available" }).where(and(eq(restaurantTables.branchId, existing[0].branchId), eq(restaurantTables.name, existing[0].tableName), existing[0].seatingSectionId ? eq(restaurantTables.seatingSectionId, existing[0].seatingSectionId) : isNull(restaurantTables.seatingSectionId)));
       }
       if (existing[0].channel === "delivery" && assignedDriverId && (input.status === "preparing" || input.status === "ready")) { const title = input.status === "preparing" ? "تم قبول طلب التوصيل" : "الطلب جاهز للاستلام"; const body = input.status === "preparing" ? `تم قبول طلب التوصيل #${input.orderId} من المطعم. سيظهر لك بعد التجهيز.` : `الطلب #${input.orderId} جاهز للاستلام الآن.`; await db.insert(notifications).values({ userId: assignedDriverId, type: "system", title, body }); void sendPushToUser(assignedDriverId, { title, body, url: "/" }).catch((error) => console.warn("[Push] delivery status notification failed", error)); }
+      if (existing[0].customerId) {
+        const customer = (await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, existing[0].customerId)).limit(1))[0];
+        const restaurantDetails = await getRestaurantById(input.restaurantId);
+        const restaurantName = restaurantDetails?.brandName ?? restaurantDetails?.name ?? "المطعم";
+        const statusLabel = input.status === "new" ? "قيد الانتظار" : input.status === "preparing" ? "قيد التحضير" : input.status === "ready" ? "جاهز" : input.status === "completed" ? "مكتمل" : "ملغى";
+        const title = input.status === "ready" ? `طلبك #${input.orderId} جاهز` : input.status === "completed" ? `اكتمل طلبك #${input.orderId}` : `تحديث الطلب #${input.orderId}`;
+        const body = input.status === "ready" ? "طلبك جاهز الآن. افتح حسابك لإظهار رمز الاستلام." : input.status === "completed" ? "تم إكمال الطلب وحفظ ملخص الفاتورة في حسابك." : `حالة طلبك الآن: ${statusLabel}`;
+        await db.insert(notifications).values({ userId: existing[0].customerId, type: "system", title, body });
+        void sendPushToUser(existing[0].customerId, { title, body, url: "/customer-orders" }).catch((error) => console.warn("[Push] customer order status failed", error));
+        const eventKey: EmailEventKey = input.status === "ready" ? "order.ready" : input.status === "completed" ? "order.completed" : "order.status";
+        void sendTemplatedEmail({ to: customer?.email, restaurantId: input.restaurantId, eventKey, locale: "ar", data: { name: customer?.name ?? "عميل NFOOD", restaurantName, orderNumber: input.orderId, status: statusLabel, total: existing[0].total, qrCode: `NFOOD|ORDER|${input.restaurantId}|${input.orderId}|${input.status}` } }).catch((error) => console.warn("[Email] customer order lifecycle failed", error));
+      }
       let automaticCardIssued = false;
       if (input.status === "completed" && existing[0].customerId) {
         const profile = (await db.select({ id: customerProfiles.id }).from(customerProfiles).where(eq(customerProfiles.userId, existing[0].customerId)).limit(1))[0];
