@@ -56,7 +56,7 @@ export default function MarketplaceStoresView() {
   const [statusFilter, setStatusFilter] = useState<StoreStatusFilter>("all");
   const [sectorFilter, setSectorFilter] = useState("all");
   const [selected, setSelected] = useState<AdminStore | null>(null);
-  const [draft, setDraft] = useState({ customerName: "", plan: "Basic" as (typeof PLAN_TIERS)[number], taxId: "", licensingFee: "", status: true });
+  const [draft, setDraft] = useState({ customerName: "", taxId: "", licensingFee: "" });
 
   const stores = (storesQuery.data ?? []) as AdminStore[];
   const sectors = useMemo(() => {
@@ -82,12 +82,12 @@ export default function MarketplaceStoresView() {
 
   const openEditor = (store: AdminStore) => {
     setSelected(store);
-    setDraft({ customerName: store.customerName, plan: (PLAN_TIERS as readonly string[]).includes(store.plan) ? store.plan as (typeof PLAN_TIERS)[number] : "Basic", taxId: store.taxId, licensingFee: String(store.licensingFee ?? ""), status: store.status });
+    setDraft({ customerName: store.customerName, taxId: store.taxId, licensingFee: String(store.licensingFee ?? "") });
   };
 
   const save = () => {
     if (!selected) return;
-    updateStore.mutate({ id: selected.id, customerName: draft.customerName.trim(), plan: draft.plan, taxId: draft.taxId.trim(), licensingFee: draft.licensingFee.trim(), status: draft.status });
+    updateStore.mutate({ id: selected.id, customerName: draft.customerName.trim(), taxId: draft.taxId.trim(), licensingFee: draft.licensingFee.trim() });
   };
 
   const toggleStatus = (store: AdminStore) => updateStore.mutate({ id: store.id, status: !store.status });
@@ -202,12 +202,10 @@ export default function MarketplaceStoresView() {
               اسم المنشأة
               <Input value={draft.customerName} onChange={(event) => setDraft({ ...draft, customerName: event.target.value })} className="mt-2 rounded-xl" />
             </label>
-            <label className="block text-sm font-semibold">
-              الباقة
-              <select value={draft.plan} onChange={(event) => setDraft({ ...draft, plan: event.target.value as (typeof PLAN_TIERS)[number] })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                {PLAN_TIERS.map((plan) => <option key={plan} value={plan}>{plan}</option>)}
-              </select>
-            </label>
+            <div className="rounded-xl border border-orange-200 bg-orange-50/70 p-3 text-sm dark:border-orange-900/50 dark:bg-orange-950/20">
+              <p className="font-black text-slate-800 dark:text-slate-100">الباقة: {selected?.plan ?? "—"}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">تغيير أو تفعيل الباقة متاح فقط من «إدارة المنشآت والمطاعم» في بطاقة المنشأة.</p>
+            </div>
             <label className="block text-sm font-semibold">
               السجل الضريبي
               <Input value={draft.taxId} onChange={(event) => setDraft({ ...draft, taxId: event.target.value })} dir="ltr" className="mt-2 rounded-xl" />
@@ -215,10 +213,6 @@ export default function MarketplaceStoresView() {
             <label className="block text-sm font-semibold">
               رسوم الترخيص (ر.س)
               <Input value={draft.licensingFee} onChange={(event) => setDraft({ ...draft, licensingFee: event.target.value })} dir="ltr" placeholder="0.00" className="mt-2 rounded-xl" />
-            </label>
-            <label className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-sm font-semibold dark:bg-slate-900">
-              المتجر مفعّل
-              <input type="checkbox" checked={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.checked })} className="h-4 w-4 accent-[#e76f3c]" />
             </label>
             {updateStore.isError && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{updateStore.error.message}</p>}
             <Button disabled={updateStore.isPending || draft.customerName.trim().length < 2} onClick={save} className="w-full rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]">
