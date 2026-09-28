@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, Clock3, Loader2, MessageSquareText, RotateCcw, ShoppingBag, Star, XCircle, ReceiptText } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
