@@ -2846,7 +2846,7 @@ async function listCustomerOrders(customerId, limit = 100) {
   const db = await getDb();
   if (!db) return [];
   const safeLimit = Math.min(Math.max(limit, 1), 100);
-  const rows = await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, status: orders.status, paymentStatus: orders.paymentStatus, channel: orders.channel, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, serviceFeeAmount: orders.serviceFeeAmount, tipAmount: orders.tipAmount, total: orders.total, currencyCode: orders.currencyCode, notes: orders.notes, reservationDate: orders.reservationDate, reservationEventType: orders.reservationEventType, createdAt: orders.createdAt, updatedAt: orders.updatedAt, restaurantName: restaurants.name, restaurantSlug: restaurants.slug, brandColor: restaurants.brandColor, taxNumber: restaurants.taxNumber, orderQrToken: qrCodes.token }).from(orders).leftJoin(qrCodes, and2(eq2(qrCodes.orderId, orders.id), eq2(qrCodes.purpose, "order_tracking"), eq2(qrCodes.status, "active"))).leftJoin(restaurants, eq2(orders.restaurantId, restaurants.id)).where(eq2(orders.customerId, customerId)).orderBy(desc(orders.createdAt)).limit(safeLimit);
+  const rows = await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, status: orders.status, paymentStatus: orders.paymentStatus, channel: orders.channel, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, serviceFeeAmount: orders.serviceFeeAmount, tipAmount: orders.tipAmount, total: orders.total, currencyCode: orders.currencyCode, notes: orders.notes, reservationDate: orders.reservationDate, reservationEventType: orders.reservationEventType, createdAt: orders.createdAt, updatedAt: orders.updatedAt, restaurantName: restaurants.name, restaurantSlug: restaurants.slug, brandColor: restaurants.brandColor, taxNumber: restaurants.taxNumber }).from(orders).leftJoin(restaurants, eq2(orders.restaurantId, restaurants.id)).where(eq2(orders.customerId, customerId)).orderBy(desc(orders.createdAt)).limit(safeLimit);
   if (!rows.length) return [];
   const itemRows = await db.select({
     orderId: orderItems.orderId,
@@ -11758,10 +11758,10 @@ var appRouter = router({
       if (input.isTest !== void 0) filters.push(eq7(reservations.isTest, input.isTest));
       return db.select().from(reservations).where(and7(...filters)).orderBy(desc3(reservations.createdAt), desc3(reservations.id));
     }),
-    createReservation: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().nullable().optional(), slotId: z3.number().int().nullable().optional(), kind: z3.enum(["reservation", "waitlist"]).default("reservation"), isTest: z3.boolean().default(false), customerName: z3.string().trim().min(2).max(160), email: z3.string().trim().email().optional(), phone: z3.string().trim().max(40).optional(), partySize: z3.number().int().min(1).max(50), durationMinutes: z3.number().int().min(15).max(360).default(60), reservedFor: z3.coerce.date(), assignedTableId: z3.number().int().positive().optional(), notes: z3.string().trim().max(1e3).optional() })).mutation(async ({ ctx, input }) => {
+    createReservation: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().nullable().optional(), slotId: z3.number().int().nullable().optional(), seatingSectionId: z3.number().int().positive().nullable().optional(), kind: z3.enum(["reservation", "waitlist"]).default("reservation"), isTest: z3.boolean().default(false), customerName: z3.string().trim().min(2).max(160), email: z3.string().trim().email().optional(), phone: z3.string().trim().max(40).optional(), partySize: z3.number().int().min(1).max(50), durationMinutes: z3.number().int().min(15).max(360).default(60), reservedFor: z3.coerce.date(), assignedTableId: z3.number().int().positive().optional(), notes: z3.string().trim().max(1e3).optional() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       await requireRestaurantFeature(input.restaurantId, input.kind === "waitlist" ? "waitlist" : "reservations");
-      if (!isAdminContext(ctx) && ctx.user?.testRole !== "waiter") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0625\u0646\u0634\u0627\u0621 \u062D\u062C\u0632" });
+      if (!isAdminContext(ctx) && String(ctx.user?.role) !== "restaurant_admin" && !["restaurant_admin", "manager", "owner", "waiter"].includes(ctx.user?.testRole ?? "")) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0625\u0646\u0634\u0627\u0621 \u062D\u062C\u0632" });
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       if (input.branchId) {
@@ -11778,7 +11778,7 @@ var appRouter = router({
         if (!slot) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0632\u0645\u0646\u064A\u0629 \u0644\u0627 \u062A\u062A\u0628\u0639 \u0647\u0630\u0627 \u0627\u0644\u0641\u0631\u0639" });
       }
       try {
-        const created = await createReservationWithTable({ restaurantId: input.restaurantId, branchId: input.branchId, slotId: input.slotId && input.slotId > 0 ? input.slotId : null, customerName: input.customerName, email: input.email ?? null, phone: input.phone ?? null, partySize: input.partySize, durationMinutes: input.durationMinutes, reservedFor: input.reservedFor, notes: input.notes ?? null, assignedTableId: input.assignedTableId ?? null, customerId: ctx.user?.id ?? null, createdByUserId: ctx.user?.id ?? null, isTest: input.isTest });
+        const created = await createReservationWithTable({ restaurantId: input.restaurantId, branchId: input.branchId, slotId: input.slotId && input.slotId > 0 ? input.slotId : null, seatingSectionId: input.seatingSectionId ?? null, customerName: input.customerName, email: input.email ?? null, phone: input.phone ?? null, partySize: input.partySize, durationMinutes: input.durationMinutes, reservedFor: input.reservedFor, notes: input.notes ?? null, assignedTableId: input.assignedTableId ?? null, customerId: ctx.user?.id ?? null, createdByUserId: ctx.user?.id ?? null, isTest: input.isTest });
         const restaurant = await getRestaurantById(input.restaurantId);
         if (input.email) {
           await sendReservationAcceptedEmail({ to: input.email, customerName: input.customerName, restaurantName: restaurant?.brandName ?? restaurant?.name ?? "\u0627\u0644\u0645\u0637\u0639\u0645", tableName: created.tableName, reservedFor: input.reservedFor, partySize: input.partySize }).catch(() => void 0);
@@ -12857,7 +12857,7 @@ var appRouter = router({
         await db.insert(notifications).values({ userId: existing[0].customerId, type: "system", title, body });
         void sendPushToUser(existing[0].customerId, { title, body, url: "/customer-orders" }).catch((error) => console.warn("[Push] customer order status failed", error));
         const eventKey = input.status === "ready" ? "order.ready" : input.status === "completed" ? "order.completed" : "order.status";
-        void sendTemplatedEmail({ to: customer?.email, restaurantId: input.restaurantId, eventKey, locale: "ar", data: { name: customer?.name ?? "\u0639\u0645\u064A\u0644 NFOOD", restaurantName, orderNumber: input.orderId, status: statusLabel, total: existing[0].total, qrCode: `NFOOD|ORDER|${input.restaurantId}|${input.orderId}|${input.status}` } }).catch((error) => console.warn("[Email] customer order lifecycle failed", error));
+        void sendTemplatedEmail({ to: customer?.email, restaurantId: input.restaurantId, eventKey, locale: "ar", data: { name: customer?.name ?? "\u0639\u0645\u064A\u0644 NFOOD", restaurantName, orderNumber: input.orderId, status: statusLabel, total: existing[0].total } }).catch((error) => console.warn("[Email] customer order lifecycle failed", error));
       }
       let automaticCardIssued = false;
       if (input.status === "completed" && existing[0].customerId) {
@@ -13012,7 +13012,7 @@ var appRouter = router({
       const rows = await listRestaurantTables(page.restaurant.id, input.branchId);
       return rows.filter((table) => table.status === "available");
     }),
-    savePickupPoint: protectedProcedure.input(z3.object({ id: z3.number().int().positive().optional(), restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive(), name: z3.string().trim().min(2).max(160), address: z3.string().trim().max(500).nullable().optional(), openingTime: z3.string().regex(/^\\d{2}:\\d{2}$/).nullable().optional(), closingTime: z3.string().regex(/^\\d{2}:\\d{2}$/).nullable().optional(), isActive: z3.boolean().default(true) })).mutation(async ({ ctx, input }) => {
+    savePickupPoint: protectedProcedure.input(z3.object({ id: z3.number().int().positive().optional(), restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive(), name: z3.string().trim().min(2).max(160), address: z3.string().trim().max(500).nullable().optional(), openingTime: z3.string().regex(/^\d{2}:\d{2}$/).nullable().optional(), closingTime: z3.string().regex(/^\d{2}:\d{2}$/).nullable().optional(), isActive: z3.boolean().default(true) })).mutation(async ({ ctx, input }) => {
       assertRestaurantManager(ctx);
       assertRestaurantAccess(ctx, input.restaurantId);
       await requireRestaurantFeature(input.restaurantId, "takeaway");
@@ -13043,7 +13043,7 @@ var appRouter = router({
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       return listReservationBlackoutDates(restaurant.id, input.branchId);
     }),
-    saveReservationSlot: protectedProcedure.input(z3.object({ id: z3.number().int().positive().optional(), restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive(), dayOfWeek: z3.number().int().min(0).max(6), startTime: z3.string().regex(/^\\d{2}:\\d{2}$/), endTime: z3.string().regex(/^\\d{2}:\\d{2}$/), capacity: z3.number().int().positive().max(500), slotDurationMinutes: z3.number().int().positive().max(480), isActive: z3.boolean().default(true) })).mutation(({ ctx, input }) => {
+    saveReservationSlot: protectedProcedure.input(z3.object({ id: z3.number().int().positive().optional(), restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive(), dayOfWeek: z3.number().int().min(0).max(6), startTime: z3.string().regex(/^\d{2}:\d{2}$/), endTime: z3.string().regex(/^\d{2}:\d{2}$/), capacity: z3.number().int().positive().max(500), slotDurationMinutes: z3.number().int().positive().max(480), isActive: z3.boolean().default(true) })).mutation(({ ctx, input }) => {
       assertRestaurantManager(ctx);
       assertRestaurantAccess(ctx, input.restaurantId);
       return saveReservationSlot(input);
