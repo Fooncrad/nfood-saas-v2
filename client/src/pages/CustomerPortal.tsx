@@ -55,7 +55,7 @@ export default function CustomerPortal() {
   const favorites = trpc.platform.favoriteRestaurants.useQuery(undefined, { enabled:Boolean(user), retry:false });
   const wallet = trpc.platform.myWallet.useQuery(undefined, { enabled:Boolean(user), retry:false });
   const engagement = trpc.platform.engagement.useQuery(undefined, { enabled:Boolean(user), retry:false });
-  const notifications = trpc.platform.notifications.useQuery(undefined, { enabled:Boolean(user), retry:false, refetchInterval:user ? 15000 : false });
+  const notifications = trpc.notifications.mine.useQuery(undefined, { enabled:Boolean(user), retry:false, refetchInterval:user ? 15000 : false });
 
   const copy = lang === "ar" ? {
     title:"حسابي", subtitle:"كل طلباتك وحجوزاتك ومحتواك في مكان واحد.",
