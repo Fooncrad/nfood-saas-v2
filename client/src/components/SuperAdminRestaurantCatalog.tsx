@@ -830,6 +830,21 @@ export function SuperAdminRestaurantCatalog() {
                         type="button"
                         size="sm"
                         variant="outline"
+                        disabled={updateRestaurant.isPending || planOptionsForEditor.length === 0}
+                        onClick={() => {
+                          const current = plans.find(plan => plan.name === restaurant.plan || plan.key === restaurant.plan);
+                          setPlanDraft(current?.key ?? planOptionsForEditor[0]?.key ?? "");
+                          setPlanEditor({ id: restaurant.id, name: restaurant.name, currentPlan: restaurant.plan ?? "" });
+                        }}
+                        className="h-9 max-w-full gap-1 rounded-xl border-orange-200 px-3 text-[10px] font-black text-[#c75325] hover:bg-orange-50 dark:border-orange-500/30 dark:text-orange-300"
+                        data-testid={`restaurant-plan-${restaurant.id}`}
+                      >
+                        {ui.editPlan}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
                         disabled={resetPassword.isPending}
                         onClick={() =>
                           setPasswordEditor({
@@ -867,207 +882,7 @@ export function SuperAdminRestaurantCatalog() {
       </Card>
       </div>
 
-      <div data-testid="restaurant-governance-grid" className="grid gap-4 xl:grid-cols-[1.15fr_1fr]">
-        <Card className="overflow-hidden rounded-[22px] border-slate-200/80 bg-white/95 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <CardHeader className="border-b border-slate-100 bg-gradient-to-l from-cyan-50 via-white to-white p-3.5 dark:border-slate-800 dark:from-cyan-950/30 dark:via-slate-900 dark:to-slate-900">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                  <CardTitle className="text-sm font-black md:text-base">
-                    مميزات الباقات الفعلية
-                  </CardTitle>
-                  <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
-                    هذه البيانات تُقرأ مباشرة من packagePlans وpackagePlanFeatures وfeatureDefinitions.
-                  </p>
-              </div>
-              <Badge variant="outline" className="rounded-lg">
-                  {catalogLoading
-                    ? "جارٍ التحميل"
-                    : `${formatCatalogMoney(plans.length)} باقات · ${formatCatalogMoney(definitions.length)} ميزة`}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {catalogError ? (
-              <div className="m-4 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-                تعذر تحميل كتالوج الباقات. Request ID: package-catalog{" "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    void plansQuery.refetch();
-                    void definitionsQuery.refetch();
-                  }}
-                  className="mr-2 font-bold underline"
-                >
-                  إعادة المحاولة
-                </button>
-              </div>
-            ) : catalogLoading ? (
-              <div className="space-y-2 p-4">
-                <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
-                <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
-              </div>
-            ) : plans.length === 0 ? (
-              <div className="p-7 text-center">
-                <p className="text-sm text-slate-600">
-                  لا توجد باقات محفوظة حاليًا.
-                </p>
-                <p className="mt-1 text-xs text-slate-400">
-                  استخدم محرر الباقات لإنشاء أول باقة وربط المميزات بها.
-                </p>
-              </div>
-            ) : (
-              plans.map((plan, index) => {
-                const featureMap = new Map(
-                  plan.features.map(feature => [feature.key, feature])
-                );
-                const enabledCount = plan.features.filter(
-                  feature => feature.enabled
-                ).length;
-                const isExpanded = expandedPlan === plan.id;
-                return (
-                  <div
-                    key={plan.id}
-                    className="border-b border-slate-100 last:border-b-0"
-                  >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedPlan(isExpanded ? null : plan.id)
-                      }
-                      className="flex w-full items-center justify-between gap-3 p-3 text-right transition hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                    >
-                      <span className="flex min-w-0 items-center gap-3">
-                        <span
-                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${index % 3 === 0 ? "bg-slate-400" : index % 3 === 1 ? "bg-sky-500" : "bg-violet-500"}`}
-                        />
-                        <span className="min-w-0">
-                          <span className="block truncate text-xs font-black text-slate-800 dark:text-slate-100">
-                            {plan.name}
-                          </span>
-                          <span className="mt-0.5 block truncate font-mono text-[10px] text-slate-400">
-                            {plan.key} · {formatCatalogMoney(plan.monthlyPrice)} SAR/شهري · {formatCatalogMoney(enabledCount)} مفعّلة
-                          </span>
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <Badge
-                          className={`rounded-lg ${plan.isActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
-                        >
-                          {plan.isActive ? "نشطة" : "متوقفة"}
-                        </Badge>
-                        <ChevronDown
-                          className={`h-4 w-4 transition ${isExpanded ? "rotate-180" : ""}`}
-                        />
-                      </span>
-                    </button>
-                    {isExpanded && (
-                      <div className="grid gap-2 bg-slate-50/60 p-3 sm:grid-cols-2 dark:bg-slate-950/50">
-                        {definitions.map(definition => {
-                          const link = featureMap.get(definition.key);
-                          const enabled = link?.enabled === true;
-                          return (
-                            <div
-                              key={definition.id}
-                              className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs ${enabled ? "border-emerald-200 bg-emerald-50/70" : "border-slate-200 bg-white"}`}
-                            >
-                              <span
-                                className={`flex min-w-0 items-center gap-2 font-semibold ${enabled ? "text-emerald-800" : "text-slate-400"}`}
-                              >
-                                {enabled ? (
-                                  <Check className="h-3.5 w-3.5 shrink-0" />
-                                ) : (
-                                  <X className="h-3.5 w-3.5 shrink-0" />
-                                )}
-                                <span className="truncate">
-                                  {definition.label}
-                                </span>
-                              </span>
-                              <span className="shrink-0 font-mono text-[10px] text-slate-400">
-                                {enabled &&
-                                link?.featureLimit !== null &&
-                                link?.featureLimit !== undefined
-                                  ? `حد ${link.featureLimit}`
-                                  : definition.isAddOn
-                                    ? "إضافة"
-                                    : "—"}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
-        <Card className="overflow-hidden rounded-[22px] border-slate-200/80 bg-white/95 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <CardHeader className="border-b border-slate-100 bg-gradient-to-l from-emerald-50 via-white to-white p-3.5 dark:border-slate-800 dark:from-emerald-950/30 dark:via-slate-900 dark:to-slate-900">
-            <CardTitle className="text-sm font-black md:text-base">كتالوج المميزات المتاحة</CardTitle>
-            <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
-              المفاتيح الموجودة حاليًا في قاعدة البيانات، مع التبعيات والإضافات وأسعارها.
-            </p>
-          </CardHeader>
-          <CardContent className="p-3.5">
-            {catalogError ? (
-              <p className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
-                تعذر تحميل تعريفات المميزات. Request ID: feature-definitions
-              </p>
-            ) : catalogLoading ? (
-              <div className="h-28 animate-pulse rounded-xl bg-slate-100" />
-            ) : definitions.length === 0 ? (
-              <p className="rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-500">
-                لا توجد مميزات معرفة بعد.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {visibleDefinitions.map(definition => (
-                  <div
-                    key={definition.id}
-                    className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/30 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-emerald-500/30"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-black text-slate-800 dark:text-slate-100">
-                          {definition.label}
-                        </p>
-                        <p className="mt-1 truncate font-mono text-[10px] text-slate-400">
-                          {definition.key}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="shrink-0 rounded-lg">
-                        {definition.isAddOn
-                          ? `إضافة ${formatCatalogMoney(definition.addonPrice)} SAR`
-                          : "ضمن الباقة"}
-                      </Badge>
-                    </div>
-                    {definition.dependencyKey ? (
-                      <p className="mt-2 text-[11px] text-slate-500">
-                        يعتمد على:{" "}
-                        <span className="font-mono">
-                          {definition.dependencyKey}
-                        </span>
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
-                {definitions.length > 8 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllFeatures(value => !value)}
-                        className="mt-2 w-full rounded-xl border border-orange-200 px-3 py-2 text-[11px] font-black text-[#c65325] transition hover:bg-orange-50 dark:border-orange-500/30 dark:hover:bg-orange-500/10"
-                  >
-                    {showAllFeatures
-                      ? "عرض المميزات الأساسية فقط"
-                      : `عرض كل المميزات (${definitions.length})`}
-                  </button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+
     </div>
   );
 }
