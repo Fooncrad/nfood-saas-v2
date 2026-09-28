@@ -539,7 +539,8 @@ function TablesView({ restaurantId }: { restaurantId: number }) {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkDraft, setBulkDraft] = useState({ branchId: 0, seatingSectionId: 0, count: 10, seats: 4, startNumber: 1, waiterUserId: 0 });
   const [draft, setDraft] = useState({ branchId: 0, seatingSectionId: 0, name: "", seats: 2, waiterUserId: 0 });
-  const sections = trpc.platform.seatingSections.useQuery({ restaurantId, branchId: draft.branchId || 1 }, { enabled: Boolean(user && draft.branchId), retry: false });
+  const sectionBranchId = bulkOpen ? bulkDraft.branchId : draft.branchId;
+  const sections = trpc.platform.seatingSections.useQuery({ restaurantId, branchId: sectionBranchId || 1 }, { enabled: Boolean(user && sectionBranchId), retry: false });
   const [sectionOpen, setSectionOpen] = useState(false);
   const [sectionDraft, setSectionDraft] = useState({ name: "", seatingType: "indoor" as "indoor" | "outdoor", smokingAllowed: false });
   const createSection = trpc.platform.createSeatingSection.useMutation({ onSuccess: async () => { await sections.refetch(); setSectionOpen(false); setSectionDraft({ name: "", seatingType: "indoor", smokingAllowed: false }); toast.success("تمت إضافة قسم الصالة"); }, onError: (error) => toast.error(error.message || "تعذر إضافة القسم") });
