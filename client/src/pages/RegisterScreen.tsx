@@ -206,6 +206,7 @@ export default function RegisterScreen() {
   const [currencyCode, setCurrencyCode] = useState(() => onboardingDraft.currencyCode || "SAR");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [acceptedLegal, setAcceptedLegal] = useState(false);
+  const selectedPlan = useMemo(() => { if (typeof window === "undefined") return "Free"; return new URLSearchParams(window.location.search).get("plan")?.trim() || "Free"; }, []);
   const registrationCaptcha = trpc.auth.registrationCaptcha.useQuery();
   const register = trpc.auth.registerRestaurant.useMutation({
     onSuccess: () => { resetDraft(); setDone(true); toast.success(copy.toastCreated); },
@@ -227,7 +228,7 @@ export default function RegisterScreen() {
   const submit = () => {
     if (!acceptedLegal) { toast.error(language === "ar" ? "يجب الموافقة على الشروط وسياسة الخصوصية" : language === "fr" ? "Vous devez accepter les conditions et la politique de confidentialité." : "You must accept the Terms and Privacy Policy."); return; }
     if (!registrationCaptcha.data?.challenge || !/^\d{1,2}$/.test(captchaAnswer.trim())) { toast.error(copy.toastCaptcha); return; }
-    register.mutate({ restaurantName: form.business.trim(), sector, countryCode, currencyCode, primaryLanguage: languageCode as "ar" | "en" | "fr" | "ur" | "es" | "de" | "tr", country: country.nameAr, city: form.city.trim(), email: form.email.trim(), phone: form.phone.trim(), plan: "Free", captchaChallenge: registrationCaptcha.data.challenge, captchaAnswer: captchaAnswer.trim() });
+    register.mutate({ restaurantName: form.business.trim(), sector, countryCode, currencyCode, primaryLanguage: languageCode as "ar" | "en" | "fr" | "ur" | "es" | "de" | "tr", country: country.nameAr, city: form.city.trim(), email: form.email.trim(), phone: form.phone.trim(), plan: selectedPlan, captchaChallenge: registrationCaptcha.data.challenge, captchaAnswer: captchaAnswer.trim() });
   };
 
   if (done && register.data) return (
@@ -379,7 +380,7 @@ export default function RegisterScreen() {
                     <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs"><span className="block text-slate-400">{copy.sectorTitle}</span><span className="mt-0.5 block font-bold">{sectorLabel(sector)}</span></p>
                     <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs"><span className="block text-slate-400">{copy.accountLanguageLabel}</span><span className="mt-0.5 block font-bold">{languageLabel}</span></p>
                     <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs"><span className="block text-slate-400">{copy.signInHandle}</span><span dir="ltr" className="mt-0.5 block font-bold">{form.email}</span></p>
-                    <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs sm:col-span-2"><span className="block text-slate-400">{copy.plan}</span><span className="mt-0.5 block font-bold">{copy.freePlan}</span></p>
+                    <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs sm:col-span-2"><span className="block text-slate-400">{copy.plan}</span><span className="mt-0.5 block font-bold">{selectedPlan === "Free" ? copy.freePlan : selectedPlan}</span></p>
                   </div>
                 </div>
                 <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
