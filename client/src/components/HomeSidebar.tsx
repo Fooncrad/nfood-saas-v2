@@ -200,6 +200,10 @@ export function HomeSidebar({
     return allowedGroups;
   }, [sidebarGroups, visibleNavItems]);
   const groups = isCentralAdmin ? platformGroups : simplifiedRestaurantGroups;
+  const primaryGroupIds = new Set(isCentralAdmin ? ["platform-overview", "platform-directory"] : ["overview", "operations"]);
+  const firstVisitDefaults = useMemo<Record<string, boolean>>(() => Object.fromEntries(
+    groups.map((group, index) => [group.id ?? group.label, index > 1 && !primaryGroupIds.has(group.id ?? "")]),
+  ), [groups, isCentralAdmin]);
 
   const copy = language === "ar"
     ? { favorites: "المفضلة", pin: "تثبيت", unpin: "إلغاء التثبيت", expand: "توسيع القائمة الجانبية", collapse: "طي القائمة الجانبية", system: "النظام", printers: "الطابعات", ready: "جاهز", checking: "جارٍ الفحص", attention: "يحتاج انتباهًا", workspace: "مساحة العمل" }
@@ -362,12 +366,12 @@ export function HomeSidebar({
             <LayoutGroup id={`nfood-sidebar-${String(managerId)}-${roleScope}`}>
               {groups.map(group => {
                 const groupKey = group.id ?? group.label;
-                const isGroupCollapsed = collapsedGroups[groupKey] ?? false;
+                const isGroupCollapsed = collapsedGroups[groupKey] ?? firstVisitDefaults[groupKey] ?? false;
                 const GroupIcon = groupIcon(group);
                 const hasActiveItem = group.items.some(item => item.key === active);
                 return (
-                  <div key={groupKey} className={`nfood-sidebar-group rounded-2xl border p-1 transition-[border-color,background-color,box-shadow] duration-200 ${hasActiveItem ? "border-orange-300/25 bg-orange-300/[.06] shadow-lg shadow-orange-950/10" : "border-white/[.07] bg-white/[.025]"}`}>
-                    {withTooltip(group.label, <button type="button" aria-expanded={!isGroupCollapsed} onClick={() => setCollapsedGroups(current => ({ ...current, [groupKey]: !isGroupCollapsed }))} className={`flex w-full items-center rounded-xl text-start transition-[background-color,color] duration-200 hover:bg-white/[.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-9 justify-center" : "gap-2 px-1.5 py-1.5"}`}>
+                  <div key={groupKey} className={`nfood-sidebar-group rounded-xl border p-1 transition-[border-color,background-color] duration-150 ${hasActiveItem ? "border-orange-300/20 bg-orange-300/[.055]" : "border-transparent bg-transparent"}`}>
+                    {withTooltip(group.label, <button type="button" aria-expanded={!isGroupCollapsed} onClick={() => setCollapsedGroups(current => ({ ...current, [groupKey]: !isGroupCollapsed }))} className={`flex w-full items-center rounded-lg text-start transition-[background-color,color] duration-150 hover:bg-white/[.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${sidebarCollapsed ? "h-9 justify-center" : "gap-2 px-1.5 py-1.5"}`}>
                       <GroupIcon className={`h-3.5 w-3.5 shrink-0 ${hasActiveItem ? "text-orange-200" : "text-slate-400"}`} />
                       {!sidebarCollapsed && <><span className={`min-w-0 flex-1 truncate text-[10px] font-bold tracking-[.08em] ${hasActiveItem ? "text-orange-100" : "text-slate-300"}`}>{group.label}</span><span className="rounded-full bg-white/[.08] px-1.5 py-0.5 text-[9px] text-slate-500">{formatSidebarCount(group.items.length)}</span><ChevronDown className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform duration-200 ${isGroupCollapsed ? "-rotate-90" : ""}`} /></>}
                     </button>)}
