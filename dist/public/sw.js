@@ -1,4 +1,4 @@
-const CACHE_NAME = "nfood-shell-v6";
+const CACHE_NAME = "nfood-shell-v7";
 const SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -28,13 +28,12 @@ async function networkFirstDocument(request) {
   }
 }
 
-async function cacheFirstAsset(request) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
+async function networkFirstAsset(request) {
   try {
     return await cacheResponse(request, await fetch(request));
   } catch {
-    return Response.error();
+    const cached = await caches.match(request);
+    return cached || Response.error();
   }
 }
 
@@ -100,5 +99,6 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
-  event.respondWith(request.mode === "navigate" ? networkFirstDocument(request) : cacheFirstAsset(request));
+  const isVersionedAsset = url.pathname.startsWith("/assets/");
+  event.respondWith(request.mode === "navigate" || isVersionedAsset ? networkFirstDocument(request) : networkFirstAsset(request));
 });
