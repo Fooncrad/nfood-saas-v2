@@ -112,7 +112,7 @@ export default function Home() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
   const globalSearchQuery = trpc.platform.globalSearch.useQuery({ restaurantId: selectedRestaurantId, query: commandQuery, limit: 20 }, { enabled: commandOpen && commandQuery.trim().length >= 2 && workspaceReady, retry: false });
-  const roleSummaryQuery = trpc.platform.roleSummary.useQuery({ restaurantId: selectedRestaurantId }, { enabled: workspaceReady, retry: false });
+  const roleSummaryQuery = trpc.platform.roleSummary.useQuery({ restaurantId: selectedRestaurantId }, { enabled: workspaceReady, retry: false, refetchInterval: workspaceReady ? 3000 : false, refetchIntervalInBackground: true });
   const workspaceBranches = trpc.platform.branches.useQuery({ restaurantId: selectedRestaurantId }, { enabled: workspaceReady, retry: false });
   const brandingQuery = trpc.platform.branding.useQuery({ restaurantId: selectedRestaurantId }, { enabled: workspaceReady, retry: false });
   const [globalForbiddenAction, setGlobalForbiddenAction] = useState<string | null>(null);
@@ -252,7 +252,9 @@ export default function Home() {
   const [branch, setBranch] = useState("");
   const activeBranchId = workspaceBranches.data?.find((item) => item.name === branch)?.id ?? workspaceBranches.data?.[0]?.id;
   const ordersWorkspaceActive = active === "overview" || active === "orders" || active === "pos" || active === "kds";
-  const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId, branchId: user?.testRole === "waiter" ? activeBranchId : undefined }, { enabled: workspaceReady && ordersWorkspaceActive && (user?.testRole !== "waiter" || Boolean(activeBranchId)), retry: false, refetchInterval: ordersWorkspaceActive ? 5000 : false });
+  // Keep the restaurant order feed alive across the whole workspace. The sidebar count,
+  // dashboard KPIs and floor state must never depend on the user opening the Orders page.
+  const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId, branchId: user?.testRole === "waiter" ? activeBranchId : undefined }, { enabled: workspaceReady && (user?.testRole !== "waiter" || Boolean(activeBranchId)), retry: false, refetchInterval: workspaceReady ? (ordersWorkspaceActive ? 1500 : 3000) : false, refetchIntervalInBackground: true });
   useEffect(() => { if (globalForbiddenAction === "platform.ordersByRestaurant" && remoteOrders.isSuccess) setGlobalForbiddenAction(null); }, [globalForbiddenAction, remoteOrders.isSuccess]);
   const updateOrderStatus = trpc.platform.updateOrderStatus.useMutation({ onSuccess: () => { remoteOrders.refetch(); toast.success("تم حفظ حالة الطلب في قاعدة البيانات"); }, onError: (error) => toast.error(`تعذر تحديث الطلب: ${error.message}`) });
   useEffect(() => { const firstBranch = workspaceBranches.data?.[0]; setBranch((current) => current && workspaceBranches.data?.some((item) => item.name === current) ? current : firstBranch?.name ?? ""); }, [workspaceBranches.data]);
@@ -530,7 +532,7 @@ function ServiceHallCenter({ restaurantId, initial = "tables" }: { restaurantId:
 function TablesView({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
   const utils = trpc.useUtils();
-  const remoteTables = trpc.platform.tables.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
+  const remoteTables = trpc.platform.tables.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false, refetchInterval: user ? 1500 : false, refetchIntervalInBackground: true });
   const branchesQuery = trpc.platform.branches.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
   const teamAccounts = trpc.platform.teamAccounts.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
   const [addOpen, setAddOpen] = useState(false);
