@@ -255,7 +255,7 @@ export async function listCustomerOrders(customerId: number, limit = 100) {
   const db = await getDb();
   if (!db) return [];
   const safeLimit = Math.min(Math.max(limit, 1), 100);
-  const rows = await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, status: orders.status, paymentStatus: orders.paymentStatus, channel: orders.channel, total: orders.total, currencyCode: orders.currencyCode, notes: orders.notes, reservationDate: orders.reservationDate, reservationEventType: orders.reservationEventType, createdAt: orders.createdAt, updatedAt: orders.updatedAt, restaurantName: restaurants.name, restaurantSlug: restaurants.slug, brandColor: restaurants.brandColor }).from(orders).leftJoin(restaurants, eq(orders.restaurantId, restaurants.id)).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt)).limit(safeLimit);
+  const rows = await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, status: orders.status, paymentStatus: orders.paymentStatus, channel: orders.channel, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, serviceFeeAmount: orders.serviceFeeAmount, tipAmount: orders.tipAmount, total: orders.total, currencyCode: orders.currencyCode, notes: orders.notes, reservationDate: orders.reservationDate, reservationEventType: orders.reservationEventType, createdAt: orders.createdAt, updatedAt: orders.updatedAt, restaurantName: restaurants.name, restaurantSlug: restaurants.slug, brandColor: restaurants.brandColor, taxNumber: restaurants.taxNumber, orderQrToken: qrCodes.token }).from(orders).leftJoin(qrCodes, and(eq(qrCodes.orderId, orders.id), eq(qrCodes.purpose, "order_tracking"), eq(qrCodes.status, "active"))).leftJoin(restaurants, eq(orders.restaurantId, restaurants.id)).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt)).limit(safeLimit);
   if (!rows.length) return [];
   const itemRows = await db.select({
     orderId: orderItems.orderId,
@@ -263,6 +263,7 @@ export async function listCustomerOrders(customerId: number, limit = 100) {
     menuItemId: orderItems.menuItemId,
     marketplaceVariantId: orderItems.marketplaceVariantId,
     quantity: orderItems.quantity,
+    unitPrice: orderItems.unitPrice,
     menuItemName: menuItems.name,
     marketplaceItemName: marketplaceListings.title,
     marketplaceSku: marketplaceListingVariants.sku,
@@ -278,6 +279,7 @@ export async function listCustomerOrders(customerId: number, limit = 100) {
     menuItemId: item.menuItemId,
     marketplaceVariantId: item.marketplaceVariantId,
     quantity: item.quantity,
+    unitPrice: item.unitPrice,
     name: item.sourceType === "marketplace_variant" ? (item.marketplaceItemName ?? "منتج متجر") : (item.menuItemName ?? "صنف منيو"),
     sku: item.sourceType === "marketplace_variant" ? item.marketplaceSku : null,
     barcode: item.sourceType === "marketplace_variant" ? item.marketplaceBarcode : null,
