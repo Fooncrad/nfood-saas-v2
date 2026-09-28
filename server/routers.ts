@@ -1071,6 +1071,7 @@ export const appRouter = router({
     resetQrCodes: restaurantAdminProcedure.input(z.object({ restaurantId: z.number().int().positive(), branchId: z.number().int().positive() })).mutation(async ({ ctx, input }) => { assertRestaurantAccess(ctx, input.restaurantId); const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" }); const result = await db.update(qrCodes).set({ status: "disabled", updatedAt: new Date() }).where(and(eq(qrCodes.restaurantId, input.restaurantId), eq(qrCodes.branchId, input.branchId))); return { success: true, disabled: Number(result[0].affectedRows ?? 0) }; }),
   }),
   notifications: router({
+    pushConfig: protectedProcedure.query(() => ({ publicKey: process.env.WEB_PUSH_PUBLIC_KEY ?? null, configured: Boolean(process.env.WEB_PUSH_PUBLIC_KEY && process.env.WEB_PUSH_PRIVATE_KEY && process.env.WEB_PUSH_SUBJECT) })),
     mine: protectedProcedure.query(({ ctx }) => listNotifications(ctx.user.id)),
     markRead: protectedProcedure.input(z.object({ notificationId: z.number().int().positive() })).mutation(async ({ ctx, input }) => { const db = await getDb(); if (!db) throw new Error("Database is not available"); await db.update(notifications).set({ readAt: new Date() }).where(and(eq(notifications.id, input.notificationId), eq(notifications.userId, ctx.user.id))); return { success: true }; }),
     markAllRead: protectedProcedure.mutation(({ ctx }) => markAllNotificationsRead(ctx.user.id)),
