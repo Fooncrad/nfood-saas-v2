@@ -157,6 +157,28 @@ export default function RestaurantMenu() {
   const [installPrompt, setInstallPrompt] = useState<DeferredInstallPrompt | null>(null);
   const [pageScrolled, setPageScrolled] = useState(false);
 
+  // Keep registered-customer checkout details for one day. Only service-specific
+  // choices (table/section/session) should change between visits.
+  useEffect(() => {
+    if (!user) return;
+    const key = `nfood:customer-checkout:${user.id}`;
+    let cached: { name?: string; phone?: string; at?: number } = {};
+    try { cached = JSON.parse(localStorage.getItem(key) || "{}"); } catch {}
+    const fresh = cached.at && Date.now() - cached.at < 24 * 60 * 60 * 1000;
+    const accountName = String((user as any).name ?? (user as any).displayName ?? "").trim();
+    const accountPhone = String((user as any).phone ?? "").trim();
+    if (!guestName) setGuestName(fresh && cached.name ? cached.name : accountName);
+    if (!guestPhone) setGuestPhone(fresh && cached.phone ? cached.phone : accountPhone);
+    if (!reservationName) setReservationName(fresh && cached.name ? cached.name : accountName);
+    if (!reservationPhone) setReservationPhone(fresh && cached.phone ? cached.phone : accountPhone);
+    if (!reservationEmail) setReservationEmail(String((user as any).email ?? ""));
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !guestName.trim() || !guestPhone.trim()) return;
+    try { localStorage.setItem(`nfood:customer-checkout:${user.id}`, JSON.stringify({ name: guestName.trim(), phone: guestPhone.trim(), at: Date.now() })); } catch {}
+  }, [user, guestName, guestPhone]);
+
   useEffect(() => {
     if (!restaurant) return;
     const saved = window.localStorage.getItem(`nfood:menu-theme:${slug}`);
