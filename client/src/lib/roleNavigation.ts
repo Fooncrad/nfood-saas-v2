@@ -1,6 +1,6 @@
 export type DashboardNavKey = "overview" | "subscription" | "admin" | "accounts" | "settings" | "operations" | "languages" | "files" | "trend" | "branches" | "orders" | "finance" | "pos" | "printers" | "kds" | "menu" | "tables" | "qr" | "inventory" | "team" | "marketing" | "storefront" | "reservations" | "remote" | "security" | "health";
 
-export type DashboardRole = "admin" | "restaurant_admin" | "waiter" | "kitchen" | "bar" | "cashier" | "customer" | "driver";
+export type DashboardRole = "admin" | "restaurant_admin" | "waiter" | "kitchen" | "bar" | "cashier" | "accountant" | "customer" | "driver";
 export type DashboardAction = "orders.create" | "orders.status.update" | "inventory.manage" | "marketing.manage" | "reservations.create";
 
 export const roleActions: Record<DashboardRole, DashboardAction[]> = {
@@ -10,6 +10,7 @@ export const roleActions: Record<DashboardRole, DashboardAction[]> = {
   kitchen: ["orders.status.update"],
   bar: ["orders.status.update"],
   cashier: ["orders.create", "orders.status.update"],
+  accountant: [],
   customer: [],
   driver: [],
 };
@@ -21,6 +22,7 @@ export const roleNavigation: Record<DashboardRole, DashboardNavKey[]> = {
   kitchen: ["overview", "kds", "files", "trend", "security"],
   bar: ["overview", "kds", "files", "trend", "security"],
   cashier: ["overview", "pos", "orders", "finance", "tables", "files", "trend", "security"],
+  accountant: ["overview", "finance", "inventory", "files", "security"],
   customer: ["overview", "orders", "reservations", "files", "trend", "security"],
   driver: ["overview", "orders", "remote", "files", "trend", "security"],
 };
