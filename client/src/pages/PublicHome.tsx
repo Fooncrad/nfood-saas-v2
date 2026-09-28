@@ -14,6 +14,8 @@ import {
   Sparkles,
   Store,
   X,
+  UtensilsCrossed,
+  UserRound,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -164,7 +166,7 @@ export default function PublicHome() {
         <a href="#top" className="flex min-w-0 items-center gap-3">
           {settings?.siteLogoUrl
             ? <img src={settings.siteLogoUrl} alt={settings.siteName || "NFOOD"} className="h-10 w-10 shrink-0 rounded-xl object-contain" />
-            : <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-500 text-lg font-black text-white">N</span>}
+            : <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-sm"><UtensilsCrossed className="h-5 w-5" /></span>}
           <div className="min-w-0">
             <strong className="block truncate text-base tracking-[.13em]">{settings?.siteName || "NFOOD"}</strong>
             <small className="block truncate text-[9px] font-bold uppercase tracking-[.18em] text-slate-400">Business Operating Platform</small>
@@ -175,9 +177,9 @@ export default function PublicHome() {
           <a href="#features" onClick={() => setMenuOpen(false)} className="rounded-xl px-2 py-2 text-sm font-bold text-slate-600 hover:text-orange-500">{copy.features}</a>
           <a href="#how" onClick={() => setMenuOpen(false)} className="rounded-xl px-2 py-2 text-sm font-bold text-slate-600 hover:text-orange-500">{copy.how}</a>
           <a href="#plans" onClick={() => setMenuOpen(false)} className="rounded-xl px-2 py-2 text-sm font-bold text-slate-600 hover:text-orange-500">{copy.plans}</a>
-          <button onClick={() => setLocation("/marketplace")} className="rounded-xl px-2 py-2 text-start text-sm font-bold text-slate-600 hover:text-orange-500">{copy.market}</button>
+          <button onClick={() => { setMenuOpen(false); setLocation("/marketplace"); }} className="rounded-xl px-2 py-2 text-start text-sm font-bold text-slate-600 hover:text-orange-500">{copy.market}</button>
           <LanguageSwitcher compact />
-          <button onClick={() => setLocation("/login")} className="rounded-xl bg-[#0b1d35] px-4 py-2.5 text-sm font-black text-white">{copy.login}</button>
+          <button onClick={() => { setMenuOpen(false); setLocation("/login"); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b1d35] px-4 py-2.5 text-sm font-black text-white"><UserRound className="h-4 w-4" />{copy.login}</button>
         </nav>
         <button aria-label="Menu" onClick={() => setMenuOpen((value) => !value)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 lg:hidden">{menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
       </div>
