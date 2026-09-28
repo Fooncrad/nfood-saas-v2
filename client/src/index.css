@@ -7025,3 +7025,148 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
   :root:not(.dark) .nfood-dashboard-shell .text-slate-500 { color: #526176; }
   :root:not(.dark) .nfood-dashboard-shell .text-slate-600 { color: #3f4d61; }
 }
+
+
+/* NFOOD 2026 unified dashboard UX */
+@layer components {
+  .nfood-dashboard-shell,
+  .nfood-dashboard-main,
+  .nfood-dashboard-inset {
+    --nfood-panel: color-mix(in srgb, var(--card) 96%, transparent);
+    --nfood-soft: color-mix(in srgb, var(--primary) 4%, var(--background));
+  }
+
+  .nfood-dashboard-main {
+    background:
+      radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 28rem),
+      radial-gradient(circle at 0% 18%, color-mix(in srgb, var(--primary) 7%, transparent), transparent 30rem);
+  }
+
+  .nfood-dashboard-main h1 {
+    font-size: clamp(1.45rem, 2vw, 2rem);
+    font-weight: 900;
+    letter-spacing: -.035em;
+    line-height: 1.25;
+  }
+  .nfood-dashboard-main h2,
+  .nfood-dashboard-main h3 {
+    font-weight: 850;
+    letter-spacing: -.025em;
+  }
+  .nfood-dashboard-main p,
+  .nfood-dashboard-main label,
+  .nfood-dashboard-main th,
+  .nfood-dashboard-main td {
+    line-height: 1.65;
+  }
+
+  .nfood-dashboard-main [data-slot="card"] {
+    background: var(--nfood-panel);
+    border: 1px solid color-mix(in srgb, var(--primary) 10%, var(--border));
+    border-radius: 1.25rem;
+    box-shadow: 0 1px 2px rgb(15 23 42 / .03), 0 16px 38px -28px rgb(15 23 42 / .28);
+  }
+
+  .nfood-dashboard-main [data-slot="button"] {
+    min-height: 2.75rem;
+    padding-inline: .95rem;
+    border-radius: .9rem;
+    font-size: .875rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .nfood-dashboard-main [data-slot="input"],
+  .nfood-dashboard-main [data-slot="textarea"],
+  .nfood-dashboard-main input:not([type="checkbox"]):not([type="radio"]),
+  .nfood-dashboard-main select,
+  .nfood-dashboard-main textarea {
+    min-height: 2.875rem;
+    border-radius: .9rem;
+    background: color-mix(in srgb, var(--card) 97%, var(--background));
+    font-size: .9rem;
+  }
+
+  .nfood-dashboard-main table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .nfood-dashboard-main thead {
+    background: color-mix(in srgb, var(--primary) 5%, var(--muted));
+  }
+  .nfood-dashboard-main th {
+    padding: .85rem 1rem;
+    font-size: .75rem;
+    font-weight: 850;
+    color: var(--muted-foreground);
+  }
+  .nfood-dashboard-main td {
+    padding: .9rem 1rem;
+    border-top: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+    font-size: .875rem;
+  }
+  .nfood-dashboard-main tbody tr {
+    transition: background-color 140ms ease;
+  }
+  .nfood-dashboard-main tbody tr:hover {
+    background: color-mix(in srgb, var(--primary) 3%, transparent);
+  }
+
+  [role="dialog"] {
+    border-radius: 1.4rem !important;
+    border-color: color-mix(in srgb, var(--primary) 11%, var(--border)) !important;
+    box-shadow: 0 30px 80px -32px rgb(15 23 42 / .45) !important;
+  }
+  [role="dialog"] h2 {
+    font-weight: 900;
+    letter-spacing: -.025em;
+  }
+
+  .nfood-dashboard-main [role="tablist"] {
+    min-height: 2.875rem;
+    border-radius: .95rem;
+    padding: .25rem;
+    background: color-mix(in srgb, var(--primary) 5%, var(--muted));
+  }
+
+  .nfood-dashboard-main [data-state="active"] {
+    font-weight: 800;
+  }
+
+  .nfood-dashboard-main button:disabled,
+  .nfood-dashboard-main [aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: .52;
+  }
+
+  .nfood-dashboard-main :is(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent) 72%, white);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 639px) {
+    .nfood-dashboard-main {
+      padding: .75rem;
+    }
+    .nfood-dashboard-main [data-slot="card"] {
+      border-radius: 1rem;
+    }
+    .nfood-dashboard-main [data-slot="button"] {
+      min-height: 2.875rem;
+    }
+    [role="dialog"] {
+      width: calc(100vw - 1rem) !important;
+      max-height: calc(100dvh - 1rem) !important;
+      border-radius: 1.15rem !important;
+    }
+  }
+}
+
+/* Customer portal follows the same premium commerce language. */
+.nfood-customer-shell {
+  background:
+    radial-gradient(circle at 100% 0%, rgb(249 115 22 / .08), transparent 24rem),
+    radial-gradient(circle at 0% 18%, rgb(37 99 235 / .07), transparent 28rem),
+    var(--background);
+}
