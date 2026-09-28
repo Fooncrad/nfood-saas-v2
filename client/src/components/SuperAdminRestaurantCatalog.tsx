@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  BellRing,
   Check,
   ChevronDown,
   Copy,
@@ -115,7 +116,22 @@ export function SuperAdminRestaurantCatalog() {
     { restaurantId: detailsRestaurant?.id ?? 1 },
     { enabled: Boolean(detailsRestaurant), retry: 1 }
   );
+  const notificationControlQuery = trpc.admin.restaurantNotificationControl.useQuery(
+    { restaurantId: detailsRestaurant?.id ?? 1 },
+    { enabled: Boolean(detailsRestaurant), retry: 1 }
+  );
   const utils = trpc.useUtils();
+  const setNotificationControl = trpc.admin.setRestaurantNotificationControl.useMutation({
+    onSuccess: async data => {
+      if (detailsRestaurant) await notificationControlQuery.refetch();
+      toast.success(data.enabled ? "تم تفعيل إشعارات الطلبات للمطعم" : "تم إيقاف إشعارات الطلبات للمطعم");
+    },
+    onError: error => toast.error(`تعذر تحديث الإشعارات: ${error.message}`),
+  });
+  const testNotification = trpc.admin.testRestaurantOrderNotification.useMutation({
+    onSuccess: data => toast.success(`تم إرسال الاختبار إلى ${data.recipients} مستلم · وصل إلى ${data.delivered}`),
+    onError: error => toast.error(`فشل اختبار الإشعار: ${error.message}`),
+  });
   const updateMarketplacePresentation = trpc.marketplace.adminUpdateRestaurantMarketplacePresentation.useMutation({
     onSuccess: async () => {
       if (detailsRestaurant) await utils.marketplace.adminRestaurantMarketplacePresentation.invalidate({ restaurantId: detailsRestaurant.id });
@@ -360,6 +376,19 @@ export function SuperAdminRestaurantCatalog() {
               {detailsRestaurant?.plan || "غير محددة"}
             </DialogDescription>
           </DialogHeader>
+          <div className="rounded-2xl border border-orange-200 bg-orange-50/70 p-4 dark:border-orange-900/50 dark:bg-orange-950/20">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-white"><BellRing className="h-5 w-5" /></span>
+                <div><p className="text-sm font-black text-slate-900 dark:text-white">إشعارات الطلبات للمطعم</p><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">تحكم مستقل لهذا المطعم. عند التفعيل يصل الطلب الجديد إلى مديري المطعم المسجلين عبر Push، إضافة إلى التنبيه داخل لوحة الطلبات.</p></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" disabled={!notificationControlQuery.data?.enabled || testNotification.isPending} onClick={() => detailsRestaurant && testNotification.mutate({ restaurantId: detailsRestaurant.id })} className="h-9 rounded-xl text-xs">اختبار الإشعار</Button>
+                <button type="button" role="switch" aria-checked={notificationControlQuery.data?.enabled ?? false} disabled={notificationControlQuery.isLoading || setNotificationControl.isPending} onClick={() => detailsRestaurant && setNotificationControl.mutate({ restaurantId: detailsRestaurant.id, enabled: !(notificationControlQuery.data?.enabled ?? false) })} className={`relative h-7 w-12 rounded-full transition ${notificationControlQuery.data?.enabled ? "bg-emerald-500" : "bg-slate-300"} disabled:opacity-50`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${notificationControlQuery.data?.enabled ? "right-1" : "right-6"}`} /></button>
+              </div>
+            </div>
+            <p className="mt-2 text-[10px] font-bold text-orange-700 dark:text-orange-300">{notificationControlQuery.isLoading ? "جارٍ قراءة حالة الإشعارات..." : notificationControlQuery.data?.enabled ? "مفعلة لهذا المطعم" : "متوقفة لهذا المطعم"}</p>
+          </div>
           <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/50 dark:bg-blue-950/20">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
