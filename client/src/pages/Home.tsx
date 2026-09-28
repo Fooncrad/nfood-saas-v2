@@ -159,7 +159,8 @@ export default function Home() {
   const markNotificationRead = trpc.notifications.markRead.useMutation({ onSuccess: () => notificationsQuery.refetch() });
   const [branch, setBranch] = useState("");
   const activeBranchId = workspaceBranches.data?.find((item) => item.name === branch)?.id ?? workspaceBranches.data?.[0]?.id;
-  const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId, branchId: user?.testRole === "waiter" ? activeBranchId : undefined }, { enabled: workspaceReady && (user?.testRole !== "waiter" || Boolean(activeBranchId)), retry: false, refetchInterval: 5000 });
+  const ordersWorkspaceActive = active === "overview" || active === "orders" || active === "pos" || active === "kds";
+  const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId, branchId: user?.testRole === "waiter" ? activeBranchId : undefined }, { enabled: workspaceReady && ordersWorkspaceActive && (user?.testRole !== "waiter" || Boolean(activeBranchId)), retry: false, refetchInterval: ordersWorkspaceActive ? 5000 : false });
   const updateOrderStatus = trpc.platform.updateOrderStatus.useMutation({ onSuccess: () => { remoteOrders.refetch(); toast.success("تم حفظ حالة الطلب في قاعدة البيانات"); }, onError: (error) => toast.error(`تعذر تحديث الطلب: ${error.message}`) });
   useEffect(() => { const firstBranch = workspaceBranches.data?.[0]; setBranch((current) => current && workspaceBranches.data?.some((item) => item.name === current) ? current : firstBranch?.name ?? ""); }, [workspaceBranches.data]);
   const [query, setQuery] = useState("");
