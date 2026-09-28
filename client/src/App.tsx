@@ -23,7 +23,7 @@ const routeLoaders = {
   CustomerContentOrders: () => import("./pages/CustomerContentOrders"),
   CustomerContentLibrary: () => import("./pages/CustomerContentLibrary"),
   CustomerOrders: () => import("./pages/CustomerOrders"),
-  CustomerReservations: () => import("./pages/CustomerReservations"),
+
   CustomerRewards: () => import("./pages/CustomerRewards"),
   CustomerStudio: () => import("./pages/CustomerStudio"),
   CustomerStudioPlans: () => import("./pages/CustomerStudioPlans"),
@@ -56,7 +56,7 @@ const CustomerPortal = lazy(routeLoaders.CustomerPortal);
 const CustomerContentOrders = lazy(routeLoaders.CustomerContentOrders);
 const CustomerContentLibrary = lazy(routeLoaders.CustomerContentLibrary);
 const CustomerOrders = lazy(routeLoaders.CustomerOrders);
-const CustomerReservations = lazy(routeLoaders.CustomerReservations);
+import CustomerReservations from "./pages/CustomerReservations";
 const CustomerRewards = lazy(routeLoaders.CustomerRewards);
 const CustomerStudio = lazy(routeLoaders.CustomerStudio);
 const CustomerStudioPlans = lazy(routeLoaders.CustomerStudioPlans);
