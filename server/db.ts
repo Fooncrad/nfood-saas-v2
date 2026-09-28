@@ -616,7 +616,17 @@ export async function updateContentModerationReview(input: { mediaFileId: number
 export async function getMerchantRestaurantId(userId: number) {
   const db = await getDb();
   if (!db) return null;
-  const rows = await db.select({ restaurantId: restaurantMembers.restaurantId, roleName: roles.name }).from(restaurantMembers).leftJoin(roles, eq(restaurantMembers.roleId, roles.id)).where(eq(restaurantMembers.userId, userId));
+  const [legacyRows, scopedRows] = await Promise.all([
+    db.select({ restaurantId: restaurantMembers.restaurantId, roleName: roles.name })
+      .from(restaurantMembers)
+      .leftJoin(roles, eq(restaurantMembers.roleId, roles.id))
+      .where(eq(restaurantMembers.userId, userId)),
+    db.select({ restaurantId: scopedRoleAssignments.restaurantId, roleName: roles.name })
+      .from(scopedRoleAssignments)
+      .leftJoin(roles, eq(scopedRoleAssignments.roleId, roles.id))
+      .where(and(eq(scopedRoleAssignments.userId, userId), eq(scopedRoleAssignments.isActive, true), isNotNull(scopedRoleAssignments.restaurantId))),
+  ]);
+  const rows = [...legacyRows, ...scopedRows].filter((row) => row.restaurantId != null);
   const merchant = rows.find((row) => /admin|manager|owner|merchant|تاجر|مدير|مالك|مشرف/i.test(row.roleName ?? ""));
   return merchant?.restaurantId ?? rows[0]?.restaurantId ?? null;
 }
