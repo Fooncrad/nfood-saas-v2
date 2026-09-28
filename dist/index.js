@@ -2783,7 +2783,7 @@ async function listCustomerReservations(customerId, limit = 100) {
   const db = await getDb();
   if (!db) return [];
   const safeLimit = Math.min(Math.max(limit, 1), 100);
-  const rows = await db.select({
+  return db.select({
     id: reservations.id,
     customerId: reservations.customerId,
     restaurantId: reservations.restaurantId,
@@ -2809,27 +2809,6 @@ async function listCustomerReservations(customerId, limit = 100) {
     branchName: branches.name,
     seatingSectionName: seatingSections.name
   }).from(reservations).leftJoin(restaurants, eq2(reservations.restaurantId, restaurants.id)).leftJoin(branches, eq2(reservations.branchId, branches.id)).leftJoin(seatingSections, eq2(reservations.seatingSectionId, seatingSections.id)).where(eq2(reservations.customerId, customerId)).orderBy(desc(reservations.reservedFor)).limit(safeLimit);
-  if (!rows.length) return [];
-  const tokens = await db.select({ token: qrCodes.token, targetUrl: qrCodes.targetUrl, label: qrCodes.label }).from(qrCodes).where(and2(eq2(qrCodes.type, "custom"), eq2(qrCodes.purpose, "reservation_confirmation"), eq2(qrCodes.status, "active")));
-  const tokenByReservation = /* @__PURE__ */ new Map();
-  for (const item of tokens) {
-    const match = item.label.match(/^reservation:(\d+)$/);
-    if (match) tokenByReservation.set(Number(match[1]), { token: item.token, targetUrl: item.targetUrl });
-  }
-  return rows.map((row) => ({ ...row, reservationQrToken: tokenByReservation.get(row.id)?.token ?? null, reservationQrTargetUrl: tokenByReservation.get(row.id)?.targetUrl ?? null }));
-}
-async function ensureReservationQrCode(input) {
-  const db = await getDb();
-  if (!db) throw new Error("Database is not available");
-  const reservation = (await db.select({ id: reservations.id, restaurantId: reservations.restaurantId, branchId: reservations.branchId, customerId: reservations.customerId, status: reservations.status }).from(reservations).where(and2(eq2(reservations.id, input.reservationId), eq2(reservations.customerId, input.customerId))).limit(1))[0];
-  if (!reservation || !reservation.branchId || !["confirmed", "seated"].includes(reservation.status)) return null;
-  const label = `reservation:${reservation.id}`;
-  const existing = (await db.select({ token: qrCodes.token, targetUrl: qrCodes.targetUrl }).from(qrCodes).where(and2(eq2(qrCodes.restaurantId, reservation.restaurantId), eq2(qrCodes.branchId, reservation.branchId), eq2(qrCodes.type, "custom"), eq2(qrCodes.purpose, "reservation_confirmation"), eq2(qrCodes.label, label), eq2(qrCodes.status, "active"))).limit(1))[0];
-  if (existing) return existing;
-  const token = `res_${nanoid(32)}`;
-  const targetUrl = `/customer-reservations?reservation=${reservation.id}`;
-  await db.insert(qrCodes).values({ restaurantId: reservation.restaurantId, branchId: reservation.branchId, type: "custom", purpose: "reservation_confirmation", token, label, targetUrl, status: "active", createdByUserId: input.customerId });
-  return { token, targetUrl };
 }
 async function cancelCustomerReservation(id, customerId) {
   const db = await getDb();
@@ -2898,7 +2877,7 @@ async function listCustomerOrders(customerId, limit = 100) {
     current.push(item);
     itemsByOrder.set(item.orderId, current);
   }
-  return rows.map((row) => ({ ...row, orderQrToken: row.status === "ready" ? row.orderQrToken : null, orderQrAvailable: row.status === "ready" && Boolean(row.orderQrToken), items: itemsByOrder.get(row.id) ?? [] }));
+  return rows.map((row) => ({ ...row, items: itemsByOrder.get(row.id) ?? [] }));
 }
 async function listFavoriteRestaurants(userId) {
   const db = await getDb();
@@ -12878,7 +12857,7 @@ var appRouter = router({
         await db.insert(notifications).values({ userId: existing[0].customerId, type: "system", title, body });
         void sendPushToUser(existing[0].customerId, { title, body, url: "/customer-orders" }).catch((error) => console.warn("[Push] customer order status failed", error));
         const eventKey = input.status === "ready" ? "order.ready" : input.status === "completed" ? "order.completed" : "order.status";
-        void sendTemplatedEmail({ to: customer?.email, restaurantId: input.restaurantId, eventKey, locale: "ar", data: { name: customer?.name ?? "\u0639\u0645\u064A\u0644 NFOOD", restaurantName, orderNumber: input.orderId, status: statusLabel, total: existing[0].total, qrCode: input.status === "ready" ? `/customer-orders?order=${input.orderId}` : "" } }).catch((error) => console.warn("[Email] customer order lifecycle failed", error));
+        void sendTemplatedEmail({ to: customer?.email, restaurantId: input.restaurantId, eventKey, locale: "ar", data: { name: customer?.name ?? "\u0639\u0645\u064A\u0644 NFOOD", restaurantName, orderNumber: input.orderId, status: statusLabel, total: existing[0].total, qrCode: `NFOOD|ORDER|${input.restaurantId}|${input.orderId}|${input.status}` } }).catch((error) => console.warn("[Email] customer order lifecycle failed", error));
       }
       let automaticCardIssued = false;
       if (input.status === "completed" && existing[0].customerId) {
@@ -13126,11 +13105,7 @@ var appRouter = router({
       await db.update(guestOrderClaimOtps).set({ consumedAt: /* @__PURE__ */ new Date() }).where(eq7(guestOrderClaimOtps.id, record.id));
       return claimGuestOrders(ctx.user.id, phone);
     }),
-    myReservations: protectedProcedure.input(z3.object({ limit: z3.number().int().min(1).max(100).default(100) }).optional()).query(async ({ ctx, input }) => {
-      const rows = await listCustomerReservations(ctx.user.id, input?.limit ?? 100);
-      await Promise.all(rows.filter((row) => ["confirmed", "seated"].includes(row.status) && !row.reservationQrToken).map((row) => ensureReservationQrCode({ reservationId: row.id, customerId: ctx.user.id })));
-      return listCustomerReservations(ctx.user.id, input?.limit ?? 100);
-    }),
+    myReservations: protectedProcedure.input(z3.object({ limit: z3.number().int().min(1).max(100).default(100) }).optional()).query(({ ctx, input }) => listCustomerReservations(ctx.user.id, input?.limit ?? 100)),
     updateMyReservation: protectedProcedure.input(z3.object({ id: z3.number().int().positive(), customerName: z3.string().trim().min(2).max(160), email: z3.string().trim().email().nullable().optional(), phone: z3.string().trim().max(40).nullable().optional(), partySize: z3.number().int().min(1).max(50), childrenCount: z3.number().int().min(0).max(50).default(0), reservedFor: z3.coerce.date(), durationMinutes: z3.number().int().min(15).max(360).default(60), notes: z3.string().trim().max(1e3).nullable().optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
