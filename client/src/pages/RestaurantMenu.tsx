@@ -82,11 +82,18 @@ function branchOpenNow(branch: any, timezone = "Asia/Riyadh") {
 function localize(raw: string | null | undefined, fallback: string, lang: string, field: "name" | "description" = "name") {
   if (!raw) return fallback;
   try {
-    const parsed = JSON.parse(raw) as Record<string, any>;
-    const direct = parsed?.[lang];
-    if (typeof direct === "string" && direct.trim()) return direct;
-    if (direct && typeof direct[field] === "string" && direct[field].trim()) return direct[field];
-    if (typeof parsed?.[field]?.[lang] === "string" && parsed[field][lang].trim()) return parsed[field][lang];
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) {
+      const entry = parsed.find((value) => value && typeof value === "object" && String((value as any).language ?? (value as any).lang ?? "").toLowerCase() === lang);
+      if (entry && typeof (entry as any)[field] === "string" && (entry as any)[field].trim()) return (entry as any)[field];
+      if (field === "name" && entry && typeof (entry as any).value === "string" && (entry as any).value.trim()) return (entry as any).value;
+    } else if (parsed && typeof parsed === "object") {
+      const record = parsed as Record<string, any>;
+      const direct = record[lang];
+      if (typeof direct === "string" && direct.trim()) return direct;
+      if (direct && typeof direct[field] === "string" && direct[field].trim()) return direct[field];
+      if (typeof record[field]?.[lang] === "string" && record[field][lang].trim()) return record[field][lang];
+    }
   } catch {}
   return fallback;
 }
