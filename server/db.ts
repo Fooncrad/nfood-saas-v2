@@ -876,6 +876,20 @@ export async function getDailyFinancialSummary(restaurantId: number, from: Date,
   return { totals: Array.from(totals.values()).map(normalize), byPaymentMethod: Array.from(payment.entries()).map(([key, value]) => ({ paymentMethod: key.split(":")[0], ...normalize(value) })), byChannel: Array.from(channel.entries()).map(([key, value]) => ({ channel: key.split(":")[0], ...normalize(value) })), byBranch: Array.from(branch.entries()).map(([key, value]) => ({ branchId: Number(key.split(":")[0]), ...normalize(value) })), orders: rows.length };
 }
 
+export async function getFinancialReconciliation(restaurantId: number, from: Date, to: Date, branchId?: number) {
+  const summary = await getDailyFinancialSummary(restaurantId, from, to, branchId);
+  const db = await getDb();
+  if (!db) return { ...summary, reconciliation: [] };
+  const conditions = [eq(financialLedgerEntries.restaurantId, restaurantId), eq(financialLedgerEntries.status, "posted"), gte(financialLedgerEntries.createdAt, from), lte(financialLedgerEntries.createdAt, to), branchId ? eq(financialLedgerEntries.branchId, branchId) : undefined].filter((condition): condition is NonNullable<typeof condition> => Boolean(condition));
+  const ledger = await db.select({ direction: financialLedgerEntries.direction, entryType: financialLedgerEntries.entryType, amount: financialLedgerEntries.amount, currencyCode: financialLedgerEntries.currencyCode }).from(financialLedgerEntries).where(and(...conditions));
+  const parseCents = (value: unknown) => { const match = String(value ?? "0").trim().match(/^(\\d+)(?:\\.(\\d{1,2}))?$/); if (!match) throw new Error("Invalid ledger monetary value"); return BigInt(match[1]) * BigInt(100) + BigInt((match[2] ?? "").padEnd(2, "0")); };
+  const byCurrency = new Map<string, { credits: bigint; debits: bigint; refunds: bigint; cancellations: bigint }>();
+  for (const row of ledger) { const currency = row.currencyCode || "SAR"; const bucket = byCurrency.get(currency) ?? { credits: BigInt(0), debits: BigInt(0), refunds: BigInt(0), cancellations: BigInt(0) }; const amount = parseCents(row.amount); if (row.direction === "credit") bucket.credits += amount; else bucket.debits += amount; if (row.entryType === "refund") bucket.refunds += amount; if (row.entryType === "cancellation") bucket.cancellations += amount; byCurrency.set(currency, bucket); }
+  const currencies = new Set([...summary.totals.map((row) => row.currencyCode), ...byCurrency.keys()]);
+  const reconciliation = Array.from(currencies).map((currencyCode) => { const sales = summary.totals.find((row) => row.currencyCode === currencyCode)?.netRevenue ?? 0; const ledgerBucket = byCurrency.get(currencyCode) ?? { credits: BigInt(0), debits: BigInt(0), refunds: BigInt(0), cancellations: BigInt(0) }; const cents = (value: bigint) => Number(value) / 100; const ledgerCredits = cents(ledgerBucket.credits); const ledgerDebits = cents(ledgerBucket.debits); const netLedger = ledgerCredits - ledgerDebits; return { currencyCode, recognizedSales: sales, ledgerCredits, ledgerDebits, refunds: cents(ledgerBucket.refunds), cancellations: cents(ledgerBucket.cancellations), netLedger, variance: Math.round((netLedger - sales) * 100) / 100 }; });
+  return { ...summary, reconciliation };
+}
+
 export async function listInventory(restaurantId: number) { const db = await getDb(); return db ? db.select().from(inventoryItems).where(eq(inventoryItems.restaurantId, restaurantId)) : []; }
 export async function listEmployees(restaurantId: number) { const db = await getDb(); return db ? db.select().from(employees).where(eq(employees.restaurantId, restaurantId)) : []; }
 export async function listSubscriptions(restaurantId?: number) { const db = await getDb(); return db ? (restaurantId ? db.select().from(subscriptions).where(eq(subscriptions.restaurantId, restaurantId)) : db.select().from(subscriptions)) : []; }
