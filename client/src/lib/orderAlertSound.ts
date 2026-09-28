@@ -33,7 +33,7 @@ function synthesizeAlertWavDataUri(tone: OrderAlertTone) {
   }
   let binary = "";
   const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  for (let i = 0; i < bytes.length; i += chunk) { const part = bytes.subarray(i, i + chunk); for (let j = 0; j < part.length; j += 1) binary += String.fromCharCode(part[j]); }
   return `data:audio/wav;base64,${btoa(binary)}`;
 }
 
