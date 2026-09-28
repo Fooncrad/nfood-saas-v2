@@ -36,7 +36,7 @@ var ADMIN_RETURN_COOKIE = "nfood_admin_return";
 import { parse as parseCookieHeader2 } from "cookie";
 
 // server/db.ts
-import { and as and2, count, desc, eq as eq2, gte, inArray, isNull, isNotNull, lte, like, ne, or, sql } from "drizzle-orm";
+import { and as and2, count, desc, eq as eq2, gte, inArray, isNull, isNotNull, lte, like, ne, or as or2, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
@@ -2372,7 +2372,7 @@ async function getEffectiveIntegrationSecret(restaurantId, providerKey) {
   if (!db) return null;
   const restaurant = (await db.select({ integrationMode: restaurants.integrationMode, plan: restaurants.plan }).from(restaurants).where(eq2(restaurants.id, restaurantId)).limit(1))[0];
   if (!restaurant) return null;
-  const paidProvider = ["otp_sms", "tamara", "stc_pay", "whatsapp_business", "smtp", "google_maps"].includes(providerKey);
+  const paidProvider = ["otp_sms", "tamara", "stc_pay", "whatsapp_business", "smtp", "google_maps", "pusher"].includes(providerKey);
   const eligible = !paidProvider || !["free", "starter"].includes(String(restaurant.plan ?? "Free").toLowerCase());
   if (!eligible) return null;
   const scope = restaurant.integrationMode === "custom" ? "restaurant" : "platform";
@@ -2479,7 +2479,7 @@ async function upsertCustomerProfile(userId, input) {
 async function listDeliveryZones(restaurantId, branchId) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(deliveryZones).where(and2(eq2(deliveryZones.restaurantId, restaurantId), branchId ? or(eq2(deliveryZones.branchId, branchId), sql`${deliveryZones.branchId} IS NULL`) : void 0)).orderBy(deliveryZones.name);
+  return db.select().from(deliveryZones).where(and2(eq2(deliveryZones.restaurantId, restaurantId), branchId ? or2(eq2(deliveryZones.branchId, branchId), sql`${deliveryZones.branchId} IS NULL`) : void 0)).orderBy(deliveryZones.name);
 }
 async function saveDeliveryZone(input) {
   const db = await getDb();
@@ -2505,7 +2505,7 @@ async function listPickupPoints(restaurantId, branchId) {
 async function listHotelsWithRooms(restaurantId, branchId) {
   const db = await getDb();
   if (!db) return [];
-  const rows = await db.select({ hotelId: hotels.id, hotelName: hotels.name, hotelCode: hotels.code, roomId: hotelRooms.id, roomNumber: hotelRooms.roomNumber, floor: hotelRooms.floor }).from(hotels).leftJoin(hotelRooms, eq2(hotelRooms.hotelId, hotels.id)).where(and2(eq2(hotels.restaurantId, restaurantId), eq2(hotels.branchId, branchId), eq2(hotels.status, "active"), or(isNull(hotelRooms.id), eq2(hotelRooms.isActive, true)))).orderBy(hotels.name, hotelRooms.roomNumber);
+  const rows = await db.select({ hotelId: hotels.id, hotelName: hotels.name, hotelCode: hotels.code, roomId: hotelRooms.id, roomNumber: hotelRooms.roomNumber, floor: hotelRooms.floor }).from(hotels).leftJoin(hotelRooms, eq2(hotelRooms.hotelId, hotels.id)).where(and2(eq2(hotels.restaurantId, restaurantId), eq2(hotels.branchId, branchId), eq2(hotels.status, "active"), or2(isNull(hotelRooms.id), eq2(hotelRooms.isActive, true)))).orderBy(hotels.name, hotelRooms.roomNumber);
   const groups = /* @__PURE__ */ new Map();
   for (const row of rows) {
     const group = groups.get(row.hotelId) ?? { id: row.hotelId, name: row.hotelName, code: row.hotelCode, rooms: [] };
@@ -3563,7 +3563,7 @@ async function updateContentPurchaseOrder(input) {
 async function listCustomerContentPurchaseOrders(customerUserId) {
   const db = await getDb();
   if (!db) return [];
-  return db.select({ id: contentPurchaseOrders.id, restaurantId: contentPurchaseOrders.restaurantId, customerUserId: contentPurchaseOrders.customerUserId, buyerUserId: contentPurchaseOrders.buyerUserId, buyerType: contentPurchaseOrders.buyerType, paymentSource: contentPurchaseOrders.paymentSource, paymentMethod: contentPurchaseOrders.paymentMethod, paymentStatus: contentPurchaseOrders.paymentStatus, refundAmount: contentPurchaseOrders.refundAmount, paidAt: contentPurchaseOrders.paidAt, refundedAt: contentPurchaseOrders.refundedAt, invoicePrintStatus: contentPurchaseOrders.invoicePrintStatus, invoicePrintedAt: contentPurchaseOrders.invoicePrintedAt, receiptMediaFileId: contentPurchaseOrders.receiptMediaFileId, itemsJson: contentPurchaseOrders.itemsJson, total: contentPurchaseOrders.total, currencyCode: contentPurchaseOrders.currencyCode, status: contentPurchaseOrders.status, customerName: contentPurchaseOrders.customerName, customerPhone: contentPurchaseOrders.customerPhone, note: contentPurchaseOrders.note, receiptExtractedAmount: contentPurchaseOrders.receiptExtractedAmount, receiptExtractedDate: contentPurchaseOrders.receiptExtractedDate, receiptExtractionConfidence: contentPurchaseOrders.receiptExtractionConfidence, receiptExtractedAt: contentPurchaseOrders.receiptExtractedAt, receiptAmountMatch: contentPurchaseOrders.receiptAmountMatch, receiptAmountDifference: contentPurchaseOrders.receiptAmountDifference, rejectionReason: contentPurchaseOrders.rejectionReason, createdAt: contentPurchaseOrders.createdAt, updatedAt: contentPurchaseOrders.updatedAt, receiptUrl: mediaFiles.publicUrl, restaurantName: restaurants.brandName, restaurantSlug: restaurants.slug }).from(contentPurchaseOrders).innerJoin(restaurants, eq2(contentPurchaseOrders.restaurantId, restaurants.id)).leftJoin(mediaFiles, eq2(contentPurchaseOrders.receiptMediaFileId, mediaFiles.id)).where(or(eq2(contentPurchaseOrders.customerUserId, customerUserId), eq2(contentPurchaseOrders.buyerUserId, customerUserId))).orderBy(desc(contentPurchaseOrders.createdAt));
+  return db.select({ id: contentPurchaseOrders.id, restaurantId: contentPurchaseOrders.restaurantId, customerUserId: contentPurchaseOrders.customerUserId, buyerUserId: contentPurchaseOrders.buyerUserId, buyerType: contentPurchaseOrders.buyerType, paymentSource: contentPurchaseOrders.paymentSource, paymentMethod: contentPurchaseOrders.paymentMethod, paymentStatus: contentPurchaseOrders.paymentStatus, refundAmount: contentPurchaseOrders.refundAmount, paidAt: contentPurchaseOrders.paidAt, refundedAt: contentPurchaseOrders.refundedAt, invoicePrintStatus: contentPurchaseOrders.invoicePrintStatus, invoicePrintedAt: contentPurchaseOrders.invoicePrintedAt, receiptMediaFileId: contentPurchaseOrders.receiptMediaFileId, itemsJson: contentPurchaseOrders.itemsJson, total: contentPurchaseOrders.total, currencyCode: contentPurchaseOrders.currencyCode, status: contentPurchaseOrders.status, customerName: contentPurchaseOrders.customerName, customerPhone: contentPurchaseOrders.customerPhone, note: contentPurchaseOrders.note, receiptExtractedAmount: contentPurchaseOrders.receiptExtractedAmount, receiptExtractedDate: contentPurchaseOrders.receiptExtractedDate, receiptExtractionConfidence: contentPurchaseOrders.receiptExtractionConfidence, receiptExtractedAt: contentPurchaseOrders.receiptExtractedAt, receiptAmountMatch: contentPurchaseOrders.receiptAmountMatch, receiptAmountDifference: contentPurchaseOrders.receiptAmountDifference, rejectionReason: contentPurchaseOrders.rejectionReason, createdAt: contentPurchaseOrders.createdAt, updatedAt: contentPurchaseOrders.updatedAt, receiptUrl: mediaFiles.publicUrl, restaurantName: restaurants.brandName, restaurantSlug: restaurants.slug }).from(contentPurchaseOrders).innerJoin(restaurants, eq2(contentPurchaseOrders.restaurantId, restaurants.id)).leftJoin(mediaFiles, eq2(contentPurchaseOrders.receiptMediaFileId, mediaFiles.id)).where(or2(eq2(contentPurchaseOrders.customerUserId, customerUserId), eq2(contentPurchaseOrders.buyerUserId, customerUserId))).orderBy(desc(contentPurchaseOrders.createdAt));
 }
 async function listRestaurantManagerUserIds(restaurantId) {
   const db = await getDb();
@@ -3577,7 +3577,7 @@ async function getPublicRestaurantPage(slug) {
   const stableRestaurantId = /^\d+$/.test(slug) ? Number(slug) : null;
   const db = await getDb();
   if (!db) return void 0;
-  const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug, customDomain: restaurants.customDomain, name: restaurants.name, status: restaurants.status, brandName: restaurants.brandName, brandColor: restaurants.brandColor, brandAccentColor: restaurants.brandAccentColor, brandTextColor: restaurants.brandTextColor, brandFontFamily: restaurants.brandFontFamily, brandHeadingFontFamily: restaurants.brandHeadingFontFamily, themeMode: restaurants.themeMode, themePreset: restaurants.themePreset, menuTemplate: restaurants.menuTemplate, menuTemplateScheduleJson: restaurants.menuTemplateScheduleJson, menuTemplateScheduleTimezone: restaurants.menuTemplateScheduleTimezone, glassGlowColor: restaurants.glassGlowColor, glassCardOpacity: restaurants.glassCardOpacity, brandLogoUrl: restaurants.brandLogoUrl, coverUrl: restaurants.coverUrl, pwaInstallMessage: restaurants.pwaInstallMessage, pwaInstallIconUrl: restaurants.pwaInstallIconUrl, brandDescription: restaurants.brandDescription, customPagesJson: restaurants.customPagesJson, termsOfService: restaurants.termsOfService, privacyPolicy: restaurants.privacyPolicy, refundPolicy: restaurants.refundPolicy, countryCode: restaurants.countryCode, currencyCode: restaurants.currencyCode, currencyDecimals: restaurants.currencyDecimals, phone: restaurants.phone, whatsapp: restaurants.whatsapp, instagramUrl: restaurants.instagramUrl, facebookUrl: restaurants.facebookUrl, tiktokUrl: restaurants.tiktokUrl, websiteUrl: restaurants.websiteUrl, address: restaurants.address, city: restaurants.city, taxNumber: restaurants.taxNumber, locationUrl: restaurants.locationUrl, seoTitle: restaurants.seoTitle, seoDescription: restaurants.seoDescription, seoKeywords: restaurants.seoKeywords, seoHashtags: restaurants.seoHashtags, seoImageUrl: restaurants.seoImageUrl, seoCanonicalUrl: restaurants.seoCanonicalUrl, seoRobots: restaurants.seoRobots, googleSearchConsoleVerification: restaurants.googleSearchConsoleVerification, googleAnalyticsMeasurementId: restaurants.googleAnalyticsMeasurementId, googleTagManagerId: restaurants.googleTagManagerId, structuredDataJson: restaurants.structuredDataJson, primaryLanguage: restaurants.primaryLanguage, timezone: restaurants.timezone, languagesJson: restaurants.languagesJson, reservationEnabled: restaurants.reservationEnabled, reservationMaxPerDay: restaurants.reservationMaxPerDay, reservationDepositEnabled: restaurants.reservationDepositEnabled, reservationDepositAmount: restaurants.reservationDepositAmount, showBranchesOnMenu: restaurants.showBranchesOnMenu, mediaShowcaseEnabled: restaurants.mediaShowcaseEnabled, motionEffectsEnabled: restaurants.motionEffectsEnabled, menuDisplaySettingsJson: restaurants.menuDisplaySettingsJson, manualPaymentMethodsJson: restaurants.manualPaymentMethodsJson, manualPaymentInstructions: restaurants.manualPaymentInstructions, orderModesJson: restaurants.orderModesJson, deliveryManagementMode: restaurants.deliveryManagementMode, platformDeliveryEnabled: restaurants.platformDeliveryEnabled, reservationEventTypesJson: restaurants.reservationEventTypesJson, waiterCallEnabled: restaurants.waiterCallEnabled, waiterCallCooldownMinutes: restaurants.waiterCallCooldownMinutes, reservationHelpText: restaurants.reservationHelpText }).from(restaurants).where(and2(or(eq2(restaurants.slug, slug), eq2(restaurants.barcode, slug), ...stableRestaurantId ? [eq2(restaurants.id, stableRestaurantId)] : []), ne(restaurants.status, "suspended"))).limit(1))[0];
+  const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug, customDomain: restaurants.customDomain, name: restaurants.name, status: restaurants.status, brandName: restaurants.brandName, brandColor: restaurants.brandColor, brandAccentColor: restaurants.brandAccentColor, brandTextColor: restaurants.brandTextColor, brandFontFamily: restaurants.brandFontFamily, brandHeadingFontFamily: restaurants.brandHeadingFontFamily, themeMode: restaurants.themeMode, themePreset: restaurants.themePreset, menuTemplate: restaurants.menuTemplate, menuTemplateScheduleJson: restaurants.menuTemplateScheduleJson, menuTemplateScheduleTimezone: restaurants.menuTemplateScheduleTimezone, glassGlowColor: restaurants.glassGlowColor, glassCardOpacity: restaurants.glassCardOpacity, brandLogoUrl: restaurants.brandLogoUrl, coverUrl: restaurants.coverUrl, pwaInstallMessage: restaurants.pwaInstallMessage, pwaInstallIconUrl: restaurants.pwaInstallIconUrl, brandDescription: restaurants.brandDescription, customPagesJson: restaurants.customPagesJson, termsOfService: restaurants.termsOfService, privacyPolicy: restaurants.privacyPolicy, refundPolicy: restaurants.refundPolicy, countryCode: restaurants.countryCode, currencyCode: restaurants.currencyCode, currencyDecimals: restaurants.currencyDecimals, phone: restaurants.phone, whatsapp: restaurants.whatsapp, instagramUrl: restaurants.instagramUrl, facebookUrl: restaurants.facebookUrl, tiktokUrl: restaurants.tiktokUrl, websiteUrl: restaurants.websiteUrl, address: restaurants.address, city: restaurants.city, taxNumber: restaurants.taxNumber, locationUrl: restaurants.locationUrl, seoTitle: restaurants.seoTitle, seoDescription: restaurants.seoDescription, seoKeywords: restaurants.seoKeywords, seoHashtags: restaurants.seoHashtags, seoImageUrl: restaurants.seoImageUrl, seoCanonicalUrl: restaurants.seoCanonicalUrl, seoRobots: restaurants.seoRobots, googleSearchConsoleVerification: restaurants.googleSearchConsoleVerification, googleAnalyticsMeasurementId: restaurants.googleAnalyticsMeasurementId, googleTagManagerId: restaurants.googleTagManagerId, structuredDataJson: restaurants.structuredDataJson, primaryLanguage: restaurants.primaryLanguage, timezone: restaurants.timezone, languagesJson: restaurants.languagesJson, reservationEnabled: restaurants.reservationEnabled, reservationMaxPerDay: restaurants.reservationMaxPerDay, reservationDepositEnabled: restaurants.reservationDepositEnabled, reservationDepositAmount: restaurants.reservationDepositAmount, showBranchesOnMenu: restaurants.showBranchesOnMenu, mediaShowcaseEnabled: restaurants.mediaShowcaseEnabled, motionEffectsEnabled: restaurants.motionEffectsEnabled, menuDisplaySettingsJson: restaurants.menuDisplaySettingsJson, manualPaymentMethodsJson: restaurants.manualPaymentMethodsJson, manualPaymentInstructions: restaurants.manualPaymentInstructions, orderModesJson: restaurants.orderModesJson, deliveryManagementMode: restaurants.deliveryManagementMode, platformDeliveryEnabled: restaurants.platformDeliveryEnabled, reservationEventTypesJson: restaurants.reservationEventTypesJson, waiterCallEnabled: restaurants.waiterCallEnabled, waiterCallCooldownMinutes: restaurants.waiterCallCooldownMinutes, reservationHelpText: restaurants.reservationHelpText }).from(restaurants).where(and2(or2(eq2(restaurants.slug, slug), eq2(restaurants.barcode, slug), ...stableRestaurantId ? [eq2(restaurants.id, stableRestaurantId)] : []), ne(restaurants.status, "suspended"))).limit(1))[0];
   if (!restaurant) return void 0;
   const schedule = normalizeMenuTemplateSchedule(restaurant.menuTemplateScheduleJson);
   const scheduledTemplate = resolveActiveMenuTemplate({ ...schedule, timezone: restaurant.menuTemplateScheduleTimezone || schedule.timezone });
@@ -3585,7 +3585,7 @@ async function getPublicRestaurantPage(slug) {
   const categories = await db.select({ id: menuCategories.id, name: menuCategories.name, imageUrl: menuCategories.imageUrl, translationsJson: menuCategories.translationsJson, sortOrder: menuCategories.sortOrder }).from(menuCategories).where(and2(eq2(menuCategories.restaurantId, restaurant.id), eq2(menuCategories.isVisible, true)));
   const items = await db.select({ id: menuItems.id, categoryId: menuItems.categoryId, name: menuItems.name, description: menuItems.description, price: menuItems.price, compareAtPrice: menuItems.compareAtPrice, imageUrl: menuItems.imageUrl, additionalImagesJson: menuItems.additionalImagesJson, translationsJson: menuItems.translationsJson, tagsJson: menuItems.tagsJson, prepTimeMinutes: menuItems.prepTimeMinutes, calories: menuItems.calories }).from(menuItems).where(and2(eq2(menuItems.restaurantId, restaurant.id), eq2(menuItems.isAvailable, true)));
   const publicAddons = await db.select({ id: menuItemAddons.id, menuItemId: menuItemAddons.menuItemId, name: menuItemAddons.name, price: menuItemAddons.price, isAvailable: menuItemAddons.isAvailable, imageUrl: menuItemAddons.imageUrl, translationsJson: menuItemAddons.translationsJson }).from(menuItemAddons).where(and2(eq2(menuItemAddons.restaurantId, restaurant.id), eq2(menuItemAddons.isAvailable, true)));
-  const branchList = await db.select({ id: branches.id, name: branches.name, city: branches.city, latitude: branches.latitude, longitude: branches.longitude, openingTime: branches.openingTime, closingTime: branches.closingTime, operatingWindowsJson: branches.operatingWindowsJson }).from(branches).where(and2(eq2(branches.restaurantId, restaurant.id), eq2(branches.status, "open")));
+  const branchList = await db.select({ id: branches.id, name: branches.name, city: branches.city, latitude: branches.latitude, longitude: branches.longitude, status: branches.status, openingTime: branches.openingTime, closingTime: branches.closingTime, operatingWindowsJson: branches.operatingWindowsJson }).from(branches).where(and2(eq2(branches.restaurantId, restaurant.id), eq2(branches.status, "open")));
   const owner = (await db.select({ email: users.email }).from(restaurantMembers).innerJoin(users, eq2(restaurantMembers.userId, users.id)).where(eq2(restaurantMembers.restaurantId, restaurant.id)).limit(1))[0];
   const availableTables = await db.select({ id: restaurantTables.id, branchId: restaurantTables.branchId, name: restaurantTables.name, seats: restaurantTables.seats, seatingSectionId: restaurantTables.seatingSectionId }).from(restaurantTables).innerJoin(branches, eq2(restaurantTables.branchId, branches.id)).where(and2(eq2(restaurantTables.status, "available"), eq2(branches.restaurantId, restaurant.id)));
   const serviceTables = await db.select({ id: restaurantTables.id, branchId: restaurantTables.branchId, name: restaurantTables.name, status: restaurantTables.status, seats: restaurantTables.seats }).from(restaurantTables).innerJoin(branches, eq2(restaurantTables.branchId, branches.id)).where(and2(eq2(branches.restaurantId, restaurant.id), ne(restaurantTables.status, "available")));
@@ -4124,7 +4124,7 @@ async function loadFeatureAccessContext(restaurantId) {
   };
   const rawPlan = subscription?.plan ?? restaurant?.plan ?? "Free";
   const activePlan = legacyPlanMap[rawPlan] ?? rawPlan;
-  const configuredPlanRows = await db.select({ key: featureDefinitions.key, enabled: packagePlanFeatures.enabled, featureLimit: packagePlanFeatures.featureLimit }).from(packagePlanFeatures).innerJoin(packagePlans, eq2(packagePlanFeatures.planId, packagePlans.id)).innerJoin(featureDefinitions, eq2(packagePlanFeatures.featureId, featureDefinitions.id)).where(and2(or(eq2(packagePlans.key, activePlan), eq2(packagePlans.name, activePlan)), eq2(packagePlans.isActive, true)));
+  const configuredPlanRows = await db.select({ key: featureDefinitions.key, enabled: packagePlanFeatures.enabled, featureLimit: packagePlanFeatures.featureLimit }).from(packagePlanFeatures).innerJoin(packagePlans, eq2(packagePlanFeatures.planId, packagePlans.id)).innerJoin(featureDefinitions, eq2(packagePlanFeatures.featureId, featureDefinitions.id)).where(and2(or2(eq2(packagePlans.key, activePlan), eq2(packagePlans.name, activePlan)), eq2(packagePlans.isActive, true)));
   return {
     definitions,
     byKey: new Map(definitions.map((definition) => [definition.key, definition])),
@@ -4747,6 +4747,39 @@ async function updateCustomerCardRequest(id, input) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
   await db.update(customerCardRequests).set({ status: input.status, adminNote: input.adminNote, price: input.price, resolvedByUserId: input.resolvedByUserId, bindingId: input.bindingId, resolvedAt: input.status && input.status !== "pending" ? /* @__PURE__ */ new Date() : void 0, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(customerCardRequests.id, id));
+}
+async function provisionNasserTestCatalog(restaurantId) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const categories = await db.select({ id: menuCategories.id, name: menuCategories.name }).from(menuCategories).where(eq2(menuCategories.restaurantId, restaurantId));
+  const imageByCategory = (name) => {
+    if (/قهوة|ساخنة|فطور/.test(name)) return "/manus-storage/nasser-test-coffee_5c37e7a4.jpg";
+    if (/حلويات|آيس كريم/.test(name)) return "/manus-storage/nasser-test-dessert_e51857b9.jpg";
+    if (/بيتزا/.test(name)) return "/manus-storage/nasser-test-pizza_6cc1f31f.jpg";
+    if (/سلطات|ورق عنب|مقبلات|عصائر|مشروبات باردة/.test(name)) return "/manus-storage/nasser-test-salad_74a069b2.jpg";
+    return "/manus-storage/nasser-test-burger_881b5d4f.jpg";
+  };
+  let created = 0;
+  let updated = 0;
+  for (const category of categories) {
+    for (let index2 = 1; index2 <= 10; index2 += 1) {
+      const name = `${category.name} \u0627\u062E\u062A\u0628\u0627\u0631 ${String(index2).padStart(2, "0")}`;
+      const existing = (await db.select({ id: menuItems.id }).from(menuItems).where(and2(eq2(menuItems.restaurantId, restaurantId), eq2(menuItems.categoryId, category.id), eq2(menuItems.name, name))).limit(1))[0];
+      const imageUrl = imageByCategory(category.name);
+      const price = (18 + index2 * 3 + Number(category.id) % 7).toFixed(2);
+      const compareAtPrice = (Number(price) + 8).toFixed(2);
+      const translationsJson = JSON.stringify({ en: { name: `${category.name} Test ${String(index2).padStart(2, "0")}`, description: "Test menu item for NFOOD delivery and menu layout testing." }, fr: { name: `${category.name} Test ${String(index2).padStart(2, "0")}`, description: "Article de test pour v\xE9rifier le menu et la livraison NFOOD." } });
+      const values = { restaurantId, categoryId: category.id, name, description: `\u0635\u0646\u0641 \u0627\u062E\u062A\u0628\u0627\u0631 \u0631\u0642\u0645 ${index2} \u0645\u0646 \u0642\u0633\u0645 ${category.name} \u0644\u0627\u062E\u062A\u0628\u0627\u0631 \u0627\u0644\u0635\u0648\u0631\u0629 \u0648\u0627\u0644\u0633\u0639\u0631 \u0648\u0627\u0644\u0633\u0644\u0629 \u0648\u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644.`, price, compareAtPrice, imageUrl, translationsJson, tagsJson: JSON.stringify(["\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u062E\u062A\u0628\u0627\u0631", "NFOOD"]), isAvailable: true, prepTimeMinutes: 10 + index2 % 6, calories: 250 + index2 * 35 };
+      if (existing) {
+        await db.update(menuItems).set(values).where(eq2(menuItems.id, existing.id));
+        updated += 1;
+      } else {
+        await db.insert(menuItems).values(values);
+        created += 1;
+      }
+    }
+  }
+  return { restaurantId, categoryCount: categories.length, created, updated, total: categories.length * 10 };
 }
 
 // server/_core/cookies.ts
@@ -6167,7 +6200,7 @@ var AFRICAN_CURRENCY_CODES = AFRICAN_CURRENCIES.map((currency) => currency.code)
 // server/marketplaceRouter.ts
 import { z as z2 } from "zod";
 import { TRPCError as TRPCError3 } from "@trpc/server";
-import { and as and3, desc as desc2, eq as eq3, gte as gte2, inArray as inArray2, isNull as isNull2, lte as lte2, or as or2, sql as sql2 } from "drizzle-orm";
+import { and as and3, desc as desc2, eq as eq3, gte as gte2, inArray as inArray2, isNull as isNull2, lte as lte2, or as or3, sql as sql2 } from "drizzle-orm";
 import { nanoid as nanoid3 } from "nanoid";
 
 // shared/currencies.ts
@@ -6703,7 +6736,7 @@ var marketplaceRouter = router({
       eq3(marketplaceListings.entityId, entity.id),
       eq3(marketplaceListings.status, "active"),
       eq3(marketplaceListingVariants.isActive, true),
-      or2(eq3(marketplaceListingVariants.barcode, code), eq3(marketplaceListingVariants.sku, code))
+      or3(eq3(marketplaceListingVariants.barcode, code), eq3(marketplaceListingVariants.sku, code))
     )).limit(2);
     if (!rows.length) throw new TRPCError3({ code: "NOT_FOUND", message: "\u0644\u0645 \u064A\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 \u0645\u0646\u062A\u062C \u0645\u0637\u0627\u0628\u0642 \u0644\u0647\u0630\u0627 \u0627\u0644\u0628\u0627\u0631\u0643\u0648\u062F \u0623\u0648 SKU" });
     if (rows.length > 1) throw new TRPCError3({ code: "CONFLICT", message: "\u0627\u0644\u0628\u0627\u0631\u0643\u0648\u062F \u0623\u0648 SKU \u0645\u0643\u0631\u0631 \u062F\u0627\u062E\u0644 \u0627\u0644\u0645\u062A\u062C\u0631. \u0635\u062D\u062D \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0646\u062A\u062C\u0627\u062A \u0642\u0628\u0644 \u0627\u0644\u0628\u064A\u0639." });
@@ -6838,7 +6871,7 @@ var marketplaceRouter = router({
     const listings = await db.select().from(marketplaceListings).where(and3(eq3(marketplaceListings.entityId, input.entityId), eq3(marketplaceListings.status, "active"))).orderBy(desc2(marketplaceListings.isFeatured), desc2(marketplaceListings.createdAt));
     const loyaltySettings = (await db.select().from(storeLoyaltySettings).where(eq3(storeLoyaltySettings.entityId, input.entityId)).limit(1))[0] ?? null;
     const now = /* @__PURE__ */ new Date();
-    const coupons2 = await db.select().from(storeCoupons).where(and3(eq3(storeCoupons.entityId, input.entityId), eq3(storeCoupons.isActive, true), or2(isNull2(storeCoupons.startsAt), lte2(storeCoupons.startsAt, now)), or2(isNull2(storeCoupons.endsAt), gte2(storeCoupons.endsAt, now)))).orderBy(desc2(storeCoupons.createdAt));
+    const coupons2 = await db.select().from(storeCoupons).where(and3(eq3(storeCoupons.entityId, input.entityId), eq3(storeCoupons.isActive, true), or3(isNull2(storeCoupons.startsAt), lte2(storeCoupons.startsAt, now)), or3(isNull2(storeCoupons.endsAt), gte2(storeCoupons.endsAt, now)))).orderBy(desc2(storeCoupons.createdAt));
     const restaurant = (await db.select().from(restaurants).where(entity.restaurantId ? eq3(restaurants.id, entity.restaurantId) : eq3(restaurants.brandName, entity.customerName)).limit(1))[0] ?? null;
     const storefront = (await db.select().from(marketplaceStorefrontSettings).where(and3(eq3(marketplaceStorefrontSettings.entityId, entity.id), eq3(marketplaceStorefrontSettings.isPublished, true))).limit(1))[0] ?? null;
     return { entity, listings, loyaltySettings, coupons: coupons2, restaurant, storefront };
@@ -8007,7 +8040,7 @@ async function getOrCreateLoyaltySettings(db, entityId) {
 }
 
 // server/rbac.ts
-import { and as and4, eq as eq4, inArray as inArray3, isNull as isNull3, or as or3 } from "drizzle-orm";
+import { and as and4, eq as eq4, inArray as inArray3, isNull as isNull3, or as or4 } from "drizzle-orm";
 import { TRPCError as TRPCError4 } from "@trpc/server";
 async function getEffectivePermissionKeys(userId, scope = {}) {
   const db = await getDb();
@@ -8016,9 +8049,9 @@ async function getEffectivePermissionKeys(userId, scope = {}) {
   if (!scope.restaurantId) scopeConditions.push(isNull3(scopedRoleAssignments.restaurantId));
   if (!scope.branchId) scopeConditions.push(isNull3(scopedRoleAssignments.branchId));
   if (!scope.departmentId) scopeConditions.push(isNull3(scopedRoleAssignments.departmentId));
-  if (scope.restaurantId) scopeConditions.push(or3(eq4(scopedRoleAssignments.restaurantId, scope.restaurantId), isNull3(scopedRoleAssignments.restaurantId)));
-  if (scope.branchId) scopeConditions.push(or3(eq4(scopedRoleAssignments.branchId, scope.branchId), isNull3(scopedRoleAssignments.branchId)));
-  if (scope.departmentId) scopeConditions.push(or3(eq4(scopedRoleAssignments.departmentId, scope.departmentId), isNull3(scopedRoleAssignments.departmentId)));
+  if (scope.restaurantId) scopeConditions.push(or4(eq4(scopedRoleAssignments.restaurantId, scope.restaurantId), isNull3(scopedRoleAssignments.restaurantId)));
+  if (scope.branchId) scopeConditions.push(or4(eq4(scopedRoleAssignments.branchId, scope.branchId), isNull3(scopedRoleAssignments.branchId)));
+  if (scope.departmentId) scopeConditions.push(or4(eq4(scopedRoleAssignments.departmentId, scope.departmentId), isNull3(scopedRoleAssignments.departmentId)));
   const assignments = await db.select({ roleId: scopedRoleAssignments.roleId }).from(scopedRoleAssignments).where(and4(eq4(scopedRoleAssignments.userId, userId), eq4(scopedRoleAssignments.isActive, true), ...scopeConditions));
   const roleIds = Array.from(new Set(assignments.map((row) => row.roleId)));
   if (!roleIds.length) return [];
@@ -10629,14 +10662,14 @@ var appRouter = router({
     }),
     publicRestaurantDirectory: publicProcedure.query(() => listPublicRestaurants()),
     publicMostActiveRestaurants: publicProcedure.input(z3.object({ limit: z3.number().int().min(1).max(24).optional() })).query(({ input }) => listMostActiveRestaurants(input?.limit ?? 6)),
-    integrationCatalog: protectedProcedure.query(() => [{ providerKey: "google_oauth", category: "auth", label: "Google OAuth", setupUrl: "https://console.cloud.google.com/apis/credentials", scopes: "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644" }, { providerKey: "otp_sms", category: "messaging", label: "OTP / SMS", setupUrl: "https://www.twilio.com/console", scopes: "\u0631\u0645\u0648\u0632 \u0627\u0644\u062A\u062D\u0642\u0642 \u0648\u0627\u0644\u0631\u0633\u0627\u0626\u0644" }, { providerKey: "passkey", category: "auth", label: "Passkey / WebAuthn", setupUrl: "https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API", scopes: "\u062F\u062E\u0648\u0644 \u0628\u062F\u0648\u0646 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631" }, { providerKey: "tamara", category: "payments", label: "Tamara", setupUrl: "https://docs.tamara.co/", scopes: "\u0627\u0644\u062F\u0641\u0639 \u0628\u0627\u0644\u062A\u0642\u0633\u064A\u0637" }, { providerKey: "stc_pay", category: "payments", label: "STC Pay", setupUrl: "https://developer.stc.com.sa/", scopes: "\u0627\u0644\u062F\u0641\u0639 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A" }, { providerKey: "whatsapp_business", category: "messaging", label: "WhatsApp Business", setupUrl: "https://developers.facebook.com/apps/", scopes: "\u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0648\u0643\u062A\u0627\u0644\u0648\u062C \u0648\u0627\u062A\u0633\u0627\u0628" }, { providerKey: "smtp", category: "messaging", label: "SMTP Email", setupUrl: "https://support.google.com/a/answer/176600", scopes: "\u0627\u0644\u0628\u0631\u064A\u062F \u0648\u0627\u0644\u062A\u0646\u0628\u064A\u0647\u0627\u062A" }, { providerKey: "google_maps", category: "maps", label: "Google Maps", setupUrl: "https://console.cloud.google.com/google/maps-apis/credentials", scopes: "\u0627\u0644\u062E\u0631\u064A\u0637\u0629 \u0648\u0627\u0644\u0645\u0648\u0642\u0639" }]),
+    integrationCatalog: protectedProcedure.query(() => [{ providerKey: "google_oauth", category: "auth", label: "Google OAuth", setupUrl: "https://console.cloud.google.com/apis/credentials", scopes: "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644" }, { providerKey: "otp_sms", category: "messaging", label: "OTP / SMS", setupUrl: "https://www.twilio.com/console", scopes: "\u0631\u0645\u0648\u0632 \u0627\u0644\u062A\u062D\u0642\u0642 \u0648\u0627\u0644\u0631\u0633\u0627\u0626\u0644" }, { providerKey: "passkey", category: "auth", label: "Passkey / WebAuthn", setupUrl: "https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API", scopes: "\u062F\u062E\u0648\u0644 \u0628\u062F\u0648\u0646 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631" }, { providerKey: "tamara", category: "payments", label: "Tamara", setupUrl: "https://docs.tamara.co/", scopes: "\u0627\u0644\u062F\u0641\u0639 \u0628\u0627\u0644\u062A\u0642\u0633\u064A\u0637" }, { providerKey: "stc_pay", category: "payments", label: "STC Pay", setupUrl: "https://developer.stc.com.sa/", scopes: "\u0627\u0644\u062F\u0641\u0639 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A" }, { providerKey: "whatsapp_business", category: "messaging", label: "WhatsApp Business", setupUrl: "https://developers.facebook.com/apps/", scopes: "\u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0648\u0643\u062A\u0627\u0644\u0648\u062C \u0648\u0627\u062A\u0633\u0627\u0628" }, { providerKey: "smtp", category: "messaging", label: "SMTP Email", setupUrl: "https://support.google.com/a/answer/176600", scopes: "\u0627\u0644\u0628\u0631\u064A\u062F \u0648\u0627\u0644\u062A\u0646\u0628\u064A\u0647\u0627\u062A" }, { providerKey: "google_maps", category: "maps", label: "Google Maps", setupUrl: "https://console.cloud.google.com/google/maps-apis/credentials", scopes: "\u0627\u0644\u062E\u0631\u064A\u0637\u0629 \u0648\u0627\u0644\u0645\u0648\u0642\u0639" }, { providerKey: "pusher", category: "realtime", label: "Pusher", setupUrl: "https://dashboard.pusher.com/", scopes: "\u0625\u0634\u0639\u0627\u0631\u0627\u062A \u0627\u0644\u0637\u0644\u0628\u0627\u062A \u0648\u0627\u0644\u062A\u062D\u062F\u064A\u062B\u0627\u062A \u0627\u0644\u0641\u0648\u0631\u064A\u0629" }]),
     restaurantIntegrationCatalog: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const restaurant = await getRestaurantById(input.restaurantId);
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       const plan = String(restaurant.plan ?? "Free").toLowerCase();
       const paidEligible = !["free", "starter"].includes(plan);
-      const providers = [{ providerKey: "google_oauth", category: "auth", label: "Google OAuth", scopes: "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0627\u0644\u0639\u0627\u0645", publicLogin: true, paid: false }, { providerKey: "passkey", category: "auth", label: "Passkey / WebAuthn", scopes: "\u062F\u062E\u0648\u0644 \u0628\u062F\u0648\u0646 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631", publicLogin: true, paid: false }, { providerKey: "otp_sms", category: "messaging", label: "OTP / SMS", scopes: "\u0631\u0645\u0648\u0632 \u0627\u0644\u062A\u062D\u0642\u0642 \u0648\u0627\u0644\u0631\u0633\u0627\u0626\u0644", publicLogin: false, paid: true }, { providerKey: "tamara", category: "payments", label: "Tamara", scopes: "\u0627\u0644\u062F\u0641\u0639 \u0628\u0627\u0644\u062A\u0642\u0633\u064A\u0637", publicLogin: false, paid: true }, { providerKey: "stc_pay", category: "payments", label: "STC Pay", scopes: "\u0627\u0644\u062F\u0641\u0639 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A", publicLogin: false, paid: true }, { providerKey: "whatsapp_business", category: "messaging", label: "WhatsApp Business", scopes: "\u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0648\u0643\u062A\u0627\u0644\u0648\u062C \u0648\u0627\u062A\u0633\u0627\u0628", publicLogin: false, paid: true }, { providerKey: "smtp", category: "messaging", label: "SMTP Email", scopes: "\u0627\u0644\u0628\u0631\u064A\u062F \u0648\u0627\u0644\u062A\u0646\u0628\u064A\u0647\u0627\u062A", publicLogin: false, paid: true }, { providerKey: "google_maps", category: "maps", label: "Google Maps", scopes: "\u0627\u0644\u062E\u0631\u064A\u0637\u0629 \u0648\u0627\u0644\u0645\u0648\u0642\u0639", publicLogin: false, paid: true }];
+      const providers = [{ providerKey: "google_oauth", category: "auth", label: "Google OAuth", scopes: "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0627\u0644\u0639\u0627\u0645", publicLogin: true, paid: false }, { providerKey: "passkey", category: "auth", label: "Passkey / WebAuthn", scopes: "\u062F\u062E\u0648\u0644 \u0628\u062F\u0648\u0646 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631", publicLogin: true, paid: false }, { providerKey: "otp_sms", category: "messaging", label: "OTP / SMS", scopes: "\u0631\u0645\u0648\u0632 \u0627\u0644\u062A\u062D\u0642\u0642 \u0648\u0627\u0644\u0631\u0633\u0627\u0626\u0644", publicLogin: false, paid: true }, { providerKey: "tamara", category: "payments", label: "Tamara", scopes: "\u0627\u0644\u062F\u0641\u0639 \u0628\u0627\u0644\u062A\u0642\u0633\u064A\u0637", publicLogin: false, paid: true }, { providerKey: "stc_pay", category: "payments", label: "STC Pay", scopes: "\u0627\u0644\u062F\u0641\u0639 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A", publicLogin: false, paid: true }, { providerKey: "whatsapp_business", category: "messaging", label: "WhatsApp Business", scopes: "\u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0648\u0643\u062A\u0627\u0644\u0648\u062C \u0648\u0627\u062A\u0633\u0627\u0628", publicLogin: false, paid: true }, { providerKey: "smtp", category: "messaging", label: "SMTP Email", scopes: "\u0627\u0644\u0628\u0631\u064A\u062F \u0648\u0627\u0644\u062A\u0646\u0628\u064A\u0647\u0627\u062A", publicLogin: false, paid: true }, { providerKey: "google_maps", category: "maps", label: "Google Maps", scopes: "\u0627\u0644\u062E\u0631\u064A\u0637\u0629 \u0648\u0627\u0644\u0645\u0648\u0642\u0639", publicLogin: false, paid: true }, { providerKey: "pusher", category: "realtime", label: "Pusher", scopes: "\u0625\u0634\u0639\u0627\u0631\u0627\u062A \u0627\u0644\u0637\u0644\u0628\u0627\u062A \u0648\u0627\u0644\u062A\u062D\u062F\u064A\u062B\u0627\u062A \u0627\u0644\u0641\u0648\u0631\u064A\u0629", publicLogin: false, paid: true }];
       const settings = await listIntegrationSettings("restaurant", input.restaurantId);
       return providers.map((provider) => ({ ...provider, eligible: !provider.paid || paidEligible, configured: settings.some((setting) => setting.providerKey === provider.providerKey && setting.status === "configured"), status: settings.find((setting) => setting.providerKey === provider.providerKey)?.status ?? "not_configured" }));
     }),
@@ -10840,7 +10873,7 @@ var appRouter = router({
       await upsertUser({ openId: ctx.user.openId, name: ctx.user.name ?? null, email: ctx.user.email ?? null, loginMethod: "oauth", lastSignedIn: /* @__PURE__ */ new Date() });
       const syncedCustomer = await getUserByOpenId(ctx.user.openId);
       const customerId = syncedCustomer?.id ?? null;
-      const restaurant = (await db.select({ id: restaurants.id, status: restaurants.status }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), eq7(restaurants.status, "active"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id, status: restaurants.status }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), inArray4(restaurants.status, ["active", "trial"]))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       const platformSettings2 = await getPlatformSettings();
       if (platformSettings2.allowGuestCheckout !== "true") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0639\u0627\u0645 \u0645\u062A\u0648\u0642\u0641 \u0645\u0624\u0642\u062A\u064B\u0627 \u0645\u0646 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0646\u0635\u0629" });
@@ -10906,8 +10939,16 @@ var appRouter = router({
           if (referral && referral.referrerCustomerId !== customerId) await tx.update(referralRecords).set({ referredCustomerId: customerId }).where(and7(eq7(referralRecords.id, referral.id), eq7(referralRecords.status, "pending"), isNull4(referralRecords.referredCustomerId)));
         }
         await tx.insert(orderItems).values(authoritativeItems.map((item) => ({ orderId, menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: item.unitPrice, selectedAddonsJson: item.selectedAddonsJson })));
-        await insertAuditLog({ restaurantId: restaurant.id, branchId: branch.id, actorUserId: null, actorRole: "guest", action: "guest.order.create", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid4(12) });
-        return { success: true, orderId, total: total.toFixed(2), splitBillGroupId, paymentMethod: input.paymentMethod, paymentStatus: "unpaid", status: "new" };
+        const orderQrToken = `ord_${nanoid4(32)}`;
+        const orderQrTargetUrl = `/customer-orders?order=${orderId}`;
+        await tx.insert(qrCodes).values({ restaurantId: restaurant.id, branchId: branch.id, type: "order", purpose: "order_tracking", token: orderQrToken, label: `\u0637\u0644\u0628 #${orderId}`, orderId, amount: total.toFixed(2), targetUrl: orderQrTargetUrl, createdByUserId: customerId });
+        const managerIds = await listRestaurantManagerUserIds(restaurant.id);
+        if (managerIds.length) {
+          await tx.insert(notifications).values(managerIds.map((userId) => ({ userId, type: "system", title: `\u0637\u0644\u0628 \u062C\u062F\u064A\u062F #${orderId}`, body: `${input.guestName} \xB7 ${input.channel === "dine_in" ? `\u0637\u0627\u0648\u0644\u0629 ${input.tableName || "-"} \xB7 ` : ""}${total.toFixed(2)} SAR` })));
+        }
+        await insertAuditLog({ restaurantId: restaurant.id, branchId: branch.id, actorUserId: customerId, actorRole: "customer", action: "guest.order.create", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid4(12) });
+        void Promise.all(managerIds.map((userId) => sendPushToUser(userId, { title: `\u0637\u0644\u0628 \u062C\u062F\u064A\u062F #${orderId}`, body: `${input.guestName} \xB7 ${total.toFixed(2)} SAR`, url: `/restaurant/dashboard?order=${orderId}`, tag: `new-order-${orderId}` }).catch((error) => console.warn("[Order] push failed", error))));
+        return { success: true, orderId, total: total.toFixed(2), splitBillGroupId, paymentMethod: input.paymentMethod, paymentStatus: "unpaid", status: "new", orderQrToken, orderQrTargetUrl };
       });
     }),
     myOrderStatus: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
@@ -11015,7 +11056,11 @@ var appRouter = router({
       if (isAdminContext(ctx)) return listRestaurants();
       if (scopedRestaurantId) return listRestaurants(scopedRestaurantId);
       const merchantRestaurantId = await getMerchantRestaurantId(ctx.user.id);
-      return merchantRestaurantId ? listRestaurants(merchantRestaurantId) : [];
+      if (merchantRestaurantId) return listRestaurants(merchantRestaurantId);
+      const db = await getDb();
+      if (!db) return [];
+      const entityRestaurant = (await db.select({ restaurantId: platformEntities.restaurantId }).from(platformEntities).where(and7(eq7(platformEntities.email, ctx.user.email ?? ""), eq7(platformEntities.status, true))).limit(1))[0]?.restaurantId;
+      return entityRestaurant ? listRestaurants(entityRestaurant) : [];
     }),
     restaurantById: protectedProcedure.input(z3.object({ id: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.id);
@@ -11564,6 +11609,12 @@ var appRouter = router({
         await db.update(menuCategories).set({ sortOrder: index2 + 1 }).where(eq7(menuCategories.id, category.id));
       }
       return { success: true, id: input.id };
+    }),
+    provisionNasserMenuTestData: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      assertRestaurantAccess(ctx, input.restaurantId);
+      const restaurant = await getRestaurantById(input.restaurantId);
+      if (!restaurant || restaurant.slug?.toLowerCase() !== "nasser") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0647\u0630\u0647 \u0627\u0644\u0623\u062F\u0627\u0629 \u0627\u0644\u062A\u062C\u0631\u064A\u0628\u064A\u0629 \u0645\u062A\u0627\u062D\u0629 \u0644\u0645\u0637\u0639\u0645 nasser \u0641\u0642\u0637" });
+      return provisionNasserTestCatalog(input.restaurantId);
     }),
     menuItems: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive().optional(), categoryId: z3.number().int().positive().optional() }).optional()).query(({ ctx, input }) => {
       assertNotDriver(ctx);
@@ -13442,10 +13493,19 @@ var appRouter = router({
     updateRestaurant: adminProcedure.input(z3.object({ id: z3.number().int().positive(), name: z3.string().min(2).max(160).optional(), slug: z3.string().min(2).max(160).optional(), plan: z3.string().min(2).optional(), status: z3.enum(["active", "trial", "suspended"]).optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ id: restaurants.id, name: restaurants.name, status: restaurants.status }).from(restaurants).where(eq7(restaurants.id, input.id)).limit(1);
+      const existing = await db.select({ id: restaurants.id, name: restaurants.name, status: restaurants.status, plan: restaurants.plan }).from(restaurants).where(eq7(restaurants.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Restaurant not found" });
       const { id: _id, ...changes } = input;
+      if (input.plan) {
+        const selectedPlan = (await db.select({ key: packagePlans.key, name: packagePlans.name }).from(packagePlans).where(and7(or(eq7(packagePlans.key, input.plan), eq7(packagePlans.name, input.plan)), eq7(packagePlans.isActive, true))).limit(1))[0];
+        if (!selectedPlan) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0628\u0627\u0642\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629 \u0623\u0648 \u063A\u064A\u0631 \u0645\u0641\u0639\u0644\u0629" });
+        changes.plan = selectedPlan.key;
+      }
       await db.update(restaurants).set(changes).where(eq7(restaurants.id, input.id));
+      if (input.plan) {
+        const activeSubscription = (await db.select({ id: subscriptions.id }).from(subscriptions).where(and7(eq7(subscriptions.restaurantId, input.id), inArray4(subscriptions.status, ["active", "trial"]))).orderBy(desc3(subscriptions.id)).limit(1))[0];
+        if (activeSubscription) await db.update(subscriptions).set({ plan: changes.plan }).where(eq7(subscriptions.id, activeSubscription.id));
+      }
       if (input.status === "active" && existing[0].status !== "active" && ctx.user?.id) {
         const branches2 = await listBranches(input.id);
         for (const branch of branches2) await ensureMenuQrCode({ restaurantId: input.id, branchId: branch.id, createdByUserId: ctx.user.id, label: `\u0645\u0646\u064A\u0648 ${existing[0].name.trim()}` });
