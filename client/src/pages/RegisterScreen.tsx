@@ -206,7 +206,7 @@ export default function RegisterScreen() {
   const [currencyCode, setCurrencyCode] = useState(() => onboardingDraft.currencyCode || "SAR");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [acceptedLegal, setAcceptedLegal] = useState(false);
-  const selectedPlan = useMemo(() => { if (typeof window === "undefined") return "Free"; return new URLSearchParams(window.location.search).get("plan")?.trim() || "Free"; }, []);
+  const selectedPlan = useMemo<"Free" | "Starter" | "Growth" | "Business" | "Enterprise">(() => { if (typeof window === "undefined") return "Free"; const requested = new URLSearchParams(window.location.search).get("plan")?.trim(); return requested === "Starter" || requested === "Growth" || requested === "Business" || requested === "Enterprise" ? requested : "Free"; }, []);
   const registrationCaptcha = trpc.auth.registrationCaptcha.useQuery();
   const register = trpc.auth.registerRestaurant.useMutation({
     onSuccess: () => { resetDraft(); setDone(true); toast.success(copy.toastCreated); },
