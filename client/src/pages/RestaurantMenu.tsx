@@ -480,32 +480,34 @@ export default function RestaurantMenu() {
             : <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d35] via-[#12345a] to-[#071525]" />}
           <div className="absolute inset-0 bg-gradient-to-t from-[#071525]/55 via-transparent to-transparent" />
           <button type="button" onClick={() => document.getElementById("menu-grid")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="absolute bottom-3 start-1/2 z-10 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full border border-white/30 bg-[#071525]/70 text-white shadow-lg backdrop-blur transition hover:scale-105 hover:bg-[#071525]/90" aria-label={lang === "ar" ? "انتقل إلى قائمة الطعام" : "Go to menu"}><ChevronDown className="h-5 w-5" /></button>
-          <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:p-6">
-            <div className="min-w-0">
-              <h2 className="truncate text-2xl font-black sm:text-4xl">{restaurant.brandName || restaurant.name}</h2>
-              {restaurant.city && <p className="mt-1 flex items-center gap-1 text-xs font-bold text-slate-200"><MapPin className="h-3.5 w-3.5" />{restaurant.city}</p>}
-            </div>
-          </div>
+
         </div>
       </div>
     </section>
 
     <section className={`border-b ${dark ? "border-white/10 bg-[#0a1a2d]" : "border-slate-200 bg-white"}`}>
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:px-5">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
-          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isOpen ? "bg-emerald-500" : "bg-red-500"}`} />
+          {restaurant.brandLogoUrl ? <img src={restaurant.brandLogoUrl} alt="" className="h-10 w-10 shrink-0 rounded-xl border border-slate-200 bg-white object-contain p-1 dark:border-white/10" /> : null}
           <div className="min-w-0">
-            <p className="text-sm font-black">{isOpen ? copy.open : copy.closed}</p>
-            {selectedBranch && <p className={`truncate text-[10px] font-bold ${muted}`}>{selectedBranch.name} · {selectedBranch.openingTime && minuteValue(selectedBranch.openingTime) === minuteValue(selectedBranch.closingTime) ? (lang === "ar" ? "24 ساعة" : "24 hours") : `${selectedBranch.openingTime || "—"}–${selectedBranch.closingTime || "—"}`}</p>}
+            <h2 className="truncate text-base font-black sm:text-lg">{restaurant.brandName || restaurant.name}</h2>
+            <div className="mt-0.5 flex items-center gap-2">
+              <span className={`h-2 w-2 shrink-0 rounded-full ${isOpen ? "bg-emerald-500" : "bg-red-500"}`} />
+              <p className="text-xs font-black">{isOpen ? copy.open : copy.closed}</p>
+              {selectedBranch && <p className={`truncate text-[10px] font-bold ${muted}`}>{selectedBranch.name} · {selectedBranch.openingTime && minuteValue(selectedBranch.openingTime) === minuteValue(selectedBranch.closingTime) ? (lang === "ar" ? "24 ساعة" : "24 hours") : `${selectedBranch.openingTime || "—"}–${selectedBranch.closingTime || "—"}`}</p>}
+            </div>
           </div>
         </div>
-        <button onClick={() => setDrawerOpen(true)} className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-black ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`}>{copy.storeInfo}</button>
+        <div className="flex shrink-0 items-center gap-2">
+          {restaurant.reservationEnabled !== false && <button onClick={() => { setReservationStep(1); setReservationOpen(true); }} className="rounded-xl px-3 py-2 text-xs font-black text-white shadow-sm" style={{ backgroundColor: primary }}><CalendarDays className="me-1 inline h-3.5 w-3.5" />{copy.reservation}</button>}
+          <button onClick={() => setDrawerOpen(true)} className={`hidden rounded-xl border px-3 py-2 text-xs font-black sm:block ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`}>{copy.storeInfo}</button>
+        </div>
       </div>
     </section>
 
-    <section aria-label={copy.menu} className="mx-auto max-w-7xl px-3 pb-3 pt-4 sm:px-5 sm:pb-4 sm:pt-5">
+    <section aria-label={copy.menu} className="mx-auto max-w-7xl px-3 pb-2 pt-2 sm:px-5 sm:pb-3 sm:pt-3">
       <div className={`flex items-center rounded-2xl border px-3 ${surface}`}><Search className={`h-5 w-5 shrink-0 ${muted}`} /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.search} className="h-12 border-0 bg-transparent shadow-none focus-visible:ring-0" /></div>
-      <div className="mt-3"><label className={`mb-1.5 block text-xs font-black ${muted}`}>{lang === "ar" ? "القسم" : lang === "fr" ? "Catégorie" : "Category"}</label><select aria-label={copy.menu} value={String(activeCategory)} onChange={(event) => setActiveCategory(event.target.value === "all" ? "all" : Number(event.target.value))} className={`h-11 w-full rounded-xl border px-3 text-sm font-bold outline-none sm:max-w-xs ${surface}`}><option value="all">{copy.all}</option>{categories.map((category) => <option key={category.id} value={category.id}>{localize(category.translationsJson, category.name, lang, "name")}</option>)}</select></div>
+      <div className="mt-2"><label className={`mb-1.5 block text-xs font-black ${muted}`}>{lang === "ar" ? "القسم" : lang === "fr" ? "Catégorie" : "Category"}</label><select aria-label={copy.menu} value={String(activeCategory)} onChange={(event) => setActiveCategory(event.target.value === "all" ? "all" : Number(event.target.value))} className={`h-11 w-full rounded-xl border px-3 text-sm font-bold outline-none sm:max-w-xs ${surface}`}><option value="all">{copy.all}</option>{categories.map((category) => <option key={category.id} value={category.id}>{localize(category.translationsJson, category.name, lang, "name")}</option>)}</select></div>
     </section>
 
     <section id="menu-grid" className="mx-auto max-w-7xl px-3 pb-28 sm:px-5">
