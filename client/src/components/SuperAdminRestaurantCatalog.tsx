@@ -75,6 +75,7 @@ export function SuperAdminRestaurantCatalog() {
         ? { center: "ریستوران مرکز", title: "ریستوران فہرست", subtitle: "ریستوران، پیکیجز، حیثیت اور عوامی لنکس ایک جگہ سے منظم کریں۔", add: "نیا ریستوران شامل کریں", search: "نام، شناخت یا پیکیج سے تلاش کریں", all: "سب", active: "فعال", trial: "آزمائشی", pending: "زیر التوا", plans: "تمام پیکیجز", actions: "اعمال", retry: "دوبارہ کوشش", empty: "تلاش سے کوئی ریستوران نہیں ملا۔", report: "رپورٹ کی تفصیل", branches: "برانچز", account: "اکاؤنٹ", statusActive: "فعال", statusTrial: "آزمائشی", statusPending: "زیر التوا", plan: "پیکیج", publicLink: "عوامی لنک", details: "تفصیل", login: "ریستوران کھولیں", pause: "روکیں", activate: "فعال کریں", editPlan: "پیکیج تبدیل کریں", resetPassword: "پاس ورڈ ری سیٹ کریں", unspecified: "متعین نہیں" }
         : { center: "Restaurant center", title: "Restaurant list", subtitle: "Manage registered restaurants, plans, statuses, and public links from one workspace.", add: "Add restaurant", search: "Search by restaurant name, ID, or plan", all: "All", active: "Active", trial: "Trial", pending: "Pending", plans: "All plans", actions: "Actions", retry: "Try again", empty: "No restaurants match the current search.", report: "Report details", branches: "branches", account: "Account", statusActive: "Active", statusTrial: "Trial", statusPending: "Pending", plan: "Plan", publicLink: "Public link", details: "Details", login: "Open restaurant", pause: "Pause", activate: "Activate", editPlan: "Edit plan", resetPassword: "Reset password", unspecified: "Not set" };
   const [query, setQuery] = useState("");
+  const [notificationEntryRestaurantId, setNotificationEntryRestaurantId] = useState<number | null>(null);
   const [filter, setFilter] = useState<Filter>("الكل");
   const [createOpen, setCreateOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -150,10 +151,15 @@ export function SuperAdminRestaurantCatalog() {
   });
   const enterRestaurant = trpc.admin.enterRestaurantAccount.useMutation({
     onSuccess: () => {
-      toast.success("تم الدخول إلى مساحة المطعم");
-      window.location.assign("/");
+      const openNotifications = notificationEntryRestaurantId !== null;
+      setNotificationEntryRestaurantId(null);
+      toast.success(openNotifications ? "تم الدخول إلى المطعم — اربط إشعارات هذا الجهاز من الزر أعلى اللوحة" : "تم الدخول إلى مساحة المطعم");
+      window.location.assign(openNotifications ? "/?setupPush=1" : "/");
     },
-    onError: error => toast.error(`تعذر الدخول إلى المطعم: ${error.message}`),
+    onError: error => {
+      setNotificationEntryRestaurantId(null);
+      toast.error(`تعذر الدخول إلى المطعم: ${error.message}`);
+    },
   });
   const createRestaurant = trpc.admin.createRestaurant.useMutation({
     onSuccess: data => {
@@ -883,6 +889,22 @@ export function SuperAdminRestaurantCatalog() {
                       >
                         <BellRing className="h-3.5 w-3.5 shrink-0" />
                         {restaurant.orderNotificationsEnabled ? "الإشعارات مفعلة" : "تفعيل الإشعارات"}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={!restaurant.orderNotificationsEnabled || enterRestaurant.isPending}
+                        onClick={() => {
+                          setNotificationEntryRestaurantId(restaurant.id);
+                          enterRestaurant.mutate({ id: restaurant.id });
+                        }}
+                        className="h-10 max-w-full gap-1.5 rounded-xl border-blue-200 bg-white px-3 text-[10px] font-black text-blue-700 hover:bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300"
+                        data-testid={`restaurant-notification-link-${restaurant.id}`}
+                        title={restaurant.orderNotificationsEnabled ? "دخول المطعم وربط إشعارات هذا الجهاز" : "فعّل إشعارات المطعم أولًا"}
+                      >
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                        فتح وربط الإشعارات
                       </Button>
                       <Button
                         type="button"
