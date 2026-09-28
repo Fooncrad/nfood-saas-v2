@@ -505,7 +505,7 @@ export const appRouter = router({
       await upsertUser({ openId: ctx.user.openId, name: ctx.user.name ?? null, email: ctx.user.email ?? null, loginMethod: "oauth", lastSignedIn: new Date() });
       const syncedCustomer = await getUserByOpenId(ctx.user.openId);
       const customerId = syncedCustomer?.id ?? null;
-      const restaurant = (await db.select({ id: restaurants.id, status: restaurants.status }).from(restaurants).where(and(eq(restaurants.slug, input.slug), eq(restaurants.status, "active"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id, status: restaurants.status }).from(restaurants).where(and(eq(restaurants.slug, input.slug), inArray(restaurants.status, ["active", "trial"]))).limit(1))[0];
       if (!restaurant) throw new TRPCError({ code: "NOT_FOUND", message: "المطعم غير متاح" });
       const platformSettings = await getPlatformSettings();
       if (platformSettings.allowGuestCheckout !== "true") throw new TRPCError({ code: "FORBIDDEN", message: "الطلب العام متوقف مؤقتًا من إدارة المنصة" });
