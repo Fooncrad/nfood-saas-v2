@@ -188,7 +188,7 @@ export async function listCustomerReservations(customerId: number, limit = 100) 
   const db = await getDb();
   if (!db) return [];
   const safeLimit = Math.min(Math.max(limit, 1), 100);
-  return db.select({
+  const rows = await db.select({
     id: reservations.id,
     customerId: reservations.customerId,
     restaurantId: reservations.restaurantId,
@@ -220,6 +220,30 @@ export async function listCustomerReservations(customerId: number, limit = 100) 
     .where(eq(reservations.customerId, customerId))
     .orderBy(desc(reservations.reservedFor))
     .limit(safeLimit);
+  if (!rows.length) return [];
+  const tokens = await db.select({ token: qrCodes.token, targetUrl: qrCodes.targetUrl, label: qrCodes.label })
+    .from(qrCodes)
+    .where(and(eq(qrCodes.type, "custom"), eq(qrCodes.purpose, "reservation_confirmation"), eq(qrCodes.status, "active")));
+  const tokenByReservation = new Map<number, { token: string; targetUrl: string | null }>();
+  for (const item of tokens) {
+    const match = item.label.match(/^reservation:(\d+)$/);
+    if (match) tokenByReservation.set(Number(match[1]), { token: item.token, targetUrl: item.targetUrl });
+  }
+  return rows.map((row) => ({ ...row, reservationQrToken: tokenByReservation.get(row.id)?.token ?? null, reservationQrTargetUrl: tokenByReservation.get(row.id)?.targetUrl ?? null }));
+}
+
+export async function ensureReservationQrCode(input: { reservationId: number; customerId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const reservation = (await db.select({ id: reservations.id, restaurantId: reservations.restaurantId, branchId: reservations.branchId, customerId: reservations.customerId, status: reservations.status }).from(reservations).where(and(eq(reservations.id, input.reservationId), eq(reservations.customerId, input.customerId))).limit(1))[0];
+  if (!reservation || !reservation.branchId || !["confirmed", "seated"].includes(reservation.status)) return null;
+  const label = `reservation:${reservation.id}`;
+  const existing = (await db.select({ token: qrCodes.token, targetUrl: qrCodes.targetUrl }).from(qrCodes).where(and(eq(qrCodes.restaurantId, reservation.restaurantId), eq(qrCodes.branchId, reservation.branchId), eq(qrCodes.type, "custom"), eq(qrCodes.purpose, "reservation_confirmation"), eq(qrCodes.label, label), eq(qrCodes.status, "active"))).limit(1))[0];
+  if (existing) return existing;
+  const token = `res_${nanoid(32)}`;
+  const targetUrl = `/customer-reservations?reservation=${reservation.id}`;
+  await db.insert(qrCodes).values({ restaurantId: reservation.restaurantId, branchId: reservation.branchId, type: "custom", purpose: "reservation_confirmation", token, label, targetUrl, status: "active", createdByUserId: input.customerId });
+  return { token, targetUrl };
 }
 
 export async function cancelCustomerReservation(id: number, customerId: number) {
