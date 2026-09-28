@@ -189,9 +189,7 @@ function parseTranslationCsv(csv: string) {
     const char = csv[i];
     if (char === '"') { if (quoted && csv[i + 1] === '"') { cell += '"'; i += 1; } else quoted = !quoted; continue; }
     if (char === "," && !quoted) { row.push(cell); cell = ""; continue; }
-    if ((char === "
-" || char === "\r") && !quoted) { if (char === "\r" && csv[i + 1] === "
-") i += 1; row.push(cell); if (row.some((value) => value.trim())) rows.push(row); row = []; cell = ""; continue; }
+    if ((char === "\n" || char === "\r") && !quoted) { if (char === "\r" && csv[i + 1] === "\n") i += 1; row.push(cell); if (row.some((value) => value.trim())) rows.push(row); row = []; cell = ""; continue; }
     cell += char;
   }
   if (cell || row.length) { row.push(cell); if (row.some((value) => value.trim())) rows.push(row); }
