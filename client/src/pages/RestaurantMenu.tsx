@@ -153,7 +153,8 @@ export default function RestaurantMenu() {
   const [waiterTable, setWaiterTable] = useState("");
   const [waiterReason, setWaiterReason] = useState<"الحساب" | "الطلب" | "المساعدة" | "الفاتورة" | "أخرى">("المساعدة");
   const [waiterName, setWaiterName] = useState("");
-  const [installPrompt, setInstallPrompt] = useState<DeferredInstallPrompt | null>(null);\n  const [pageScrolled, setPageScrolled] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<DeferredInstallPrompt | null>(null);
+  const [pageScrolled, setPageScrolled] = useState(false);
 
   useEffect(() => {
     if (!restaurant) return;
