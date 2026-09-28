@@ -1,4 +1,4 @@
-import { Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, UtensilsCrossed } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -142,7 +142,7 @@ export default function LoginPage() {
           <div className="absolute -bottom-40 right-0 h-[28rem] w-[28rem] rounded-full bg-teal-500/10 blur-3xl" />
           <div className="relative">
             <button onClick={() => setLocation("/")} className="flex items-center gap-3 text-right">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500 text-xl font-black shadow-lg shadow-orange-950/30">N</span>
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-950/30"><UtensilsCrossed className="h-5 w-5" /></span>
               <span><strong className="block text-lg tracking-[.15em]">NFOOD</strong><small className="block text-[9px] font-bold tracking-[.2em] text-slate-400">RESTAURANT OPERATING SYSTEM</small></span>
             </button>
             <div className="mt-28 max-w-lg">
@@ -169,7 +169,7 @@ export default function LoginPage() {
             </div>
             <div className="mb-5 lg:hidden">
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500 text-xl font-black text-white">N</span>
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 text-white"><UtensilsCrossed className="h-5 w-5" /></span>
                 <strong className="text-lg tracking-[.15em]">NFOOD</strong>
               </div>
             </div>
@@ -206,7 +206,7 @@ export default function LoginPage() {
               <button type="submit" disabled={login.isPending} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 text-sm font-black text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:opacity-60">{login.isPending ? copy.signingIn : copy.signIn}</button>
             </form>}
             <div className="my-6 flex items-center gap-3"><span className="h-px flex-1 bg-slate-200" /><span className="text-[11px] text-slate-400">{copy.or}</span><span className="h-px flex-1 bg-slate-200" /></div>
-            <button onClick={() => { const params = new URLSearchParams(window.location.search); const next = params.get("next"); const returnTo = next?.startsWith("/") && !next.startsWith("//") ? next : `${window.location.pathname}${window.location.search}${window.location.hash}`; window.location.href = `/api/oauth/google/start?returnTo=${encodeURIComponent(returnTo)}`; }} className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white text-sm font-bold transition hover:border-blue-300 hover:shadow-md"><span className="grid h-6 w-6 place-items-center rounded-full border border-slate-200 font-black text-blue-600">G</span>{copy.oauth}</button>
+            <button onClick={() => { const params = new URLSearchParams(window.location.search); const next = params.get("next"); const returnTo = next?.startsWith("/") && !next.startsWith("//") ? next : `${window.location.pathname}${window.location.search}${window.location.hash}`; window.location.href = `/api/oauth/google/start?returnTo=${encodeURIComponent(returnTo)}`; }} className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white text-sm font-bold transition hover:border-blue-300 hover:shadow-md"><span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-full border border-slate-200 bg-white font-black text-[13px] text-[#4285F4]">G</span><span>{copy.oauth}</span></button>
             <button type="button" onClick={() => setLocation("/register")} className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 text-sm font-black text-orange-700 transition hover:bg-orange-100">{copy.createAccount}</button>
             <p className="mt-6 text-center text-[11px] leading-6 text-slate-400">{copy.legal}</p>
           </div>
