@@ -135,6 +135,14 @@ function CustomerAreaGuard({ children }: { children: ReactNode }) {
   if (loading || !user) return <PageLoading />;
   return <>{children}</>;
 }
+function PricingRoute() {
+  const [, navigate] = useLocation();
+  useEffect(() => {
+    navigate("/#plans", { replace: true });
+    window.setTimeout(() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }, [navigate]);
+  return <PageLoading />;
+}
 function CustomerRegisterRoute() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
@@ -168,6 +176,7 @@ function Router() {
       <Route path="/restaurant/account" component={RootRoute} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterScreen} />
+      <Route path="/pricing" component={PricingRoute} />
       <Route path="/customer-register" component={CustomerRegisterRoute} />
       <Route path="/admin/content-moderation" component={PlatformContentModeration} />
       <Route path="/restaurant/register" component={RegisterScreen} />
