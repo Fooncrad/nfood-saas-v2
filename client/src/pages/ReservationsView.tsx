@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarClock, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Trash2, UserRound, Users, type LucideIcon } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { installOrderAlertAudioUnlock, playOrderAlertSound } from "@/lib/orderAlertSound";
 
 type Props = { restaurantId: number; initialTable?: { id: number; branchId: number; name: string; seats: number } | null; onInitialTableConsumed?: () => void };
 const statuses = ["pending", "confirmed", "rejected", "seated", "completed", "cancelled", "no_show"] as const;
@@ -51,7 +52,8 @@ export function ReservationsView({ restaurantId, initialTable, onInitialTableCon
   const [editForm, setEditForm] = useState({ customerName: "", email: "", phone: "", partySize: "2", reservedFor: "", durationMinutes: "60" });
   const [filter, setFilter] = useState<Filter>("all");
   const [calendarDate, setCalendarDate] = useState(() => { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; });
-  const reservations = trpc.platform.reservations.useQuery({ restaurantId }, { retry: false });
+  const reservations = trpc.platform.reservations.useQuery({ restaurantId }, { retry: false, refetchInterval: 10_000 });
+  const previousReservationIds = useRef<Set<number> | null>(null);
   const branches = trpc.platform.branches.useQuery({ restaurantId }, { retry: false });
   const slots = trpc.platform.reservationSlotsForRestaurant.useQuery({ restaurantId, branchId: branchId ?? 0 }, { enabled: kind === "reservation" && Boolean(branchId), retry: false });
   useEffect(() => { const firstBranch = branches.data?.[0]; if (!branchId && firstBranch) setBranchId(firstBranch.id); if (branchId && branches.data && !branches.data.some((branch) => branch.id === branchId)) setBranchId(firstBranch?.id); }, [branchId, branches.data]);
@@ -61,6 +63,19 @@ export function ReservationsView({ restaurantId, initialTable, onInitialTableCon
   const update = trpc.platform.updateReservationStatus.useMutation({ onSuccess: () => { void utils.platform.reservations.invalidate(); toast.success("تم تحديث الحالة"); }, onError: (error) => toast.error(`تعذر تحديث الحجز: ${error.message}`) });
   const updateDetails = trpc.platform.updateReservationDetails.useMutation({ onSuccess: () => { void utils.platform.reservations.invalidate(); setEditingReservation(null); toast.success("تم تعديل بيانات الحجز"); }, onError: (error) => toast.error(`تعذر تعديل الحجز: ${error.message}`) });
   const deleteTest = trpc.platform.deleteTestReservation.useMutation({ onSuccess: () => { void utils.platform.reservations.invalidate(); toast.success("تم حذف الحجز الاختباري"); }, onError: (error) => toast.error(`تعذر حذف الحجز الاختباري: ${error.message}`) });
+  useEffect(() => installOrderAlertAudioUnlock(), []);
+  useEffect(() => {
+    if (!reservations.data) return;
+    const current = new Set(reservations.data.map((item) => item.id));
+    if (previousReservationIds.current) {
+      const added = reservations.data.find((item) => !previousReservationIds.current!.has(item.id));
+      if (added) {
+        void playOrderAlertSound({ volume: 0.7, tone: "new" });
+        toast.success(`حجز جديد: ${added.customerName} · ${added.partySize} ضيوف`);
+      }
+    }
+    previousReservationIds.current = current;
+  }, [reservations.data]);
   const allReservations = reservations.data ?? [];
   const filteredReservations = useMemo(() => filter === "all" ? allReservations : allReservations.filter((item) => item.status === filter), [allReservations, filter]);
   const stats = useMemo(() => ({ total: allReservations.length, confirmed: allReservations.filter((item) => item.status === "confirmed").length, seated: allReservations.filter((item) => item.status === "seated").length, pending: allReservations.filter((item) => item.status === "pending").length }), [allReservations]);
