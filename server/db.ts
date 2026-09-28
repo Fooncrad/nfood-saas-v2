@@ -69,7 +69,7 @@ export async function getEffectiveIntegrationSecret(restaurantId: number, provid
   const db = await getDb(); if (!db) return null;
   const restaurant = (await db.select({ integrationMode: restaurants.integrationMode, plan: restaurants.plan }).from(restaurants).where(eq(restaurants.id, restaurantId)).limit(1))[0];
   if (!restaurant) return null;
-  const paidProvider = ["otp_sms", "tamara", "stc_pay", "whatsapp_business", "smtp", "google_maps"].includes(providerKey);
+  const paidProvider = ["otp_sms", "tamara", "stc_pay", "whatsapp_business", "smtp", "google_maps", "pusher"].includes(providerKey);
   const eligible = !paidProvider || !["free", "starter"].includes(String(restaurant.plan ?? "Free").toLowerCase());
   if (!eligible) return null;
   const scope = restaurant.integrationMode === "custom" ? "restaurant" : "platform";
