@@ -123,7 +123,94 @@ export default function Home() {
   const [pushSetupPrompt, setPushSetupPrompt] = useState(false);
   const pushSubscribe = trpc.notifications.pushSubscribe.useMutation();
   const pushConfigQuery = trpc.notifications.pushConfig.useQuery(undefined, { enabled: Boolean(user), retry: false });
-  const enablePush = async () => { if (typeof Notification === "undefined" || !("serviceWorker" in navigator)) { toast.error("المتصفح الحالي لا يدعم إشعارات Push"); return; } const permission = await Notification.requestPermission(); setPushStatus(permission); if (permission !== "granted") { toast.info(permission === "denied" ? "إشعارات المطعم مفعلة من المنصة، لكن هذا المتصفح حظر الإشعارات. اسمح بها من إعدادات الموقع ثم اضغط ربط الجهاز." : "إشعارات المطعم مفعلة من المنصة. اسمح لهذا الجهاز باستقبال التنبيهات لإكمال الربط."); return; } try { const publicKey = pushConfigQuery.data?.publicKey; if (!publicKey) { toast.error("إعدادات Web Push غير مكتملة على الخادم"); return; } const registration = await navigator.serviceWorker.ready; let subscription = await registration.pushManager.getSubscription(); if (!subscription) { const padding = "=".repeat((4 - publicKey.length % 4) % 4); const base64 = (publicKey + padding).replace(/-/g, "+").replace(/_/g, "/"); const raw = window.atob(base64); const applicationServerKey = Uint8Array.from([...raw].map(char => char.charCodeAt(0))); subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey }); } const json = subscription.toJSON(); if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth) throw new Error("invalid_push_subscription"); await pushSubscribe.mutateAsync({ endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth }, userAgent: navigator.userAgent }); toast.success("تم ربط هذا الجهاز بإشعارات الطلبات"); } catch { toast.error("تعذر إنشاء أو حفظ اشتراك الإشعارات"); } };
+  const enablePush = async () => {
+    if (typeof Notification === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      toast.error("المتصفح الحالي لا يدعم إشعارات Push");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setPushStatus(permission);
+    if (permission !== "granted") {
+      toast.info(permission === "denied"
+        ? "المتصفح حظر الإشعارات. اسمح بها من إعدادات الموقع ثم اضغط ربط الجهاز."
+        : "اسمح لهذا الجهاز باستقبال التنبيهات لإكمال الربط.");
+      return;
+    }
+
+    const publicKey = pushConfigQuery.data?.publicKey?.trim();
+    if (!publicKey) {
+      toast.error("إعدادات Web Push غير مكتملة على الخادم");
+      return;
+    }
+
+    let registration: ServiceWorkerRegistration;
+    try {
+      registration = await navigator.serviceWorker.ready;
+    } catch (error) {
+      console.error("[Push] service worker not ready", error);
+      toast.error("تعذر تجهيز Service Worker للإشعارات");
+      return;
+    }
+
+    let applicationServerKey: Uint8Array;
+    try {
+      const padding = "=".repeat((4 - publicKey.length % 4) % 4);
+      const base64 = (publicKey + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const raw = window.atob(base64);
+      applicationServerKey = Uint8Array.from([...raw].map(char => char.charCodeAt(0)));
+      if (applicationServerKey.byteLength !== 65) throw new Error("invalid_vapid_public_key_length");
+    } catch (error) {
+      console.error("[Push] invalid VAPID public key", error);
+      toast.error("مفتاح Web Push العام غير صالح — تحقق من WEB_PUSH_PUBLIC_KEY ثم أعد تشغيل التطبيق");
+      return;
+    }
+
+    let subscription: PushSubscription;
+    try {
+      const existing = await registration.pushManager.getSubscription();
+      if (existing) {
+        const existingKey = existing.options.applicationServerKey
+          ? new Uint8Array(existing.options.applicationServerKey)
+          : null;
+        const sameKey = existingKey
+          && existingKey.length === applicationServerKey.length
+          && existingKey.every((value, index) => value === applicationServerKey[index]);
+        if (!sameKey) {
+          await existing.unsubscribe();
+          subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+        } else {
+          subscription = existing;
+        }
+      } else {
+        subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+      }
+    } catch (error) {
+      console.error("[Push] browser subscription failed", error);
+      const detail = error instanceof Error ? error.message : "";
+      toast.error(`تعذر إنشاء اشتراك المتصفح${detail ? `: ${detail}` : ""}`);
+      return;
+    }
+
+    const json = subscription.toJSON();
+    if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth) {
+      console.error("[Push] subscription payload is incomplete");
+      toast.error("تم إنشاء الاشتراك لكن بياناته غير مكتملة");
+      return;
+    }
+
+    try {
+      await pushSubscribe.mutateAsync({
+        endpoint: json.endpoint,
+        keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+        userAgent: navigator.userAgent,
+      });
+      toast.success("تم ربط هذا الجهاز بإشعارات الطلبات");
+    } catch (error) {
+      console.error("[Push] server save failed", error);
+      const detail = error instanceof Error ? error.message : "";
+      toast.error(`تم إنشاء اشتراك المتصفح لكن تعذر حفظه على الخادم${detail ? `: ${detail}` : ""}`);
+    }
+  };
   useEffect(() => { if (typeof window === "undefined" || !user) return; const params = new URLSearchParams(window.location.search); if (params.get("setupPush") !== "1") return; setPushSetupPrompt(true); params.delete("setupPush"); const query = params.toString(); window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`); }, [user?.id]);
   useEffect(() => { const capture = (event: Event) => { event.preventDefault(); setInstallPrompt(event as InstallPromptEvent); }; const installed = () => { setPwaInstalled(true); setInstallPrompt(null); toast.success("تم تثبيت تطبيق NFOOD"); }; window.addEventListener("beforeinstallprompt", capture); window.addEventListener("appinstalled", installed); return () => { window.removeEventListener("beforeinstallprompt", capture); window.removeEventListener("appinstalled", installed); }; }, []);
   useEffect(() => {
