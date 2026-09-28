@@ -3585,7 +3585,7 @@ async function getPublicRestaurantPage(slug) {
   const categories = await db.select({ id: menuCategories.id, name: menuCategories.name, imageUrl: menuCategories.imageUrl, translationsJson: menuCategories.translationsJson, sortOrder: menuCategories.sortOrder }).from(menuCategories).where(and2(eq2(menuCategories.restaurantId, restaurant.id), eq2(menuCategories.isVisible, true)));
   const items = await db.select({ id: menuItems.id, categoryId: menuItems.categoryId, name: menuItems.name, description: menuItems.description, price: menuItems.price, compareAtPrice: menuItems.compareAtPrice, imageUrl: menuItems.imageUrl, additionalImagesJson: menuItems.additionalImagesJson, translationsJson: menuItems.translationsJson, tagsJson: menuItems.tagsJson, prepTimeMinutes: menuItems.prepTimeMinutes, calories: menuItems.calories }).from(menuItems).where(and2(eq2(menuItems.restaurantId, restaurant.id), eq2(menuItems.isAvailable, true)));
   const publicAddons = await db.select({ id: menuItemAddons.id, menuItemId: menuItemAddons.menuItemId, name: menuItemAddons.name, price: menuItemAddons.price, isAvailable: menuItemAddons.isAvailable, imageUrl: menuItemAddons.imageUrl, translationsJson: menuItemAddons.translationsJson }).from(menuItemAddons).where(and2(eq2(menuItemAddons.restaurantId, restaurant.id), eq2(menuItemAddons.isAvailable, true)));
-  const branchList = await db.select({ id: branches.id, name: branches.name, city: branches.city, latitude: branches.latitude, longitude: branches.longitude, openingTime: branches.openingTime, closingTime: branches.closingTime, operatingWindowsJson: branches.operatingWindowsJson }).from(branches).where(and2(eq2(branches.restaurantId, restaurant.id), eq2(branches.status, "open")));
+  const branchList = await db.select({ id: branches.id, name: branches.name, city: branches.city, latitude: branches.latitude, longitude: branches.longitude, status: branches.status, openingTime: branches.openingTime, closingTime: branches.closingTime, operatingWindowsJson: branches.operatingWindowsJson }).from(branches).where(and2(eq2(branches.restaurantId, restaurant.id), eq2(branches.status, "open")));
   const owner = (await db.select({ email: users.email }).from(restaurantMembers).innerJoin(users, eq2(restaurantMembers.userId, users.id)).where(eq2(restaurantMembers.restaurantId, restaurant.id)).limit(1))[0];
   const availableTables = await db.select({ id: restaurantTables.id, branchId: restaurantTables.branchId, name: restaurantTables.name, seats: restaurantTables.seats, seatingSectionId: restaurantTables.seatingSectionId }).from(restaurantTables).innerJoin(branches, eq2(restaurantTables.branchId, branches.id)).where(and2(eq2(restaurantTables.status, "available"), eq2(branches.restaurantId, restaurant.id)));
   const serviceTables = await db.select({ id: restaurantTables.id, branchId: restaurantTables.branchId, name: restaurantTables.name, status: restaurantTables.status, seats: restaurantTables.seats }).from(restaurantTables).innerJoin(branches, eq2(restaurantTables.branchId, branches.id)).where(and2(eq2(branches.restaurantId, restaurant.id), ne(restaurantTables.status, "available")));
@@ -4747,6 +4747,39 @@ async function updateCustomerCardRequest(id, input) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
   await db.update(customerCardRequests).set({ status: input.status, adminNote: input.adminNote, price: input.price, resolvedByUserId: input.resolvedByUserId, bindingId: input.bindingId, resolvedAt: input.status && input.status !== "pending" ? /* @__PURE__ */ new Date() : void 0, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(customerCardRequests.id, id));
+}
+async function provisionNasserTestCatalog(restaurantId) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const categories = await db.select({ id: menuCategories.id, name: menuCategories.name }).from(menuCategories).where(eq2(menuCategories.restaurantId, restaurantId));
+  const imageByCategory = (name) => {
+    if (/قهوة|ساخنة|فطور/.test(name)) return "/manus-storage/nasser-test-coffee_5c37e7a4.jpg";
+    if (/حلويات|آيس كريم/.test(name)) return "/manus-storage/nasser-test-dessert_e51857b9.jpg";
+    if (/بيتزا/.test(name)) return "/manus-storage/nasser-test-pizza_6cc1f31f.jpg";
+    if (/سلطات|ورق عنب|مقبلات|عصائر|مشروبات باردة/.test(name)) return "/manus-storage/nasser-test-salad_74a069b2.jpg";
+    return "/manus-storage/nasser-test-burger_881b5d4f.jpg";
+  };
+  let created = 0;
+  let updated = 0;
+  for (const category of categories) {
+    for (let index2 = 1; index2 <= 10; index2 += 1) {
+      const name = `${category.name} \u0627\u062E\u062A\u0628\u0627\u0631 ${String(index2).padStart(2, "0")}`;
+      const existing = (await db.select({ id: menuItems.id }).from(menuItems).where(and2(eq2(menuItems.restaurantId, restaurantId), eq2(menuItems.categoryId, category.id), eq2(menuItems.name, name))).limit(1))[0];
+      const imageUrl = imageByCategory(category.name);
+      const price = (18 + index2 * 3 + Number(category.id) % 7).toFixed(2);
+      const compareAtPrice = (Number(price) + 8).toFixed(2);
+      const translationsJson = JSON.stringify({ en: { name: `${category.name} Test ${String(index2).padStart(2, "0")}`, description: "Test menu item for NFOOD delivery and menu layout testing." }, fr: { name: `${category.name} Test ${String(index2).padStart(2, "0")}`, description: "Article de test pour v\xE9rifier le menu et la livraison NFOOD." } });
+      const values = { restaurantId, categoryId: category.id, name, description: `\u0635\u0646\u0641 \u0627\u062E\u062A\u0628\u0627\u0631 \u0631\u0642\u0645 ${index2} \u0645\u0646 \u0642\u0633\u0645 ${category.name} \u0644\u0627\u062E\u062A\u0628\u0627\u0631 \u0627\u0644\u0635\u0648\u0631\u0629 \u0648\u0627\u0644\u0633\u0639\u0631 \u0648\u0627\u0644\u0633\u0644\u0629 \u0648\u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644.`, price, compareAtPrice, imageUrl, translationsJson, tagsJson: JSON.stringify(["\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u062E\u062A\u0628\u0627\u0631", "NFOOD"]), isAvailable: true, prepTimeMinutes: 10 + index2 % 6, calories: 250 + index2 * 35 };
+      if (existing) {
+        await db.update(menuItems).set(values).where(eq2(menuItems.id, existing.id));
+        updated += 1;
+      } else {
+        await db.insert(menuItems).values(values);
+        created += 1;
+      }
+    }
+  }
+  return { restaurantId, categoryCount: categories.length, created, updated, total: categories.length * 10 };
 }
 
 // server/_core/cookies.ts
@@ -11564,6 +11597,12 @@ var appRouter = router({
         await db.update(menuCategories).set({ sortOrder: index2 + 1 }).where(eq7(menuCategories.id, category.id));
       }
       return { success: true, id: input.id };
+    }),
+    provisionNasserMenuTestData: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      assertRestaurantAccess(ctx, input.restaurantId);
+      const restaurant = await getRestaurantById(input.restaurantId);
+      if (!restaurant || restaurant.slug?.toLowerCase() !== "nasser") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0647\u0630\u0647 \u0627\u0644\u0623\u062F\u0627\u0629 \u0627\u0644\u062A\u062C\u0631\u064A\u0628\u064A\u0629 \u0645\u062A\u0627\u062D\u0629 \u0644\u0645\u0637\u0639\u0645 nasser \u0641\u0642\u0637" });
+      return provisionNasserTestCatalog(input.restaurantId);
     }),
     menuItems: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive().optional(), categoryId: z3.number().int().positive().optional() }).optional()).query(({ ctx, input }) => {
       assertNotDriver(ctx);
