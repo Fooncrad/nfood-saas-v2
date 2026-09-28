@@ -86,6 +86,13 @@ const platformFieldMap: Record<string, { key: string; label: string; placeholder
     { key: "replyTo", label: "Reply-To", placeholder: "support@example.com" }, { key: "secure", label: "التشفير", placeholder: "TLS", type: "select", options: [{value:"tls",label:"TLS / STARTTLS"},{value:"ssl",label:"SSL"}] },
   ],
   "Google OAuth": [{key:"clientId",label:"Google Client ID",placeholder:"...apps.googleusercontent.com"},{key:"clientSecret",label:"Google Client Secret",placeholder:"سر OAuth",secret:true},{key:"redirectUri",label:"Redirect URI",placeholder:"https://.../api/oauth/callback"}],
+  Pusher: [
+    { key: "appId", label: "App ID", placeholder: "2057347" },
+    { key: "authKey", label: "Auth Key", placeholder: "Pusher Auth Key" },
+    { key: "secret", label: "Secret", placeholder: "Pusher Secret", secret: true },
+    { key: "cluster", label: "Cluster", placeholder: "ap2" },
+    { key: "developmentMode", label: "Development Mode", placeholder: "false", type: "select", options: [{value:"false",label:"Production"},{value:"true",label:"Development"}] },
+  ],
 };
 
 function IntegrationCard({
