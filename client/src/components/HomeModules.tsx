@@ -3362,11 +3362,9 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       />
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold">نقطة البيع POS</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            أنشئ طلباً جديداً واختر القناة والطاولة ووسيلة الدفع؛ تُحفظ حالة
-            الدفع غير مدفوعة حتى تأكيد مزود خارجي.
-          </p>
+          <p className="text-xs font-black text-orange-500">مساحة الكاشير</p>
+          <h2 className="mt-1 text-xl font-black">إنشاء طلب من نقطة البيع</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500">1. اختر قناة الطلب والأصناف. 2. راجع السلة وبيانات الخدمة. 3. اختر الدفع ثم أرسل الطلب إلى أقسام التشغيل.</p>
         </div>
         <Badge
           className={`rounded-lg ${isOnline ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-50" : "bg-amber-50 text-amber-700 hover:bg-amber-50"}`}
@@ -3389,12 +3387,12 @@ function PosView({ restaurantId }: { restaurantId: number }) {
         <Card className="flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:max-h-[calc(100vh-156px)] xl:overflow-hidden">
           <CardHeader className="shrink-0 border-b border-slate-100 px-5 py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <CardTitle className="text-base">الأصناف المتاحة</CardTitle>
+              <div><CardTitle className="text-base">1. اختر الأصناف</CardTitle><p className="mt-1 text-[11px] text-slate-500">ابحث أو استخدم الفئات، ثم اضغط على الصنف لإضافته للسلة.</p></div>
               <div className="flex flex-wrap items-center gap-2">
                 <Input
                   value={productSearch}
                   onChange={event => setProductSearch(event.target.value)}
-                  placeholder="ابحث عن صنف..."
+                  placeholder="ابحث باسم الصنف..."
                   aria-label="البحث عن صنف"
                   className="h-9 w-44 rounded-xl bg-slate-50 text-xs"
                 />
@@ -3457,11 +3455,11 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                 <button
                   key={product.name}
                   onClick={() => add(product)}
-                  className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5 text-right transition hover:border-orange-200 hover:bg-orange-50/40 sm:rounded-2xl sm:p-4"
+                  className="group rounded-xl border border-slate-200 bg-white p-2.5 text-right shadow-sm transition hover:border-orange-300 hover:bg-orange-50/50 sm:rounded-2xl sm:p-4"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xl">🍽</span>
-                    <Plus className="h-4 w-4 text-[#e76f3c]" />
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-orange-50 px-2 py-1 text-[10px] font-black text-[#e76f3c]"><Plus className="h-3.5 w-3.5" />إضافة</span>
                   </div>
                   <p className="mt-4 text-sm font-bold">{product.name}</p>
                   <p className="mt-1 text-xs text-slate-500">
@@ -3475,7 +3473,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
         <Card className="flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:max-h-[calc(100vh-156px)] xl:overflow-hidden" data-pos-order-card>
           <CardHeader className="shrink-0 border-b border-slate-100 px-5 py-4">
             <CardTitle className="flex items-center justify-between text-base">
-              الطلب الحالي
+              <span>2. راجع الطلب والدفع</span>
               <span className="text-xs font-normal text-slate-400">
                 {channel}
               </span>
@@ -3643,13 +3641,13 @@ function PosView({ restaurantId }: { restaurantId: number }) {
             </div>
             <div className="sticky bottom-0 z-10 border-t border-slate-100 bg-white/95 pt-4 backdrop-blur">
               <div className="mb-3 flex justify-between text-sm">
-                <span className="text-slate-500">الإجمالي</span>
-                <strong className="text-lg">{money(total)}</strong>
+                <span className="font-bold text-slate-600">إجمالي الطلب</span>
+                <strong className="text-xl font-black text-slate-950">{money(total)}</strong>
               </div>
               <Button
                 disabled={!cart.length || !branchId || createOrder.isPending || remoteKitchenSections.isLoading || (enabledKitchenSections.length > 0 && selectedRoutingSectionIds.length === 0)}
                 onClick={submitOrder}
-                aria-label="إرسال الطلب إلى الأقسام المحددة"
+                aria-label="تأكيد الطلب وإرساله إلى أقسام التشغيل"
                 data-pos-submit-order
                 className="w-full rounded-xl bg-[#e76f3c] py-5 hover:bg-[#d85f2e]"
               >
@@ -3661,7 +3659,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                       ? "جارٍ حفظ الطلب..."
                       : enabledKitchenSections.length > 0 && selectedRoutingSectionIds.length === 0
                         ? "حدد أقسام الإرسال أولًا"
-                        : "إرسال الطلب للأقسام المحددة"}
+                        : "تأكيد الطلب وإرساله للتشغيل"}
               </Button>
             </div>
           </CardContent>
