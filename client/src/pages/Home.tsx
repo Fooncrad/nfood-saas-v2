@@ -153,12 +153,13 @@ export default function Home() {
       return;
     }
 
-    let applicationServerKey: Uint8Array;
+    let applicationServerKey: ArrayBuffer;
     try {
       const padding = "=".repeat((4 - publicKey.length % 4) % 4);
       const base64 = (publicKey + padding).replace(/-/g, "+").replace(/_/g, "/");
       const raw = window.atob(base64);
-      applicationServerKey = Uint8Array.from([...raw].map(char => char.charCodeAt(0)));
+      const bytes = Uint8Array.from(Array.from(raw, char => char.charCodeAt(0)));
+      applicationServerKey = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
       if (applicationServerKey.byteLength !== 65) throw new Error("invalid_vapid_public_key_length");
     } catch (error) {
       console.error("[Push] invalid VAPID public key", error);
