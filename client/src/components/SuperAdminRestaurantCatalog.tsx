@@ -256,7 +256,7 @@ export function SuperAdminRestaurantCatalog() {
               إدارة الباقة والحزم
             </DialogTitle>
             <DialogDescription>
-              مركز تكوين المنشأة: قارن الباقة والحزم والحدود قبل التطبيق. أي تغيير في الاستحقاقات ينعكس على الأدوات المتاحة للمنشأة.
+              اختر الباقة الجديدة، راجع السعر والمميزات الفعلية، ثم طبّق الترقية مباشرة على المنشأة.
             </DialogDescription>
           </DialogHeader>
           {planEditor && (
@@ -331,12 +331,12 @@ export function SuperAdminRestaurantCatalog() {
                 if (planEditor && selectedPlan)
                   updateRestaurant.mutate({
                     id: planEditor.id,
-                    plan: selectedPlan.name,
+                    plan: selectedPlan.key,
                   });
               }}
               className="rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]"
             >
-              {updateRestaurant.isPending ? "جارٍ الحفظ..." : "تطبيق تغيير الباقة"}
+              {updateRestaurant.isPending ? "جارٍ تطبيق الترقية..." : "ترقية المطعم وتفعيل المميزات"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -836,10 +836,10 @@ export function SuperAdminRestaurantCatalog() {
                           setPlanDraft(current?.key ?? planOptionsForEditor[0]?.key ?? "");
                           setPlanEditor({ id: restaurant.id, name: restaurant.name, currentPlan: restaurant.plan ?? "" });
                         }}
-                        className="h-9 max-w-full gap-1 rounded-xl border-orange-200 px-3 text-[10px] font-black text-[#c75325] hover:bg-orange-50 dark:border-orange-500/30 dark:text-orange-300"
+                        className="h-10 max-w-full gap-1.5 rounded-xl border-orange-500 bg-orange-500 px-4 text-[11px] font-black text-white shadow-sm hover:bg-orange-600 dark:border-orange-500 dark:bg-orange-500 dark:text-white dark:hover:bg-orange-600"
                         data-testid={`restaurant-plan-${restaurant.id}`}
                       >
-                        {ui.editPlan}
+                        ترقية / تغيير الباقة
                       </Button>
                       <Button
                         type="button"
