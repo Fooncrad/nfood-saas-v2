@@ -556,7 +556,7 @@ export default function RestaurantMenu() {
       </> : <div className={`rounded-[26px] border border-dashed p-12 text-center ${surface}`}><Search className="mx-auto h-10 w-10 opacity-20" /><p className="mt-3 font-bold">{copy.empty}</p></div>}
     </section>
 
-    {itemCount > 0 && <button onClick={() => setCartOpen(true)} className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[min(92vw,430px)] -translate-x-1/2 items-center justify-between rounded-2xl border border-white/20 px-5 py-3.5 text-white shadow-2xl backdrop-blur-md" style={{ background:primary }}><span className="flex items-center gap-2 font-black"><ShoppingBag className="h-5 w-5" />{copy.cart} · {itemCount}</span><span className="font-black">{formatMoney(subtotal, currency)}</span></button>}
+    {itemCount > 0 && <button onClick={() => setCartOpen(true)} className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[min(92vw,430px)] -translate-x-1/2 items-center justify-between rounded-2xl border border-white/20 px-5 py-3.5 text-white shadow-2xl backdrop-blur-md sm:hidden" style={{ background:primary }}><span className="flex items-center gap-2 font-black"><ShoppingBag className="h-5 w-5" />{copy.cart} · {itemCount}</span><span className="font-black">{formatMoney(subtotal, currency)}</span></button>}
 
     <footer className="bg-[#06101b] px-4 py-8 text-slate-300">
       <div className="mx-auto grid max-w-7xl gap-7 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr]">
