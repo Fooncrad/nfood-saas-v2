@@ -131,7 +131,7 @@ export function SuperAdminRestaurantCatalog() {
     onError: error => toast.error(`تعذر تحديث الإشعارات: ${error.message}`),
   });
   const testNotification = trpc.admin.testRestaurantOrderNotification.useMutation({
-    onSuccess: data => toast.success(`تم إرسال الاختبار إلى ${data.recipients} مستلم · وصل إلى ${data.delivered}`),
+    onSuccess: data => toast.success(`تم حفظ ${data.textDelivered} إشعار نصي · Push وصل إلى ${data.pushDelivered} جهاز`),
     onError: error => toast.error(`فشل اختبار الإشعار: ${error.message}`),
   });
   const updateMarketplacePresentation = trpc.marketplace.adminUpdateRestaurantMarketplacePresentation.useMutation({
