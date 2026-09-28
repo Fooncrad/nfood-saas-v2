@@ -188,7 +188,7 @@ export async function listCustomerReservations(customerId: number, limit = 100) 
   const db = await getDb();
   if (!db) return [];
   const safeLimit = Math.min(Math.max(limit, 1), 100);
-  const rows = await db.select({
+  return db.select({
     id: reservations.id,
     customerId: reservations.customerId,
     restaurantId: reservations.restaurantId,
@@ -220,30 +220,6 @@ export async function listCustomerReservations(customerId: number, limit = 100) 
     .where(eq(reservations.customerId, customerId))
     .orderBy(desc(reservations.reservedFor))
     .limit(safeLimit);
-  if (!rows.length) return [];
-  const tokens = await db.select({ token: qrCodes.token, targetUrl: qrCodes.targetUrl, label: qrCodes.label })
-    .from(qrCodes)
-    .where(and(eq(qrCodes.type, "custom"), eq(qrCodes.purpose, "reservation_confirmation"), eq(qrCodes.status, "active")));
-  const tokenByReservation = new Map<number, { token: string; targetUrl: string | null }>();
-  for (const item of tokens) {
-    const match = item.label.match(/^reservation:(\d+)$/);
-    if (match) tokenByReservation.set(Number(match[1]), { token: item.token, targetUrl: item.targetUrl });
-  }
-  return rows.map((row) => ({ ...row, reservationQrToken: tokenByReservation.get(row.id)?.token ?? null, reservationQrTargetUrl: tokenByReservation.get(row.id)?.targetUrl ?? null }));
-}
-
-export async function ensureReservationQrCode(input: { reservationId: number; customerId: number }) {
-  const db = await getDb();
-  if (!db) throw new Error("Database is not available");
-  const reservation = (await db.select({ id: reservations.id, restaurantId: reservations.restaurantId, branchId: reservations.branchId, customerId: reservations.customerId, status: reservations.status }).from(reservations).where(and(eq(reservations.id, input.reservationId), eq(reservations.customerId, input.customerId))).limit(1))[0];
-  if (!reservation || !reservation.branchId || !["confirmed", "seated"].includes(reservation.status)) return null;
-  const label = `reservation:${reservation.id}`;
-  const existing = (await db.select({ token: qrCodes.token, targetUrl: qrCodes.targetUrl }).from(qrCodes).where(and(eq(qrCodes.restaurantId, reservation.restaurantId), eq(qrCodes.branchId, reservation.branchId), eq(qrCodes.type, "custom"), eq(qrCodes.purpose, "reservation_confirmation"), eq(qrCodes.label, label), eq(qrCodes.status, "active"))).limit(1))[0];
-  if (existing) return existing;
-  const token = `res_${nanoid(32)}`;
-  const targetUrl = `/customer-reservations?reservation=${reservation.id}`;
-  await db.insert(qrCodes).values({ restaurantId: reservation.restaurantId, branchId: reservation.branchId, type: "custom", purpose: "reservation_confirmation", token, label, targetUrl, status: "active", createdByUserId: input.customerId });
-  return { token, targetUrl };
 }
 
 export async function cancelCustomerReservation(id: number, customerId: number) {
@@ -314,7 +290,7 @@ export async function listCustomerOrders(customerId: number, limit = 100) {
     current.push(item);
     itemsByOrder.set(item.orderId, current);
   }
-  return rows.map((row) => ({ ...row, orderQrToken: row.status === "ready" ? row.orderQrToken : null, orderQrAvailable: row.status === "ready" && Boolean(row.orderQrToken), items: itemsByOrder.get(row.id) ?? [] }));
+  return rows.map((row) => ({ ...row, items: itemsByOrder.get(row.id) ?? [] }));
 }
 export async function listFavoriteRestaurants(userId: number) { const db = await getDb(); if (!db) return []; return db.select({ id: favoriteRestaurants.id, restaurantId: favoriteRestaurants.restaurantId, name: restaurants.name, brandName: restaurants.brandName, brandColor: restaurants.brandColor, brandLogoUrl: restaurants.brandLogoUrl, city: restaurants.city, address: restaurants.address, phone: restaurants.phone, reservationEnabled: restaurants.reservationEnabled, createdAt: favoriteRestaurants.createdAt }).from(favoriteRestaurants).innerJoin(restaurants, eq(favoriteRestaurants.restaurantId, restaurants.id)).where(and(eq(favoriteRestaurants.userId, userId), ne(restaurants.status, "suspended"))).orderBy(desc(favoriteRestaurants.createdAt)); }
 export async function toggleFavoriteRestaurant(input: { userId: number; restaurantId: number }) { const db = await getDb(); if (!db) throw new Error("Database is not available"); const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and(eq(restaurants.id, input.restaurantId), ne(restaurants.status, "suspended"))).limit(1))[0]; if (!restaurant) throw new Error("المطعم غير متاح حاليًا"); const existing = (await db.select({ id: favoriteRestaurants.id }).from(favoriteRestaurants).where(and(eq(favoriteRestaurants.userId, input.userId), eq(favoriteRestaurants.restaurantId, input.restaurantId))).limit(1))[0]; if (existing) { await db.delete(favoriteRestaurants).where(eq(favoriteRestaurants.id, existing.id)); return { favorite: false }; } await db.insert(favoriteRestaurants).values(input); return { favorite: true }; }
