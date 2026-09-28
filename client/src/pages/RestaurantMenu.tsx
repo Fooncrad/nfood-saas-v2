@@ -469,14 +469,14 @@ export default function RestaurantMenu() {
       </div>
     </header>
 
-    <section className="relative h-[170px] max-h-[170px] overflow-hidden bg-[#071525] text-white sm:h-[190px] sm:max-h-[190px] md:h-[230px] md:max-h-[230px] lg:h-[260px] lg:max-h-[260px]">
+    <section className="relative h-[140px] max-h-[140px] overflow-hidden bg-[#071525] text-white sm:h-[165px] sm:max-h-[165px] md:h-[200px] md:max-h-[200px] lg:h-[220px] lg:max-h-[220px]">
       <div className="mx-auto h-full max-w-7xl">
         <div className="relative h-full overflow-hidden">
           {restaurant.coverUrl
             ? <img src={restaurant.coverUrl} alt={restaurant.brandName || restaurant.name} className="absolute inset-0 h-full w-full object-cover" />
             : <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d35] via-[#12345a] to-[#071525]" />}
           <div className="absolute inset-0 bg-gradient-to-t from-[#071525]/55 via-transparent to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:p-6">
+          <button type="button" onClick={() => document.getElementById("menu-grid")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="absolute bottom-3 start-1/2 z-10 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full border border-white/30 bg-[#071525]/70 text-white shadow-lg backdrop-blur transition hover:scale-105 hover:bg-[#071525]/90" aria-label={lang === "ar" ? "انتقل إلى قائمة الطعام" : "Go to menu"}><ChevronDown className="h-5 w-5" /></button>\n          <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:p-6">
             <div className="min-w-0">
               <h2 className="truncate text-2xl font-black sm:text-4xl">{restaurant.brandName || restaurant.name}</h2>
               {restaurant.city && <p className="mt-1 flex items-center gap-1 text-xs font-bold text-slate-200"><MapPin className="h-3.5 w-3.5" />{restaurant.city}</p>}
@@ -515,7 +515,7 @@ export default function RestaurantMenu() {
             const description = localize(item.translationsJson, item.description || "", lang, "description");
             const discounted = item.compareAtPrice && Number(item.compareAtPrice) > Number(item.price);
             return <button key={item.id} onClick={() => openProduct(item.id)} className={`group min-w-0 overflow-hidden rounded-[22px] border text-start shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${surface}`}>
-              <div className="relative aspect-[4/3] overflow-hidden bg-slate-200/10">{item.imageUrl ? <img src={item.imageUrl} alt={name} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><Utensils className="h-9 w-9 opacity-20" /></div>}{item.calories ? <span className="absolute end-2 top-2 rounded-full bg-[#071525]/85 px-2 py-1 text-[9px] font-black text-white">{copy.calories} · {item.calories} kcal</span> : null}</div>
+              <div className="relative aspect-[4/3] overflow-hidden bg-slate-200/10">{item.imageUrl ? <img src={item.imageUrl} alt={name} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><Utensils className="h-9 w-9 opacity-20" /></div>}</div>
               <div className="min-w-0 p-3 sm:p-4"><h3 className="line-clamp-2 text-[13px] font-black leading-5 sm:text-sm">{name}</h3>{description && <p className={`mt-1 line-clamp-2 text-[11px] leading-5 ${muted}`}>{description}</p>}<div className="mt-3 flex flex-wrap items-baseline gap-1.5"><span className="text-base font-black">{formatMoney(item.price, currency)}</span>{discounted && <span className={`text-[10px] line-through ${muted}`}>{formatMoney(item.compareAtPrice!, currency)}</span>}</div><span className="mt-3 inline-flex rounded-xl px-3 py-2 text-[10px] font-black text-white" style={{ background:primary }}>{copy.add}</span>{item.prepTimeMinutes ? <p className={`mt-2 flex items-center gap-1 text-[10px] ${muted}`}><Clock3 className="h-3 w-3" />{item.prepTimeMinutes} {copy.prep}</p> : null}</div>
             </button>;
           })}
