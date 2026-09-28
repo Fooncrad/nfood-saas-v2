@@ -1141,8 +1141,12 @@ export const appRouter = router({
     }),
     setRestaurantNotificationControl: adminProcedure.input(z.object({ restaurantId: z.number().int().positive(), enabled: z.boolean() })).mutation(async ({ ctx, input }) => {
       const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const definition = (await db.select({ id: featureDefinitions.id }).from(featureDefinitions).where(eq(featureDefinitions.key, "notifications.order_push")).limit(1))[0];
-      if (!definition) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "ميزة إشعارات الطلبات غير مثبتة. شغّل migrations أولًا." });
+      let definition = (await db.select({ id: featureDefinitions.id }).from(featureDefinitions).where(eq(featureDefinitions.key, "notifications.order_push")).limit(1))[0];
+      if (!definition) {
+        await db.insert(featureDefinitions).values({ key: "notifications.order_push", label: "إشعارات الطلبات للمطعم", description: "إشعار فوري وصوتي عند وصول طلب جديد، مع تحكم Super Admin لكل مطعم.", dependencyKey: null, defaultLimit: null, isAddOn: false, addonPrice: null });
+        definition = (await db.select({ id: featureDefinitions.id }).from(featureDefinitions).where(eq(featureDefinitions.key, "notifications.order_push")).limit(1))[0];
+      }
+      if (!definition) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "تعذر تهيئة ميزة إشعارات الطلبات" });
       const existing = (await db.select({ id: restaurantFeatures.id }).from(restaurantFeatures).where(and(eq(restaurantFeatures.restaurantId, input.restaurantId), eq(restaurantFeatures.featureId, definition.id))).limit(1))[0];
       if (existing) await db.update(restaurantFeatures).set({ enabled: input.enabled }).where(eq(restaurantFeatures.id, existing.id));
       else await db.insert(restaurantFeatures).values({ restaurantId: input.restaurantId, featureId: definition.id, enabled: input.enabled });
