@@ -63,21 +63,21 @@ export default function CustomerPortal() {
     library:"مكتبتي", studio:"الاستوديو", rewards:"المكافآت", profile:"الملف والإعدادات",
     marketplace:"استكشف السوق", recentOrders:"آخر الطلبات", recentReservations:"آخر الحجوزات",
     emptyOrders:"لا توجد طلبات بعد.", emptyReservations:"لا توجد حجوزات بعد.",
-    open:"فتح", logout:"تسجيل الخروج", balance:"الرصيد", restaurants:"مطاعمي المفضلة",
+    open:"عرض التفاصيل", logout:"تسجيل الخروج", balance:"رصيد المحفظة", restaurants:"مطاعمي المفضلة",
   } : lang === "fr" ? {
     title:"Mon compte", subtitle:"Commandes, réservations et contenu au même endroit.",
     orders:"Commandes", reservations:"Réservations", invoices:"Factures", notifications:"Notifications", favorites:"Favoris",
     library:"Ma bibliothèque", studio:"Studio", rewards:"Récompenses", profile:"Profil et paramètres",
     marketplace:"Explorer le marché", recentOrders:"Dernières commandes", recentReservations:"Dernières réservations",
     emptyOrders:"Aucune commande.", emptyReservations:"Aucune réservation.",
-    open:"Ouvrir", logout:"Déconnexion", balance:"Solde", restaurants:"Restaurants favoris",
+    open:"Voir les détails", logout:"Déconnexion", balance:"Solde du portefeuille", restaurants:"Restaurants favoris",
   } : {
     title:"My account", subtitle:"Orders, reservations and content in one place.",
     orders:"Orders", reservations:"Reservations", invoices:"Invoices", notifications:"Notifications", favorites:"Favorites",
     library:"My library", studio:"Studio", rewards:"Rewards", profile:"Profile & settings",
     marketplace:"Explore marketplace", recentOrders:"Recent orders", recentReservations:"Recent reservations",
     emptyOrders:"No orders yet.", emptyReservations:"No reservations yet.",
-    open:"Open", logout:"Sign out", balance:"Balance", restaurants:"Favorite restaurants",
+    open:"View details", logout:"Sign out", balance:"Wallet balance", restaurants:"Favorite restaurants",
   };
 
   const quick = [
@@ -95,7 +95,7 @@ export default function CustomerPortal() {
   const displayName = (user as any)?.name || (user as any)?.displayName || user?.email || copy.title;
   const points = (engagement.data?.loyalty ?? []).reduce((sum, row) => sum + Number(row.pointsBalance || 0), 0);
 
-  return <main dir={direction} className="min-h-screen overflow-x-hidden bg-[#f6f8fc] text-[#0b1d35] dark:bg-[#071525] dark:text-white">
+  return <main dir={direction} className="nfood-customer-shell min-h-screen overflow-x-hidden text-[#0b1d35] dark:text-white">
     <header className="border-b border-slate-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[#08192b]/95">
       <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
         <Link href="/marketplace" className="flex items-center gap-3">
