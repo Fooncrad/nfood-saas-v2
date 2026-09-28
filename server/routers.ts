@@ -559,8 +559,16 @@ export const appRouter = router({
           if (referral && referral.referrerCustomerId !== customerId) await tx.update(referralRecords).set({ referredCustomerId: customerId }).where(and(eq(referralRecords.id, referral.id), eq(referralRecords.status, "pending"), isNull(referralRecords.referredCustomerId)));
         }
         await tx.insert(orderItems).values(authoritativeItems.map((item) => ({ orderId, menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: item.unitPrice, selectedAddonsJson: item.selectedAddonsJson })));
-        await insertAuditLog({ restaurantId: restaurant.id, branchId: branch.id, actorUserId: null, actorRole: "guest", action: "guest.order.create", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid(12) });
-        return { success: true, orderId, total: total.toFixed(2), splitBillGroupId, paymentMethod: input.paymentMethod, paymentStatus: "unpaid" as const, status: "new" as const };
+        const orderQrToken = `ord_${nanoid(32)}`;
+        const orderQrTargetUrl = `/customer-orders?order=${orderId}`;
+        await tx.insert(qrCodes).values({ restaurantId: restaurant.id, branchId: branch.id, type: "order", purpose: "order_tracking", token: orderQrToken, label: `طلب #${orderId}`, orderId, amount: total.toFixed(2), targetUrl: orderQrTargetUrl, createdByUserId: customerId });
+        const managerIds = await listRestaurantManagerUserIds(restaurant.id);
+        if (managerIds.length) {
+          await tx.insert(notifications).values(managerIds.map((userId) => ({ userId, type: "system" as const, title: `طلب جديد #${orderId}`, body: `${input.guestName} · ${input.channel === "dine_in" ? `طاولة ${input.tableName || "-"} · ` : ""}${total.toFixed(2)} SAR` })));
+        }
+        await insertAuditLog({ restaurantId: restaurant.id, branchId: branch.id, actorUserId: customerId, actorRole: "customer", action: "guest.order.create", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid(12) });
+        void Promise.all(managerIds.map((userId) => sendPushToUser(userId, { title: `طلب جديد #${orderId}`, body: `${input.guestName} · ${total.toFixed(2)} SAR`, url: `/restaurant/dashboard?order=${orderId}`, tag: `new-order-${orderId}` }).catch((error) => console.warn("[Order] push failed", error))));
+        return { success: true, orderId, total: total.toFixed(2), splitBillGroupId, paymentMethod: input.paymentMethod, paymentStatus: "unpaid" as const, status: "new" as const, orderQrToken, orderQrTargetUrl };
       });
     }),
     myOrderStatus: protectedProcedure.input(z.object({ orderId: z.number().int().positive() })).query(async ({ ctx, input }) => {
