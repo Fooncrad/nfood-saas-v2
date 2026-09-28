@@ -174,9 +174,10 @@ export default function Home() {
         const existingKey = existing.options.applicationServerKey
           ? new Uint8Array(existing.options.applicationServerKey)
           : null;
+        const applicationServerBytes = new Uint8Array(applicationServerKey);
         const sameKey = existingKey
-          && existingKey.length === applicationServerKey.length
-          && existingKey.every((value, index) => value === applicationServerKey[index]);
+          && existingKey.length === applicationServerBytes.length
+          && existingKey.every((value, index) => value === applicationServerBytes[index]);
         if (!sameKey) {
           await existing.unsubscribe();
           subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
