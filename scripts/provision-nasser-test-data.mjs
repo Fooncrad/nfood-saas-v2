@@ -1,6 +1,6 @@
 import { provisionNasserTestCatalog, provisionNasserDeliveryTestData, getDb } from "../server/db.ts";
 
-const restaurantId = 60001;
+// Temporary production test fixture for the nasser restaurant only.\nconst restaurantId = 60001;
 const catalog = await provisionNasserTestCatalog(restaurantId);
 const delivery = await provisionNasserDeliveryTestData(restaurantId);
 const db = await getDb();
