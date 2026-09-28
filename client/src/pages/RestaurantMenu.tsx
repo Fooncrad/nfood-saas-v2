@@ -138,6 +138,7 @@ export default function RestaurantMenu() {
   const [deliveryLatitude, setDeliveryLatitude] = useState<number | undefined>();
   const [deliveryLongitude, setDeliveryLongitude] = useState<number | undefined>();
   const [orderNotes, setOrderNotes] = useState("");
+  const [dineInPartySize, setDineInPartySize] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank_transfer">("cash");
   const [hotelId, setHotelId] = useState<number | null>(null);
   const [hotelRoomId, setHotelRoomId] = useState<number | null>(null);
@@ -395,6 +396,7 @@ export default function RestaurantMenu() {
       paymentMethod,
       channel:orderMode === "dineIn" ? "dine_in" : orderMode,
       tableName:orderMode === "dineIn" ? tableName.trim() : undefined,
+      partySize:orderMode === "dineIn" ? dineInPartySize : undefined,
       pickupPoint:orderMode === "takeaway" ? pickupPoint.trim() || undefined : undefined,
       deliveryAddress:orderMode === "delivery" ? deliveryAddress.trim() : undefined,
       deliveryLatitude:orderMode === "delivery" ? deliveryLatitude : undefined,
@@ -644,6 +646,7 @@ export default function RestaurantMenu() {
                 {availableTables.isLoading ? <div className="rounded-xl border border-dashed p-4 text-center text-xs text-slate-500">{lang === "ar" ? "جارٍ تحميل الطاولات..." : "Loading tables..."}</div> : availableTables.data?.length ? <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
                   {availableTables.data.map((table) => <button key={table.id} type="button" onClick={() => { setSelectedTableId(table.id); setTableName(table.name); }} title={`${table.name} · ${table.seats}`} className={`flex min-h-12 items-center justify-center rounded-xl border px-2 py-2 text-center text-xs font-black transition ${selectedTableId === table.id ? "border-transparent text-white shadow-md" : "border-slate-200 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"}`} style={selectedTableId === table.id ? { background:primary } : undefined}><span>{String(table.name).replace(/^(طاولة|Table|TABLE)\\s*/i, "") || table.name}</span></button>)}
                 </div> : <div className="rounded-xl border border-dashed p-4 text-center text-xs text-slate-500">{lang === "ar" ? "لا توجد طاولات متاحة الآن" : lang === "fr" ? "Aucune table disponible" : "No tables available right now"}</div>}
+                <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/70 p-2 dark:border-white/10 dark:bg-white/5"><span className="text-xs font-bold">{copy.party}</span><div className="flex items-center gap-2"><button type="button" onClick={() => setDineInPartySize((value) => Math.max(1, value - 1))} className="grid h-8 w-8 place-items-center rounded-lg border"><Minus className="h-3.5 w-3.5" /></button><span className="min-w-6 text-center text-sm font-black">{dineInPartySize}</span><button type="button" onClick={() => setDineInPartySize((value) => Math.min(50, value + 1))} className="grid h-8 w-8 place-items-center rounded-lg border"><Plus className="h-3.5 w-3.5" /></button></div></div>
               </div>}
               {orderMode === "takeaway" && <div className="sm:col-span-2">
                 <p className="mb-2 text-xs font-black text-slate-500">{lang === "ar" ? "اختر نقطة الاستلام" : lang === "fr" ? "Choisissez le point de retrait" : "Choose pickup point"}</p>
