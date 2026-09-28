@@ -27,6 +27,8 @@ import {
   Users,
   WalletCards,
   X,
+  UtensilsCrossed,
+  ChevronDown,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
@@ -279,6 +281,7 @@ export function CentralAdminCommandCenter({
   const [dashboardTab, setDashboardTab] = useState<"orders" | "customers" | "purchases" | "nfc">("orders");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showAdvancedNav, setShowAdvancedNav] = useState(false);
 
   const restaurantsQuery = trpc.admin.restaurants.useQuery(undefined, { retry: 2 });
   const subscriptionsQuery = trpc.admin.subscriptions.useQuery({}, { retry: 2 });
@@ -341,7 +344,9 @@ export function CentralAdminCommandCenter({
       .slice(0, 60);
   }, [orders, search, orderFilter]);
 
-  const filteredNav = NAV_ORDER.filter((key) => !navQuery.trim() || NAV_LABELS[key].ar.includes(navQuery.trim()) || NAV_LABELS[key].en.toLowerCase().includes(navQuery.trim().toLowerCase()));
+  const primaryNav: CentralAdminNavKey[] = ["overview", "stores", "activities", "accounts", "packages", "site"];
+  const visibleNavOrder = showAdvancedNav || navQuery.trim() ? NAV_ORDER : primaryNav;
+  const filteredNav = visibleNavOrder.filter((key) => !navQuery.trim() || NAV_LABELS[key].ar.includes(navQuery.trim()) || NAV_LABELS[key].en.toLowerCase().includes(navQuery.trim().toLowerCase()));
 
   const notifications = notificationsQuery.data ?? [];
   const unreadCount = notificationCount > 0 ? notificationCount : notifications.filter((item) => !item.readAt).length;
@@ -360,7 +365,7 @@ export function CentralAdminCommandCenter({
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/10 px-5">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-sm font-black text-white shadow-lg shadow-orange-500/20">
-          N
+          <UtensilsCrossed className="h-4 w-4" />
         </div>
         <div>
           <p className="text-sm font-black tracking-[0.18em] text-white">NFOOD</p>
@@ -399,6 +404,7 @@ export function CentralAdminCommandCenter({
           );
         })}
         {filteredNav.length === 0 && <p className="px-3 py-2 text-xs text-slate-500">لا نتائج</p>}
+        {!navQuery.trim() && <button type="button" onClick={() => setShowAdvancedNav((value) => !value)} className="mt-2 flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[.035] px-3 py-2.5 text-xs font-bold text-slate-300 transition hover:bg-white/[.07] hover:text-white"><span>{showAdvancedNav ? (language === "ar" ? "إخفاء الأدوات المتقدمة" : "Hide advanced tools") : (language === "ar" ? "كل أدوات المنصة" : "All platform tools")}</span><ChevronDown className={`h-4 w-4 transition-transform ${showAdvancedNav ? "rotate-180" : ""}`} /></button>}
       </nav>
       <div className="shrink-0 border-t border-white/10 p-4">
         <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 p-3">
