@@ -943,6 +943,8 @@ function evaluateFeatureAccess(context: FeatureAccessContext, key: string, visit
     if (!dependency.enabled) return { enabled: false, limit: null, reason: "dependency_disabled" };
   }
   if (override?.enabled === false) return { enabled: false, limit: override.overrideLimit ?? context.planFeatureByKey.get(key)?.featureLimit ?? definition.defaultLimit ?? null, reason: "disabled" };
+  // Order notifications are opt-out platform infrastructure: every restaurant is enabled unless Super Admin explicitly disables it.
+  if (key === "notifications.order_push") return { enabled: true, limit: override?.overrideLimit ?? context.planFeatureByKey.get(key)?.featureLimit ?? definition.defaultLimit ?? null, reason: "enabled" };
   const packageFeature = context.planFeatureByKey.get(key);
   if (!override && ((context.configuredPlan && packageFeature?.enabled !== true) || (!context.configuredPlan && !context.planFeatures.has(key)))) return { enabled: false, limit: packageFeature?.featureLimit ?? definition.defaultLimit ?? null, reason: "disabled" };
   return { enabled: true, limit: override?.overrideLimit ?? packageFeature?.featureLimit ?? definition.defaultLimit ?? null, reason: "enabled" };
