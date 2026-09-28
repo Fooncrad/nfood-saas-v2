@@ -53,45 +53,38 @@ export function PricingPage() {
 export function LegalPage({ kind }: { kind: "terms" | "privacy" | "refund" }) {
   const { language } = useLanguage();
   const lang = language === "fr" ? "fr" : language === "en" ? "en" : "ar";
-  const site = trpc.platform.publicSiteContent.useQuery();
-  const updated = "24 September 2026";
-  const pages = {
-    terms: {
-      ar: { title: "الشروط والأحكام", intro: "تنظم هذه الشروط استخدام منصة NFOOD وخدمات إدارة الأنشطة والمطاعم.", sections: [["الحساب والمسؤولية", "يلتزم المستخدم بتقديم بيانات صحيحة وحماية بيانات الدخول، ويتحمل النشاط مسؤولية محتواه وأسعاره وموظفيه وامتثاله للأنظمة المطبقة."], ["الخدمة والاشتراكات", "تختلف الخصائص والحدود حسب الباقة. قد تتطلب بعض التكاملات خدمات خارجية تخضع أيضًا لشروط مزوديها."], ["الاستخدام المقبول", "يُمنع إساءة استخدام المنصة أو محاولة تجاوز الصلاحيات أو عزل بيانات الأنشطة والفروع أو استخدام الخدمة بصورة مخالفة للأنظمة."], ["إنهاء الاستخدام", "يمكن تقييد الحساب عند وجود إساءة استخدام أو مخاطر أمنية أو مخالفة جوهرية، مع تطبيق شروط الاشتراك والاسترجاع ذات الصلة."]] },
-      en: { title: "Terms and Conditions", intro: "These terms govern the use of NFOOD and its restaurant and business management services.", sections: [["Account responsibility", "Users must provide accurate information and protect sign-in credentials. Each business remains responsible for its content, prices, staff, and regulatory compliance."], ["Service and subscriptions", "Features and limits vary by plan. Some integrations depend on third-party services that are also subject to their providers’ terms."], ["Acceptable use", "You may not misuse the platform, bypass permissions or tenant/branch isolation, or use the service unlawfully."], ["Termination", "Access may be restricted for abuse, security risk, or material breach, subject to applicable subscription and refund terms."]] },
-      fr: { title: "Conditions générales", intro: "Ces conditions régissent l’utilisation de NFOOD et de ses services de gestion.", sections: [["Responsabilité du compte", "Les utilisateurs doivent fournir des informations exactes et protéger leurs identifiants. Chaque établissement reste responsable de son contenu, de ses prix et de son personnel."], ["Service et abonnements", "Les fonctionnalités et limites varient selon le forfait. Certaines intégrations dépendent de services tiers."], ["Utilisation acceptable", "Il est interdit de contourner les autorisations, l’isolation des établissements ou d’utiliser le service illégalement."], ["Fin d’utilisation", "L’accès peut être limité en cas d’abus, de risque de sécurité ou de violation importante."]] }
-    },
-    privacy: {
-      ar: { title: "سياسة الخصوصية", intro: "توضح هذه السياسة كيفية تعامل NFOOD مع البيانات اللازمة لتشغيل المنصة وتأمينها.", sections: [["البيانات التي نعالجها", "قد نعالج بيانات الحساب والتواصل والنشاط والفروع والطلبات وسجلات الأمان والبيانات التي يختار المستخدم إدخالها في المنصة."], ["تسجيل الدخول بواسطة Google", "عند اختيار Google OAuth نستقبل من Google بيانات الملف الأساسية اللازمة لتسجيل الدخول، مثل معرّف الحساب والاسم والبريد الإلكتروني وحالة التحقق من البريد. لا نحصل على كلمة مرور Google."], ["كيف نستخدم بيانات Google", "نستخدم بيانات Google للمصادقة وربط الحساب الصحيح ومنع إنشاء حسابات مكررة وتأمين الجلسة واستئناف إعداد النشاط. لا نبيع بيانات Google أو نستخدمها للإعلانات."], ["المشاركة والتخزين", "لا نشارك البيانات إلا مع مزودي الخدمة اللازمين لتشغيل المنصة أو عند وجود التزام نظامي. نطبق ضوابط وصول وعزل بين الأنشطة والفروع ونحتفظ بالبيانات للمدة اللازمة للأغراض المشروعة."], ["التحكم والحذف", "يمكن للمستخدم إلغاء وصول NFOOD من إعدادات حساب Google، وطلب تصحيح أو حذف بيانات حساب NFOOD وفق المتطلبات النظامية ومتطلبات الاحتفاظ المشروعة."], ["الأمان والتواصل", "نستخدم تدابير تقنية وتنظيمية لحماية البيانات. للاستفسارات المتعلقة بالخصوصية استخدم صفحة اتصل بنا أو البريد المنشور فيها."]] },
-      en: { title: "Privacy Policy", intro: "This policy explains how NFOOD handles data required to operate and secure the platform.", sections: [["Data we process", "We may process account and contact details, business and branch data, orders, security logs, and information users choose to enter into NFOOD."], ["Sign in with Google", "When you choose Google OAuth, we receive basic profile information needed for sign-in, such as the account identifier, name, email address, and email-verification status. We do not receive your Google password."], ["How we use Google data", "Google data is used to authenticate you, link the correct NFOOD account, prevent duplicate accounts, secure sessions, and resume business onboarding. We do not sell Google user data or use it for advertising."], ["Sharing and retention", "We share data only with service providers needed to operate NFOOD or where legally required. Access controls and business/branch isolation are applied, and data is retained only as needed for legitimate purposes."], ["Control and deletion", "You can revoke NFOOD access from your Google Account settings and request correction or deletion of NFOOD account data, subject to applicable legal retention requirements."], ["Security and contact", "We use technical and organizational safeguards. For privacy requests, use the Contact page or the published support email."]] },
-      fr: { title: "Politique de confidentialité", intro: "Cette politique explique comment NFOOD traite les données nécessaires au fonctionnement et à la sécurité de la plateforme.", sections: [["Données traitées", "Nous pouvons traiter les données du compte et de contact, les données de l’établissement et des succursales, les commandes et les journaux de sécurité."], ["Connexion avec Google", "Avec Google OAuth, nous recevons les informations de profil de base nécessaires à la connexion, notamment l’identifiant, le nom, l’adresse e-mail et son statut de vérification. Nous ne recevons pas votre mot de passe Google."], ["Utilisation des données Google", "Ces données servent à l’authentification, au rattachement du bon compte NFOOD, à la prévention des doublons et à la sécurité des sessions. Elles ne sont ni vendues ni utilisées pour la publicité."], ["Partage et conservation", "Les données ne sont partagées qu’avec les prestataires nécessaires au service ou lorsque la loi l’exige. Des contrôles d’accès et une isolation par établissement et succursale sont appliqués."], ["Contrôle et suppression", "Vous pouvez révoquer l’accès NFOOD depuis votre compte Google et demander la correction ou la suppression de vos données NFOOD, sous réserve des obligations légales de conservation."], ["Sécurité et contact", "Nous appliquons des mesures techniques et organisationnelles de protection. Pour toute demande, utilisez la page Contact."]] }
-    },
-    refund: {
-      ar: { title: "سياسة الاسترجاع", intro: "تخضع طلبات الاسترجاع للمراجعة وفق حالة الاشتراك والخدمة.", sections: [["التحويلات والاشتراكات", "التحويل البنكي المعلق لا يعد دفعة مكتملة قبل اعتماده. تتم مراجعة طلبات الاسترجاع وفق الباقة والخدمة المستخدمة والأنظمة المطبقة."]] },
-      en: { title: "Refund Policy", intro: "Refund requests are reviewed according to subscription and service status.", sections: [["Transfers and subscriptions", "A pending bank transfer is not a completed payment until approved. Refund requests are reviewed according to the plan, service usage, and applicable requirements."]] },
-      fr: { title: "Politique de remboursement", intro: "Les demandes de remboursement sont examinées selon l’état de l’abonnement et du service.", sections: [["Virements et abonnements", "Un virement en attente n’est pas un paiement final avant validation. Les demandes sont examinées selon le forfait, l’utilisation et les règles applicables."]] }
-    }
+  const site = trpc.platform.publicSiteContent.useQuery(undefined, { retry: false });
+  const labels = {
+    terms: { ar: "الشروط والأحكام", en: "Terms & Conditions", fr: "Conditions générales" },
+    privacy: { ar: "سياسة الخصوصية", en: "Privacy Policy", fr: "Politique de confidentialité" },
+    refund: { ar: "سياسة الاسترجاع", en: "Refund Policy", fr: "Politique de remboursement" },
   } as const;
-  const content = pages[kind][lang];
   const field = kind === "terms" ? "termsOfService" : kind === "privacy" ? "privacyPolicy" : "refundPolicy";
   const localizedField = `${field}${lang === "ar" ? "" : lang === "en" ? "En" : "Fr"}` as keyof NonNullable<typeof site.data>;
-  const managedContent = String(site.data?.[localizedField] || site.data?.[field] || "").trim();
-  return <PublicShell><main className="mx-auto max-w-5xl px-5 py-10 sm:py-16">
-    <div className="mb-6 rounded-[28px] bg-gradient-to-br from-[#071525] via-[#102945] to-[#173a5d] px-6 py-9 text-white shadow-xl sm:px-10">
-      <p className="text-xs font-black uppercase tracking-[.2em] text-orange-300">NFOOD · {lang === "ar" ? "المركز القانوني" : lang === "fr" ? "Centre juridique" : "Legal center"}</p>
-      <h1 className="mt-3 text-3xl font-black sm:text-5xl">{content.title}</h1>
-      <p className="mt-4 max-w-2xl text-sm leading-8 text-slate-200">{content.intro}</p>
-    </div>
-    <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-      <nav aria-label={lang === "ar" ? "الصفحات القانونية" : "Legal pages"} className="flex h-fit flex-wrap gap-2 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm lg:flex-col">
-        {(["terms", "privacy", "refund"] as const).map((page) => <Link key={page} href={`/${page}`} className={`rounded-xl px-4 py-3 text-sm font-bold ${kind === page ? "bg-[#102945] text-white" : "text-slate-600 hover:bg-orange-50 hover:text-[#d75c20]"}`}>{pages[page][lang].title}</Link>)}
-      </nav>
-      <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10">
-        <p className="text-xs font-semibold text-slate-500">{lang === "ar" ? "آخر تحديث" : lang === "fr" ? "Dernière mise à jour" : "Last updated"}: {updated}</p>
-        {managedContent ? <div className="mt-7 whitespace-pre-wrap text-base leading-9 text-slate-700">{managedContent}</div> : <div className="mt-7 space-y-7">{content.sections.map(([title, body]) => <section key={title}><h2 className="text-lg font-black text-[#102945]">{title}</h2><p className="mt-2 leading-8 text-slate-600">{body}</p></section>)}</div>}
-        <div className="mt-9 border-t border-slate-100 pt-6 text-sm text-slate-500">{lang === "ar" ? "للاستفسارات حول هذه الصفحة" : lang === "fr" ? "Questions sur cette page" : "Questions about this page"} · <Link href="/contact" className="font-bold text-[#d75c20]">{lang === "ar" ? "تواصل معنا" : lang === "fr" ? "Contactez-nous" : "Contact us"}</Link></div>
-      </article>
-    </div>
+  const managedContent = String(site.data?.[localizedField] || "").trim();
+  const title = labels[kind][lang];
+  const emptyCopy = lang === "ar"
+    ? "هذه الصفحة تُدار من لوحة تحكم NFOOD ولم يتم نشر محتواها بهذه اللغة بعد."
+    : lang === "fr"
+      ? "Cette page est gérée depuis l’administration NFOOD et son contenu n’a pas encore été publié dans cette langue."
+      : "This page is managed from NFOOD administration and has not been published in this language yet.";
+  return <PublicShell><main className="mx-auto max-w-6xl px-5 py-10 sm:py-16">
+    <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl shadow-slate-200/40">
+      <div className="bg-[#172235] px-6 py-10 text-white sm:px-10">
+        <p className="text-xs font-black uppercase tracking-[.2em] text-[#f4a340]">NFOOD · {lang === "ar" ? "الصفحات والسياسات" : lang === "fr" ? "Pages et politiques" : "Pages & policies"}</p>
+        <h1 className="mt-3 text-3xl font-black sm:text-5xl">{title}</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">{lang === "ar" ? "محتوى رسمي مُدار من لوحة تحكم المنصة ومتوافق مع اللغة المختارة." : lang === "fr" ? "Contenu officiel géré depuis l’administration et adapté à la langue sélectionnée." : "Official content managed from the platform dashboard for the selected language."}</p>
+      </div>
+      <div className="grid gap-0 lg:grid-cols-[240px_1fr]">
+        <nav aria-label={lang === "ar" ? "صفحات السياسات" : "Policy pages"} className="border-b border-slate-100 bg-slate-50 p-4 lg:border-b-0 lg:border-e">
+          {(["terms", "privacy", "refund"] as const).map((page) => <Link key={page} href={`/${page}`} className={`mb-2 block rounded-2xl px-4 py-3 text-sm font-black transition ${kind === page ? "bg-[#e76f3c] text-white shadow-sm" : "text-slate-600 hover:bg-white hover:text-[#e76f3c]"}`}>{labels[page][lang]}</Link>)}
+        </nav>
+        <article className="min-h-[420px] p-6 sm:p-10">
+          {site.isLoading ? <div className="space-y-3"><div className="h-5 w-2/3 animate-pulse rounded bg-slate-100" /><div className="h-5 w-full animate-pulse rounded bg-slate-100" /><div className="h-5 w-5/6 animate-pulse rounded bg-slate-100" /></div> : managedContent ? <div className="whitespace-pre-wrap text-base leading-9 text-slate-700">{managedContent}</div> : <div className="rounded-3xl border border-dashed border-amber-200 bg-amber-50 p-8 text-center"><p className="font-black text-amber-900">{emptyCopy}</p></div>}
+          <div className="mt-10 border-t border-slate-100 pt-6 text-sm text-slate-500">{lang === "ar" ? "للاستفسارات حول هذه الصفحة" : lang === "fr" ? "Questions sur cette page" : "Questions about this page"} · <Link href="/contact" className="font-black text-[#e76f3c]">{lang === "ar" ? "تواصل معنا" : lang === "fr" ? "Contactez-nous" : "Contact us"}</Link></div>
+        </article>
+      </div>
+    </section>
   </main></PublicShell>;
 }
 
