@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { getOrderStatusPalette } from "@/lib/statusPalette";
-import { playOrderAlertSound, primeOrderAlertAudio } from "@/lib/orderAlertSound";
+import { installOrderAlertAudioUnlock, playOrderAlertSound, primeOrderAlertAudio } from "@/lib/orderAlertSound";
 
 export type RealtimeOrder = { id: string; status: string; table: string; time: string };
 type Props = { orders: RealtimeOrder[]; mode: "pos" | "kds" };
@@ -27,6 +27,7 @@ export function OrderRealtimeAlerts({ orders, mode }: Props) {
   const [soundEnabled, setSoundEnabled] = useState(() => typeof window === "undefined" ? true : localStorage.getItem(`nfood-order-alert-sound-${mode}`) !== "off");
   const [alertVolume, setAlertVolume] = useState(() => typeof window === "undefined" ? 0.65 : Number(localStorage.getItem(`nfood-order-alert-volume-${mode}`) ?? "0.65"));
   const snapshot = useMemo(() => new Map(orders.map((order) => [order.id, order.status])), [orders]);
+  useEffect(() => installOrderAlertAudioUnlock(), []);
   useEffect(() => {
     setLastSync(new Date());
     if (!previous.current) { previous.current = snapshot; return; }
