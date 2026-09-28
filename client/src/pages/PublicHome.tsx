@@ -254,11 +254,11 @@ export default function PublicHome() {
         <div className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-20">
           <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[.18em] text-orange-300">{copy.pricingEyebrow}</p><h2 className="mt-3 text-3xl font-black sm:text-4xl">{pricingLocale.title || copy.plans}</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{pricingLocale.subtitle || copy.description}</p></div><Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-xs font-black text-white">{copy.pricingCta}{direction === "rtl" ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}</Link></div>
           <div className="mt-9 grid gap-4 md:grid-cols-3">
-            {(pricingLocale.plans ?? []).slice(0, 3).map((plan) => <article key={plan.name} className={`rounded-[26px] border p-6 ${plan.featured ? "border-orange-400 bg-orange-500/10" : "border-white/10 bg-white/5"}`}>
+            {(pricingLocale.plans ?? []).map((plan) => <article key={plan.name} className={`rounded-[26px] border p-6 ${plan.featured ? "border-orange-400 bg-orange-500/10" : "border-white/10 bg-white/5"}`}>
               <div className="flex items-center justify-between gap-3"><h3 className="text-xl font-black">{plan.name}</h3>{plan.featured && <span className="rounded-full bg-orange-500 px-2.5 py-1 text-[10px] font-black">NFOOD</span>}</div>
               <p className="mt-3 min-h-12 text-sm leading-6 text-slate-400">{plan.desc}</p>
               <div className="mt-6"><span className="text-4xl font-black">{plan.price}</span><span className="ms-2 text-xs text-slate-400">SAR</span></div>
-              <div className="mt-6 space-y-2">{plan.items.slice(0, 4).map((item) => <p key={item} className="flex items-center gap-2 text-sm text-slate-300"><Check className="h-4 w-4 text-orange-400" />{item}</p>)}</div>
+              <div className="mt-6 space-y-2">{plan.items.map((item) => <p key={item} className="flex items-center gap-2 text-sm text-slate-300"><Check className="h-4 w-4 text-orange-400" />{item}</p>)}</div><button type="button" onClick={() => setLocation(`/register?plan=${encodeURIComponent(plan.name)}`)} className="mt-7 flex h-12 w-full items-center justify-center rounded-2xl bg-orange-500 px-4 text-sm font-black text-white hover:bg-orange-600">{lang === "ar" ? "اختيار الباقة والمتابعة" : lang === "fr" ? "Choisir et continuer" : "Choose plan & continue"}</button>
             </article>)}
           </div>
         </div>
