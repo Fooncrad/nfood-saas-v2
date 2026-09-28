@@ -1,7 +1,7 @@
 export type RestaurantCatalogFilter = "الكل" | "نشط" | "تجربة" | "معلّق";
 
 export type RestaurantCatalogPlan = { key: string; name: string };
-export type RestaurantCatalogRow = { id: number; name: string; slug: string | null; plan: string | null; status: string; branchCount?: number; createdAt?: string | Date | null };
+export type RestaurantCatalogRow = { id: number; name: string; slug: string | null; plan: string | null; status: string; branchCount?: number; createdAt?: string | Date | null; orderNotificationsEnabled?: boolean };
 
 export function formatCatalogMoney(value: string | number | null | undefined) {
   const amount = Number(value ?? 0);
