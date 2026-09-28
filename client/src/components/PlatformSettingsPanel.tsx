@@ -33,6 +33,7 @@ export const gatewayFieldMap: Record<string, GatewayField[]> = {
   "Facebook Pixel": [{ key: "pixelId", label: "Pixel ID", placeholder: "معرّف Pixel" }, { key: "accessToken", label: "Conversions API Token", placeholder: "رمز الوصول", secret: true }],
   Webhooks: [{ key: "endpointUrl", label: "Endpoint URL", placeholder: "https://example.com/webhook", type: "url" }, { key: "signingSecret", label: "Signing Secret", placeholder: "سر التوقيع", secret: true }, { key: "events", label: "الأحداث", placeholder: "order.created,order.updated" }],
   Realtime: [{ key: "endpointUrl", label: "Realtime Endpoint", placeholder: "wss://...", type: "url" }, { key: "accessToken", label: "Access Token", placeholder: "رمز الوصول", secret: true }, { key: "channel", label: "Channel / Project ID", placeholder: "معرّف القناة" }],
+  Pusher: [{ key: "appId", label: "App ID", placeholder: "2057347" }, { key: "authKey", label: "Auth Key", placeholder: "Pusher Auth Key" }, { key: "secret", label: "Secret", placeholder: "Pusher Secret", secret: true }, { key: "cluster", label: "Cluster", placeholder: "ap2" }, { key: "developmentMode", label: "Development Mode", placeholder: "disabled", type: "select", options: [{ value: "disabled", label: "Disabled" }, { value: "enabled", label: "Enabled" }] }],
   "OTP/SMS": [{ key: "providerAccount", label: "Account / Project ID", placeholder: "معرّف الحساب" }, { key: "apiKey", label: "API Key", placeholder: "مفتاح OTP", secret: true }, { key: "senderId", label: "Sender ID", placeholder: "اسم المرسل" }],
 };
 function fieldsForGateway(key: string) { return gatewayFieldMap[key] ?? [{ key: "apiKey", label: "API Key", placeholder: "مرجع مفتاح API", secret: true }]; }
@@ -59,6 +60,7 @@ const gateways: Gateway[] = [
   { key: "Facebook Pixel", label: "Facebook Pixel", category: "التحليلات", description: "تتبع الحملات الإعلانية.", Icon: BarChart3 },
   { key: "Webhooks", label: "Webhooks", category: "التكاملات", description: "إشعارات الأنظمة الخارجية.", Icon: Globe2 },
   { key: "Realtime", label: "Realtime / التتبع الحي", category: "التكاملات", description: "تحديثات التتبع الحي للسائق والطلبات. استخدم DEMO_REPLACE_REALTIME_KEY حتى ربط المزود.", Icon: Globe2 },
+  { key: "Pusher", label: "Pusher", category: "التكاملات", description: "إشعارات الطلبات والحجوزات والتحديثات الفورية. يمكن تفعيله لكل مطعم على حدة.", Icon: MessageSquare },
 ];
 const recommendedSiteContent: Partial<Settings> = {
   siteName: "NFOOD",
