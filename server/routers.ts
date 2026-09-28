@@ -1012,7 +1012,7 @@ export const appRouter = router({
         await db.insert(notifications).values({ userId: existing[0].customerId, type: "system", title, body });
         void sendPushToUser(existing[0].customerId, { title, body, url: "/customer-orders" }).catch((error) => console.warn("[Push] customer order status failed", error));
         const eventKey: EmailEventKey = input.status === "ready" ? "order.ready" : input.status === "completed" ? "order.completed" : "order.status";
-        void sendTemplatedEmail({ to: customer?.email, restaurantId: input.restaurantId, eventKey, locale: "ar", data: { name: customer?.name ?? "عميل NFOOD", restaurantName, orderNumber: input.orderId, status: statusLabel, total: existing[0].total, qrCode: `NFOOD|ORDER|${input.restaurantId}|${input.orderId}|${input.status}` } }).catch((error) => console.warn("[Email] customer order lifecycle failed", error));
+        void sendTemplatedEmail({ to: customer?.email, restaurantId: input.restaurantId, eventKey, locale: "ar", data: { name: customer?.name ?? "عميل NFOOD", restaurantName, orderNumber: input.orderId, status: statusLabel, total: existing[0].total, qrCode: input.status === "ready" ? `/customer-orders?order=${input.orderId}` : "" } }).catch((error) => console.warn("[Email] customer order lifecycle failed", error));
       }
       let automaticCardIssued = false;
       if (input.status === "completed" && existing[0].customerId) {
