@@ -119,12 +119,17 @@ async function startServer() {
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
+  const isProduction = process.env.NODE_ENV === "production";
+  const port = isProduction ? preferredPort : await findAvailablePort(preferredPort);
 
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+  if (!isProduction && port !== preferredPort) {
+    console.log(`Port ${preferredPort} is busy, using development fallback port ${port}`);
   }
 
+  server.on("error", (error) => {
+    console.error(`[Server] Failed to listen on required port ${port}:`, error);
+    if (isProduction) process.exitCode = 1;
+  });
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
