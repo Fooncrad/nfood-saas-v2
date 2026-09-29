@@ -3460,11 +3460,11 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                   onClick={() => add(product)}
                   className="group rounded-xl border border-slate-200 bg-white p-2.5 text-right shadow-sm transition hover:border-orange-300 hover:bg-orange-50/50 sm:rounded-2xl sm:p-4"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl">🍽</span>
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-orange-50 px-2 py-1 text-[10px] font-black text-[#e76f3c]"><Plus className="h-3.5 w-3.5" />إضافة</span>
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+                    {product.imageUrl ? <img src={product.imageUrl} alt={product.name} loading="lazy" className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.02]" /> : <div className="grid h-full place-items-center text-3xl" aria-label="لا توجد صورة للصنف">🍽</div>}
+                    <span className="absolute bottom-2 end-2 inline-flex items-center gap-1 rounded-lg bg-white/95 px-2 py-1 text-[10px] font-black text-[#e76f3c] shadow-sm"><Plus className="h-3.5 w-3.5" />إضافة</span>
                   </div>
-                  <p className="mt-4 text-sm font-bold">{product.name}</p>
+                  <p className="mt-3 line-clamp-2 text-sm font-bold">{product.name}</p>
                   <p className="mt-1 text-xs text-slate-500">
                     {money(product.price)}
                   </p>
@@ -3606,11 +3606,12 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                     key={item.product.name}
                     className="flex items-center justify-between rounded-xl bg-slate-50 p-3"
                   >
-                    <div>
-                      <p className="text-xs font-bold">{item.product.name}</p>
-                      <p className="mt-1 text-[11px] text-slate-400">
-                        {item.quantity} × {money(item.product.price)}
-                      </p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-white ring-1 ring-slate-200">{item.product.imageUrl ? <img src={item.product.imageUrl} alt={item.product.name} loading="lazy" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-lg">🍽</div>}</div>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold">{item.product.name}</p>
+                        <p className="mt-1 text-[11px] text-slate-400">{item.quantity} × {money(item.product.price)}</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
