@@ -80,6 +80,7 @@ export default function Home() {
   const [testPassword, setTestPassword] = useState("");
   const testLogin = trpc.auth.testLogin.useMutation({ onSuccess: () => { toast.success("تم تسجيل الدخول لحساب الاختبار"); window.location.reload(); }, onError: (error) => toast.error(error.message || "بيانات الدخول غير صحيحة") });
   const [active, setActive] = useState<NavKey>("overview");
+  useEffect(() => { if (user?.testRole === "cashier" && active !== "pos") setActive("pos"); }, [user?.testRole, active]);
   const visibleNavItems = useMemo(() => { if (user?.role === "admin" || user?.testRole === "admin") return []; const role = user?.testRole; if (!role) return navItems; const keys = roleNavigation[role as keyof typeof roleNavigation] ?? ["overview"]; return navItems.filter((item) => (keys as readonly string[]).includes(item.key)); }, [user?.role, user?.testRole]);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState(1);
   const restaurantsQuery = trpc.platform.restaurants.useQuery(undefined, { enabled: Boolean(user), retry: false });
