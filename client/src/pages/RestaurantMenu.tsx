@@ -567,7 +567,13 @@ export default function RestaurantMenu() {
   const surface = dark ? "border-white/10 bg-[#0d2037] text-white" : "border-slate-200 bg-white text-[#0b1d35]";
   const muted = dark ? "text-slate-400" : "text-slate-500";
   const pageBg = dark ? "bg-[#071525] text-white" : "bg-[#f6f8fc] text-[#0b1d35]";
-  const selectedHotelRooms = selectedHotel?.rooms ?? [];\n  const seatingLabel = (section: any) => {\n    const translatedName = localize(section.translationsJson, section.name, lang, "name");\n    const type = section.seatingType === "indoor" ? copy.indoor : section.seatingType === "outdoor" ? copy.outdoor : "";\n    const smoking = typeof section.smokingAllowed === "boolean" ? (section.smokingAllowed ? copy.smoking : copy.nonSmoking) : "";\n    return [translatedName, type, smoking].filter(Boolean).join(" · ");\n  };
+  const selectedHotelRooms = selectedHotel?.rooms ?? [];
+  const seatingLabel = (section: any) => {
+    const translatedName = localize(section.translationsJson, section.name, lang, "name");
+    const type = section.seatingType === "indoor" ? copy.indoor : section.seatingType === "outdoor" ? copy.outdoor : "";
+    const smoking = typeof section.smokingAllowed === "boolean" ? (section.smokingAllowed ? copy.smoking : copy.nonSmoking) : "";
+    return [translatedName, type, smoking].filter(Boolean).join(" · ");
+  };
 
   return <main dir={direction} className={`min-h-screen w-full max-w-[100vw] overflow-x-hidden overscroll-x-none touch-pan-y [contain:inline-size] ${dark ? "dark" : ""} ${pageBg}`} style={{ overflowX: "hidden", overscrollBehaviorX: "none", touchAction: "pan-y", fontFamily:restaurant.brandFontFamily || undefined, "--restaurant-primary":primary, "--restaurant-accent":accent } as React.CSSProperties}>
     <header className={`sticky top-0 z-40 w-full max-w-[100vw] overflow-hidden border-b backdrop-blur-xl ${dark ? "border-white/10 bg-[#071525]/92" : "border-slate-200 bg-white/92"}`}>
