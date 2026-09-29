@@ -49,7 +49,8 @@ describe("financial ledger and driver deposits", () => {
     expect(router).toContain("financialLedger:");
     expect(router).toContain("driverSecurityDeposit:");
     expect(router).toContain("recordDriverSecurityDeposit:");
-    expect(router).toContain('assertTeamPermission(ctx, "finance.read")');
+    expect(router).toContain('await assertTeamPermission(ctx, "finance.read", input.restaurantId)');
+    expect(router).toContain('await assertTeamPermission(ctx, "finance.manage", input.restaurantId)');
     expect(ui).toContain("السجل المالي والودائع");
     expect(ui).toContain("السجل المالي الموحد");
     expect(ui).toContain("ودائع السائقين والأرصدة السابقة");
