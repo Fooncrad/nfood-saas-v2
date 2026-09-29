@@ -21,7 +21,10 @@ describe("refund permission enforcement", () => {
     expect(requireScopedPermission).toHaveBeenCalledWith(10, "orders.refund", { restaurantId: 1 });
     expect(getDb).not.toHaveBeenCalled();
   });
-  it("does not bypass the existing finance gate when a cashier has the scoped key", async () => {
+  it("does not bypass the existing finance gate when a cashier has only the refund scoped key", async () => {
+    vi.mocked(requireScopedPermission).mockImplementation(async (_user, key) => {
+      if (key === "finance.read") throw new TRPCError({ code: "FORBIDDEN" });
+    });
     await expect(appRouter.createCaller(context("cashier")).platform.refundOrder(input)).rejects.toMatchObject({ code: "FORBIDDEN", message: "لا تملك صلاحية finance.read" });
     expect(requireScopedPermission).toHaveBeenCalledWith(10, "orders.refund", { restaurantId: 1 });
     expect(getDb).not.toHaveBeenCalled();
