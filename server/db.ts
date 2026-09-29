@@ -1113,7 +1113,10 @@ export async function getRoleSummary(restaurantId: number, role?: string, userId
   const db = await getDb();
   if (!db) return unavailable;
   const scope = role === "customer" ? "customer" : role === "driver" ? "driver" : "restaurant";
-  const baseFilters = [eq(orders.restaurantId, restaurantId), ...(branchId ? [eq(orders.branchId, branchId)] : [])];
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const baseFilters = [eq(orders.restaurantId, restaurantId), gte(orders.createdAt, startOfToday), lt(orders.createdAt, startOfTomorrow), ...(branchId ? [eq(orders.branchId, branchId)] : [])];
   const roleFilters = role === "customer" && userId ? [...baseFilters, eq(orders.customerId, userId)] : role === "driver" && userId ? [...baseFilters, eq(orders.driverId, userId)] : baseFilters;
   const rows = await db.select().from(orders).where(and(...roleFilters));
   const revenueRows = rows.filter(isRecognizedRevenueOrder);
