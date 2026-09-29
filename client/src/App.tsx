@@ -159,6 +159,7 @@ function CustomerRegisterRoute() {
   if (loading || user) return <PageLoading />;
   return <CustomerRegister />;
 }
+const RESTAURANT_AREA_ROLES = new Set(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver", "accountant"]);
 function RootRoute() { const { user, loading } = useAuth(); const [, navigate] = useLocation(); const isAdmin = user?.role === "admin" || user?.testRole === "admin" || user?.accountRole === "admin"; const role = String(user?.testRole ?? user?.accountRole ?? user?.role ?? ""); const isRestaurantAccount = Boolean(user && RESTAURANT_AREA_ROLES.has(role)); useEffect(() => { if (loading || !user) return; if (isAdmin) { navigate("/admin", { replace: true }); return; } if (isRestaurantAccount && window.location.pathname === "/") navigate("/restaurant/dashboard", { replace: true }); }, [loading, user, isAdmin, isRestaurantAccount, navigate]); if (loading || isAdmin || isRestaurantAccount) return <PageLoading />; return user ? <Home /> : <PublicHome />; }
 function RestaurantRoute() {
   const { user, loading } = useAuth();
