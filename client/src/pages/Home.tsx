@@ -342,6 +342,8 @@ type MenuProduct = { id: number; name: string; category: string; price: number; 
 
 function MenuView({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
+  const { language } = useLanguage();
+  const posText = (ar: string, en: string, fr: string) => language === "ar" ? ar : language === "fr" ? fr : en;
   const remoteMenu = trpc.platform.menuItems.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
   const remoteCategories = trpc.platform.menuCategories.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
   const products = useMemo(() => (remoteMenu.data ?? []).map((item) => ({ id: item.id, name: item.name, categoryId: item.categoryId, category: remoteCategories.data?.find((categoryItem) => categoryItem.id === item.categoryId)?.name ?? `تصنيف ${item.categoryId}`, price: Number(item.price), compareAtPrice: item.compareAtPrice ? Number(item.compareAtPrice) : null, calories: item.calories ?? null, imageUrl: item.imageUrl ?? "", available: item.isAvailable })), [remoteMenu.data, remoteCategories.data]);
