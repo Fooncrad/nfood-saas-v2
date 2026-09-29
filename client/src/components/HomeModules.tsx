@@ -3107,12 +3107,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
         setQueuedCount(result.remainingCount);
         if (result.syncedCount > 0) {
           toast.success(result.remainingCount === 0 ? `تمت مزامنة ${result.syncedCount} طلبات محفوظة` : `تمت مزامنة ${result.syncedCount} طلبات، وبقي ${result.remainingCount} للمحاولة لاحقًا`);
-        }
-        if (result.discardedCount > 0) {
-          toast.error(`تم استبعاد ${result.discardedCount} طلبات محفوظة بسبب بيانات غير صالحة أو صلاحيات غير كافية`);
-        }
-        if (result.syncedCount > 0 || result.discardedCount > 0) {
-          window.dispatchEvent(new CustomEvent("nfood:sync-complete", { detail: { count: result.syncedCount, discarded: result.discardedCount, remaining: result.remainingCount } }));
+          window.dispatchEvent(new CustomEvent("nfood:sync-complete", { detail: { count: result.syncedCount, remaining: result.remainingCount } }));
         }
       } finally {
         syncingRef.current = false;
@@ -3127,15 +3122,10 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       toast.error("لا يوجد فرع مرتبط لاستقبال الطلب");
       return;
     }
-    if (channel === "داخل المطعم" && !tableName.trim()) {
-      toast.error("أدخل رقم أو اسم الطاولة قبل حفظ الطلب");
-      return;
-    }
-    const clientRequestId = crypto.randomUUID();
     const payload = {
       restaurantId,
       branchId,
-      clientRequestId,
+      clientRequestId: crypto.randomUUID(),
       channel:
         channel === "داخل المطعم"
           ? ("dine_in" as const)
@@ -3170,7 +3160,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
         localStorage,
         queueKey,
         payload,
-        clientRequestId
+        crypto.randomUUID()
       );
       setQueuedCount(queue.length);
       setCart([]);
