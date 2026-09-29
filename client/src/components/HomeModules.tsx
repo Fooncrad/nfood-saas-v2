@@ -3381,26 +3381,26 @@ function PosView({ restaurantId }: { restaurantId: number }) {
         </Badge>
       </div>
       {cart.length > 0 && (
-        <div className="sticky top-2 z-20 mb-4 flex items-center justify-between gap-3 rounded-2xl border border-orange-200 bg-white/95 p-3 shadow-sm backdrop-blur xl:hidden" data-pos-mobile-cart-jump>
+        <div className="fixed inset-x-3 bottom-3 z-50 flex items-center justify-between gap-3 rounded-2xl border border-orange-200 bg-white/95 p-3 shadow-2xl backdrop-blur xl:hidden" data-pos-mobile-cart-jump>
           <div className="min-w-0">
             <p className="truncate text-xs font-bold text-slate-800">السلة الحالية</p>
             <p className="mt-1 text-[11px] text-slate-500">{cart.reduce((sum, item) => sum + item.quantity, 0)} أصناف · {money(total)}</p>
           </div>
-          <Button type="button" className="shrink-0 rounded-xl bg-[#e76f3c] text-xs hover:bg-[#d85f2e]" onClick={() => document.querySelector('[data-pos-order-card]')?.scrollIntoView({ behavior: "smooth", block: "start" })}>فتح السلة والإرسال</Button>
+          <Button type="button" className="shrink-0 rounded-xl bg-[#e76f3c] text-xs hover:bg-[#d85f2e]" onClick={() => document.querySelector('[data-pos-order-card]')?.scrollIntoView({ behavior: "smooth", block: "start" })}>السلة والدفع</Button>
         </div>
       )}
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <Card className="flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:max-h-[calc(100vh-156px)] xl:overflow-hidden">
-          <CardHeader className="shrink-0 border-b border-slate-100 px-5 py-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div><CardTitle className="text-base">1. اختر الأصناف</CardTitle><p className="mt-1 text-[11px] text-slate-500">ابحث أو استخدم الفئات، ثم اضغط على الصنف لإضافته للسلة.</p></div>
+      <div className="grid gap-4 pb-24 xl:grid-cols-[minmax(0,1fr)_400px] xl:pb-0">
+        <Card className="order-1 flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:max-h-[calc(100vh-156px)] xl:overflow-hidden">
+          <CardHeader className="sticky top-0 z-10 shrink-0 border-b border-slate-100 bg-white/95 px-3 py-3 backdrop-blur sm:px-5 sm:py-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div><CardTitle className="text-base">الأصناف</CardTitle><p className="mt-1 hidden text-[11px] text-slate-500 sm:block">ابحث أو استخدم الفئات، ثم اضغط على الصنف لإضافته للسلة.</p></div>
               <div className="flex flex-wrap items-center gap-2">
                 <Input
                   value={productSearch}
                   onChange={event => setProductSearch(event.target.value)}
                   placeholder="ابحث باسم الصنف..."
                   aria-label="البحث عن صنف"
-                  className="h-9 w-44 rounded-xl bg-slate-50 text-xs"
+                  className="h-10 w-full min-w-[180px] flex-1 rounded-xl bg-slate-50 text-xs sm:w-52"
                 />
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {["داخل المطعم", "استلام", "توصيل", "حجز", "فندق"].map(item => (
@@ -3476,10 +3476,10 @@ function PosView({ restaurantId }: { restaurantId: number }) {
             )}
           </CardContent>
         </Card>
-        <Card className="flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:max-h-[calc(100vh-156px)] xl:overflow-hidden" data-pos-order-card>
+        <Card className="order-2 flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:sticky xl:top-3 xl:max-h-[calc(100vh-156px)] xl:overflow-hidden" data-pos-order-card>
           <CardHeader className="shrink-0 border-b border-slate-100 px-5 py-4">
             <CardTitle className="flex items-center justify-between text-base">
-              <span>2. راجع الطلب والدفع</span>
+              <span>السلة والدفع</span>
               <span className="text-xs font-normal text-slate-400">
                 {channel}
               </span>
