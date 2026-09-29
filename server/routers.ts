@@ -249,6 +249,7 @@ export const appRouter = router({
         const teamAccountId = Number(account.openId.slice(5));
         const teamAccount = (await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, role: testAccounts.role, passwordHash: testAccounts.passwordHash, isActive: testAccounts.isActive, displayName: testAccounts.displayName }).from(testAccounts).where(eq(testAccounts.id, teamAccountId)).limit(1))[0];
         if (!teamAccount || !teamAccount.isActive) throw new TRPCError({ code: "UNAUTHORIZED", message: "الحساب غير مفعل أو بيانات الدخول غير صحيحة" });
+        if (!teamAccount.restaurantId) throw new TRPCError({ code: "FORBIDDEN", message: "حساب الموظف غير مرتبط بمتجر محدد" });
         const [teamScheme, teamSalt, teamStoredKey] = teamAccount.passwordHash.split("$");
         if (teamScheme !== "scrypt" || !teamSalt || !teamStoredKey) throw new TRPCError({ code: "UNAUTHORIZED", message: "بيانات الدخول غير صحيحة" });
         const teamDerivedKey = scryptSync(input.password, Buffer.from(teamSalt, "base64"), 64);
