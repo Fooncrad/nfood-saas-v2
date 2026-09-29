@@ -950,7 +950,13 @@ export const appRouter = router({
     refundOrder: protectedProcedure.input(z.object({ restaurantId: z.number().int().positive(), orderId: z.number().int().positive(), pin: z.string().regex(/^\d{4,8}$/), reason: z.string().trim().max(500).optional() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       await assertSensitivePermission(ctx, "orders.refund", input.restaurantId);
-      if (ctx.user?.testRole === "cashier") await assertTeamPermission(ctx, "finance.read", input.restaurantId);
+      if (ctx.user?.testRole === "cashier") {
+        // A cashier refund is intentionally stricter than a normal scoped action:
+        // the finance grant must be explicit and must not inherit the cashier role shortcut.
+        if (!ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك صلاحية finance.read" });
+        try { await requireScopedPermission(ctx.user.id, "finance.read", { restaurantId: input.restaurantId }); }
+        catch { throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك صلاحية finance.read" }); }
+      }
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const [restaurant, order] = await Promise.all([
