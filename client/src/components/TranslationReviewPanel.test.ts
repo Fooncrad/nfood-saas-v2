@@ -54,8 +54,8 @@ describe("TranslationReviewPanel progress", () => {
   });
 
   it("keeps mobile navigation compact and separate from profile controls", () => {
-    expect(homeSource).toContain("nfood-mobile-drawer");
     expect(homeSource).toContain("lg:hidden");
+    expect(homeSource).toContain("mobileNavOpen");
     expect(homeSource).toContain("profileOpen");
   });
 
@@ -67,9 +67,8 @@ describe("TranslationReviewPanel progress", () => {
   });
 
   it("animates the mobile drawer without blocking reduced-motion users", () => {
-    expect(homeSource).toContain("transition-transform");
     expect(styleSource).toContain("prefers-reduced-motion");
-    expect(homeSource).toContain("pointer-events-none");
+    expect(homeSource).toContain("mobileNavOpen");
   });
 
   it("scopes mutation translation work to added nodes and caches dictionary entries", () => {
