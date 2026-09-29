@@ -95,10 +95,6 @@ function AppContent() {
   const { direction, language, setLanguage } = useLanguage();
   const [location] = useLocation();
   useEffect(() => {
-    const timer = window.setTimeout(() => { void Promise.all([routeLoaders.Home(), routeLoaders.RestaurantMenu(), routeLoaders.CustomerPortal(), routeLoaders.CustomerOrders()]); }, 1800);
-    return () => window.clearTimeout(timer);
-  }, []);
-  useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("lang");
     if (isUiLanguage(requested)) { setLanguage(requested); return; }
     const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null;
