@@ -398,7 +398,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const utils = trpc.useUtils();
   const remoteMenu = trpc.platform.menuItems.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
   const remoteBranches = trpc.platform.branches.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
-  const remoteTables = trpc.platform.tables.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false });
+  const remoteTables = trpc.platform.tables.useQuery({ restaurantId }, { enabled: Boolean(user), retry: false, refetchInterval: 3000, refetchIntervalInBackground: true });
   const branchId = remoteBranches.data?.[0]?.id;
   const availablePosTables = (remoteTables.data ?? []).filter((table) => table.branchId === branchId && table.status === "available");
   const posProducts: MenuProduct[] = (remoteMenu.data ?? []).map((item) => ({ id: item.id, name: item.name, category: String(item.categoryId), price: Number(item.price), available: item.isAvailable, imageUrl: item.imageUrl ?? undefined }));
@@ -409,6 +409,10 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const [deadLetterCount, setDeadLetterCount] = useState(0);
   const [customerDisplaySessionId] = useState(() => createCustomerDisplaySessionId());
   const [tableName, setTableName] = useState("");
+  useEffect(() => {
+    if (!remoteTables.isSuccess || !branchId || !tableName) return;
+    if (!availablePosTables.some((table) => table.name === tableName)) setTableName("");
+  }, [remoteTables.data, remoteTables.isSuccess, branchId, tableName]);
   const [serviceCustomerName, setServiceCustomerName] = useState("");
   const [serviceCustomerPhone, setServiceCustomerPhone] = useState("");
   const [reservationAt, setReservationAt] = useState("");
