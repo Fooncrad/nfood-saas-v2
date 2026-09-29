@@ -3033,6 +3033,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
           quantity: item.quantity,
           unitPrice: item.product.price,
         })),
+        paymentSplits: normalizePaymentSplits(paymentSplits).map(split => ({ method: split.method, amount: formatPaymentCents(split.amountCents) })),
         pricing: {
           ...result.pricing,
           discountPercent: "discountPercent" in result.pricing ? result.pricing.discountPercent : 0,
@@ -3308,6 +3309,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                 <span>الإجمالي النهائي</span>
                 <span>{money(Number(lastReceipt.pricing.total))}</span>
               </div>
+              {lastReceipt.paymentSplits?.length ? <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3"><p className="mb-2 text-xs font-black text-slate-800">تقسيم الفاتورة</p>{lastReceipt.paymentSplits.map((split, index) => <div key={`${split.method}-${index}`} className="flex justify-between py-1 text-xs"><span>الجزء {index + 1} · {{ cash: "نقدي", card: "بطاقة", bank_transfer: "تحويل بنكي", online: "دفع إلكتروني", other: "أخرى" }[split.method]}</span><strong>{money(Number(split.amount))}</strong></div>)}</div> : null}
             </div>
           </CardContent>
         </Card>
