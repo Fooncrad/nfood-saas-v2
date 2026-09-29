@@ -556,7 +556,7 @@ export default function RestaurantMenu() {
       </div>
     </header>
 
-    <section className="relative h-[118px] max-h-[118px] w-full overflow-hidden bg-[#071525] text-white motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-500 sm:h-[145px] sm:max-h-[145px] md:h-[170px] md:max-h-[170px] lg:h-[190px] lg:max-h-[190px]">
+    <section className="relative h-[210px] max-h-[210px] w-full overflow-hidden bg-[#071525] text-white motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300 sm:h-[240px] sm:max-h-[240px] md:h-[270px] md:max-h-[270px] lg:h-[300px] lg:max-h-[300px]">
       <div className="relative h-full w-full overflow-hidden">
           {restaurant.coverUrl
             ? <img src={restaurant.coverUrl} alt={restaurant.brandName || restaurant.name} className="absolute inset-0 h-full w-full object-cover object-center" />
