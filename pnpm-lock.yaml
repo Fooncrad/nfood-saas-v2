@@ -217,7 +217,7 @@ importers:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       nodemailer:
-        specifier: ^10.0.2
+        specifier: 10.0.2
         version: 10.0.2
       postcss:
         specifier: ^8.5.23
@@ -3734,7 +3734,7 @@ packages:
     engines: {node: '>=18'}
 
   nodemailer@10.0.2:
-    resolution: {integrity: sha512-izw9mVKFix6YSnC9eLgV6g1opl9DUlRio9ZNcq+Wu9Ujn2UwF+8Nl0B8nz22kEC+CTZCvinkxwJ0DeFbb6NwcQ==}
+    resolution: {integrity: sha512-83mO0TnWXySiJXdMAIUYmlXYdJ2KUq/w8EJgc4ogKU2UssaHf7ZPeuHcb4YCxeNiM0DDshnm291U0/ClrSZZsg==}
     engines: {node: '>=6.0.0'}
 
   normalize-range@0.1.2:
