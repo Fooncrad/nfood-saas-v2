@@ -38,6 +38,20 @@ describe("waiter call and reservation operational flows", () => {
     expect(menu).not.toContain("لا توجد فترة حجز متاحة لهذا الفرع.");
   });
 
+  it("synchronizes exact tables across menu, POS, and multi-branch stores", () => {
+    const menu = read("client/src/pages/RestaurantMenu.tsx");
+    const home = read("client/src/pages/Home.tsx");
+    const router = read("server/routers.ts");
+    expect(menu).toContain("refetchInterval:3000");
+    expect(menu).toContain('tableId:orderMode === "dineIn" ? selectedTableId');
+    expect(menu).toContain("selectedTable?.seatingSectionId");
+    expect(menu).toContain("The selected table is no longer available");
+    expect(router).toContain("tableId: z.number().int().positive().optional()");
+    expect(router).toContain("input.tableId ? eq(restaurantTables.id, input.tableId)");
+    expect(home).toContain("(remoteBranches.data?.length ?? 0) > 1");
+    expect(home).toContain("setSelectedBranchId(branches[0].id)");
+  });
+
   it("normalizes Saudi WhatsApp links and hides branch selection for a single branch", () => {
     const menu = read("client/src/pages/RestaurantMenu.tsx");
     expect(menu).toContain("normalizeWhatsAppNumber");
