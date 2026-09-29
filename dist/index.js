@@ -802,6 +802,33 @@ var posCashMovements = mysqlTable("posCashMovements", {
 }, (table) => ({
   shiftDateIdx: index("pos_cash_movements_shift_date_idx").on(table.shiftId, table.createdAt)
 }));
+var electronicInvoices = mysqlTable("electronicInvoices", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  orderId: int("orderId").notNull().references(() => orders.id),
+  customerId: int("customerId").references(() => users.id),
+  invoiceNumber: varchar("invoiceNumber", { length: 80 }).notNull(),
+  invoiceType: mysqlEnum("invoiceType", ["simplified", "tax"]).default("simplified").notNull(),
+  status: mysqlEnum("status", ["issued", "cancelled", "refunded"]).default("issued").notNull(),
+  currencyCode: varchar("currencyCode", { length: 3 }).default("SAR").notNull(),
+  sellerName: varchar("sellerName", { length: 180 }).notNull(),
+  sellerTaxNumber: varchar("sellerTaxNumber", { length: 64 }),
+  customerName: varchar("customerName", { length: 180 }),
+  customerTaxNumber: varchar("customerTaxNumber", { length: 64 }),
+  subtotal: decimal("subtotal", { precision: 12, scale: 2 }).default("0").notNull(),
+  discountAmount: decimal("discountAmount", { precision: 12, scale: 2 }).default("0").notNull(),
+  taxAmount: decimal("taxAmount", { precision: 12, scale: 2 }).default("0").notNull(),
+  total: decimal("total", { precision: 12, scale: 2 }).default("0").notNull(),
+  itemsSnapshotJson: text("itemsSnapshotJson").notNull(),
+  qrPayload: text("qrPayload"),
+  issuedAt: timestamp("issuedAt").defaultNow().notNull(),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull()
+}, (table) => ({
+  restaurantInvoiceNumberUidx: uniqueIndex("electronic_invoices_restaurant_number_uidx").on(table.restaurantId, table.invoiceNumber),
+  orderInvoiceUidx: uniqueIndex("electronic_invoices_order_uidx").on(table.orderId),
+  customerIssuedIdx: index("electronic_invoices_customer_issued_idx").on(table.customerId, table.issuedAt)
+}));
 var orderItems = mysqlTable("orderItems", {
   id: int("id").autoincrement().primaryKey(),
   orderId: int("orderId").notNull(),
@@ -3890,15 +3917,27 @@ async function getDailyFinancialSummary(restaurantId, from, to, branchId) {
   if (!db) return { totals: [], byPaymentMethod: [], byChannel: [], byBranch: [], orders: 0 };
   const filters = [eq2(orders.restaurantId, restaurantId), eq2(orders.status, "completed"), eq2(orders.paymentStatus, "paid"), gte(orders.createdAt, from), lte(orders.createdAt, to), branchId ? eq2(orders.branchId, branchId) : void 0].filter((condition) => Boolean(condition));
   const rows = await db.select({ id: orders.id, branchId: orders.branchId, channel: orders.channel, paymentMethod: orders.paymentMethod, currencyCode: orders.currencyCode, currencyDecimals: orders.currencyDecimals, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, serviceFeeAmount: orders.serviceFeeAmount, tipAmount: orders.tipAmount, deliveryFee: orders.deliveryFee, total: orders.total, createdAt: orders.createdAt }).from(orders).where(and2(...filters)).orderBy(desc(orders.createdAt));
-  const makeBucket = (currencyCode) => ({ currencyCode, grossSales: 0, discounts: 0, tax: 0, serviceFees: 0, tips: 0, deliveryFees: 0, netRevenue: 0, orders: 0 });
+  const parseMinor = (value, decimals) => {
+    const text2 = String(value ?? "0").trim().replace(/,/g, "");
+    const match = text2.match(/^(-?)(\d+)(?:\.(\d+))?$/);
+    if (!match) throw new Error("Invalid monetary value");
+    const scale = Math.max(0, Math.min(3, decimals));
+    const fraction = (match[3] ?? "").padEnd(scale, "0");
+    if (fraction.length > scale && /[1-9]/.test(fraction.slice(scale))) throw new Error("Monetary value exceeds currency precision");
+    const units = BigInt(match[2]) * BigInt("1" + "0".repeat(scale)) + BigInt(fraction.slice(0, scale) || "0");
+    return match[1] === "-" ? -units : units;
+  };
+  const toNumber = (units, decimals) => Number(units) / 10 ** decimals;
+  const makeBucket = (currencyCode, currencyDecimals) => ({ currencyCode, currencyDecimals, grossSales: BigInt(0), discounts: BigInt(0), tax: BigInt(0), serviceFees: BigInt(0), tips: BigInt(0), deliveryFees: BigInt(0), netRevenue: BigInt(0), orders: 0 });
   const add = (bucket, row) => {
-    bucket.grossSales += Number(row.subtotal ?? 0);
-    bucket.discounts += Number(row.discountAmount ?? 0);
-    bucket.tax += Number(row.taxAmount ?? 0);
-    bucket.serviceFees += Number(row.serviceFeeAmount ?? 0);
-    bucket.tips += Number(row.tipAmount ?? 0);
-    bucket.deliveryFees += Number(row.deliveryFee ?? 0);
-    bucket.netRevenue += Number(row.total ?? 0);
+    const d = bucket.currencyDecimals;
+    bucket.grossSales += parseMinor(row.subtotal, d);
+    bucket.discounts += parseMinor(row.discountAmount, d);
+    bucket.tax += parseMinor(row.taxAmount, d);
+    bucket.serviceFees += parseMinor(row.serviceFeeAmount, d);
+    bucket.tips += parseMinor(row.tipAmount, d);
+    bucket.deliveryFees += parseMinor(row.deliveryFee, d);
+    bucket.netRevenue += parseMinor(row.total, d);
     bucket.orders += 1;
   };
   const totals = /* @__PURE__ */ new Map();
@@ -3907,15 +3946,49 @@ async function getDailyFinancialSummary(restaurantId, from, to, branchId) {
   const branch = /* @__PURE__ */ new Map();
   for (const row of rows) {
     const currency = row.currencyCode || "SAR";
-    for (const [map, key] of [[totals, currency], [payment, `${row.paymentMethod}:${currency}`], [channel, `${row.channel}:${currency}`], [branch, `${row.branchId}:${currency}`]]) {
-      const current = map.get(key) ?? makeBucket(currency);
+    const decimals = Math.max(0, Math.min(3, Number.isInteger(row.currencyDecimals) ? Number(row.currencyDecimals) : 2));
+    for (const [map, key] of [[totals, `${currency}:${decimals}`], [payment, `${row.paymentMethod}:${currency}:${decimals}`], [channel, `${row.channel}:${currency}:${decimals}`], [branch, `${row.branchId}:${currency}:${decimals}`]]) {
+      const current = map.get(key) ?? makeBucket(currency, decimals);
       add(current, row);
       map.set(key, current);
     }
   }
-  const round = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
-  const normalize = (bucket) => ({ ...bucket, grossSales: round(bucket.grossSales), discounts: round(bucket.discounts), tax: round(bucket.tax), serviceFees: round(bucket.serviceFees), tips: round(bucket.tips), deliveryFees: round(bucket.deliveryFees), netRevenue: round(bucket.netRevenue) });
+  const normalize = (bucket) => ({ currencyCode: bucket.currencyCode, currencyDecimals: bucket.currencyDecimals, grossSales: toNumber(bucket.grossSales, bucket.currencyDecimals), discounts: toNumber(bucket.discounts, bucket.currencyDecimals), tax: toNumber(bucket.tax, bucket.currencyDecimals), serviceFees: toNumber(bucket.serviceFees, bucket.currencyDecimals), tips: toNumber(bucket.tips, bucket.currencyDecimals), deliveryFees: toNumber(bucket.deliveryFees, bucket.currencyDecimals), netRevenue: toNumber(bucket.netRevenue, bucket.currencyDecimals), orders: bucket.orders });
   return { totals: Array.from(totals.values()).map(normalize), byPaymentMethod: Array.from(payment.entries()).map(([key, value]) => ({ paymentMethod: key.split(":")[0], ...normalize(value) })), byChannel: Array.from(channel.entries()).map(([key, value]) => ({ channel: key.split(":")[0], ...normalize(value) })), byBranch: Array.from(branch.entries()).map(([key, value]) => ({ branchId: Number(key.split(":")[0]), ...normalize(value) })), orders: rows.length };
+}
+async function getFinancialReconciliation(restaurantId, from, to, branchId) {
+  const summary = await getDailyFinancialSummary(restaurantId, from, to, branchId);
+  const db = await getDb();
+  if (!db) return { ...summary, reconciliation: [] };
+  const conditions = [eq2(financialLedgerEntries.restaurantId, restaurantId), eq2(financialLedgerEntries.status, "posted"), gte(financialLedgerEntries.createdAt, from), lte(financialLedgerEntries.createdAt, to), branchId ? eq2(financialLedgerEntries.branchId, branchId) : void 0].filter((condition) => Boolean(condition));
+  const ledger = await db.select({ direction: financialLedgerEntries.direction, entryType: financialLedgerEntries.entryType, amount: financialLedgerEntries.amount, currencyCode: financialLedgerEntries.currencyCode }).from(financialLedgerEntries).where(and2(...conditions));
+  const parseCents = (value) => {
+    const match = String(value ?? "0").trim().match(/^(\\d+)(?:\\.(\\d{1,2}))?$/);
+    if (!match) throw new Error("Invalid ledger monetary value");
+    return BigInt(match[1]) * BigInt(100) + BigInt((match[2] ?? "").padEnd(2, "0"));
+  };
+  const byCurrency = /* @__PURE__ */ new Map();
+  for (const row of ledger) {
+    const currency = row.currencyCode || "SAR";
+    const bucket = byCurrency.get(currency) ?? { credits: BigInt(0), debits: BigInt(0), refunds: BigInt(0), cancellations: BigInt(0) };
+    const amount = parseCents(row.amount);
+    if (row.direction === "credit") bucket.credits += amount;
+    else bucket.debits += amount;
+    if (row.entryType === "refund") bucket.refunds += amount;
+    if (row.entryType === "cancellation") bucket.cancellations += amount;
+    byCurrency.set(currency, bucket);
+  }
+  const currencies = /* @__PURE__ */ new Set([...summary.totals.map((row) => row.currencyCode), ...byCurrency.keys()]);
+  const reconciliation = Array.from(currencies).map((currencyCode) => {
+    const sales = summary.totals.find((row) => row.currencyCode === currencyCode)?.netRevenue ?? 0;
+    const ledgerBucket = byCurrency.get(currencyCode) ?? { credits: BigInt(0), debits: BigInt(0), refunds: BigInt(0), cancellations: BigInt(0) };
+    const cents = (value) => Number(value) / 100;
+    const ledgerCredits = cents(ledgerBucket.credits);
+    const ledgerDebits = cents(ledgerBucket.debits);
+    const netLedger = ledgerCredits - ledgerDebits;
+    return { currencyCode, recognizedSales: sales, ledgerCredits, ledgerDebits, refunds: cents(ledgerBucket.refunds), cancellations: cents(ledgerBucket.cancellations), netLedger, variance: Math.round((netLedger - sales) * 100) / 100 };
+  });
+  return { ...summary, reconciliation };
 }
 async function listInventory(restaurantId) {
   const db = await getDb();
@@ -4603,8 +4676,12 @@ async function listFinancialLedgerEntries(input) {
 async function createFinancialLedgerEntry(input) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
-  const normalizedAmount = Number(input.amount).toFixed(2);
-  if (!Number.isFinite(Number(input.amount)) || Number(input.amount) <= 0) throw new Error("Ledger amount must be positive");
+  const rawAmount = input.amount.trim();
+  const amountMatch = rawAmount.match(/^(\\d+)(?:\\.(\\d{1,2}))?$/);
+  if (!amountMatch) throw new Error("Ledger amount must be a positive monetary value with at most 2 decimals");
+  const amountMinor = BigInt(amountMatch[1]) * BigInt(100) + BigInt((amountMatch[2] ?? "").padEnd(2, "0"));
+  if (amountMinor <= BigInt(0)) throw new Error("Ledger amount must be positive");
+  const normalizedAmount = `\\${amountMinor / BigInt(100)}.\\${(amountMinor % BigInt(100)).toString().padStart(2, "0")}`;
   if (input.idempotencyKey) {
     const existing = await db.select({ id: financialLedgerEntries.id }).from(financialLedgerEntries).where(eq2(financialLedgerEntries.idempotencyKey, input.idempotencyKey)).limit(1);
     if (existing[0]) return existing[0].id;
@@ -5455,7 +5532,7 @@ var restaurantAdminProcedure = protectedProcedure.use(
 var testRoleProcedure = (...roles2) => protectedProcedure.use(
   t.middleware(async (opts) => {
     const role = opts.ctx.user?.testRole;
-    if (role && !roles2.includes(role)) {
+    if (!role || !roles2.includes(role)) {
       throw new TRPCError2({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u062A\u0646\u0641\u064A\u0630 \u0647\u0630\u0627 \u0627\u0644\u0625\u062C\u0631\u0627\u0621" });
     }
     return opts.next({ ctx: { ...opts.ctx, user: opts.ctx.user } });
@@ -9086,9 +9163,15 @@ function isMerchantContext(ctx, restaurantId) {
   return ctx.user.testRole === "restaurant_admin" || ctx.user.restaurantId === restaurantId;
 }
 function assertRestaurantAccess(ctx, restaurantId) {
+  if (!ctx.user) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644" });
   if (isAdminContext(ctx)) return;
-  if (ctx.user?.testRole === "restaurant_admin" && ctx.user.restaurantId === void 0) return;
-  if (ctx.user?.testRole && restaurantId !== (ctx.user.restaurantId ?? 1)) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0627\u0644\u0648\u0635\u0648\u0644 \u0625\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645" });
+  const restaurantRoles = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver"];
+  if (!ctx.user.testRole || !restaurantRoles.includes(ctx.user.testRole)) {
+    throw new TRPCError7({ code: "FORBIDDEN", message: "\u0647\u0630\u0627 \u0627\u0644\u062D\u0633\u0627\u0628 \u063A\u064A\u0631 \u0645\u062E\u0648\u0644 \u0644\u0644\u0648\u0635\u0648\u0644 \u0625\u0644\u0649 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0637\u0627\u0639\u0645" });
+  }
+  if (!ctx.user.restaurantId || ctx.user.restaurantId !== restaurantId) {
+    throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0627\u0644\u0648\u0635\u0648\u0644 \u0625\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645" });
+  }
 }
 function assertNotDriver(ctx) {
   if (ctx.user?.testRole === "driver") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0648\u062D\u0629 \u0627\u0644\u0633\u0627\u0626\u0642 \u062A\u0639\u0631\u0636 \u0627\u0644\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644\u064A\u0629 \u0641\u0642\u0637" });
@@ -10376,7 +10459,7 @@ var appRouter = router({
       const assignments = linkedUser ? await db.select({ id: waiterTableAssignments.id, branchId: waiterTableAssignments.branchId, tableId: waiterTableAssignments.tableId, tableName: restaurantTables.name, assignedAt: waiterTableAssignments.createdAt }).from(waiterTableAssignments).innerJoin(restaurantTables, eq7(waiterTableAssignments.tableId, restaurantTables.id)).where(and7(eq7(waiterTableAssignments.restaurantId, input.restaurantId), eq7(waiterTableAssignments.waiterUserId, linkedUser.id))).orderBy(desc3(waiterTableAssignments.createdAt)) : [];
       return { ...account, userId: linkedUser?.id ?? null, lastSignedIn: linkedUser?.lastSignedIn ?? null, activity, calls, assignments };
     }),
-    createTeamAccount: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), email: z3.string().email().max(320), displayName: z3.string().trim().min(2).max(120), phone: z3.string().trim().min(7).max(40).optional(), role: z3.enum(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver", "customer"]), permissions: z3.array(z3.string().trim().min(2).max(80)).max(40).optional(), password: z3.string().min(8).max(128) })).mutation(async ({ ctx, input }) => {
+    createTeamAccount: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), email: z3.string().email().max(320), displayName: z3.string().trim().min(2).max(120), phone: z3.string().trim().min(7).max(40).optional(), role: z3.enum(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver"]), permissions: z3.array(z3.string().trim().min(2).max(80)).max(40).optional(), password: z3.string().min(8).max(128) })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
@@ -10391,7 +10474,7 @@ var appRouter = router({
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "team.account.created", entityType: "team_account", entityId: String(accountId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ email, role: input.role, hasPhone: Boolean(input.phone) }) });
       return { success: true, id: accountId, userId: (await getUserByOpenId(`test_${accountId}`))?.id ?? null };
     }),
-    updateTeamAccount: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive(), displayName: z3.string().trim().min(2).max(120).optional(), phone: z3.string().trim().min(7).max(40).nullable().optional(), role: z3.enum(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver", "customer"]).optional(), permissions: z3.array(z3.string().trim().min(2).max(80)).max(40).optional(), isActive: z3.boolean().optional(), password: z3.string().min(8).max(128).optional() })).mutation(async ({ ctx, input }) => {
+    updateTeamAccount: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive(), displayName: z3.string().trim().min(2).max(120).optional(), phone: z3.string().trim().min(7).max(40).nullable().optional(), role: z3.enum(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver"]).optional(), permissions: z3.array(z3.string().trim().min(2).max(80)).max(40).optional(), isActive: z3.boolean().optional(), password: z3.string().min(8).max(128).optional() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
@@ -10519,6 +10602,37 @@ var appRouter = router({
       const id = await upsertReceiptTemplate({ restaurantId: input.restaurantId, headerText: before?.headerText ?? "", footerText: before?.footerText ?? "\u0634\u0643\u0631\u0627\u064B \u0644\u0632\u064A\u0627\u0631\u062A\u0643\u0645", logoUrl: stored.url, messageTemplatesJson: before?.messageTemplatesJson ?? null, createdByUserId: ctx.user?.id ?? null });
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "receipt.logo.updated", entityType: "receipt_template", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ previousLogoUrl: before?.logoUrl ?? null, fileName: input.fileName, contentType: input.contentType, sizeBytes: buffer.length }) });
       return { success: true, id, logoUrl: stored.url };
+    }),
+    electronicInvoices: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), limit: z3.number().int().min(1).max(250).default(100) })).query(async ({ ctx, input }) => {
+      assertRestaurantAccess(ctx, input.restaurantId);
+      const db = await getDb();
+      if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      return db.select().from(electronicInvoices).where(eq7(electronicInvoices.restaurantId, input.restaurantId)).orderBy(desc3(electronicInvoices.issuedAt)).limit(input.limit);
+    }),
+    myElectronicInvoices: protectedProcedure.input(z3.object({ limit: z3.number().int().min(1).max(100).default(50) }).optional()).query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      return db.select().from(electronicInvoices).where(eq7(electronicInvoices.customerId, ctx.user.id)).orderBy(desc3(electronicInvoices.issuedAt)).limit(input?.limit ?? 50);
+    }),
+    issueElectronicInvoice: testRoleProcedure("restaurant_admin", "cashier", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive(), invoiceType: z3.enum(["simplified", "tax"]).default("simplified"), customerName: z3.string().trim().max(180).optional(), customerTaxNumber: z3.string().trim().max(64).optional() })).mutation(async ({ ctx, input }) => {
+      assertRestaurantAccess(ctx, input.restaurantId);
+      const db = await getDb();
+      if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const existing = (await db.select().from(electronicInvoices).where(and7(eq7(electronicInvoices.restaurantId, input.restaurantId), eq7(electronicInvoices.orderId, input.orderId))).limit(1))[0];
+      if (existing) return existing;
+      const order = (await db.select().from(orders).where(and7(eq7(orders.id, input.orderId), eq7(orders.restaurantId, input.restaurantId))).limit(1))[0];
+      if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
+      if (order.paymentStatus !== "paid") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0625\u0635\u062F\u0627\u0631 \u0641\u0627\u062A\u0648\u0631\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 \u0642\u0628\u0644 \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062F\u0641\u0639" });
+      const restaurant = await getRestaurantById(input.restaurantId);
+      if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
+      const items = await db.select({ menuItemId: orderItems.menuItemId, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice, name: menuItems.name }).from(orderItems).leftJoin(menuItems, eq7(orderItems.menuItemId, menuItems.id)).where(eq7(orderItems.orderId, input.orderId));
+      const invoiceNumber = `NF-${input.restaurantId}-${String(input.orderId).padStart(8, "0")}`;
+      const issuedAt = /* @__PURE__ */ new Date();
+      const qrPayload = JSON.stringify({ invoiceNumber, seller: restaurant.brandName ?? restaurant.name, taxNumber: restaurant.taxNumber ?? null, issuedAt: issuedAt.toISOString(), total: order.total, tax: order.taxAmount, currency: order.currencyCode });
+      const values = { restaurantId: input.restaurantId, orderId: input.orderId, customerId: order.customerId ?? null, invoiceNumber, invoiceType: input.invoiceType, status: "issued", currencyCode: order.currencyCode, sellerName: restaurant.brandName ?? restaurant.name, sellerTaxNumber: restaurant.taxNumber ?? null, customerName: input.customerName?.trim() || order.guestName || null, customerTaxNumber: input.customerTaxNumber?.trim() || null, subtotal: order.subtotal, discountAmount: order.discountAmount, taxAmount: order.taxAmount, total: order.total, itemsSnapshotJson: JSON.stringify(items), qrPayload, issuedAt, createdByUserId: ctx.user.id };
+      await db.insert(electronicInvoices).values(values);
+      await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user.id, actorRole: ctx.user.testRole ?? ctx.user.role, action: "electronic_invoice.issued", entityType: "electronic_invoice", entityId: invoiceNumber, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ orderId: input.orderId, invoiceType: input.invoiceType, total: order.total }) });
+      return (await db.select().from(electronicInvoices).where(and7(eq7(electronicInvoices.restaurantId, input.restaurantId), eq7(electronicInvoices.orderId, input.orderId))).limit(1))[0];
     }),
     sendReceipt: testRoleProcedure("restaurant_admin", "cashier", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive(), channel: z3.enum(["email", "sms"]), recipient: z3.string().trim().max(320).optional(), locale: z3.enum(["ar", "en", "fr"]).optional() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
@@ -13071,7 +13185,13 @@ var appRouter = router({
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), eq7(restaurants.status, "active"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
-      return listReservationSlots(restaurant.id, input.branchId);
+      const branch = (await db.select({ id: branches.id, restaurantId: branches.restaurantId, status: branches.status, openingTime: branches.openingTime, closingTime: branches.closingTime }).from(branches).where(and7(eq7(branches.id, input.branchId), eq7(branches.restaurantId, restaurant.id))).limit(1))[0];
+      if (!branch || branch.status !== "open") return [];
+      const configured2 = await listReservationSlots(restaurant.id, input.branchId);
+      if (configured2.length) return configured2;
+      const openingTime = branch.openingTime ?? "00:00";
+      const closingTime = branch.closingTime ?? "23:59";
+      return Array.from({ length: 7 }, (_, dayOfWeek) => ({ id: -(dayOfWeek + 1), restaurantId: restaurant.id, branchId: input.branchId, dayOfWeek, startTime: openingTime, endTime: closingTime, capacity: 999, bookedCount: 0, slotDurationMinutes: 60, isActive: true, createdAt: /* @__PURE__ */ new Date(0), updatedAt: /* @__PURE__ */ new Date(0), fallback: true }));
     }),
     reservationBlackoutDates: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), branchId: z3.number().int().positive() })).query(async ({ input }) => {
       const db = await getDb();
@@ -13109,7 +13229,18 @@ var appRouter = router({
       await deleteReservationBlackoutDate(input);
       return { success: true, id: input.id };
     }),
-    myPreferences: protectedProcedure.query(({ ctx }) => getUserPreferences(ctx.user.id)),
+    myPreferences: protectedProcedure.query(async ({ ctx }) => {
+      const existing = await getUserPreferences(ctx.user.id);
+      const defaults = { enabled: true, sound: true, push: true, orders: true, kitchen: true, waiterCalls: true, reservations: true, payments: true, operational: true };
+      let parsed = {};
+      try {
+        const value = JSON.parse(existing?.notificationPreferencesJson ?? "{}");
+        if (value && typeof value === "object") parsed = value;
+      } catch {
+        parsed = {};
+      }
+      return existing ? { ...existing, notificationPreferencesJson: JSON.stringify({ ...defaults, ...parsed }) } : { userId: ctx.user.id, language: "ar", themeMode: "system", themePreset: "nfood-sunset", notificationPreferencesJson: JSON.stringify(defaults) };
+    }),
     saveMyPreferences: protectedProcedure.input(z3.object({ language: z3.enum(["ar", "en", "fr", "ur", "es", "de", "tr"]), themeMode: z3.enum(["light", "dark", "system"]), themePreset: z3.string().trim().min(2).max(40), notificationPreferencesJson: z3.string().max(1e3).nullable().optional() })).mutation(({ ctx, input }) => upsertUserPreferences(ctx.user.id, input).then(() => ({ success: true, ...input }))),
     myNoteTemplates: protectedProcedure.query(({ ctx }) => listMyQuickNoteTemplates(ctx.user.id)),
     myOrders: protectedProcedure.input(z3.object({ limit: z3.number().int().min(1).max(100).default(100) }).optional()).query(({ ctx, input }) => listCustomerOrders(ctx.user.id, input?.limit ?? 100)),
@@ -14228,20 +14359,26 @@ var appRouter = router({
       assertTeamPermission(ctx, "reports.read");
       return getDailyOrderPerformance(input.restaurantId, input.from, input.to);
     }),
-    dailyFinancialSummary: testRoleProcedure("restaurant_admin", "cashier", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().optional(), from: z3.coerce.date(), to: z3.coerce.date() })).query(({ ctx, input }) => {
+    dailyFinancialSummary: testRoleProcedure("restaurant_admin", "cashier", "accountant", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().optional(), from: z3.coerce.date(), to: z3.coerce.date() })).query(({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       assertTeamPermission(ctx, "finance.read");
       if (input.to < input.from) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0646\u0637\u0627\u0642 \u0627\u0644\u062A\u0627\u0631\u064A\u062E \u063A\u064A\u0631 \u0635\u0627\u0644\u062D" });
       return getDailyFinancialSummary(input.restaurantId, input.from, input.to, input.branchId);
     }),
-    financialLedger: testRoleProcedure("restaurant_admin", "cashier", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().optional(), userId: z3.number().int().positive().optional(), section: z3.string().trim().max(80).optional(), entryType: z3.enum(["payment", "refund", "cancellation", "deposit", "withdrawal", "adjustment"]).optional(), from: z3.coerce.date().optional(), to: z3.coerce.date().optional(), limit: z3.number().int().min(1).max(1e3).default(200) })).query(({ ctx, input }) => {
+    financialReconciliation: testRoleProcedure("restaurant_admin", "cashier", "accountant", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().optional(), from: z3.coerce.date(), to: z3.coerce.date() })).query(({ ctx, input }) => {
+      assertRestaurantAccess(ctx, input.restaurantId);
+      assertTeamPermission(ctx, "finance.read");
+      if (input.to < input.from) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0646\u0637\u0627\u0642 \u0627\u0644\u062A\u0627\u0631\u064A\u062E \u063A\u064A\u0631 \u0635\u0627\u0644\u062D" });
+      return getFinancialReconciliation(input.restaurantId, input.from, input.to, input.branchId);
+    }),
+    financialLedger: testRoleProcedure("restaurant_admin", "cashier", "accountant", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().optional(), userId: z3.number().int().positive().optional(), section: z3.string().trim().max(80).optional(), entryType: z3.enum(["payment", "refund", "cancellation", "deposit", "withdrawal", "adjustment"]).optional(), from: z3.coerce.date().optional(), to: z3.coerce.date().optional(), limit: z3.number().int().min(1).max(1e3).default(200) })).query(({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       assertTeamPermission(ctx, "finance.read");
       return listFinancialLedgerEntries(input);
     }),
-    createFinancialLedgerEntry: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().nullable().optional(), userId: z3.number().int().positive().nullable().optional(), section: z3.string().trim().min(2).max(80), entryType: z3.enum(["payment", "refund", "cancellation", "deposit", "withdrawal", "adjustment"]), direction: z3.enum(["credit", "debit"]), amount: z3.string().regex(/^\\d+(\\.\\d{1,2})?$/), currencyCode: z3.string().trim().length(3).default("SAR"), referenceType: z3.string().trim().max(60).nullable().optional(), referenceId: z3.number().int().positive().nullable().optional(), idempotencyKey: z3.string().trim().max(120).nullable().optional(), note: z3.string().trim().max(500).nullable().optional() })).mutation(({ ctx, input }) => {
+    createFinancialLedgerEntry: testRoleProcedure("restaurant_admin", "accountant", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().nullable().optional(), userId: z3.number().int().positive().nullable().optional(), section: z3.string().trim().min(2).max(80), entryType: z3.enum(["payment", "refund", "cancellation", "deposit", "withdrawal", "adjustment"]), direction: z3.enum(["credit", "debit"]), amount: z3.string().regex(/^\\d+(\\.\\d{1,2})?$/), currencyCode: z3.string().trim().length(3).default("SAR"), referenceType: z3.string().trim().max(60).nullable().optional(), referenceId: z3.number().int().positive().nullable().optional(), idempotencyKey: z3.string().trim().max(120).nullable().optional(), note: z3.string().trim().max(500).nullable().optional() })).mutation(({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
-      assertTeamPermission(ctx, "finance.read");
+      assertTeamPermission(ctx, "finance.manage");
       return createFinancialLedgerEntry({ ...input, createdByUserId: ctx.user.id });
     }),
     driverSecurityDeposit: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), driverUserId: z3.number().int().positive(), openingBalance: z3.string().regex(/^\\d+(\\.\\d{1,2})?$/).optional(), currencyCode: z3.string().trim().length(3).default("SAR"), note: z3.string().trim().max(500).nullable().optional() })).mutation(({ ctx, input }) => {
