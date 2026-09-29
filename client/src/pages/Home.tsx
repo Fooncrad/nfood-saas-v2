@@ -431,7 +431,9 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const [customerDisplaySessionId] = useState(() => createCustomerDisplaySessionId());
   const [tableName, setTableName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "bank_transfer" | "online" | "other">("cash");
-  const createOrder = trpc.platform.createOrder.useMutation();\n  const issueInvoice = trpc.platform.issueElectronicInvoice.useMutation();\n  const [lastInvoice, setLastInvoice] = useState<{ invoiceNumber: string; orderId: number; total: string; currencyCode: string; issuedAt: string | Date } | null>(null);
+  const createOrder = trpc.platform.createOrder.useMutation();
+  const issueInvoice = trpc.platform.issueElectronicInvoice.useMutation();
+  const [lastInvoice, setLastInvoice] = useState<{ invoiceNumber: string; orderId: number; total: string; currencyCode: string; issuedAt: string | Date } | null>(null);
   const [barcodeBusy, setBarcodeBusy] = useState(false);
   const [productSearch, setProductSearch] = useState("");
   const [printerSettingsOpen, setPrinterSettingsOpen] = useState(false);
@@ -451,7 +453,8 @@ function PosView({ restaurantId }: { restaurantId: number }) {
     }
     try {
       const result = await createOrder.mutateAsync(payload);
-      toast.success(`تم حفظ الطلب #${result.orderId}`);\n      if (result.paymentStatus === "paid") { try { const invoice = await issueInvoice.mutateAsync({ restaurantId, orderId: result.orderId, invoiceType: "simplified" }); setLastInvoice(invoice); toast.success(`تم إصدار الفاتورة ${invoice.invoiceNumber}`); } catch (invoiceError) { toast.warning(invoiceError instanceof Error ? invoiceError.message : "تم حفظ الطلب وتعذر إصدار الفاتورة تلقائيًا"); } }
+      toast.success(`تم حفظ الطلب #${result.orderId}`);
+      if (result.paymentStatus === "paid") { try { const invoice = await issueInvoice.mutateAsync({ restaurantId, orderId: result.orderId, invoiceType: "simplified" }); setLastInvoice(invoice); toast.success(`تم إصدار الفاتورة ${invoice.invoiceNumber}`); } catch (invoiceError) { toast.warning(invoiceError instanceof Error ? invoiceError.message : "تم حفظ الطلب وتعذر إصدار الفاتورة تلقائيًا"); } }
       publishCustomerFacingState(customerDisplaySessionId, { restaurantId, updatedAt: new Date().toISOString(), status: "complete", lines: cart.map((item) => ({ id: item.product.id, name: item.product.name, quantity: item.quantity, unitPrice: item.product.price })), subtotal: Number(result.pricing?.subtotal ?? total), discount: Number(result.pricing?.discountAmount ?? 0), tax: Number(result.pricing?.taxAmount ?? 0), total: Number(result.pricing?.total ?? total), currencyCode: result.currency?.currencyCode ?? "SAR", receiptNumber: String(result.orderId) });
       window.setTimeout(() => publishCustomerFacingState(customerDisplaySessionId, { restaurantId, updatedAt: new Date().toISOString(), status: "idle", lines: [], subtotal: 0, discount: 0, tax: 0, total: 0, currencyCode: result.currency?.currencyCode ?? "SAR" }), 12000);
       setCart([]);
