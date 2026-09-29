@@ -140,7 +140,7 @@ describe("language configuration", () => {
   });
 
   it("translates newly added Trend Kitchen labels in English and French", () => {
-    expect(autoTranslateText("سوق نفود للمحتوى · برجر · شراء", "en")).toBe("NFOOD Content Market · Burger · Buy");
+    expect(autoTranslateText("سوق نفود للمحتوى · برجر · شراء", "en")).toBe("NFOOD Content Market · Burger · Purchase");
     expect(autoTranslateText("سوق نفود للمحتوى · برجر · شراء", "fr")).toBe("Marché de contenu NFOOD · Burger · Acheter");
   });
 
