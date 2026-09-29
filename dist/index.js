@@ -6890,15 +6890,29 @@ var marketplaceRouter = router({
     const appearance = readMarketplaceAppearance(settings.marketplaceAppearanceJson);
     return { siteName: settings.siteName, siteLogoUrl: settings.siteLogoUrl, socialLinks: settings.socialLinks, appearance };
   }),
-  publicSectors: publicProcedure.query(async () => {
+  publicSectors: publicProcedure.input(z2.object({
+    countryCode: z2.string().trim().length(2).transform((value) => value.toUpperCase()).optional()
+  }).optional()).query(async ({ input }) => {
     const settings = await getPlatformSettings();
     const appearance = readMarketplaceAppearance(settings.marketplaceAppearanceJson);
     if (!isMarketplaceEnabled(appearance)) return [];
     const db = await getDb();
     if (!db) return [];
     const sectors = await db.select().from(marketplaceSectors).where(eq3(marketplaceSectors.isActive, true)).orderBy(marketplaceSectors.sortOrder);
-    const counts = await db.select({ sectorId: marketplaceListings.sectorId, total: sql2`count(*)` }).from(marketplaceListings).where(eq3(marketplaceListings.status, "active")).groupBy(marketplaceListings.sectorId);
+    const entityConditions = [eq3(platformEntities.status, true)];
+    if (input?.countryCode) entityConditions.push(eq3(platformEntities.countryCode, input.countryCode));
+    const entities = await db.select({
+      id: platformEntities.id,
+      restaurantId: platformEntities.restaurantId,
+      sector: platformEntities.sector
+    }).from(platformEntities).where(and3(...entityConditions));
+    const entityIds = entities.map((entity) => entity.id);
+    const counts = entityIds.length ? await db.select({ sectorId: marketplaceListings.sectorId, total: sql2`count(*)` }).from(marketplaceListings).where(and3(eq3(marketplaceListings.status, "active"), inArray2(marketplaceListings.entityId, entityIds))).groupBy(marketplaceListings.sectorId) : [];
     const countMap = new Map(counts.map((row) => [Number(row.sectorId), Number(row.total)]));
+    const restaurantIds = entities.flatMap((entity) => entity.sector === "restaurant" && entity.restaurantId ? [Number(entity.restaurantId)] : []);
+    const restaurantMenuCount = restaurantIds.length ? Number((await db.select({ total: sql2`count(*)` }).from(menuItems).where(and3(inArray2(menuItems.restaurantId, restaurantIds), eq3(menuItems.isAvailable, true))))[0]?.total ?? 0) : 0;
+    const restaurantSector = sectors.find((sector) => sector.slug === "restaurant");
+    if (restaurantSector && restaurantMenuCount > 0) countMap.set(restaurantSector.id, restaurantMenuCount);
     return sectors.map((sector) => ({ ...sector, listingCount: countMap.get(sector.id) ?? 0 }));
   }),
   publicFeaturedStores: publicProcedure.input(z2.object({
@@ -6967,11 +6981,21 @@ var marketplaceRouter = router({
     } else {
       for (const listing of listings) matchingEntityIds.add(listing.entityId);
     }
-    if (input.sectorSlug && !matchingEntityIds.size) return [];
+    const includesRestaurantMenus = input.sectorSlug === "restaurant";
+    if (input.sectorSlug && !matchingEntityIds.size && !includesRestaurantMenus) return [];
     const entityConditions = [eq3(platformEntities.status, true)];
-    if (input.sectorSlug) entityConditions.push(inArray2(platformEntities.id, Array.from(matchingEntityIds)));
+    if (input.sectorSlug) {
+      entityConditions.push(includesRestaurantMenus ? eq3(platformEntities.sector, "restaurant") : inArray2(platformEntities.id, Array.from(matchingEntityIds)));
+    }
     if (input.countryCode) entityConditions.push(eq3(platformEntities.countryCode, input.countryCode));
     const entityRows = await db.select().from(platformEntities).where(and3(...entityConditions));
+    const restaurantIds = entityRows.flatMap((entity) => entity.sector === "restaurant" && entity.restaurantId ? [Number(entity.restaurantId)] : []);
+    const availableMenuItems = restaurantIds.length ? await db.select({ restaurantId: menuItems.restaurantId }).from(menuItems).where(and3(inArray2(menuItems.restaurantId, restaurantIds), eq3(menuItems.isAvailable, true))) : [];
+    const availableMenuCountMap = /* @__PURE__ */ new Map();
+    for (const item of availableMenuItems) {
+      if (!item.restaurantId) continue;
+      availableMenuCountMap.set(item.restaurantId, (availableMenuCountMap.get(item.restaurantId) ?? 0) + 1);
+    }
     const searchTerm = input.search?.trim().toLowerCase();
     const result = [];
     for (const entity of entityRows) {
@@ -6986,7 +7010,7 @@ var marketplaceRouter = router({
         sector: entity.sector,
         status: entity.status,
         plan: entity.plan,
-        listingCount: entityListings.length,
+        listingCount: entity.sector === "restaurant" && entity.restaurantId ? availableMenuCountMap.get(Number(entity.restaurantId)) ?? entityListings.length : entityListings.length,
         minPrice: entityListings.length ? Math.min(...entityListings.map((row) => Number(row.price))) : 0,
         restaurant: restaurantMatch[0] ?? null,
         storefront
