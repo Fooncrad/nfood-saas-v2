@@ -664,7 +664,7 @@ function FinanceSalesView({ restaurantId }: { restaurantId: number }) {
   const [from, setFrom] = useState(start.toISOString().slice(0, 10)); const [to, setTo] = useState(end.toISOString().slice(0, 10));
   const bounds = useMemo(() => ({ from: new Date(`${from}T00:00:00`), to: new Date(`${to}T23:59:59.999`) }), [from, to]);
   const report = trpc.admin.dailyFinancialSummary.useQuery({ restaurantId, from: bounds.from, to: bounds.to }, { enabled: Boolean(restaurantId) && bounds.from <= bounds.to, retry: false });
-  const liveOrders = trpc.platform.orders.useQuery({ restaurantId }, { enabled: Boolean(restaurantId), retry: false, refetchInterval: 5000 });
+  const liveOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId, limit: 500 }, { enabled: Boolean(restaurantId), retry: false, refetchInterval: 5000 });
   const periodOrders = useMemo(() => (liveOrders.data ?? []).filter((order) => { const createdAt = new Date(order.createdAt); return createdAt >= bounds.from && createdAt <= bounds.to; }), [liveOrders.data, bounds.from, bounds.to]);
   const paidOrders = periodOrders.filter((order) => order.paymentStatus === "paid").length;
   const pendingPaymentOrders = periodOrders.filter((order) => order.paymentStatus !== "paid" && order.status !== "cancelled").length;
