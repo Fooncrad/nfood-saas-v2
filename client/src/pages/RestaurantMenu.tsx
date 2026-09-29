@@ -501,7 +501,7 @@ export default function RestaurantMenu() {
       </div>
     </header>
 
-    <section className="relative h-[118px] max-h-[118px] overflow-hidden bg-[#071525] text-white sm:h-[145px] sm:max-h-[145px] md:h-[170px] md:max-h-[170px] lg:h-[190px] lg:max-h-[190px]">
+    <section className="relative h-[118px] max-h-[118px] overflow-hidden bg-[#071525] text-white motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-500 sm:h-[145px] sm:max-h-[145px] md:h-[170px] md:max-h-[170px] lg:h-[190px] lg:max-h-[190px]">
       <div className="mx-auto h-full max-w-7xl">
         <div className="relative h-full overflow-hidden">
           {restaurant.coverUrl
@@ -536,7 +536,7 @@ export default function RestaurantMenu() {
 
     <section aria-label={copy.menu} className="mx-auto max-w-7xl px-3 pb-2 pt-2 sm:px-5 sm:pb-3 sm:pt-3">
       <div className={`flex items-center rounded-2xl border px-3 ${surface}`}><Search className={`h-5 w-5 shrink-0 ${muted}`} /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.search} className="h-12 border-0 bg-transparent shadow-none focus-visible:ring-0" /></div>
-      <div className="mt-2"><label className={`mb-1.5 block text-xs font-black ${muted}`}>{lang === "ar" ? "القسم" : lang === "fr" ? "Catégorie" : "Category"}</label><select aria-label={copy.menu} value={String(activeCategory)} onChange={(event) => setActiveCategory(event.target.value === "all" ? "all" : Number(event.target.value))} className={`h-11 w-full rounded-xl border px-3 text-sm font-bold outline-none sm:max-w-xs ${surface}`}><option value="all">{copy.all}</option>{categories.map((category) => <option key={category.id} value={category.id}>{localize(category.translationsJson, category.name, lang, "name")}</option>)}</select></div>
+      <div className="mt-2"><label className={`mb-1.5 block text-xs font-black ${muted}`}>{lang === "ar" ? "القسم" : lang === "fr" ? "Catégorie" : "Category"}</label><select aria-label={copy.menu} value={String(activeCategory)} onChange={(event) => setActiveCategory(event.target.value === "all" ? "all" : Number(event.target.value))} className={`h-11 w-full rounded-xl border px-3 text-sm font-bold outline-none transition duration-200 focus:ring-2 focus:ring-orange-400/30 sm:max-w-xs ${surface}`}><option value="all">{copy.all}</option>{categories.map((category) => <option key={category.id} value={category.id}>{localize(category.translationsJson, category.name, lang, "name")}</option>)}</select></div>
     </section>
 
     <section id="menu-grid" className="mx-auto max-w-7xl px-3 pb-28 sm:px-5">
@@ -546,7 +546,7 @@ export default function RestaurantMenu() {
             const name = localize(item.translationsJson, item.name, lang, "name");
             const description = localize(item.translationsJson, item.description || "", lang, "description");
             const discounted = item.compareAtPrice && Number(item.compareAtPrice) > Number(item.price);
-            return <button key={item.id} onClick={() => openProduct(item.id)} className={`group min-w-0 overflow-hidden rounded-[22px] border text-start shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${surface}`}>
+            return <button key={item.id} onClick={() => openProduct(item.id)} className={`group min-w-0 overflow-hidden rounded-[22px] border text-start shadow-sm transition duration-200 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 active:scale-[0.98] sm:hover:-translate-y-1 sm:hover:shadow-xl ${surface}`}>
               <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100/80 dark:bg-white/5">{item.imageUrl ? <><img src={item.imageUrl} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center" /><div className="absolute inset-0 bg-black/10" /><img src={item.imageUrl} alt={name} loading="lazy" className="relative z-10 h-full w-full object-contain object-center" /></> : <div className="grid h-full place-items-center"><Utensils className="h-9 w-9 opacity-20" /></div>}</div>
               <div className="min-w-0 p-3"><h3 className="line-clamp-1 text-[13px] font-black leading-5 sm:text-sm">{name}</h3>{description && <p className={`mt-0.5 line-clamp-1 text-[11px] leading-4 ${muted}`}>{description}</p>}<div className="mt-2 flex items-center justify-between gap-2"><div className="flex min-w-0 flex-wrap items-baseline gap-1.5"><span className="text-base font-black">{formatMoney(item.price, currency)}</span>{discounted && <span className="text-[10px] font-bold text-red-600 line-through dark:text-red-400">{formatMoney(item.compareAtPrice!, currency)}</span>}</div><span className="shrink-0 rounded-xl px-3 py-2 text-[10px] font-black text-white" style={{ background:primary }}>{copy.add}</span></div></div>
             </button>;
@@ -556,7 +556,7 @@ export default function RestaurantMenu() {
       </> : <div className={`rounded-[26px] border border-dashed p-12 text-center ${surface}`}><Search className="mx-auto h-10 w-10 opacity-20" /><p className="mt-3 font-bold">{copy.empty}</p></div>}
     </section>
 
-    {itemCount > 0 && <button onClick={() => setCartOpen(true)} className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[min(92vw,430px)] -translate-x-1/2 items-center justify-between rounded-2xl border border-white/20 px-5 py-3.5 text-white shadow-2xl backdrop-blur-md sm:hidden" style={{ background:primary }}><span className="flex items-center gap-2 font-black"><ShoppingBag className="h-5 w-5" />{copy.cart} · {itemCount}</span><span className="font-black">{formatMoney(subtotal, currency)}</span></button>}
+    {itemCount > 0 && <button onClick={() => setCartOpen(true)} className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[min(92vw,430px)] -translate-x-1/2 items-center justify-between rounded-2xl border border-white/20 px-5 py-3.5 text-white shadow-2xl backdrop-blur-md motion-safe:animate-in motion-safe:slide-in-from-bottom-5 motion-safe:fade-in motion-safe:duration-300 active:scale-[0.98] sm:hidden" style={{ background:primary }}><span className="flex items-center gap-2 font-black"><ShoppingBag className="h-5 w-5" />{copy.cart} · {itemCount}</span><span className="font-black">{formatMoney(subtotal, currency)}</span></button>}
 
     <footer className="bg-[#06101b] px-4 py-8 text-slate-300">
       <div className="mx-auto grid max-w-7xl gap-7 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr]">
