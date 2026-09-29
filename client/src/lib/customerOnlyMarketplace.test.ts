@@ -74,14 +74,8 @@ describe("customer-only content marketplace", () => {
     expect(publicHome).toContain('sectorMeta(store.sector)[lang]');
     expect(publicHome).toContain('/menu/${encodeURIComponent(store.restaurantSlug)}');
     expect(publicHome).not.toContain('href="/pricing"');
-    expect(publicHome).not.toContain('
-    expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "QR الموقع"');
-    expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "امسح للدخول إلى موقع NFOOD"');
-  });
-});
- + '{lang === "ar" ? "QR الموقع"');
+    expect(publicHome).not.toContain('text-white">$');
     expect(marketplaceLanding).toContain('lang === "ar" ? meta.ar : lang === "fr" ? meta.fr : meta.en');
-    expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "QR الموقع"');
-    expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "امسح للدخول إلى موقع NFOOD"');
+    expect(marketplaceLanding).not.toContain('font-black">$');
   });
 });
