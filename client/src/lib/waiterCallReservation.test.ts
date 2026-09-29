@@ -31,7 +31,7 @@ describe("waiter call and reservation operational flows", () => {
 
   it("keeps the modern public menu wired to reservation slots and deposits", () => {
     const menu = read("client/src/pages/RestaurantMenu.tsx");
-    expect(menu).toContain("reservationSlotsForRestaurant");
+    expect(menu).toContain("reservationSlots");
     expect(menu).toContain("reservationDepositAmount");
     expect(menu).toContain("createPublicReservation");
   });
