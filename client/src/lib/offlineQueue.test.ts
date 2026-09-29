@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enqueueOfflineItem, isOfflineTerminalError, readOfflineQueue, replayOfflineQueue, writeOfflineQueue } from "./offlineQueue";
+import { enqueueOfflineItem, isOfflineDuplicateError, readOfflineQueue, replayOfflineQueue, writeOfflineQueue } from "./offlineQueue";
 
 function storage(initial: Record<string, string> = {}) {
   const values = new Map(Object.entries(initial));
@@ -39,28 +39,19 @@ describe("offline POS queue", () => {
     expect(readOfflineQueue(local, "orders")).toEqual([{ offlineId: "b", total: "20" }]);
   });
 
-  it("discards terminal validation failures without counting them as synced", async () => {
+  it("removes successful and duplicate requests but preserves a transient failure", async () => {
     const local = storage();
     enqueueOfflineItem(local, "orders", { total: "10" }, "a");
     enqueueOfflineItem(local, "orders", { total: "20" }, "b");
     enqueueOfflineItem(local, "orders", { total: "30" }, "c");
     const result = await replayOfflineQueue(local, "orders", async (payload) => {
-      if (payload.total === "20") throw { data: { code: "FORBIDDEN" } };
+      if (payload.total === "20") throw { data: { code: "CONFLICT" } };
       if (payload.total === "30") throw new Error("temporary network failure");
     });
-    expect(result).toEqual({ attempted: 3, syncedCount: 1, discardedCount: 1, remainingCount: 1, stoppedOnError: true });
+    expect(result).toEqual({ attempted: 3, syncedCount: 2, remainingCount: 1, stoppedOnError: true });
     expect(readOfflineQueue(local, "orders")).toEqual([{ total: "30", offlineId: "c" }]);
-  });
-
-  it("does not mistake a table conflict for a synced duplicate", async () => {
-    const local = storage();
-    enqueueOfflineItem(local, "orders", { total: "10" }, "a");
-    const result = await replayOfflineQueue(local, "orders", async () => {
-      throw { shape: { data: { code: "CONFLICT" } } };
-    });
-    expect(result).toEqual({ attempted: 1, syncedCount: 0, discardedCount: 1, remainingCount: 0, stoppedOnError: false });
-    expect(isOfflineTerminalError({ shape: { data: { code: "CONFLICT" } } })).toBe(true);
-    expect(isOfflineTerminalError(new Error("temporary network failure"))).toBe(false);
+    expect(isOfflineDuplicateError({ data: { code: "CONFLICT" } })).toBe(true);
+    expect(isOfflineDuplicateError(new Error("temporary network failure"))).toBe(false);
   });
 
   it("does not delete a new item appended while an older queue is replaying", async () => {
@@ -74,7 +65,6 @@ describe("offline POS queue", () => {
       expect(payload.total).not.toBe("30");
     });
     expect(result.syncedCount).toBe(2);
-    expect(result.discardedCount).toBe(0);
     expect(result.remainingCount).toBe(1);
     expect(readOfflineQueue(local, "orders")).toEqual([{ total: "30", offlineId: "c" }]);
   });
@@ -85,7 +75,7 @@ describe("offline POS queue", () => {
     let online = false;
     const send = async () => { throw new Error("should not send while offline"); };
     const result = await replayOfflineQueue(local, "orders", send, () => online);
-    expect(result).toEqual({ attempted: 0, syncedCount: 0, discardedCount: 0, remainingCount: 1, stoppedOnError: true });
+    expect(result).toEqual({ attempted: 0, syncedCount: 0, remainingCount: 1, stoppedOnError: true });
     online = true;
   });
 });
