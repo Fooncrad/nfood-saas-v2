@@ -196,19 +196,19 @@ export default function MarketplaceLanding() {
     <section className="relative overflow-hidden border-b border-white/5 bg-[#071525] text-white">
       <div className="absolute inset-0 opacity-25" style={{ background: `radial-gradient(circle at 15% 20%, ${accent} 0, transparent 32%), radial-gradient(circle at 85% 10%, ${primary} 0, transparent 28%)` }} />
       {appearance.heroImageUrl && <div className="absolute inset-y-0 end-0 hidden w-[44%] lg:block"><img src={appearance.heroImageUrl} alt="" className="h-full w-full object-cover opacity-35" /><div className="absolute inset-0 bg-gradient-to-r from-[#071525] via-[#071525]/65 to-transparent" /></div>}
-      <div className="relative mx-auto grid min-h-[360px] max-w-7xl items-center gap-8 px-4 py-12 md:px-8 lg:grid-cols-[1.05fr_.95fr]">
+      <div className="relative mx-auto grid min-h-[300px] max-w-7xl items-center gap-6 px-4 py-8 md:px-8 lg:grid-cols-[1.08fr_.92fr]">
         <div className="max-w-3xl">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold text-orange-200"><Compass className="h-4 w-4" />{countryInfo.flag} {countryInfo[lang]} · NFOOD</span>
-          <h1 className="mt-5 text-4xl font-black leading-[1.15] tracking-tight sm:text-5xl lg:text-6xl">{heroTitle}</h1>
-          <p className="mt-5 max-w-2xl text-sm leading-8 text-slate-300 sm:text-base">{heroSubtitle}</p>
-          <div className="mt-7 grid gap-2 rounded-2xl bg-white p-2 shadow-2xl sm:grid-cols-[1fr_190px_auto]">
+          <h1 className="mt-4 text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.35rem]">{heroTitle}</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">{heroSubtitle}</p>
+          <div className="mt-5 grid gap-2 rounded-2xl bg-white p-2 shadow-2xl sm:grid-cols-[1fr_190px_auto]">
             <div className="flex items-center"><Search className="ms-3 h-5 w-5 text-slate-400" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.search} className="h-11 border-0 bg-transparent text-slate-900 shadow-none focus-visible:ring-0" /></div>
             <select value={country} onChange={(event) => chooseCountry(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-900">
               {marketplaceCountries.map((item) => <option key={item.code} value={item.code}>{item.flag} {item[lang]}</option>)}
             </select>
             <Button className="h-11 rounded-xl px-6 font-black text-white" style={{ background: primary }}>{t.searchButton}</Button>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-400">
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-slate-400">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-2"><BadgeCheck className="h-3.5 w-3.5 text-orange-300" />{t.curated}</span>
             <Link href="/store-marketing" className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-white transition hover:bg-white/10"><Store className="h-3.5 w-3.5" />{t.merchant}</Link>
           </div>
@@ -220,15 +220,15 @@ export default function MarketplaceLanding() {
       </div>
     </section>
 
-    <section id="stores" className="mx-auto max-w-7xl px-4 pb-6 pt-7 md:px-8 md:pb-7 md:pt-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-black text-orange-500">NFOOD SELECT</p><h2 className="mt-1 text-2xl font-black sm:text-3xl">{t.stores}</h2><p className={`mt-2 text-sm ${muted}`}>{t.storesHint}</p></div></div>
+    <section id="stores" className="mx-auto max-w-7xl px-4 pb-4 pt-5 md:px-8 md:pb-5 md:pt-5">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-black text-orange-500">NFOOD SELECT</p><h2 className="mt-1 text-2xl font-black sm:text-3xl">{t.stores}</h2><p className={`mt-2 text-sm ${muted}`}>{t.storesHint}</p></div></div>
       {featuredStores.isLoading || stores.isLoading ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{Array.from({ length: 5 }).map((_, index) => <div key={index} className={`h-60 animate-pulse border ${surface}`} style={{ borderRadius: radius }} />)}</div> : featuredRows.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{featuredRows.slice(0, 5).map((store) => {
         const fullStore = storeRows.find((item) => item.entityId === store.entityId);
         const restaurant = fullStore?.restaurant;
         const cover = restaurant?.coverUrl || store.imageUrl;
         const meta = sectorMeta(store.sector);
         return <Link key={store.entityId} href={store.sector === "restaurant" && restaurant?.slug ? `/menu/${encodeURIComponent(restaurant.slug)}` : `/store/${store.entityId}?country=${country}`} className={`group overflow-hidden border shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${surface}`} style={{ borderRadius: radius }}>
-          <div className="relative aspect-[16/10] overflow-hidden bg-slate-200/10">{cover ? <img src={cover} alt="" className="aspect-square h-full w-full object-cover object-center transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-5xl">{meta.icon}</div>}<span className="absolute end-3 top-3 rounded-full bg-[#071525]/75 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur">{meta.icon}</span></div>
+          <div className="relative aspect-square overflow-hidden bg-slate-200/10">{cover ? <img src={cover} alt="" className="aspect-square h-full w-full object-cover object-center transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-5xl">{meta.icon}</div>}<span className="absolute end-3 top-3 rounded-full bg-[#071525]/75 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur">{meta.icon}</span></div>
           <div className="p-4"><h3 className="truncate font-black">{store.customerName}</h3><p className={`mt-1 flex items-center gap-1 text-xs ${muted}`}><MapPin className="h-3 w-3" />{restaurant?.city || countryInfo[lang]}</p><div className="mt-3 flex items-center justify-between gap-2"><span className="truncate text-xs font-bold text-orange-500">{lang === "ar" ? store.sectorLabelAr : lang === "fr" ? store.sectorLabelFr : store.sectorLabelEn}</span><span className={`shrink-0 text-[10px] ${muted}`}>{store.listingCount} {t.items}</span></div></div>
         </Link>;
       })}</div> : <div className={`border border-dashed p-10 text-center ${surface}`} style={{ borderRadius: radius }}><Store className="mx-auto h-10 w-10 opacity-30" /><p className="mt-3 font-bold">{t.emptyStores}</p></div>}
@@ -236,14 +236,14 @@ export default function MarketplaceLanding() {
 
     <section id="sectors" className={`border-y py-3 ${dark ? "border-white/10 bg-[#091a2e]" : "border-slate-200 bg-white"}`}>
       <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">{filteredSectors.map((sector) => {
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{filteredSectors.map((sector) => {
           const meta = sectorMeta(sector.slug);
           return <Link key={sector.id} href={`/marketplace/sector/${sector.slug}?country=${country}`} className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-black transition hover:-translate-y-0.5 ${surface}`}><span>{meta.icon}</span><span>{lang === "ar" ? sector.labelAr : lang === "fr" ? sector.labelFr : sector.labelEn}</span><small className={muted}>{sector.listingCount}</small></Link>;
         })}</div>
       </div>
     </section>
 
-    <div className="mx-auto w-full max-w-7xl space-y-10 overflow-x-hidden px-3 pb-10 pt-7 sm:px-4 md:px-8 md:pb-12 md:pt-8">
+    <div className="mx-auto w-full max-w-7xl space-y-8 overflow-x-hidden px-3 pb-10 pt-5 sm:px-4 md:px-8 md:pb-12 md:pt-6">
       {highlights.isLoading ? Array.from({ length: 2 }).map((_, index) => <div key={index} className={`h-80 animate-pulse border ${surface}`} style={{ borderRadius: radius }} />) : highlightRows.map((group) => {
         const meta = sectorMeta(group.sector.slug);
         const sectorName = lang === "ar" ? group.sector.labelAr : lang === "fr" ? group.sector.labelFr : group.sector.labelEn;
