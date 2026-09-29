@@ -153,7 +153,7 @@ export default function RestaurantMenu() {
   const [hotelRoomId, setHotelRoomId] = useState<number | null>(null);
   const [reservationDate, setReservationDate] = useState("");
   const [reservationSlotId, setReservationSlotId] = useState<number | undefined>();
-  const [seatingSectionId: seatingSectionId || undefined, setSeatingSectionId] = useState<number | undefined>();
+  const [seatingSectionId, setSeatingSectionId] = useState<number | undefined>();
   const [reservationName, setReservationName] = useState("");
   const [reservationEmail, setReservationEmail] = useState("");
   const [reservationPhone, setReservationPhone] = useState("");
