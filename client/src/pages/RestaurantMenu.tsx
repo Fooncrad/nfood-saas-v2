@@ -563,15 +563,15 @@ export default function RestaurantMenu() {
   const pageBg = dark ? "bg-[#071525] text-white" : "bg-[#f6f8fc] text-[#0b1d35]";
   const selectedHotelRooms = selectedHotel?.rooms ?? [];
 
-  return <main dir={direction} className={`min-h-screen w-full max-w-[100vw] overflow-x-hidden overscroll-x-none touch-pan-y ${dark ? "dark" : ""} ${pageBg}`} style={{ overflowX: "hidden", overscrollBehaviorX: "none", touchAction: "pan-y", fontFamily:restaurant.brandFontFamily || undefined, "--restaurant-primary":primary, "--restaurant-accent":accent } as React.CSSProperties}>
-    <header className={`sticky top-0 z-40 w-full max-w-full overflow-x-clip border-b backdrop-blur-xl ${dark ? "border-white/10 bg-[#071525]/92" : "border-slate-200 bg-white/92"}`}>
+  return <main dir={direction} className={`min-h-screen w-full max-w-[100vw] overflow-x-hidden overscroll-x-none touch-pan-y [contain:inline-size] ${dark ? "dark" : ""} ${pageBg}`} style={{ overflowX: "hidden", overscrollBehaviorX: "none", touchAction: "pan-y", fontFamily:restaurant.brandFontFamily || undefined, "--restaurant-primary":primary, "--restaurant-accent":accent } as React.CSSProperties}>
+    <header className={`sticky top-0 z-40 w-full max-w-[100vw] overflow-hidden border-b backdrop-blur-xl ${dark ? "border-white/10 bg-[#071525]/92" : "border-slate-200 bg-white/92"}`}>
       <div className="mx-auto flex h-16 w-full max-w-7xl min-w-0 items-center justify-between gap-2 overflow-hidden px-3 sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
           <button onClick={() => setDrawerOpen(true)} className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`} aria-label="Menu"><Menu className="h-5 w-5" /></button>
           {restaurant.brandLogoUrl ? <img src={restaurant.brandLogoUrl} alt="" className="h-10 w-10 shrink-0 rounded-xl object-cover" /> : <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-500 font-black text-white">{restaurant.name.slice(0,1)}</span>}
           <div className="min-w-0"><h1 className="truncate text-sm font-black sm:text-base">{restaurant.brandName || restaurant.name}</h1></div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 shrink-0 items-center gap-1.5">
           <LanguageSwitcher compact />
           <button onClick={() => setTheme((value) => { const next = value === "dark" ? "light" : "dark"; window.localStorage.setItem(`nfood:menu-theme:${slug}`, next); return next; })} className={`grid h-10 w-10 place-items-center rounded-xl border ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`} aria-label="Theme">{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
           <button onClick={() => user ? navigate("/customer-portal") : navigate(`/login?next=${encodeURIComponent(location)}`)} className="grid h-10 w-10 place-items-center rounded-xl bg-[#0b1d35] text-white" aria-label={copy.account}><UserRound className="h-4 w-4" /></button>
@@ -706,7 +706,7 @@ export default function RestaurantMenu() {
     </aside></div>}
 
     <Dialog open={Boolean(selectedItem)} onOpenChange={(open) => { if (!open) { setSelectedItemId(null); setSelectedAddonIds([]); } }}>
-      <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-lg overflow-y-auto rounded-[26px] p-0">
+      <DialogContent className="max-h-[calc(100dvh-24px-env(safe-area-inset-bottom))] max-w-lg overflow-x-hidden overflow-y-auto overscroll-contain rounded-[26px] p-0">
         {selectedItem && <>
           <div className="aspect-[16/10] overflow-hidden bg-slate-100 dark:bg-white/5">{selectedItem.imageUrl ? <img src={selectedItem.imageUrl} alt={localize(selectedItem.translationsJson, selectedItem.name, lang, "name")} className="h-full w-full object-contain" /> : <div className="grid h-full place-items-center"><Utensils className="h-10 w-10 text-slate-300" /></div>}</div>
           <div className="p-5"><DialogHeader><DialogTitle>{localize(selectedItem.translationsJson, selectedItem.name, lang, "name")}</DialogTitle><DialogDescription>{localize(selectedItem.translationsJson, selectedItem.description || "", lang, "description")}</DialogDescription></DialogHeader>
@@ -721,7 +721,7 @@ export default function RestaurantMenu() {
     <button type="button" onClick={() => pageScrolled ? window.scrollTo({ top: 0, behavior: "smooth" }) : document.getElementById("menu-grid")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="fixed bottom-24 end-4 z-30 grid h-11 w-11 place-items-center rounded-full border border-white/25 text-white shadow-xl transition hover:scale-105 active:scale-95 sm:end-6" style={{ backgroundColor: accent }} aria-label={pageScrolled ? copy.back : copy.menu}><ChevronDown className={`h-5 w-5 transition-transform duration-300 ${pageScrolled ? "rotate-180" : ""}`} /></button>
 
     <Dialog open={cartOpen} onOpenChange={(open) => { setCartOpen(open); if (!open) setCartStep(1); }}>
-      <DialogContent className="fixed left-1/2 top-1/2 max-h-[min(720px,calc(100dvh-32px))] w-[calc(100%-24px)] max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[24px]">
+      <DialogContent className="fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] top-auto max-h-[calc(100dvh-24px-env(safe-area-inset-bottom))] w-auto max-w-none translate-x-0 translate-y-0 overflow-x-hidden overflow-y-auto overscroll-contain rounded-[24px] sm:left-1/2 sm:right-auto sm:top-1/2 sm:bottom-auto sm:w-[calc(100%-24px)] sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2">
         <DialogHeader><DialogTitle>{copy.cart} · {cartStep}/3</DialogTitle><DialogDescription>{cartStep === 1 ? `${itemCount} ${copy.items}` : cartStep === 2 ? (lang === "ar" ? "اختر نوع الطلب" : lang === "fr" ? "Choisissez le service" : "Choose your service") : (lang === "ar" ? "بيانات الطلب والتأكيد" : lang === "fr" ? "Détails et confirmation" : "Details and confirmation")}</DialogDescription></DialogHeader>
         {cartStep === 1 ? <>
         <div className="grid gap-3">{cart.map((line) => <div key={line.key} className="flex items-center gap-3 rounded-2xl border border-slate-200 p-3"><div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{line.name}</p><p className="mt-1 text-xs text-slate-500">{formatMoney(line.price + line.addonTotal, currency)}</p></div><div className="flex items-center gap-2"><button onClick={() => updateQty(line.key,-1)} className="grid h-8 w-8 place-items-center rounded-lg border"><Minus className="h-3 w-3" /></button><b>{line.quantity}</b><button onClick={() => updateQty(line.key,1)} className="grid h-8 w-8 place-items-center rounded-lg border"><Plus className="h-3 w-3" /></button></div></div>)}</div>
@@ -803,7 +803,7 @@ export default function RestaurantMenu() {
     </Dialog>
 
     <Dialog open={reservationOpen} onOpenChange={(open) => { setReservationOpen(open); if (!open) setReservationStep(1); }}>
-      <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-xl overflow-y-auto rounded-[26px]">
+      <DialogContent className="max-h-[calc(100dvh-24px-env(safe-area-inset-bottom))] max-w-xl overflow-x-hidden overflow-y-auto overscroll-contain rounded-[26px]">
         <DialogHeader><DialogTitle>{copy.reservation} · {reservationStep}/2</DialogTitle><DialogDescription>{reservationStep === 1 ? (lang === "ar" ? "اختر حجزًا مسبقًا أو انتظار الآن" : "Choose advance booking or wait now") : `${copy.name} · ${copy.phone}`}</DialogDescription></DialogHeader>
         {reservationStep === 1 ? <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid grid-cols-2 gap-2 sm:col-span-2">
@@ -826,7 +826,7 @@ export default function RestaurantMenu() {
       </DialogContent>
     </Dialog>
     <Dialog open={waiterOpen} onOpenChange={(open) => { setWaiterOpen(open); if (!open) setWaiterStep(1); }}>
-      <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-md overflow-y-auto rounded-[26px]">
+      <DialogContent className="max-h-[calc(100dvh-24px-env(safe-area-inset-bottom))] max-w-md overflow-x-hidden overflow-y-auto overscroll-contain rounded-[26px]">
         <DialogHeader><DialogTitle>{copy.waiter} · {waiterStep}/2</DialogTitle><DialogDescription>{waiterStep === 1 ? `${selectedBranch?.name || copy.branch} · ${copy.table}` : `${copy.table}: ${waiterTable} · ${waiterReason}`}</DialogDescription></DialogHeader>
         {waiterStep === 1 ? <div className="grid gap-3"><Input value={waiterTable} onChange={(e) => setWaiterTable(e.target.value)} placeholder={copy.table} /><select value={waiterReason} onChange={(e) => setWaiterReason(e.target.value as typeof waiterReason)} className="h-10 rounded-md border px-3"><option value="المساعدة">{lang === "ar" ? "مساعدة" : "Help"}</option><option value="الطلب">{lang === "ar" ? "الطلب" : "Order"}</option><option value="الحساب">{lang === "ar" ? "الحساب" : "Account"}</option><option value="الفاتورة">{lang === "ar" ? "الفاتورة" : "Bill"}</option><option value="أخرى">{lang === "ar" ? "أخرى" : "Other"}</option></select><Button disabled={!restaurant.waiterCallEnabled || !selectedBranchId || !waiterTable.trim()} onClick={() => setWaiterStep(2)} className="mt-2 text-white" style={{ background:primary }}>{copy.next}</Button></div> : <div className="grid gap-3"><Input value={waiterName} onChange={(e) => setWaiterName(e.target.value)} placeholder={copy.name} /><Button variant="outline" onClick={() => setWaiterStep(1)}>{copy.back}</Button>
         <Button disabled={!restaurant.waiterCallEnabled || !selectedBranchId || !waiterTable.trim() || notifyWaiter.isPending} onClick={() => selectedBranchId && notifyWaiter.mutate({ slug, branchId:selectedBranchId, tableName:waiterTable.trim(), reason:waiterReason, customerName:waiterName.trim() || undefined })} className="mt-4 w-full text-white" style={{ background:primary }}>{copy.send}</Button></div>}
