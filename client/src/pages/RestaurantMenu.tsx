@@ -133,6 +133,7 @@ export default function RestaurantMenu() {
   const [waiterStep, setWaiterStep] = useState<1 | 2>(1);
   const [reservationOpen, setReservationOpen] = useState(false);
   const [reservationStep, setReservationStep] = useState<1 | 2>(1);
+  const [reservationKind, setReservationKind] = useState<"reservation" | "waitlist">("reservation");
   const [waiterOpen, setWaiterOpen] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState<number | null>(null);
   const [orderMode, setOrderMode] = useState<OrderMode | null>(null);
@@ -443,24 +444,31 @@ export default function RestaurantMenu() {
 
   const submitReservation = () => {
     if (reservationStep === 1) {
-      if (!selectedBranchId || !reservationDate || !seatingSectionId) return toast.error(lang === "ar" ? "اختر التاريخ وقسم الجلسة" : "Choose date and seating");
+      if (!selectedBranchId || !seatingSectionId) return toast.error(lang === "ar" ? "اختر قسم الجلسة" : "Choose seating");
+      if (reservationKind === "reservation") {
+        if (!reservationDate) return toast.error(lang === "ar" ? "اختر تاريخًا ووقتًا مستقبليين" : "Choose a future date and time");
+        const when = new Date(reservationDate);
+        if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now()) return toast.error(lang === "ar" ? "الحجز المسبق يجب أن يكون في وقت لاحق" : "Advance booking must be in the future");
+      }
       setReservationStep(2);
       return;
     }
-    if (!selectedBranchId || reservationName.trim().length < 2 || reservationPhone.trim().length < 7 || !reservationEmail.trim() || !policyAccepted) return toast.error(lang === "ar" ? "أكمل بيانات الحجز" : "Complete reservation details");
+    if (!selectedBranchId || reservationName.trim().length < 2 || reservationPhone.trim().length < 7 || !policyAccepted) return toast.error(lang === "ar" ? "أكمل البيانات المطلوبة" : "Complete required details");
+    if (reservationKind === "reservation" && !reservationEmail.trim()) return toast.error(lang === "ar" ? "أدخل البريد الإلكتروني للحجز المسبق" : "Enter email for advance booking");
     reservation.mutate({
       slug,
       branchId:selectedBranchId,
-      slotId:reservationSlotId && reservationSlotId > 0 ? reservationSlotId : undefined,
+      kind: reservationKind,
+      slotId:reservationKind === "reservation" && reservationSlotId && reservationSlotId > 0 ? reservationSlotId : undefined,
       seatingSectionId,
       childrenCount:reservationChildrenCount,
       policyAccepted:true,
       customerName:reservationName.trim(),
-      email:reservationEmail.trim(),
+      email:reservationKind === "reservation" ? reservationEmail.trim() : undefined,
       phone:reservationPhone.trim(),
       partySize:reservationPartySize,
-      reservedFor:new Date(reservationDate),
-      durationMinutes:60,
+      reservedFor:reservationKind === "reservation" ? new Date(reservationDate) : new Date(),
+      durationMinutes:reservationKind === "reservation" ? 60 : 15,
     });
   };
 
@@ -722,24 +730,27 @@ export default function RestaurantMenu() {
 
     <Dialog open={reservationOpen} onOpenChange={(open) => { setReservationOpen(open); if (!open) setReservationStep(1); }}>
       <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-xl overflow-y-auto rounded-[26px]">
-        <DialogHeader><DialogTitle>{copy.reservation} · {reservationStep}/2</DialogTitle><DialogDescription>{reservationStep === 1 ? `${copy.date} · ${copy.section}` : `${copy.name} · ${copy.phone}`}</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{copy.reservation} · {reservationStep}/2</DialogTitle><DialogDescription>{reservationStep === 1 ? (lang === "ar" ? "اختر حجزًا مسبقًا أو انتظار الآن" : "Choose advance booking or wait now") : `${copy.name} · ${copy.phone}`}</DialogDescription></DialogHeader>
         {reservationStep === 1 ? <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-xs font-bold"><span>{lang === "ar" ? "التاريخ والوقت (ميلادي)" : lang === "fr" ? "Date et heure (grégorien)" : "Date & time (Gregorian)"}</span><input type="datetime-local" lang="en-US" dir="ltr" value={reservationDate} onChange={(e) => setReservationDate(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-left font-sans text-sm tabular-nums text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white" /></label>
-          {reservationSlots.isLoading ? <div className="grid h-10 place-items-center rounded-xl border border-slate-200 text-xs text-slate-500">{lang === "ar" ? "جارٍ تحميل أوقات الحجز..." : lang === "fr" ? "Chargement des horaires..." : "Loading reservation times..."}</div> : reservationSlots.data?.length ? <select aria-label={lang === "ar" ? "فترة الحجز" : lang === "fr" ? "Créneau de réservation" : "Reservation window"} value={reservationSlotId ?? ""} onChange={(e) => setReservationSlotId(Number(e.target.value) || undefined)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="">{lang === "ar" ? "اختر فترة الحجز" : lang === "fr" ? "Choisir un créneau" : "Choose reservation window"}</option>{reservationSlots.data.map((slot:any) => <option key={slot.id} value={slot.id}>{`${slot.startTime} – ${slot.endTime}${slot.fallback ? (lang === "ar" ? " · ساعات الفرع" : lang === "fr" ? " · horaires de la succursale" : " · branch hours") : ""}`}</option>)}</select> : <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800">{lang === "ar" ? "لا توجد فترة حجز متاحة لهذا الفرع. راجع ساعات تشغيل الفرع أو اختر فرعًا آخر." : lang === "fr" ? "Aucun créneau disponible pour cette succursale." : "No reservation window is available for this branch."}</div>}
+          <div className="grid grid-cols-2 gap-2 sm:col-span-2">
+            <button type="button" onClick={() => setReservationKind("reservation")} className={`rounded-2xl border p-3 text-start transition ${reservationKind === "reservation" ? "border-orange-500 bg-orange-50 text-orange-950 ring-1 ring-orange-500/20 dark:bg-orange-500/10 dark:text-orange-100" : "border-slate-200 dark:border-white/10"}`}><span className="block text-sm font-black">{lang === "ar" ? "حجز مسبق" : "Advance booking"}</span><span className="mt-1 block text-[11px] opacity-70">{lang === "ar" ? "سأزور المطعم لاحقًا" : "I will visit later"}</span></button>
+            <button type="button" onClick={() => { setReservationKind("waitlist"); setReservationDate(""); setReservationSlotId(undefined); }} className={`rounded-2xl border p-3 text-start transition ${reservationKind === "waitlist" ? "border-orange-500 bg-orange-50 text-orange-950 ring-1 ring-orange-500/20 dark:bg-orange-500/10 dark:text-orange-100" : "border-slate-200 dark:border-white/10"}`}><span className="block text-sm font-black">{lang === "ar" ? "انتظار الآن" : "Wait now"}</span><span className="mt-1 block text-[11px] opacity-70">{lang === "ar" ? "أنا موجود في المطعم الآن" : "I am at the restaurant now"}</span></button>
+          </div>
+          {reservationKind === "reservation" ? <><label className="grid gap-1 text-xs font-bold"><span>{lang === "ar" ? "التاريخ والوقت (ميلادي)" : lang === "fr" ? "Date et heure (grégorien)" : "Date & time (Gregorian)"}</span><input type="datetime-local" lang="en-US" dir="ltr" min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16)} value={reservationDate} onChange={(e) => setReservationDate(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-left font-sans text-sm tabular-nums text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white" /></label>
+          {reservationSlots.isLoading ? <div className="grid h-10 place-items-center rounded-xl border border-slate-200 text-xs text-slate-500">{lang === "ar" ? "جارٍ تحميل أوقات الحجز..." : "Loading reservation times..."}</div> : reservationSlots.data?.length ? <select aria-label="Reservation window" value={reservationSlotId ?? ""} onChange={(e) => setReservationSlotId(Number(e.target.value) || undefined)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="">{lang === "ar" ? "اختر فترة الحجز" : "Choose reservation window"}</option>{reservationSlots.data.map((slot:any) => <option key={slot.id} value={slot.id}>{`${slot.startTime} – ${slot.endTime}`}</option>)}</select> : <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800">{lang === "ar" ? "لا توجد فترة حجز متاحة لهذا الفرع." : "No reservation window is available."}</div>}</> : <div className="sm:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold leading-5 text-amber-900 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-100">{lang === "ar" ? "سيتم تسجيل وقت وصولك الآن تلقائيًا. لا تحتاج لاختيار تاريخ أو وقت، وسيتم تخصيص أول طاولة مناسبة عند توفرها." : "Your arrival time is recorded now. The first suitable available table will be assigned."}</div>}
           <select value={seatingSectionId ?? ""} onChange={(e) => setSeatingSectionId(Number(e.target.value) || undefined)} className="h-10 rounded-md border px-3"><option value="">{copy.section}</option>{seatingSections.filter((section) => !selectedBranchId || section.branchId === selectedBranchId).map((section) => <option key={section.id} value={section.id}>{section.name}</option>)}</select>
           <Input type="number" min={1} max={50} value={reservationPartySize} onChange={(e) => setReservationPartySize(Math.max(1,Number(e.target.value)||1))} placeholder={copy.party} />
           <Input type="number" min={0} max={20} value={reservationChildrenCount} onChange={(e) => setReservationChildrenCount(Math.max(0,Number(e.target.value)||0))} placeholder={copy.children} />
         </div> : <div className="grid gap-3">
           <Input value={reservationName} onChange={(e) => setReservationName(e.target.value)} placeholder={copy.name} />
-          <Input value={reservationEmail} onChange={(e) => setReservationEmail(e.target.value)} placeholder={copy.email} dir="ltr" />
+          {reservationKind === "reservation" ? <Input value={reservationEmail} onChange={(e) => setReservationEmail(e.target.value)} placeholder={copy.email} dir="ltr" /> : null}
           <label className="grid gap-1 text-xs font-bold"><span>{copy.phone} *</span><Input value={reservationPhone} onChange={(e) => setReservationPhone(e.target.value)} placeholder={lang === "ar" ? "مثال: 05xxxxxxxx" : copy.phone} inputMode="tel" autoComplete="tel" dir="ltr" /></label>
-          {Number((restaurant as any)?.reservationDepositAmount ?? 0) > 0 && (restaurant as any)?.reservationDepositEnabled ? <div className="rounded-2xl border border-orange-200 bg-orange-50 p-3 text-xs text-orange-900 dark:border-orange-400/20 dark:bg-orange-500/10 dark:text-orange-100"><div className="flex items-center justify-between gap-3"><span className="font-black">{lang === "ar" ? "رسوم / عربون الحجز" : lang === "fr" ? "Frais / acompte de réservation" : "Reservation fee / deposit"}</span><strong className="text-sm">{formatMoney(Number((restaurant as any).reservationDepositAmount), restaurant.currencyCode ?? "SAR")}</strong></div><p className="mt-1 leading-5 opacity-80">{lang === "ar" ? "تُعرض هذه الرسوم قبل التأكيد وتُسجّل مع الحجز. يتطلب الحجز المدفوع تسجيل الدخول." : lang === "fr" ? "Ces frais sont affichés avant confirmation et enregistrés avec la réservation." : "This fee is shown before confirmation and recorded with the reservation."}</p></div> : null}
+          {reservationKind === "reservation" && Number((restaurant as any)?.reservationDepositAmount ?? 0) > 0 && (restaurant as any)?.reservationDepositEnabled ? <div className="rounded-2xl border border-orange-200 bg-orange-50 p-3 text-xs text-orange-900"><strong>{lang === "ar" ? "رسوم / عربون الحجز" : "Reservation deposit"}: {formatMoney(Number((restaurant as any).reservationDepositAmount), restaurant.currencyCode ?? "SAR")}</strong></div> : null}
           <label className="flex items-start gap-2 rounded-xl border p-3 text-xs"><input type="checkbox" checked={policyAccepted} onChange={(e) => setPolicyAccepted(e.target.checked)} className="mt-0.5" /><span>{copy.policy}</span></label>
         </div>}
-        <div className="mt-4 flex gap-2">{reservationStep === 2 && <Button variant="outline" onClick={() => setReservationStep(1)} className="flex-1">{copy.back}</Button>}<Button onClick={submitReservation} disabled={reservation.isPending} className="flex-1 text-white" style={{ background:primary }}>{reservationStep === 1 ? copy.next : copy.confirm}</Button></div>
+        <div className="mt-4 flex gap-2">{reservationStep === 2 && <Button variant="outline" onClick={() => setReservationStep(1)} className="flex-1">{copy.back}</Button>}<Button onClick={submitReservation} disabled={reservation.isPending} className="flex-1 text-white" style={{ background:primary }}>{reservationStep === 1 ? copy.next : reservationKind === "waitlist" ? (lang === "ar" ? "انضم للانتظار" : "Join waitlist") : copy.confirm}</Button></div>
       </DialogContent>
     </Dialog>
-
     <Dialog open={waiterOpen} onOpenChange={(open) => { setWaiterOpen(open); if (!open) setWaiterStep(1); }}>
       <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-md overflow-y-auto rounded-[26px]">
         <DialogHeader><DialogTitle>{copy.waiter} · {waiterStep}/2</DialogTitle><DialogDescription>{waiterStep === 1 ? `${selectedBranch?.name || copy.branch} · ${copy.table}` : `${copy.table}: ${waiterTable} · ${waiterReason}`}</DialogDescription></DialogHeader>
