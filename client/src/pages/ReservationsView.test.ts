@@ -55,6 +55,7 @@ describe("reservation operations wiring", () => {
     expect(policy).toContain("reservationDepositEnabled");
     expect(policy).toContain("اتركه فارغًا لغير محدود");
     expect(publicMenu).toContain("reservationDepositAmount");
-    expect(publicMenu).toContain("يتطلب الحجز المدفوع تسجيل الدخول");
+    expect(publicMenu).toContain("reservationDepositEnabled");
+    expect(publicMenu).toContain("inlineLogin");
   });
 });
