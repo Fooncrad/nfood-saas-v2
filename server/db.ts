@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, isNull, isNotNull, lte, like, ne, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, lt, inArray, isNull, isNotNull, lte, like, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
