@@ -41,6 +41,7 @@ describe("waiter call and reservation operational flows", () => {
   it("normalizes Saudi WhatsApp links and hides branch selection for a single branch", () => {
     const menu = read("client/src/pages/RestaurantMenu.tsx");
     expect(menu).toContain("normalizeWhatsAppNumber");
+    expect(menu).toContain("/^05\\d{8}$/");
     expect(menu).toContain('digits = `966${digits.slice(1)}`');
     expect(menu).toContain('href={`https://wa.me/${whatsappTarget}`}');
     expect(menu).toContain('branches.length > 1 && <div className="mt-5">');
