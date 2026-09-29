@@ -13,6 +13,8 @@ describe("customer-only content marketplace", () => {
   const login = readFileSync(resolve(process.cwd(), "client/src/components/TestLoginScreen.tsx"), "utf8");
   const studioPlans = readFileSync(resolve(process.cwd(), "client/src/pages/CustomerStudioPlans.tsx"), "utf8");
   const app = readFileSync(resolve(process.cwd(), "client/src/App.tsx"), "utf8");
+  const marketplaceLanding = readFileSync(resolve(process.cwd(), "client/src/pages/MarketplaceLanding.tsx"), "utf8");
+  const marketplaceRouter = readFileSync(resolve(process.cwd(), "server/marketplaceRouter.ts"), "utf8");
 
   it("keeps customers out of buying while allowing merchant buying only when admin enables it", () => {
     expect(router).toContain("الشراء متاح لهذا الحساب التجاري");
@@ -57,5 +59,13 @@ describe("customer-only content marketplace", () => {
     expect(app).toContain('path="/customer-portal" component={() => <CustomerAreaGuard>');
     expect(app).toContain('path="/customer-profile" component={() => <CustomerAreaGuard>');
     expect(login).toContain("continueWithGoogle");
+  });
+
+  it("keeps restaurant marketplace cards accurate and fully localized", () => {
+    expect(marketplaceRouter).toContain("availableMenuCountMap");
+    expect(marketplaceRouter).toContain('entity.sector === "restaurant" && entity.restaurantId');
+    expect(marketplaceLanding).toContain('lang === "ar" ? meta.ar : lang === "fr" ? meta.fr : meta.en');
+    expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "QR الموقع"');
+    expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "امسح للدخول إلى موقع NFOOD"');
   });
 });
