@@ -195,11 +195,11 @@ function SuperAdminRoute() {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={RootRoute} />
-      <Route path="/admin" component={SuperAdminRoute} />
       <Route path="/admin/account" component={SuperAdminRoute} />
+      <Route path="/admin" component={SuperAdminRoute} />
       <Route path="/restaurant/dashboard" component={RootRoute} />
       <Route path="/restaurant/account" component={RootRoute} />
+      <Route path="/" component={RootRoute} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterScreen} />
       <Route path="/pricing" component={PricingRoute} />
