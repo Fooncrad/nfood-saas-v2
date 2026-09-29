@@ -3010,6 +3010,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethod>("cash");
   const [paymentSplits, setPaymentSplits] = useState<Array<{ method: PosPaymentMethod; amount: string }>>([]);
   const [splitPeople, setSplitPeople] = useState(2);
+  const [splitMode, setSplitMode] = useState<"single" | "equal" | "custom">("single");
   const [refundPin, setRefundPin] = useState("");
   const [refundReason, setRefundReason] = useState("");
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
@@ -3043,6 +3044,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       toast.success(`تم حفظ الطلب #${result.orderId} وإرساله للمطبخ`);
       setCart([]);
       setPaymentSplits([]);
+      setSplitMode("single");
     },
     onError: error => { if (!syncingRef.current) toast.error(`تعذر حفظ الطلب: ${error.message}`); },
   });
@@ -3541,17 +3543,22 @@ function PosView({ restaurantId }: { restaurantId: number }) {
             <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <p className="text-xs font-bold text-slate-800">الدفع المجزأ</p>
-                  <p className="mt-1 text-[10px] text-slate-500">قسّم الإجمالي على أكثر من وسيلة دفع مع تحقق مركزي.</p>
+                  <p className="text-xs font-bold text-slate-800">تقسيم الفاتورة</p>
+                  <p className="mt-1 text-[10px] text-slate-500">اختر الطريقة أولًا؛ التفاصيل المحاسبية تظهر فقط عند الحاجة.</p>
                 </div>
                 <Button
                   type="button"
                   variant="outline"
                   className="h-8 rounded-lg text-[10px]"
-                  onClick={() => setPaymentSplits(current => current.length ? [] : [{ method: paymentMethod, amount: formatPaymentCents(totalCents) }])}
+                  onClick={() => { if (paymentSplits.length) { setPaymentSplits([]); setSplitMode("single"); } else { setSplitMode("custom"); setPaymentSplits([{ method: paymentMethod, amount: formatPaymentCents(totalCents) }]); } }}
                 >
-                  {paymentSplits.length ? "إلغاء التقسيم" : "تفعيل التقسيم"}
+                  {paymentSplits.length ? "فاتورة واحدة" : "تقسيم الفاتورة"}
                 </Button>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <Button type="button" variant={splitMode === "single" ? "default" : "outline"} className="h-9 rounded-xl text-[10px]" onClick={() => { setSplitMode("single"); setPaymentSplits([]); }}>فاتورة واحدة</Button>
+                <Button type="button" variant={splitMode === "equal" ? "default" : "outline"} className="h-9 rounded-xl text-[10px]" onClick={() => { setSplitMode("equal"); const people = Math.max(2, Math.min(20, splitPeople)); const base = Math.floor(totalCents / people); const remainder = totalCents - base * people; setPaymentSplits(Array.from({ length: people }, (_, index) => ({ method: index === 0 ? paymentMethod : "cash" as PosPaymentMethod, amount: formatPaymentCents(base + (index === people - 1 ? remainder : 0)) }))); }}>بالتساوي</Button>
+                <Button type="button" variant={splitMode === "custom" ? "default" : "outline"} className="h-9 rounded-xl text-[10px]" onClick={() => { setSplitMode("custom"); setPaymentSplits(current => current.length ? current : [{ method: paymentMethod, amount: formatPaymentCents(totalCents) }]); }}>مبلغ مخصص</Button>
               </div>
               {paymentSplits.length > 0 && (
                 <div className="mt-3 space-y-2">
