@@ -1,7 +1,7 @@
 export type OfflineQueueItem<T> = T & { offlineId?: string; offlineAttempts?: number; offlineLastError?: string };
 export type OfflineDeadLetterItem<T> = OfflineQueueItem<T> & { deadLetteredAt: string; deadLetterReason: string };
 
-const TERMINAL_OFFLINE_CODES = new Set(["BAD_REQUEST", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND", "PRECONDITION_FAILED", "UNPROCESSABLE_CONTENT"]);
+const TERMINAL_OFFLINE_CODES = new Set(["BAD_REQUEST", "CONFLICT", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND", "PRECONDITION_FAILED", "UNPROCESSABLE_CONTENT"]);
 
 export function readOfflineQueue<T>(storage: Pick<Storage, "getItem">, key: string): Array<OfflineQueueItem<T>> {
   try {
@@ -27,18 +27,23 @@ export function enqueueOfflineItem<T>(storage: Pick<Storage, "getItem" | "setIte
 export type OfflineReplayResult = {
   attempted: number;
   syncedCount: number;
+  discardedCount: number;
   remainingCount: number;
   stoppedOnError: boolean;
 };
 
 function errorCode(error: unknown) {
-  return error && typeof error === "object" && "data" in error
-    ? (error as { data?: { code?: string } }).data?.code
-    : undefined;
+  if (!error || typeof error !== "object") return undefined;
+  const candidate = error as {
+    data?: { code?: string };
+    shape?: { data?: { code?: string } };
+  };
+  return candidate.data?.code ?? candidate.shape?.data?.code;
 }
 
-export function isOfflineDuplicateError(error: unknown) {
-  return errorCode(error) === "CONFLICT";
+export function isOfflineTerminalError(error: unknown) {
+  const code = errorCode(error);
+  return typeof code === "string" && TERMINAL_OFFLINE_CODES.has(code);
 }
 
 export async function replayOfflineQueue<T extends object>(
@@ -50,6 +55,7 @@ export async function replayOfflineQueue<T extends object>(
   const initialQueue = readOfflineQueue<T>(storage, key);
   let attempted = 0;
   let syncedCount = 0;
+  let discardedCount = 0;
   let stoppedOnError = false;
 
   for (const queuedItem of initialQueue) {
@@ -64,8 +70,8 @@ export async function replayOfflineQueue<T extends object>(
       await send(payload as T);
       syncedCount += 1;
     } catch (error) {
-      if (isOfflineDuplicateError(error)) {
-        syncedCount += 1;
+      if (isOfflineTerminalError(error)) {
+        discardedCount += 1;
       } else {
         stoppedOnError = true;
         break;
@@ -81,6 +87,7 @@ export async function replayOfflineQueue<T extends object>(
   return {
     attempted,
     syncedCount,
+    discardedCount,
     remainingCount: readOfflineQueue<T>(storage, key).length,
     stoppedOnError,
   };
