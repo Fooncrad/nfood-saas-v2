@@ -189,6 +189,27 @@ export default function RestaurantMenu() {
   }, [user, guestName, guestPhone]);
 
   useEffect(() => {
+    const key = `nfood:reservation-profile:${slug}`;
+    try {
+      const cached = JSON.parse(localStorage.getItem(key) || "{}");
+      if (!reservationName && cached.name) setReservationName(cached.name);
+      if (!reservationEmail && cached.email) setReservationEmail(cached.email);
+      if (!reservationPhone && cached.phone) setReservationPhone(cached.phone);
+    } catch {}
+  }, [slug]);
+
+  useEffect(() => {
+    if (!reservationName.trim() || !reservationPhone.trim()) return;
+    try {
+      localStorage.setItem(`nfood:reservation-profile:${slug}`, JSON.stringify({
+        name: reservationName.trim(),
+        email: reservationEmail.trim(),
+        phone: reservationPhone.trim(),
+      }));
+    } catch {}
+  }, [slug, reservationName, reservationEmail, reservationPhone]);
+
+  useEffect(() => {
     if (!restaurant) return;
     const saved = window.localStorage.getItem(`nfood:menu-theme:${slug}`);
     if (saved === "light" || saved === "dark") { setTheme(saved); return; }
