@@ -178,11 +178,11 @@ function CustomerRegisterRoute() {
   if (loading || user) return <PageLoading />;
   return <CustomerRegister />;
 }
-function RootRoute() { const { user, loading } = useAuth(); const [, navigate] = useLocation(); const isAdmin = user?.role === "admin" || user?.testRole === "admin"; useEffect(() => { if (!loading && isAdmin) navigate("/admin"); }, [loading, isAdmin, navigate]); if (loading || isAdmin) return <PageLoading />; return user ? <Home /> : <PublicHome />; }
+function RootRoute() { const { user, loading } = useAuth(); const [, navigate] = useLocation(); const isAdmin = user?.role === "admin" || user?.testRole === "admin" || user?.accountRole === "admin"; const role = String(user?.testRole ?? user?.accountRole ?? user?.role ?? ""); const isRestaurantAccount = Boolean(user && RESTAURANT_AREA_ROLES.has(role)); useEffect(() => { if (loading || !user) return; if (isAdmin) { navigate("/admin", { replace: true }); return; } if (isRestaurantAccount && window.location.pathname === "/") navigate("/restaurant/dashboard", { replace: true }); }, [loading, user, isAdmin, isRestaurantAccount, navigate]); if (loading || isAdmin || isRestaurantAccount) return <PageLoading />; return user ? <Home /> : <PublicHome />; }
 function SuperAdminRoute() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
-  const isAdmin = user?.role === "admin" || user?.testRole === "admin";
+  const isAdmin = user?.role === "admin" || user?.testRole === "admin" || user?.accountRole === "admin";
   useEffect(() => {
     if (loading) return;
     if (!user) { navigate("/login?next=/admin"); return; }
