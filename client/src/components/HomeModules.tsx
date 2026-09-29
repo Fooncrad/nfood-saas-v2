@@ -3312,7 +3312,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                 <span>الإجمالي النهائي</span>
                 <span>{money(Number(lastReceipt.pricing.total))}</span>
               </div>
-              {lastReceipt.paymentSplits?.length ? <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3"><p className="mb-2 text-xs font-black text-slate-800">تقسيم الفاتورة</p>{lastReceipt.paymentSplits.map((split, index) => <div key={`${split.method}-${index}`} className="flex justify-between py-1 text-xs"><span>الجزء {index + 1} · {{ cash: "نقدي", card: "بطاقة", bank_transfer: "تحويل بنكي", online: "دفع إلكتروني", other: "أخرى" }[split.method]}</span><strong>{money(Number(split.amount))}</strong></div>)}</div> : null}
+              {lastReceipt.paymentSplits?.length ? <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3"><div className="mb-2 flex items-center justify-between gap-2"><p className="text-xs font-black text-slate-800">تقسيم الفاتورة · {lastReceipt.paymentSplits.length} أجزاء</p><span className="text-[10px] font-bold text-blue-700">الإجمالي {money(lastReceipt.paymentSplits.reduce((sum, split) => sum + Number(split.amount || 0), 0))}</span></div>{lastReceipt.paymentSplits.map((split, index) => <div key={`${split.method}-${index}`} className="flex justify-between border-t border-blue-100/70 py-2 text-xs first:border-t-0"><span>الجزء {index + 1} · {{ cash: "نقدي", card: "بطاقة", bank_transfer: "تحويل بنكي", online: "دفع إلكتروني", other: "أخرى" }[split.method]}</span><strong>{money(Number(split.amount))}</strong></div>)}</div> : null}
             </div>
           </CardContent>
         </Card>
