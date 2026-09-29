@@ -6936,6 +6936,8 @@ var marketplaceRouter = router({
       if (!item.restaurantId) continue;
       availableMenuCountMap.set(item.restaurantId, (availableMenuCountMap.get(item.restaurantId) ?? 0) + 1);
     }
+    const restaurantRoutes = restaurantIds.length ? await db.select({ id: restaurants.id, slug: restaurants.slug }).from(restaurants).where(inArray2(restaurants.id, restaurantIds)) : [];
+    const restaurantSlugMap = new Map(restaurantRoutes.map((restaurant) => [restaurant.id, restaurant.slug]));
     const sectorRows = await db.select({ id: marketplaceSectors.id, slug: marketplaceSectors.slug, labelAr: marketplaceSectors.labelAr, labelEn: marketplaceSectors.labelEn, labelFr: marketplaceSectors.labelFr }).from(marketplaceSectors).where(eq3(marketplaceSectors.isActive, true));
     const sectorMap = new Map(sectorRows.map((s) => [s.id, s]));
     const eligible = entities;
@@ -6947,7 +6949,7 @@ var marketplaceRouter = router({
     return ordered.map((entity) => {
       const items = listings.filter((l) => l.entityId === entity.id);
       const sector = sectorMap.get(items[0]?.sectorId);
-      return { entityId: entity.id, customerName: entity.customerName, sector: entity.sector, sectorLabelAr: sector?.labelAr ?? entity.sector, sectorLabelEn: sector?.labelEn ?? entity.sector, sectorLabelFr: sector?.labelFr ?? entity.sector, imageUrl: items.find((i) => i.imageUrl)?.imageUrl ?? null, listingCount: entity.sector === "restaurant" && entity.restaurantId ? availableMenuCountMap.get(Number(entity.restaurantId)) ?? items.length : items.length, featured: preferred.includes(entity.id) };
+      return { entityId: entity.id, customerName: entity.customerName, sector: entity.sector, sectorLabelAr: sector?.labelAr ?? entity.sector, sectorLabelEn: sector?.labelEn ?? entity.sector, sectorLabelFr: sector?.labelFr ?? entity.sector, imageUrl: items.find((i) => i.imageUrl)?.imageUrl ?? null, restaurantSlug: entity.restaurantId ? restaurantSlugMap.get(Number(entity.restaurantId)) ?? null : null, listingCount: entity.sector === "restaurant" && entity.restaurantId ? availableMenuCountMap.get(Number(entity.restaurantId)) ?? items.length : items.length, featured: preferred.includes(entity.id) };
     });
   }),
   publicStores: publicProcedure.input(z2.object({
