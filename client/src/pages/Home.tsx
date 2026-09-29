@@ -424,6 +424,8 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const channelLabel = channel === "dine_in" ? posText("داخل المطعم", "Dine in", "Sur place") : channel === "takeaway" ? posText("استلام", "Takeaway", "À emporter") : channel === "delivery" ? posText("توصيل", "Delivery", "Livraison") : channel === "reservation" ? posText("حجز مع الطلب", "Reservation + order", "Réservation + commande") : posText("طلب غرف الفنادق", "Hotel room order", "Commande en chambre");
   const submitOrder = async () => {
     if (!branchId) { toast.error("لا يوجد فرع مرتبط لاستقبال الطلب"); return; }
+    if (cart.length === 0) { toast.error(posText("أضف صنفًا إلى الطلب أولًا", "Add an item before saving", "Ajoutez un article avant de valider")); return; }
+    if (channel === "dine_in" && !tableName.trim()) { toast.error(posText("أدخل رقم الطاولة قبل حفظ الطلب", "Enter the table number before saving", "Saisissez le numéro de table avant de valider")); return; }
     if (channel === "reservation" && (!serviceCustomerName.trim() || !reservationAt || Number(reservationPartySize) < 1)) { toast.error(posText("أدخل اسم العميل وموعد الحجز وعدد الضيوف", "Enter customer, reservation time and party size", "Saisissez le client, l’heure et le nombre de personnes")); return; }
     if (channel === "hotel" && !hotelRoomNumber.trim()) { toast.error(posText("أدخل رقم الغرفة", "Enter room number", "Saisissez le numéro de chambre")); return; }
     const serviceNotes = channel === "reservation" ? `POS_RESERVATION|customer=${serviceCustomerName.trim()}|phone=${serviceCustomerPhone.trim()}|reservedFor=${reservationAt}|partySize=${reservationPartySize}` : channel === "hotel" ? `POS_HOTEL|room=${hotelRoomNumber.trim()}|guest=${serviceCustomerName.trim()}|phone=${serviceCustomerPhone.trim()}` : undefined;
@@ -453,14 +455,19 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       window.setTimeout(() => publishCustomerFacingState(customerDisplaySessionId, { restaurantId, updatedAt: new Date().toISOString(), status: "idle", lines: [], subtotal: 0, discount: 0, tax: 0, total: 0, currencyCode: result.currency?.currencyCode ?? "SAR" }), 12000);
       setCart([]);
     } catch (error) {
-      // The server may have accepted the request before the response was lost.
-      // Persist the exact same clientRequestId so replay remains idempotent.
+      // Validation and permission errors are final. Keep the cart for correction.
+      if (isOnline && !shouldRetryPosOffline(error)) {
+        toast.error(error instanceof Error ? error.message : posText("صحح بيانات الطلب ثم أعد المحاولة", "Correct the order details and retry", "Corrigez la commande puis réessayez"));
+        return;
+      }
+      // A network failure may happen after the server accepted the order.
+      // Reuse the same request ID during replay to avoid a duplicate sale.
       try {
         await enqueuePosOffline(payload, payload.clientRequestId);
         setQueuedCount((await listPosOffline({ restaurantId })).length);
-        toast.warning("تعذر تأكيد استجابة الخادم. حُفظت العملية بنفس رقمها وستتم مزامنتها دون تكرار البيع.");
+        toast.warning(posText("تعذر تأكيد استجابة الخادم. حُفظ الطلب للمزامنة.", "Server response unavailable. Order saved for sync.", "Réponse du serveur indisponible. Commande enregistrée pour synchronisation."));
       } catch {
-        toast.error(error instanceof Error ? error.message : "تعذر حفظ الطلب أو وضعه في قائمة المزامنة");
+        toast.error(error instanceof Error ? error.message : posText("تعذر حفظ الطلب", "Could not save order", "Impossible d’enregistrer la commande"));
       }
     }
   };
