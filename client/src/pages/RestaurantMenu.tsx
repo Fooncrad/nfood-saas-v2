@@ -349,8 +349,19 @@ export default function RestaurantMenu() {
   );
   const availableTables = trpc.platform.publicAvailableTables.useQuery(
     { slug, branchId: selectedBranchId ?? 0 },
-    { enabled: orderMode === "dineIn" && Boolean(selectedBranchId), retry:false }
+    { enabled: orderMode === "dineIn" && Boolean(selectedBranchId), retry:false, refetchInterval:3000, refetchIntervalInBackground:true, refetchOnWindowFocus:true }
   );
+  useEffect(() => {
+    if (orderMode !== "dineIn" || !availableTables.isSuccess || !selectedTableId) return;
+    const selectedTable = availableTables.data?.find((table) => table.id === selectedTableId);
+    if (!selectedTable) {
+      setSelectedTableId(null);
+      setTableName("");
+      toast.warning(lang === "ar" ? "الطاولة المختارة لم تعد متاحة؛ اختر طاولة أخرى" : lang === "fr" ? "La table choisie n’est plus disponible ; choisissez-en une autre" : "The selected table is no longer available; choose another table");
+      return;
+    }
+    if (tableName !== selectedTable.name) setTableName(selectedTable.name);
+  }, [availableTables.data, availableTables.isSuccess, lang, orderMode, selectedTableId, tableName]);
   const reservationSlots = trpc.platform.reservationSlots.useQuery(
     { slug, branchId: selectedBranchId ?? 0 },
     { enabled: reservationOpen && Boolean(selectedBranchId), retry:false }
@@ -498,6 +509,7 @@ export default function RestaurantMenu() {
     if (orderMode === "takeaway" && pickupOptions.data?.length && !pickupPoint.trim()) return toast.error(lang === "ar" ? "اختر نقطة الاستلام" : "Choose pickup point");
     if (orderMode === "delivery" && (!deliveryAddress.trim() || deliveryLatitude === undefined || deliveryLongitude === undefined)) return toast.error(copy.address);
     const selectedRoom = selectedHotel?.rooms?.find((room:any) => room.id === hotelRoomId);
+    const selectedTable = availableTables.data?.find((table) => table.id === selectedTableId);
     if (orderMode === "hotel" && (!hotelId || !hotelRoomId)) return toast.error(copy.roomNumber);
     checkout.mutate({
       slug,
@@ -506,7 +518,9 @@ export default function RestaurantMenu() {
       guestPhone:guestPhone.trim(),
       paymentMethod,
       channel:orderMode === "dineIn" ? "dine_in" : orderMode,
+      tableId:orderMode === "dineIn" ? selectedTableId ?? undefined : undefined,
       tableName:orderMode === "dineIn" ? tableName.trim() : undefined,
+      seatingSectionId:orderMode === "dineIn" ? selectedTable?.seatingSectionId ?? undefined : undefined,
       partySize:orderMode === "dineIn" ? dineInPartySize : undefined,
       pickupPoint:orderMode === "takeaway" ? pickupPoint.trim() || undefined : undefined,
       deliveryAddress:orderMode === "delivery" ? deliveryAddress.trim() : undefined,
