@@ -122,7 +122,8 @@ export function resolveMediaContext(ctx: { user: { id: number; role?: string; te
     return { scope: "platform" as const, restaurantId: undefined, ownerUserId: undefined };
   }
   if (ctx.user.testRole === "restaurant_admin" || ctx.user.testRole === "waiter" || ctx.user.testRole === "kitchen" || ctx.user.testRole === "cashier" || ctx.user.testRole === "driver") {
-    return { scope: "restaurant" as const, restaurantId: ctx.user.restaurantId ?? 1, ownerUserId: undefined };
+    if (!ctx.user.restaurantId) throw new TRPCError({ code: "FORBIDDEN", message: "حساب المطعم غير مرتبط بمطعم محدد" });
+    return { scope: "restaurant" as const, restaurantId: ctx.user.restaurantId, ownerUserId: undefined };
   }
   return { scope: "user" as const, restaurantId: undefined, ownerUserId: ctx.user.id };
 }
