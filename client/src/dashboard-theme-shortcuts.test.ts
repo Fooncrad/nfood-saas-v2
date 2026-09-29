@@ -14,10 +14,11 @@ describe("dashboard theme, notifications, and shortcuts", () => {
   });
 
   it("keeps the active admin command center wired to navigation and notifications", () => {
-    const home = read("pages/Home.tsx");
+    const app = read("pages/SuperAdminApp.tsx");
     const admin = read("components/CentralAdminCommandCenter.tsx");
-    expect(home).toContain("CentralAdminCommandCenter");
-    expect(home).toContain("adminPanelChildren");
+    expect(app).toContain("<CentralAdminCommandCenter");
+    expect(app).toContain("active={active}");
+    expect(app).toContain("onNavigate={setActive}");
     expect(admin).toContain("onNavigate");
     expect(admin).toContain("notifications");
     expect(admin).toContain("onLogout");
@@ -35,15 +36,13 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     expect(overview).toContain("hover:-translate-y-0.5");
     expect(overview).not.toContain("مركز نشاط NFOOD");
     expect(overview).not.toContain("نبض المنصة");
-    const home = read("pages/Home.tsx");
+    const app = read("pages/SuperAdminApp.tsx");
     const analytics = read("components/OverviewAnalyticsPanel.tsx");
-    expect(home).toContain("CentralAdminCommandCenter");
-    expect(home).toContain("isCentralAdmin");
-    expect(home).toContain("<CentralAdminCommandCenter");
-    expect(home).toContain("adminPanelChildren");
-    expect(home).toContain("<ActivitiesSectorsAdmin");
-    expect(home).not.toContain('case "activities": return <PlatformOverview');
-    expect(home).not.toContain("<SuperAdminRestaurantCatalog");
+    expect(app).toContain("CentralAdminCommandCenter");
+    expect(app).toContain("<CentralAdminCommandCenter");
+    expect(app).toContain("<ActivitiesSectorsAdmin");
+    expect(app).not.toContain('case "activities": return <PlatformOverview');
+    expect(app).not.toContain("<SuperAdminRestaurantCatalog");
     expect(analytics).not.toContain(">{copy.overview}</h2>");
     expect(analytics).not.toContain("{copy.subtitle}</p>");
     expect(css).toContain(".dark .nfood-dashboard-shell");
