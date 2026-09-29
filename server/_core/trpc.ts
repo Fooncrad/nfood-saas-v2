@@ -39,7 +39,10 @@ export const restaurantAdminProcedure = protectedProcedure.use(
 export const testRoleProcedure = (...roles: string[]) => protectedProcedure.use(
   t.middleware(async opts => {
     const role = opts.ctx.user?.testRole;
-    if (role && !roles.includes(role)) {
+    // Restaurant team endpoints are deny-by-default: a team session must have
+    // an explicitly assigned role that this procedure accepts. Never fall
+    // through as a generic customer/user when testRole is missing.
+    if (!role || !roles.includes(role)) {
       throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك صلاحية تنفيذ هذا الإجراء" });
     }
     return opts.next({ ctx: { ...opts.ctx, user: opts.ctx.user } });
