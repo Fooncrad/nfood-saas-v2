@@ -16,6 +16,7 @@ describe("customer-only content marketplace", () => {
   const marketplaceLanding = readFileSync(resolve(process.cwd(), "client/src/pages/MarketplaceLanding.tsx"), "utf8");
   const marketplaceRouter = readFileSync(resolve(process.cwd(), "server/marketplaceRouter.ts"), "utf8");
   const marketplaceSector = readFileSync(resolve(process.cwd(), "client/src/pages/MarketplaceSector.tsx"), "utf8");
+  const publicHome = readFileSync(resolve(process.cwd(), "client/src/pages/PublicHome.tsx"), "utf8");
 
   it("keeps customers out of buying while allowing merchant buying only when admin enables it", () => {
     expect(router).toContain("الشراء متاح لهذا الحساب التجاري");
@@ -70,6 +71,15 @@ describe("customer-only content marketplace", () => {
     expect(marketplaceSector).toContain('publicSectors.useQuery({ countryCode: country }');
     expect(marketplaceSector).toContain('marketLanguage === "ar" ? storeSector.ar');
     expect(marketplaceSector).not.toContain('>{store.sector}</Badge>');
+    expect(publicHome).toContain('sectorMeta(store.sector)[lang]');
+    expect(publicHome).toContain('/menu/${encodeURIComponent(store.restaurantSlug)}');
+    expect(publicHome).not.toContain('href="/pricing"');
+    expect(publicHome).not.toContain('
+    expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "QR الموقع"');
+    expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "امسح للدخول إلى موقع NFOOD"');
+  });
+});
+ + '{lang === "ar" ? "QR الموقع"');
     expect(marketplaceLanding).toContain('lang === "ar" ? meta.ar : lang === "fr" ? meta.fr : meta.en');
     expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "QR الموقع"');
     expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "امسح للدخول إلى موقع NFOOD"');
