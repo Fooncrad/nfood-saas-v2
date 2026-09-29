@@ -22,7 +22,9 @@ const statusMeta: Record<string, { label: string; description: string; className
 
 export default function CustomerOrders() {
   const { user, loading } = useAuth();
-  const orders = trpc.platform.myOrders.useQuery({ limit: 100 }, { enabled: Boolean(user), retry: false, refetchInterval: user ? 10000 : false });\n  const invoices = trpc.platform.myElectronicInvoices.useQuery({ limit: 100 }, { enabled: Boolean(user), retry: false });\n  const invoiceByOrder = useMemo(() => new Map((invoices.data ?? []).map((invoice) => [invoice.orderId, invoice])), [invoices.data]);
+  const orders = trpc.platform.myOrders.useQuery({ limit: 100 }, { enabled: Boolean(user), retry: false, refetchInterval: user ? 10000 : false });
+  const invoices = trpc.platform.myElectronicInvoices.useQuery({ limit: 100 }, { enabled: Boolean(user), retry: false });
+  const invoiceByOrder = useMemo(() => new Map((invoices.data ?? []).map((invoice) => [invoice.orderId, invoice])), [invoices.data]);
   const [guestPhone, setGuestPhone] = useState("");
   const [guestOtp, setGuestOtp] = useState("");
   const [otpRequested, setOtpRequested] = useState(false);
