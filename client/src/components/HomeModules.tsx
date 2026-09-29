@@ -3018,6 +3018,22 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const [couponCode, setCouponCode] = useState("");
   const [customerNote, setCustomerNote] = useState("");
   const [cashierNotes, setCashierNotes] = useState("");
+  const [heldOrders, setHeldOrders] = useState<Array<{ id: string; label: string; cart: { product: MenuProduct; quantity: number }[]; tableName: string; channel: string; total: number }>>([]);
+  const [advancedCheckoutOpen, setAdvancedCheckoutOpen] = useState(false);
+  const holdCurrentOrder = () => {
+    if (!cart.length) return;
+    const id = String(Date.now());
+    setHeldOrders(current => [{ id, label: tableName.trim() || `طلب معلق ${current.length + 1}`, cart, tableName, channel, total }, ...current].slice(0, 12));
+    setCart([]); setTableName(""); setPaymentSplits([]); setSplitMode("single");
+    toast.success("تم تعليق الطلب ويمكن استرجاعه من نفس الشاشة");
+  };
+  const restoreHeldOrder = (id: string) => {
+    const held = heldOrders.find(order => order.id === id);
+    if (!held) return;
+    if (cart.length && !window.confirm("السلة الحالية تحتوي أصنافًا. هل تريد استبدالها بالطلب المعلق؟")) return;
+    setCart(held.cart); setTableName(held.tableName); setChannel(held.channel); setHeldOrders(current => current.filter(order => order.id !== id));
+    toast.success(`تم استرجاع ${held.label}`);
+  };
   const [receiptTemplate, setReceiptTemplate] = useState<
     "thermal" | "detailed"
   >("thermal");
@@ -3477,16 +3493,12 @@ function PosView({ restaurantId }: { restaurantId: number }) {
           </CardContent>
         </Card>
         <Card className="order-2 flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:sticky xl:top-3 xl:max-h-[calc(100vh-156px)] xl:overflow-hidden" data-pos-order-card>
-          <CardHeader className="shrink-0 border-b border-slate-100 px-5 py-4">
-            <CardTitle className="flex items-center justify-between text-base">
-              <span>السلة والدفع</span>
-              <span className="text-xs font-normal text-slate-400">
-                {channel}
-              </span>
-            </CardTitle>
+          <CardHeader className="shrink-0 border-b border-slate-100 px-4 py-3">
+            <div className="flex items-center justify-between gap-2"><CardTitle className="text-base">السلة والدفع</CardTitle><div className="flex items-center gap-2"><Button type="button" variant="outline" className="h-8 rounded-lg px-2 text-[10px]" disabled={!cart.length} onClick={holdCurrentOrder}>تعليق الطلب</Button><span className="text-[10px] font-bold text-slate-400">{channel}</span></div></div>
+            {heldOrders.length > 0 && <div className="mt-2 flex gap-2 overflow-x-auto pb-1">{heldOrders.map(order => <button type="button" key={order.id} onClick={() => restoreHeldOrder(order.id)} className="shrink-0 rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1.5 text-[10px] font-bold text-blue-700">استرجاع {order.label} · {money(order.total)}</button>)}</div>}
           </CardHeader>
           <CardContent className="flex min-h-0 flex-col p-5 xl:flex-1">
-            <div className="mb-4 shrink-0 rounded-2xl border border-orange-100 bg-orange-50/60 p-3" data-pos-routing-selector>
+            <div className="mb-3 flex items-center justify-between gap-2"><p className="text-[11px] font-bold text-slate-500">الإجراءات اليومية أمامك، والإعدادات الإضافية عند الحاجة.</p><Button type="button" variant="outline" className="h-8 rounded-lg px-2 text-[10px]" onClick={() => setAdvancedCheckoutOpen(value => !value)}>{advancedCheckoutOpen ? "إخفاء الخيارات" : "خيارات متقدمة"}</Button></div>{advancedCheckoutOpen && <div className="mb-4 shrink-0 rounded-2xl border border-orange-100 bg-orange-50/60 p-3" data-pos-routing-selector>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="text-xs font-bold text-slate-800">أقسام الإرسال</p>
@@ -3506,7 +3518,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                   return <button type="button" key={section.id} aria-pressed={selected} onClick={() => { routingSelectionTouchedRef.current = true; setSelectedRoutingSectionIds(current => selected ? current.filter(id => id !== section.id) : [...current, section.id]); }} className={`shrink-0 rounded-xl border px-3 py-2 text-[11px] font-bold ${selected ? "border-orange-300 bg-white text-orange-700" : "border-transparent bg-white/60 text-slate-500"}`}><span className={`ml-1 inline-block h-2 w-2 rounded-full ${selected ? "bg-orange-500" : "bg-slate-300"}`} />{section.name}</button>;
                 })}
               </div>
-            </div>
+            </div>}
             <div className="min-h-0 flex-1 overflow-y-auto pr-1 xl:overscroll-contain">
             <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Input
