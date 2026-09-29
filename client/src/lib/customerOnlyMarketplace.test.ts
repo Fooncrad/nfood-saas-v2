@@ -29,7 +29,7 @@ describe("customer-only content marketplace", () => {
     expect(router).toContain('visibility: z.enum(["public", "friends"])');
     expect(router).toContain("foodTags: z.array");
     expect(studio).toContain("خاص للأصدقاء المدعوين");
-    expect(studio).toContain("أصناف الطعام والهاشتاقات");
+    expect(studio).toContain("الوسوم والهاشتاقات");
   });
 
   it("keeps public search tag-aware with customer selling and merchant buying", () => {
@@ -37,10 +37,9 @@ describe("customer-only content marketplace", () => {
     expect(market).toContain("بيع العملاء · شراء التجار");
     expect(market).toContain("شراء للتاجر");
     expect(market).toContain('purchase.mutate({ listingId })');
-    expect(portal).toContain('href="/content-market"');
-    expect(portal).toContain('href="/customer-content-library"');
-    expect(portal).toContain("سوق المحتوى والوصفات");
-    expect(portal).toContain("دخول Trend Kitchen");
+    expect(portal).toContain('href:"/customer-content-library"');
+    expect(portal).toContain('href:"/customer-studio"');
+    expect(portal).toContain('marketplace:"استكشف السوق"');
     expect(portal).not.toContain("إنشاء حساب عميل مستقل");
     expect(market).toContain("هذه الميزة للبيع غير متوفرة لحسابك");
     expect(market).toContain('window.location.href = "/support"');
