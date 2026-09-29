@@ -126,6 +126,26 @@ function AppContent() {
   return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<RouteLoading />}><Router /></Suspense>{showGlobalLoader && <NfoodsLoadingScreen key={loaderKey} onComplete={completeGlobalLoader} />}</div>;
 }
 
+function SessionIdleGuard() {
+  const { user, logout } = useAuth();
+  useEffect(() => {
+    if (!user) return;
+    const MAX_IDLE_MS = 5 * 60 * 1000;
+    let timer = window.setTimeout(() => void logout(), MAX_IDLE_MS);
+    const refresh = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => void logout(), MAX_IDLE_MS);
+    };
+    const events: Array<keyof WindowEventMap> = ["pointerdown", "keydown", "touchstart", "scroll"];
+    events.forEach((event) => window.addEventListener(event, refresh, { passive: true }));
+    return () => {
+      window.clearTimeout(timer);
+      events.forEach((event) => window.removeEventListener(event, refresh));
+    };
+  }, [user, logout]);
+  return null;
+}
+
 function CustomerAreaGuard({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const [location, navigate] = useLocation();
@@ -235,6 +255,7 @@ export default function App() {
         <TooltipProvider>
           <LanguageProvider>
             <DatabaseTranslationBridge />
+            <SessionIdleGuard />
             <AppContent />
           </LanguageProvider>
         </TooltipProvider>
