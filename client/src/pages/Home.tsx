@@ -367,7 +367,7 @@ function ModuleView({ active, orders, advanceOrder, setActive, restaurantId, ord
 }
 
 
-type MenuProduct = { id: number; name: string; category: string; price: number; available: boolean };
+type MenuProduct = { id: number; name: string; category: string; price: number; available: boolean; imageUrl?: string ; imageUrl?: string };
 
 function MenuView({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
@@ -438,6 +438,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const [barcodeBusy, setBarcodeBusy] = useState(false);
   const [productSearch, setProductSearch] = useState("");
   const [printerSettingsOpen, setPrinterSettingsOpen] = useState(false);
+  const [channel, setChannel] = useState<"dine_in" | "takeaway" | "delivery" | "reservation">("dine_in");
   const channelLabel = channel === "dine_in" ? posText("داخل المطعم", "Dine in", "Sur place") : channel === "takeaway" ? posText("استلام", "Takeaway", "À emporter") : channel === "delivery" ? posText("توصيل", "Delivery", "Livraison") : posText("حجز مع الطلب", "Reservation + order", "Réservation + commande");
   const submitOrder = async () => {
     if (!branchId) { toast.error("لا يوجد فرع مرتبط لاستقبال الطلب"); return; }
@@ -473,7 +474,6 @@ function PosView({ restaurantId }: { restaurantId: number }) {
     }
   };
   useEffect(() => { let disposed = false; const refresh = async () => { const online = navigator.onLine; setIsOnline(online); const before = await listPosOffline<Parameters<typeof createOrder.mutate>[0]>({ restaurantId, includeDeadLetter: true }); if (disposed) return; setQueuedCount(before.filter((item) => item.status !== "dead_letter").length); setDeadLetterCount(before.filter((item) => item.status === "dead_letter").length); if (!online || !before.some((item) => item.status !== "dead_letter")) return; const result = await replayPosOffline<Parameters<typeof createOrder.mutate>[0]>((payload) => createOrder.mutateAsync(payload), () => navigator.onLine, { restaurantId }); if (disposed) return; setQueuedCount(result.remaining); setDeadLetterCount(result.deadLetter); if (result.synced > 0) toast.success(`تمت مزامنة ${result.synced} طلبات محفوظة`); }; void refresh(); const onRefresh = () => void refresh(); window.addEventListener("online", onRefresh); window.addEventListener("offline", onRefresh); window.addEventListener("nfood:sync-request", onRefresh); return () => { disposed = true; window.removeEventListener("online", onRefresh); window.removeEventListener("offline", onRefresh); window.removeEventListener("nfood:sync-request", onRefresh); }; }, [createOrder.mutateAsync, restaurantId]);
-  const [channel, setChannel] = useState<"dine_in" | "takeaway" | "delivery" | "reservation">("dine_in");
   const total = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const visiblePosProducts = posProducts.filter((product) => product.available && product.name.toLocaleLowerCase().includes(productSearch.trim().toLocaleLowerCase()));
   const add = (product: MenuProduct, sourceType: PosCartItem["sourceType"] = "menu_item") => setCart((items) => { const sourceId = product.id; const found = items.find((item) => item.sourceId === sourceId && item.sourceType === sourceType); return found ? items.map((item) => item.sourceId === sourceId && item.sourceType === sourceType ? { ...item, quantity: item.quantity + 1 } : item) : [...items, { sourceType, sourceId, product, quantity: 1 }]; });
