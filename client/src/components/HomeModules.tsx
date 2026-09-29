@@ -338,6 +338,7 @@ export function ModuleView({
     { title: string; description: string; icon: typeof LayoutDashboard }
   > = {
     overview: { title: "نظرة عامة", description: "", icon: LayoutDashboard },
+    finance: { title: "المالية والفواتير", description: "السجل المالي والفواتير والمدفوعات والتسويات.", icon: WalletCards },
     admin: {
       title: "Super Admin",
       description: "إدارة المطاعم والعملاء والاشتراكات والصلاحيات.",
