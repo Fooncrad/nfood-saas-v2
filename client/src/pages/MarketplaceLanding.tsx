@@ -101,7 +101,7 @@ export default function MarketplaceLanding() {
   const appearance = (appearanceQuery.data?.appearance || {}) as MarketAppearance;
   const enabled = appearance.marketplaceEnabled !== false;
 
-  const sectors = trpc.marketplace.publicSectors.useQuery(undefined, { retry: false, enabled });
+  const sectors = trpc.marketplace.publicSectors.useQuery({ countryCode: country }, { retry: false, enabled });
   const stores = trpc.marketplace.publicStores.useQuery({ countryCode: country, search: search.trim() || undefined }, { retry: false, enabled });
   const featuredStores = trpc.marketplace.publicFeaturedStores.useQuery({ countryCode: country }, { retry: false, enabled });
   const highlights = trpc.marketplace.publicSectorHighlights.useQuery({ countryCode: country }, { retry: false, enabled });
