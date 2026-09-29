@@ -983,7 +983,7 @@ async function loadFeatureAccessContext(restaurantId: number): Promise<FeatureAc
   const definitions = await db.select().from(featureDefinitions);
   const overrides = await db.select().from(restaurantFeatures).where(eq(restaurantFeatures.restaurantId, restaurantId));
   const restaurant = (await db.select({ plan: restaurants.plan }).from(restaurants).where(eq(restaurants.id, restaurantId)).limit(1))[0];
-  const subscription = (await db.select({ plan: subscriptions.plan }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), inArray(subscriptions.status, ["active", "trial"]))).orderBy(desc(subscriptions.id)).limit(1))[0];
+  const subscription = (await db.select({ plan: subscriptions.plan, status: subscriptions.status }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), inArray(subscriptions.status, ["active", "trial"]))).orderBy(desc(sql`CASE WHEN ${subscriptions.status} = "active" THEN 1 ELSE 0 END`), desc(subscriptions.id)).limit(1))[0];
   const legacyPlanMap: Record<string, string> = {
     Free: "hospitality_basic",
     Starter: "hospitality_basic",
