@@ -453,7 +453,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
     }
     try {
       const result = await createOrder.mutateAsync(payload);
-      toast.success(`تم حفظ الطلب #${result.orderId}`);
+      toast.success(`تم حفظ الطلب · رقم الطلب ORD-${String(result.orderId).padStart(6, "0")}`);
       if (result.paymentStatus === "paid") { try { const invoice = await issueInvoice.mutateAsync({ restaurantId, orderId: result.orderId, invoiceType: "simplified" }); setLastInvoice(invoice); toast.success(`تم إصدار الفاتورة ${invoice.invoiceNumber}`); } catch (invoiceError) { toast.warning(invoiceError instanceof Error ? invoiceError.message : "تم حفظ الطلب وتعذر إصدار الفاتورة تلقائيًا"); } }
       publishCustomerFacingState(customerDisplaySessionId, { restaurantId, updatedAt: new Date().toISOString(), status: "complete", lines: cart.map((item) => ({ id: item.product.id, name: item.product.name, quantity: item.quantity, unitPrice: item.product.price })), subtotal: Number(result.pricing?.subtotal ?? total), discount: Number(result.pricing?.discountAmount ?? 0), tax: Number(result.pricing?.taxAmount ?? 0), total: Number(result.pricing?.total ?? total), currencyCode: result.currency?.currencyCode ?? "SAR", receiptNumber: String(result.orderId) });
       window.setTimeout(() => publishCustomerFacingState(customerDisplaySessionId, { restaurantId, updatedAt: new Date().toISOString(), status: "idle", lines: [], subtotal: 0, discount: 0, tax: 0, total: 0, currencyCode: result.currency?.currencyCode ?? "SAR" }), 12000);
