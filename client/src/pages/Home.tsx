@@ -367,7 +367,7 @@ function ModuleView({ active, orders, advanceOrder, setActive, restaurantId, ord
 }
 
 
-type MenuProduct = { id: number; name: string; category: string; price: number; available: boolean; imageUrl?: string ; imageUrl?: string };
+type MenuProduct = { id: number; name: string; category: string; price: number; available: boolean; imageUrl?: string };
 
 function MenuView({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
