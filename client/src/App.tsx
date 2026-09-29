@@ -1,11 +1,10 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation, useParams } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { DatabaseTranslationBridge } from "./components/DatabaseTranslationBridge";
-import NfoodsLoadingScreen from "./components/NfoodsLoadingScreen";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LANGUAGE_STORAGE_KEY, LanguageProvider, isUiLanguage, useLanguage, type Language } from "./contexts/LanguageContext";
 const routeLoaders = {
@@ -92,38 +91,20 @@ function LegacyMenuLink() {
   return <PageLoading />;
 }
 
-function RouteLoading() {
-  return <div className="pointer-events-none fixed inset-x-0 top-0 z-[90] h-1 overflow-hidden bg-[#17212b]/80" aria-live="polite"><div className="h-full w-1/3 animate-pulse rounded-full bg-[#f4a340] shadow-[0_0_10px_rgba(244,163,64,0.9)]" /></div>;
-}
-
-const NFOODS_LOADER_SESSION_KEY = "nfood-global-loader-seen";
-
 function AppContent() {
   const { direction, language, setLanguage } = useLanguage();
   const [location] = useLocation();
-  const previousLocation = useRef(location);
-  const [loaderKey, setLoaderKey] = useState(0);
-  const [showGlobalLoader, setShowGlobalLoader] = useState(() => typeof window === "undefined" || !window.sessionStorage.getItem(NFOODS_LOADER_SESSION_KEY));
-  const completeGlobalLoader = useCallback(() => {
-    window.sessionStorage.setItem(NFOODS_LOADER_SESSION_KEY, "1");
-    setShowGlobalLoader(false);
-  }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => { void Promise.all([routeLoaders.Home(), routeLoaders.RestaurantMenu(), routeLoaders.CustomerPortal(), routeLoaders.CustomerOrders()]); }, 1800);
     return () => window.clearTimeout(timer);
   }, []);
-  useEffect(() => {
-    if (previousLocation.current === location) return;
-    previousLocation.current = location;
-    // Keep the branded loader for the first session load only; route changes use Suspense's lightweight bar.
-  }, [location]);
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("lang");
     if (isUiLanguage(requested)) { setLanguage(requested); return; }
     const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null;
     if (isUiLanguage(stored) && stored !== language) setLanguage(stored, false);
   }, [location]);
-  return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<RouteLoading />}><Router /></Suspense>{showGlobalLoader && <NfoodsLoadingScreen key={loaderKey} onComplete={completeGlobalLoader} />}</div>;
+  return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<PageLoading />}><Router /></Suspense></div>;
 }
 
 function SessionIdleGuard() {
