@@ -111,15 +111,12 @@ export default function LoginPage() {
   const requestReset = trpc.auth.requestPasswordReset.useMutation({ onSuccess: () => toast.success(copy.resetSent), onError: (error) => toast.error(error.message) });
   const completeReset = trpc.auth.resetPassword.useMutation({ onSuccess: () => { toast.success(copy.resetDone); setResetMode(false); window.history.replaceState({}, "", "/login"); }, onError: (error) => toast.error(error.message) });
   const login = trpc.auth.testLogin.useMutation({ onSuccess: async (result) => {
-    toast.success(copy.toastSignedIn);
-    // The login mutation sets the session cookie on the response, but auth.me may
-    // still contain the pre-login anonymous cache. Refresh it before leaving the
-    // login route, then use a document navigation so every route guard starts from
-    // the newly authenticated server session.
+    // Refresh the authenticated session first. Do not show a success toast while
+    // the login screen is still visible; it caused the misleading pre-navigation flash.
     await refresh();
     const next = new URLSearchParams(window.location.search).get("next");
     const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : result.next ?? (result.role === "admin" ? "/admin" : "/dashboard");
-    window.location.assign(safeNext);
+    setLocation(safeNext);
   }, onError: (error) => { if (error.message === "VERIFY_EMAIL_REQUIRED") { toast.error(language === "ar" ? "تحقق من بريدك الإلكتروني أولًا ثم ارجع لتسجيل الدخول." : language === "fr" ? "Vérifiez d’abord votre e-mail, puis reconnectez-vous." : "Verify your email first, then return to sign in."); return; } toast.error(error.message || copy.toastInvalid); } });
   const features = [copy.feat1, copy.feat2, copy.feat3];
   useEffect(() => {
