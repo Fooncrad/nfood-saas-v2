@@ -804,6 +804,34 @@ export const posCashMovements = mysqlTable("posCashMovements", {
   shiftDateIdx: index("pos_cash_movements_shift_date_idx").on(table.shiftId, table.createdAt),
 }));
 
+export const electronicInvoices = mysqlTable("electronicInvoices", {
+  id: int("id").autoincrement().primaryKey(),
+  restaurantId: int("restaurantId").notNull().references(() => restaurants.id),
+  orderId: int("orderId").notNull().references(() => orders.id),
+  customerId: int("customerId").references(() => users.id),
+  invoiceNumber: varchar("invoiceNumber", { length: 80 }).notNull(),
+  invoiceType: mysqlEnum("invoiceType", ["simplified", "tax"]).default("simplified").notNull(),
+  status: mysqlEnum("status", ["issued", "cancelled", "refunded"]).default("issued").notNull(),
+  currencyCode: varchar("currencyCode", { length: 3 }).default("SAR").notNull(),
+  sellerName: varchar("sellerName", { length: 180 }).notNull(),
+  sellerTaxNumber: varchar("sellerTaxNumber", { length: 64 }),
+  customerName: varchar("customerName", { length: 180 }),
+  customerTaxNumber: varchar("customerTaxNumber", { length: 64 }),
+  subtotal: decimal("subtotal", { precision: 12, scale: 2 }).default("0").notNull(),
+  discountAmount: decimal("discountAmount", { precision: 12, scale: 2 }).default("0").notNull(),
+  taxAmount: decimal("taxAmount", { precision: 12, scale: 2 }).default("0").notNull(),
+  total: decimal("total", { precision: 12, scale: 2 }).default("0").notNull(),
+  itemsSnapshotJson: text("itemsSnapshotJson").notNull(),
+  qrPayload: text("qrPayload"),
+  issuedAt: timestamp("issuedAt").defaultNow().notNull(),
+  createdByUserId: int("createdByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  restaurantInvoiceNumberUidx: uniqueIndex("electronic_invoices_restaurant_number_uidx").on(table.restaurantId, table.invoiceNumber),
+  orderInvoiceUidx: uniqueIndex("electronic_invoices_order_uidx").on(table.orderId),
+  customerIssuedIdx: index("electronic_invoices_customer_issued_idx").on(table.customerId, table.issuedAt),
+}));
+
 export const orderItems = mysqlTable("orderItems", {
   id: int("id").autoincrement().primaryKey(),
   orderId: int("orderId").notNull(),
