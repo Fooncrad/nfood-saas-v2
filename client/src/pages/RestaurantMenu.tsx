@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState , useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import {
   CalendarDays,
@@ -347,6 +347,29 @@ export default function RestaurantMenu() {
     { slug, reservationId: activeWaitlist?.id ?? 0, phone: activeWaitlist?.phone ?? "" },
     { enabled: Boolean(activeWaitlist?.id && activeWaitlist?.phone), retry:false, refetchInterval:5000, refetchOnWindowFocus:true }
   );
+  const previousWaitlistStatus = useRef<string | undefined>(undefined);
+  const previousWaitlistAhead = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    const data = waitlistStatus.data;
+    if (!data || !activeWaitlist) return;
+    const statusChanged = previousWaitlistStatus.current && previousWaitlistStatus.current !== data.status;
+    const aheadChanged = previousWaitlistAhead.current !== undefined && previousWaitlistAhead.current !== data.ahead;
+    if (statusChanged || aheadChanged) {
+      const title = data.status === "confirmed"
+        ? (lang === "ar" ? "طاولتك جاهزة" : "Your table is ready")
+        : (lang === "ar" ? "تحديث قائمة الانتظار" : "Waitlist update");
+      const body = data.status === "confirmed"
+        ? (lang === "ar" ? "توجه إلى الاستقبال، طاولتك أصبحت جاهزة." : "Please go to reception. Your table is ready.")
+        : (lang === "ar" ? `أمامك الآن ${data.ahead} مجموعة.` : `${data.ahead} groups are now ahead of you.`);
+      toast.success(title + " — " + body);
+      if ("Notification" in window && Notification.permission === "granted") {
+        try { new Notification(title, { body }); } catch {}
+      }
+    }
+    previousWaitlistStatus.current = data.status;
+    previousWaitlistAhead.current = data.ahead;
+  }, [activeWaitlist, lang, waitlistStatus.data?.status, waitlistStatus.data?.ahead]);
+
   useEffect(() => {
     const status = waitlistStatus.data?.status;
     if (activeWaitlist && status && ["completed","cancelled","no_show"].includes(status)) {
