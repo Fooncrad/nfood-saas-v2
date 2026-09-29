@@ -79,6 +79,7 @@ export default function Home() {
   useEffect(() => { const restaurants = restaurantsQuery.data ?? []; if (!restaurants.length) return; const available = restaurants.some((restaurant) => restaurant.id === selectedRestaurantId); if (!available) setSelectedRestaurantId(restaurants[0].id); }, [restaurantsQuery.data, selectedRestaurantId]);
   const selectedRestaurant = (restaurantsQuery.data ?? []).find((restaurant) => restaurant.id === selectedRestaurantId) ?? restaurantsQuery.data?.[0] ?? null;
   const workspaceState = restaurantsQuery.isLoading && !selectedRestaurant ? "loading" : getWorkspaceState(restaurantsQuery.data ?? [], selectedRestaurant?.id ?? selectedRestaurantId);
+  const workspaceReady = Boolean(user && selectedRestaurant && workspaceState === "ready");
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileImageUploading, setProfileImageUploading] = useState(false);
   const profileImageUpload = trpc.uploadBrandAsset.useMutation({ onSuccess: async () => { await utils.platform.branding.invalidate({ restaurantId: selectedRestaurantId }); toast.success("تم تحديث أيقونة المطعم"); }, onError: (error) => toast.error(error.message || "تعذر تحديث أيقونة المطعم") });
