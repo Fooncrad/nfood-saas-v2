@@ -353,7 +353,7 @@ function ModuleView({ active, orders, advanceOrder, setActive, restaurantId, ord
   if (active === "menu") return <MenuView restaurantId={restaurantId} />;
   if (active === "tables") return <ServiceHallCenter restaurantId={restaurantId} initial="tables" />;
   if (active === "inventory") return <InventoryView restaurantId={restaurantId} />;
-  if (active === "team") return <ServiceHallCenter restaurantId={restaurantId} initial="waiters" />;
+  if (active === "team") return <TeamView restaurantId={restaurantId} />;
   if (active === "marketing") return <MarketingView restaurantId={restaurantId} />;
   if (active === "storefront") return <StorefrontCustomizationPanel restaurantId={restaurantId} />;
   if (active === "reservations") return <ServiceHallCenter restaurantId={restaurantId} initial="reservations" />;
