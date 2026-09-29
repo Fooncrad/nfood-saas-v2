@@ -25,6 +25,7 @@ import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { QRCodeSVG } from "qrcode.react";
+import { sectorMeta } from "@/lib/marketplaceExperience";
 
 type HomeFeatureCard = { title: string; body: string };
 type HomeFeatureLocale = { title?: string; subtitle?: string; homeCards?: HomeFeatureCard[] };
@@ -228,9 +229,9 @@ export default function PublicHome() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {featuredBusinesses.isLoading
             ? Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-56 animate-pulse rounded-3xl bg-slate-200" />)
-            : (featuredBusinesses.data ?? []).slice(0, 5).map((store) => <button key={store.entityId} onClick={() => setLocation(`/store/${store.entityId}`)} className="group overflow-hidden rounded-3xl border border-slate-200 bg-white text-start shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+            : (featuredBusinesses.data ?? []).slice(0, 5).map((store) => <button key={store.entityId} onClick={() => setLocation(store.sector === "restaurant" && store.restaurantSlug ? `/menu/${encodeURIComponent(store.restaurantSlug)}` : `/store/${store.entityId}`)} className="group overflow-hidden rounded-3xl border border-slate-200 bg-white text-start shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
                 <div className="aspect-[4/3] bg-slate-100">{store.imageUrl ? <img src={store.imageUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><Store className="h-8 w-8 text-slate-300" /></div>}</div>
-                <div className="p-4"><h3 className="truncate text-sm font-black">{store.customerName}</h3><p className="mt-1 truncate text-xs font-bold text-orange-500">{lang === "ar" ? store.sectorLabelAr : lang === "fr" ? store.sectorLabelFr : store.sectorLabelEn}</p></div>
+                <div className="p-4"><h3 className="truncate text-sm font-black">{store.customerName}</h3><p className="mt-1 truncate text-xs font-bold text-orange-500">{sectorMeta(store.sector)[lang]}</p></div>
               </button>)}
         </div>
       </section>
@@ -254,7 +255,7 @@ export default function PublicHome() {
 
       <section id="plans" className="bg-[#0b1d35] text-white">
         <div className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-20">
-          <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[.18em] text-orange-300">{copy.pricingEyebrow}</p><h2 className="mt-3 text-3xl font-black sm:text-4xl">{pricingLocale.title || copy.plans}</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{pricingLocale.subtitle || copy.description}</p></div><Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-xs font-black text-white">{copy.pricingCta}{direction === "rtl" ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}</Link></div>
+          <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[.18em] text-orange-300">{copy.pricingEyebrow}</p><h2 className="mt-3 text-3xl font-black sm:text-4xl">{pricingLocale.title || copy.plans}</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{pricingLocale.subtitle || copy.description}</p></div><a href="#plans" className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-xs font-black text-white">{copy.pricingCta}{direction === "rtl" ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}</a></div>
           <div className="mt-9 grid gap-4 md:grid-cols-3">
             {(pricingLocale.plans ?? []).map((plan) => <article key={plan.name} className={`rounded-[26px] border p-6 ${plan.featured ? "border-orange-400 bg-orange-500/10" : "border-white/10 bg-white/5"}`}>
               <div className="flex items-center justify-between gap-3"><h3 className="text-xl font-black">{plan.name}</h3>{plan.featured && <span className="rounded-full bg-orange-500 px-2.5 py-1 text-[10px] font-black">NFOOD</span>}</div>
@@ -285,7 +286,7 @@ export default function PublicHome() {
             <p className="mt-4 max-w-sm break-words text-sm leading-7 text-slate-400">{footerDescription}</p>
           </div>
 
-          <div className="min-w-0"><h3 className="font-black">{copy.footerDiscover}</h3><div className="mt-4 grid gap-3 text-sm text-slate-400"><a href="#features" className="break-words hover:text-orange-300">{copy.features}</a><a href="#how" className="break-words hover:text-orange-300">{copy.how}</a><Link href="/pricing" className="break-words hover:text-orange-300">{copy.plans}</Link><Link href="/marketplace" className="break-words hover:text-orange-300">{copy.market}</Link></div></div>
+          <div className="min-w-0"><h3 className="font-black">{copy.footerDiscover}</h3><div className="mt-4 grid gap-3 text-sm text-slate-400"><a href="#features" className="break-words hover:text-orange-300">{copy.features}</a><a href="#how" className="break-words hover:text-orange-300">{copy.how}</a><a href="#plans" className="break-words hover:text-orange-300">{copy.plans}</a><Link href="/marketplace" className="break-words hover:text-orange-300">{copy.market}</Link></div></div>
 
           <div className="min-w-0"><h3 className="font-black">{copy.footerSupport}</h3><div className="mt-4 grid gap-3 text-sm text-slate-400"><Link href="/faq" className="break-words hover:text-orange-300">{copy.faq}</Link><Link href="/contact" className="break-words hover:text-orange-300">{copy.contact}</Link>{settings?.supportPhone && <a href={`tel:${settings.supportPhone}`} className="break-all hover:text-orange-300">{settings.supportPhone}</a>}{settings?.supportEmail && <a href={`mailto:${settings.supportEmail}`} className="break-all hover:text-orange-300">{settings.supportEmail}</a>}</div></div>
 
@@ -293,7 +294,7 @@ export default function PublicHome() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-4 border-b border-white/10 py-6 sm:flex-row">
-          <div className="text-center sm:text-start"><p className="text-sm font-black text-white">${lang === "ar" ? "QR الموقع" : lang === "fr" ? "QR du site" : "Site QR"}</p><p className="mt-1 text-xs text-slate-400">${lang === "ar" ? "امسح الرمز للدخول إلى موقع NFOOD" : lang === "fr" ? "Scannez pour ouvrir NFOOD" : "Scan to open NFOOD"}</p></div>
+          <div className="text-center sm:text-start"><p className="text-sm font-black text-white">{lang === "ar" ? "QR الموقع" : lang === "fr" ? "QR du site" : "Site QR"}</p><p className="mt-1 text-xs text-slate-400">{lang === "ar" ? "امسح الرمز للدخول إلى موقع NFOOD" : lang === "fr" ? "Scannez pour ouvrir NFOOD" : "Scan to open NFOOD"}</p></div>
           <a href="/" aria-label="NFOOD QR" className="rounded-2xl bg-white p-2 shadow-xl"><QRCodeSVG value={typeof window !== "undefined" ? window.location.origin : "https://fooncard.com"} size={92} level="H" /></a>
         </div>
 
