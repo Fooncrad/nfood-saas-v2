@@ -247,7 +247,9 @@ export default function RestaurantMenu() {
     date:"التاريخ والوقت", section:"قسم الجلسة", party:"عدد الضيوف", children:"الأطفال", email:"البريد الإلكتروني",
     policy:"أوافق على سياسة المطعم", send:"إرسال", status:"حالة المطعم", social:"حسابات التواصل",
     startOrder:"ابدأ الطلب", storeInfo:"معلومات المطعم", items:"صنف", active:"نشط", unavailable:"غير متاح حاليًا",
-    installNow:"تثبيت الآن", call:"اتصال", whatsapp:"واتساب", noBranch:"لا يوجد فرع متاح حاليًا",\n    advanceBooking:"حجز مسبق", waitNow:"انتظار الآن", visitLater:"سأزور المطعم لاحقًا", hereNow:"أنا موجود في المطعم الآن",\n    seatingPreference:"تفضيل الجلسة (اختياري)", anySeating:"أي جلسة متاحة — الأسرع", indoor:"داخلي", outdoor:"خارجي", smoking:"مدخنين", nonSmoking:"غير مدخنين",
+    installNow:"تثبيت الآن", call:"اتصال", whatsapp:"واتساب", noBranch:"لا يوجد فرع متاح حاليًا",
+    advanceBooking:"حجز مسبق", waitNow:"انتظار الآن", visitLater:"سأزور المطعم لاحقًا", hereNow:"أنا موجود في المطعم الآن",
+    seatingPreference:"تفضيل الجلسة (اختياري)", anySeating:"أي جلسة متاحة — الأسرع", indoor:"داخلي", outdoor:"خارجي", smoking:"مدخنين", nonSmoking:"غير مدخنين",
   } : lang === "fr" ? {
     menu:"Menu", search:"Rechercher dans le menu", all:"Tout", cart:"Panier", reservation:"Réserver",
     waiter:"Appeler le serveur", account:"Mon compte", login:"Connexion", guest:"Continuer en invité", contact:"Contact",
@@ -260,7 +262,9 @@ export default function RestaurantMenu() {
     date:"Date et heure", section:"Zone", party:"Personnes", children:"Enfants", email:"E-mail",
     policy:"J’accepte la politique du restaurant", send:"Envoyer", status:"Statut", social:"Réseaux",
     startOrder:"Commander", storeInfo:"Restaurant", items:"articles", active:"Actif", unavailable:"Indisponible",
-    installNow:"Installer", call:"Appeler", whatsapp:"WhatsApp", noBranch:"Aucun site disponible",\n    advanceBooking:"Réservation à l’avance", waitNow:"Attendre maintenant", visitLater:"Je viendrai plus tard", hereNow:"Je suis au restaurant maintenant",\n    seatingPreference:"Préférence de zone (facultatif)", anySeating:"Toute zone disponible — la plus rapide", indoor:"Intérieur", outdoor:"Extérieur", smoking:"Fumeurs", nonSmoking:"Non-fumeurs",
+    installNow:"Installer", call:"Appeler", whatsapp:"WhatsApp", noBranch:"Aucun site disponible",
+    advanceBooking:"Réservation à l’avance", waitNow:"Attendre maintenant", visitLater:"Je viendrai plus tard", hereNow:"Je suis au restaurant maintenant",
+    seatingPreference:"Préférence de zone (facultatif)", anySeating:"Toute zone disponible — la plus rapide", indoor:"Intérieur", outdoor:"Extérieur", smoking:"Fumeurs", nonSmoking:"Non-fumeurs",
   } : {
     menu:"Menu", search:"Search the menu", all:"All", cart:"Cart", reservation:"Reserve a table",
     waiter:"Call waiter", account:"My account", login:"Sign in", guest:"Browse as guest", contact:"Contact",
@@ -273,7 +277,9 @@ export default function RestaurantMenu() {
     date:"Date and time", section:"Seating section", party:"Guests", children:"Children", email:"Email",
     policy:"I accept the restaurant policy", send:"Send", status:"Status", social:"Social",
     startOrder:"Start order", storeInfo:"Restaurant info", items:"items", active:"Active", unavailable:"Unavailable",
-    installNow:"Install now", call:"Call", whatsapp:"WhatsApp", noBranch:"No branch is currently available",\n    advanceBooking:"Advance booking", waitNow:"Wait now", visitLater:"I will visit later", hereNow:"I am at the restaurant now",\n    seatingPreference:"Seating preference (optional)", anySeating:"Any available — fastest", indoor:"Indoor", outdoor:"Outdoor", smoking:"Smoking", nonSmoking:"Non-smoking",
+    installNow:"Install now", call:"Call", whatsapp:"WhatsApp", noBranch:"No branch is currently available",
+    advanceBooking:"Advance booking", waitNow:"Wait now", visitLater:"I will visit later", hereNow:"I am at the restaurant now",
+    seatingPreference:"Seating preference (optional)", anySeating:"Any available — fastest", indoor:"Indoor", outdoor:"Outdoor", smoking:"Smoking", nonSmoking:"Non-smoking",
   };
 
   const primary = restaurant?.brandColor || "#f97316";
