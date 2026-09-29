@@ -100,7 +100,7 @@ const loginCopy = {
 export default function LoginPage() {
   const { language, direction } = useLanguage();
   const copy = language === "fr" ? loginCopy.fr : language === "en" ? loginCopy.en : loginCopy.ar;
-  const { user, loading, refresh } = useAuth();
+  const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -110,13 +110,12 @@ export default function LoginPage() {
   const [resetConfirm, setResetConfirm] = useState("");
   const requestReset = trpc.auth.requestPasswordReset.useMutation({ onSuccess: () => toast.success(copy.resetSent), onError: (error) => toast.error(error.message) });
   const completeReset = trpc.auth.resetPassword.useMutation({ onSuccess: () => { toast.success(copy.resetDone); setResetMode(false); window.history.replaceState({}, "", "/login"); }, onError: (error) => toast.error(error.message) });
-  const login = trpc.auth.testLogin.useMutation({ onSuccess: async (result) => {
-    // Refresh the authenticated session first. Do not show a success toast while
-    // the login screen is still visible; it caused the misleading pre-navigation flash.
-    await refresh();
+  const login = trpc.auth.testLogin.useMutation({ onSuccess: (result) => {
+    // The response has set the cookie. A document navigation starts every guard
+    // with a fresh session instead of racing the login page's cached auth query.
     const next = new URLSearchParams(window.location.search).get("next");
-    const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : result.next ?? (result.role === "admin" ? "/admin" : "/dashboard");
-    setLocation(safeNext);
+    const safeNext = result.role === "admin" ? "/admin" : next?.startsWith("/") && !next.startsWith("//") ? next : result.next ?? "/";
+    window.location.assign(safeNext);
   }, onError: (error) => { if (error.message === "VERIFY_EMAIL_REQUIRED") { toast.error(language === "ar" ? "تحقق من بريدك الإلكتروني أولًا ثم ارجع لتسجيل الدخول." : language === "fr" ? "Vérifiez d’abord votre e-mail, puis reconnectez-vous." : "Verify your email first, then return to sign in."); return; } toast.error(error.message || copy.toastInvalid); } });
   const features = [copy.feat1, copy.feat2, copy.feat3];
   useEffect(() => {
