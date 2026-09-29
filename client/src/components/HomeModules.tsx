@@ -3382,11 +3382,11 @@ function PosView({ restaurantId }: { restaurantId: number }) {
           restaurantName: "NFOOD",
         }}
       />
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
         <div>
           <p className="text-xs font-black text-orange-500">مساحة الكاشير</p>
           <h2 className="mt-1 text-xl font-black">إنشاء طلب من نقطة البيع</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">1. اختر قناة الطلب والأصناف. 2. راجع السلة وبيانات الخدمة. 3. اختر الدفع ثم أرسل الطلب إلى أقسام التشغيل.</p>
+          <p className="mt-1 text-xs text-slate-500">بيع سريع · اختر الخدمة ثم الصنف، والسلة والدفع أمامك دائمًا.</p>
         </div>
         <Badge
           className={`rounded-lg ${isOnline ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-50" : "bg-amber-50 text-amber-700 hover:bg-amber-50"}`}
@@ -3405,8 +3405,8 @@ function PosView({ restaurantId }: { restaurantId: number }) {
           <Button type="button" className="shrink-0 rounded-xl bg-[#e76f3c] text-xs hover:bg-[#d85f2e]" onClick={() => document.querySelector('[data-pos-order-card]')?.scrollIntoView({ behavior: "smooth", block: "start" })}>السلة والدفع</Button>
         </div>
       )}
-      <div className="grid gap-4 pb-24 xl:grid-cols-[minmax(0,1fr)_400px] xl:pb-0">
-        <Card className="order-1 flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:max-h-[calc(100vh-156px)] xl:overflow-hidden">
+      <div className="grid gap-3 pb-24 xl:grid-cols-[minmax(0,1fr)_380px] xl:pb-0">
+        <Card className="order-1 flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:h-[calc(100vh-178px)] xl:overflow-hidden">
           <CardHeader className="sticky top-0 z-10 shrink-0 border-b border-slate-100 bg-white/95 px-3 py-3 backdrop-blur sm:px-5 sm:py-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div><CardTitle className="text-base">الأصناف</CardTitle><p className="mt-1 hidden text-[11px] text-slate-500 sm:block">ابحث أو استخدم الفئات، ثم اضغط على الصنف لإضافته للسلة.</p></div>
@@ -3477,28 +3477,26 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                 <button
                   key={product.name}
                   onClick={() => add(product)}
-                  className="group rounded-xl border border-slate-200 bg-white p-2.5 text-right shadow-sm transition hover:border-orange-300 hover:bg-orange-50/50 sm:rounded-2xl sm:p-4"
+                  className="group rounded-xl border border-slate-200 bg-white p-2 text-right shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50/50 hover:shadow-md sm:rounded-2xl sm:p-3"
                 >
                   <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
                     {product.imageUrl ? <img src={product.imageUrl} alt={product.name} loading="lazy" className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.02]" /> : <div className="grid h-full place-items-center text-3xl" aria-label="لا توجد صورة للصنف">🍽</div>}
                     <span className="absolute bottom-2 end-2 inline-flex items-center gap-1 rounded-lg bg-white/95 px-2 py-1 text-[10px] font-black text-[#e76f3c] shadow-sm"><Plus className="h-3.5 w-3.5" />إضافة</span>
                   </div>
-                  <p className="mt-3 line-clamp-2 text-sm font-bold">{product.name}</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {money(product.price)}
-                  </p>
+                  <p className="mt-2 line-clamp-2 text-sm font-black">{product.name}</p>
+                  <p className="mt-1 text-sm font-black text-[#111c2e]">{money(product.price)}</p>
                 </button>
               ))
             )}
           </CardContent>
         </Card>
-        <Card className="order-2 flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:sticky xl:top-3 xl:max-h-[calc(100vh-156px)] xl:overflow-hidden" data-pos-order-card>
+        <Card className="order-2 flex min-h-0 flex-col rounded-2xl border-slate-200 bg-white shadow-sm xl:sticky xl:top-3 xl:h-[calc(100vh-178px)] xl:overflow-hidden" data-pos-order-card>
           <CardHeader className="shrink-0 border-b border-slate-100 px-4 py-3">
             <div className="flex items-center justify-between gap-2"><CardTitle className="text-base">السلة والدفع</CardTitle><div className="flex items-center gap-2"><Button type="button" variant="outline" className="h-8 rounded-lg px-2 text-[10px]" disabled={!cart.length} onClick={holdCurrentOrder}>تعليق الطلب</Button><span className="text-[10px] font-bold text-slate-400">{channel}</span></div></div>
             {heldOrders.length > 0 && <div className="mt-2 flex gap-2 overflow-x-auto pb-1">{heldOrders.map(order => <button type="button" key={order.id} onClick={() => restoreHeldOrder(order.id)} className="shrink-0 rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1.5 text-[10px] font-bold text-blue-700">استرجاع {order.label} · {money(order.total)}</button>)}</div>}
           </CardHeader>
-          <CardContent className="flex min-h-0 flex-col p-5 xl:flex-1">
-            <div className="mb-3 flex items-center justify-between gap-2"><p className="text-[11px] font-bold text-slate-500">الإجراءات اليومية أمامك، والإعدادات الإضافية عند الحاجة.</p><Button type="button" variant="outline" className="h-8 rounded-lg px-2 text-[10px]" onClick={() => setAdvancedCheckoutOpen(value => !value)}>{advancedCheckoutOpen ? "إخفاء الخيارات" : "خيارات متقدمة"}</Button></div>{advancedCheckoutOpen && <div className="mb-4 shrink-0 rounded-2xl border border-orange-100 bg-orange-50/60 p-3" data-pos-routing-selector>
+          <CardContent className="flex min-h-0 flex-col p-3 sm:p-4 xl:flex-1">
+            <div className="mb-2 flex items-center justify-between gap-2"><p className="text-[11px] font-bold text-slate-500">الطلب الحالي · الإجراءات الإضافية مخفية لتسريع البيع.</p><Button type="button" variant="outline" className="h-8 rounded-lg px-2 text-[10px]" onClick={() => setAdvancedCheckoutOpen(value => !value)}>{advancedCheckoutOpen ? "إخفاء الخيارات" : "خيارات متقدمة"}</Button></div>{advancedCheckoutOpen && <div className="mb-4 shrink-0 rounded-2xl border border-orange-100 bg-orange-50/60 p-3" data-pos-routing-selector>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="text-xs font-bold text-slate-800">أقسام الإرسال</p>
@@ -3520,11 +3518,11 @@ function PosView({ restaurantId }: { restaurantId: number }) {
               </div>
             </div>}
             <div className="min-h-0 flex-1 overflow-y-auto pr-1 xl:overscroll-contain">
-            <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="mb-3 grid grid-cols-2 gap-2">
               <Input
                 value={tableName}
                 onChange={event => setTableName(event.target.value)}
-                placeholder="رقم الطاولة (اختياري)"
+                placeholder="الطاولة"
                 className="rounded-xl"
               />
               <Input
@@ -3532,7 +3530,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                 onChange={event =>
                   setCouponCode(event.target.value.toUpperCase())
                 }
-                placeholder="كود الخصم (اختياري)"
+                placeholder="كود الخصم"
                 aria-label="كود الخصم"
                 className="rounded-xl"
               />
@@ -3550,7 +3548,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                 <option value="online">دفع إلكتروني</option>
                 <option value="other">أخرى</option>
               </select>
-              <Textarea value={customerNote} onChange={event => setCustomerNote(event.target.value)} placeholder="ملاحظات العميل (اختياري)" aria-label="ملاحظات العميل" className="min-h-16 rounded-xl text-xs" />
+              <Textarea value={customerNote} onChange={event => setCustomerNote(event.target.value)} placeholder="ملاحظات العميل (اختياري)" aria-label="ملاحظات العميل" className="min-h-12 rounded-xl text-xs" />
               <Textarea value={cashierNotes} onChange={event => setCashierNotes(event.target.value)} placeholder="ملاحظات الكاشير (داخلية)" aria-label="ملاحظات الكاشير" className="min-h-16 rounded-xl text-xs" />
             </div>
             <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
