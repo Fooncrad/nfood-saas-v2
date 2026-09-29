@@ -3009,6 +3009,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const [tableName, setTableName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethod>("cash");
   const [paymentSplits, setPaymentSplits] = useState<Array<{ method: PosPaymentMethod; amount: string }>>([]);
+  const [splitPeople, setSplitPeople] = useState(2);
   const [refundPin, setRefundPin] = useState("");
   const [refundReason, setRefundReason] = useState("");
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
@@ -3552,6 +3553,11 @@ function PosView({ restaurantId }: { restaurantId: number }) {
               </div>
               {paymentSplits.length > 0 && (
                 <div className="mt-3 space-y-2">
+                  <div className="flex flex-wrap items-end gap-2 rounded-xl border border-blue-100 bg-blue-50/70 p-2">
+                    <label className="grid gap-1 text-[10px] font-bold text-slate-600"><span>عدد الأشخاص</span><Input type="number" min={2} max={20} value={splitPeople} onChange={event => setSplitPeople(Math.max(2, Math.min(20, Number(event.target.value) || 2)))} className="h-8 w-24 bg-white text-xs" /></label>
+                    <Button type="button" variant="outline" className="h-8 rounded-lg bg-white text-[10px]" onClick={() => { const people = Math.max(2, Math.min(20, splitPeople)); const base = Math.floor(totalCents / people); const remainder = totalCents - (base * people); setPaymentSplits(Array.from({ length: people }, (_, index) => ({ method: index === 0 ? paymentMethod : "cash" as PosPaymentMethod, amount: formatPaymentCents(base + (index === people - 1 ? remainder : 0)) })).slice(0, 20)); }}>تقسيم بالتساوي</Button>
+                    <span className="text-[10px] leading-5 text-slate-500">يوزّع صافي الإجمالي بدقة، ويضع فرق التقريب في آخر جزء حتى يطابق مجموع الفاتورة.</span>
+                  </div>
                   {paymentSplits.map((split, index) => (
                     <div key={`${split.method}-${index}`} className="grid grid-cols-[1fr_1fr_auto] gap-2">
                       <select
@@ -3578,7 +3584,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
                       {splitIsExact ? "مكتمل" : `المتبقي: ${money(splitRemainingCents / 100)}`}
                     </span>
                     <div className="flex gap-2">
-                      {!splitIsExact && <Button type="button" variant="outline" className="h-7 rounded-lg px-2 text-[10px]" onClick={() => setPaymentSplits(current => [...current, { method: "cash" as PosPaymentMethod, amount: formatPaymentCents(splitRemainingCents) }].slice(0, 5))} disabled={splitRemainingCents <= 0 || paymentSplits.length >= 5}>إضافة المتبقي</Button>}
+                      {!splitIsExact && <Button type="button" variant="outline" className="h-7 rounded-lg px-2 text-[10px]" onClick={() => setPaymentSplits(current => [...current, { method: "cash" as PosPaymentMethod, amount: formatPaymentCents(splitRemainingCents) } ].slice(0, 20))} disabled={splitRemainingCents <= 0 || paymentSplits.length >= 20}>إضافة المتبقي</Button>}
                       <Button type="button" variant="outline" className="h-7 rounded-lg px-2 text-[10px]" onClick={() => setPaymentSplits(current => current.length ? [{ ...current[0], amount: formatPaymentCents(totalCents) }, ...current.slice(1)] : current)}>تعبئة الإجمالي</Button>
                     </div>
                   </div>
