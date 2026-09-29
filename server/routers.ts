@@ -98,9 +98,18 @@ function isMerchantContext(ctx: { user: { role?: string; testRole?: string; rest
   return ctx.user.testRole === "restaurant_admin" || ctx.user.restaurantId === restaurantId;
 }
 function assertRestaurantAccess(ctx: { user: { role?: string; testRole?: string; restaurantId?: number } | null }, restaurantId: number) {
+  if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED", message: "يجب تسجيل الدخول" });
   if (isAdminContext(ctx)) return;
-  if (ctx.user?.testRole === "restaurant_admin" && ctx.user.restaurantId === undefined) return;
-  if (ctx.user?.testRole && restaurantId !== (ctx.user.restaurantId ?? 1)) throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك صلاحية الوصول إلى هذا المطعم" });
+  // Tenant isolation is fail-closed. Restaurant-scoped identities must carry
+  // an explicit tenant id; never infer restaurant 1 and never allow an
+  // unscoped restaurant_admin to cross tenant boundaries.
+  const restaurantRoles = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver"];
+  if (!ctx.user.testRole || !restaurantRoles.includes(ctx.user.testRole)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "هذا الحساب غير مخول للوصول إلى بيانات المطاعم" });
+  }
+  if (!ctx.user.restaurantId || ctx.user.restaurantId !== restaurantId) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك صلاحية الوصول إلى هذا المطعم" });
+  }
 }
 function assertNotDriver(ctx: { user: { testRole?: string } | null }) { if (ctx.user?.testRole === "driver") throw new TRPCError({ code: "FORBIDDEN", message: "لوحة السائق تعرض الطلبات التشغيلية فقط" }); }
 export function resolveMediaContext(ctx: { user: { id: number; role?: string; testRole?: string; restaurantId?: number } | null }, input: { scope?: "platform" | "restaurant" | "user"; restaurantId?: number }) {
