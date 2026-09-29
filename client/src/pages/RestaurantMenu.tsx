@@ -104,7 +104,7 @@ function formatMoney(value: number | string, currency: string) {
 function normalizeWhatsAppNumber(value: string | null | undefined, country?: string | null) {
   let digits = String(value ?? "").replace(/\D/g, "");
   if (digits.startsWith("00")) digits = digits.slice(2);
-  if (String(country ?? "").toUpperCase() === "SA" && /^0\d{9}$/.test(digits)) digits = `966${digits.slice(1)}`;
+  if (/^05\d{8}$/.test(digits) || (String(country ?? "").toUpperCase() === "SA" && /^0\d{9}$/.test(digits))) digits = `966${digits.slice(1)}`;
   return digits;
 }
 
