@@ -259,18 +259,18 @@ export default function Home() {
   const ordersWorkspaceActive = active === "overview" || active === "orders" || active === "pos" || active === "kds";
   // Keep the restaurant order feed alive across the whole workspace. The sidebar count,
   // dashboard KPIs and floor state must never depend on the user opening the Orders page.
-  const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId, branchId: user?.testRole === "waiter" ? activeBranchId : undefined }, { enabled: workspaceReady && user?.testRole !== "cashier" && (user?.testRole !== "waiter" || Boolean(activeBranchId)), retry: false, refetchInterval: workspaceReady && user?.testRole !== "cashier" ? (ordersWorkspaceActive ? 1500 : 3000) : false, refetchIntervalInBackground: true });
+  const remoteOrders = trpc.platform.ordersByRestaurant.useQuery({ restaurantId: selectedRestaurantId, branchId: user?.testRole === "waiter" ? activeBranchId : undefined }, { enabled: workspaceReady && (user?.testRole !== "waiter" || Boolean(activeBranchId)), retry: false, refetchInterval: workspaceReady ? (ordersWorkspaceActive ? 1500 : 3000) : false, refetchIntervalInBackground: true });
   useEffect(() => { if (globalForbiddenAction === "platform.ordersByRestaurant" && remoteOrders.isSuccess) setGlobalForbiddenAction(null); }, [globalForbiddenAction, remoteOrders.isSuccess]);
   const updateOrderStatus = trpc.platform.updateOrderStatus.useMutation({ onSuccess: () => { remoteOrders.refetch(); toast.success("تم حفظ حالة الطلب في قاعدة البيانات"); }, onError: (error) => toast.error(`تعذر تحديث الطلب: ${error.message}`) });
   useEffect(() => { const firstBranch = workspaceBranches.data?.[0]; setBranch((current) => current && workspaceBranches.data?.some((item) => item.name === current) ? current : firstBranch?.name ?? ""); }, [workspaceBranches.data]);
   const [query, setQuery] = useState("");
-  const orders = useMemo(() => (remoteOrders.data ?? []).map((order) => ({ id: formatOrderReference(order.id, order.channel), table: order.tableName ?? "بدون طاولة", items: order.items?.length ? order.items.map((item) => `${item.quantity > 1 ? `${item.quantity}× ` : ""}${item.itemName}`).join("، ") : "لا توجد أصناف مسجلة", total: Number(order.total), status: order.status === "cancelled" ? "completed" : order.status, time: new Date(order.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" }), channel: order.channel === "dine_in" ? "داخل المطعم" : order.channel === "takeaway" ? "استلام" : "توصيل", ageMinutes: 0 })), [remoteOrders.data]);
+  const orders = useMemo(() => (remoteOrders.data ?? []).map((order) => ({ id: formatOrderReference(order.id, order.channel), table: order.tableName ?? "بدون طاولة", items: order.items?.length ? order.items.map((item) => `${item.quantity > 1 ? `${item.quantity}× ` : ""}${item.itemName}`).join("، ") : "لا توجد أصناف مسجلة", total: Number(order.total), status: order.status === "cancelled" ? "completed" : order.status, time: new Date(order.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" }), channel: order.channel === "dine_in" ? "داخل المطعم" : order.channel === "takeaway" ? "استلام" : order.channel === "delivery" ? "توصيل" : order.channel === "reservation" ? "حجز مع الطلب" : order.channel === "hotel" ? "طلب غرف الفنادق" : "غير محدد", ageMinutes: 0 })), [remoteOrders.data]);
   const visibleOrders = useMemo(() => orders.filter((order) => `${order.id} ${order.table} ${order.items}`.includes(query)), [orders, query]);
   const advanceOrder = (id: string) => {
     const current = orders.find((order) => order.id === id);
     if (!current) return;
     const next: OrderStatus = current.status === "new" ? "preparing" : current.status === "preparing" ? "ready" : "completed";
-    const numericId = Number(id.replace("#", ""));
+    const numericId = Number(id.match(/(\d+)$/)?.[1] ?? "");
     if (!remoteOrders.data?.some((order) => order.id === numericId)) { toast.error("الطلب غير موجود في بيانات backend الحالية"); return; }
     updateOrderStatus.mutate({ restaurantId: selectedRestaurantId, orderId: numericId, status: next });
   };
