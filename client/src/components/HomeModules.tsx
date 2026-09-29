@@ -459,7 +459,7 @@ export function ModuleView({
       icon: Activity,
     },
   };
-  const info = labels[active];
+  const info = labels[active] ?? { title: active === "finance" ? "المالية والفواتير" : "وحدة التشغيل", description: active === "finance" ? "السجل المالي والفواتير والمدفوعات والتسويات." : "هذه الوحدة قيد التهيئة ضمن مساحة العمل.", icon: active === "finance" ? WalletCards : LayoutDashboard };
   const Icon = info.icon;
   const station = role === "bar" ? "bar" : role === "kitchen" ? "kitchen" : undefined;
   if (role === "customer" && active === "overview")
