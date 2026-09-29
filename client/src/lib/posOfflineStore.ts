@@ -129,8 +129,10 @@ export async function replayPosOffline<T>(
       await removePosOffline(item.id);
       synced += 1;
     } catch (error) {
-      await markPosOfflineFailure(item, error);
-      break;
+      const terminal = !shouldRetryPosOffline(error);
+      await markPosOfflineFailure(item, error, terminal);
+      // A bad entry should not block valid orders queued behind it.
+      if (!terminal) break;
     }
   }
   const after = await listPosOffline<T>({ ...scope, includeDeadLetter: true });
