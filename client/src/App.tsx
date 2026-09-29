@@ -129,10 +129,16 @@ function AppContent() {
 function CustomerAreaGuard({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const [location, navigate] = useLocation();
+  const teamRole = user?.testRole;
+  const isRestaurantTeam = Boolean(teamRole && ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver"].includes(teamRole));
   useEffect(() => {
-    if (!loading && !user) navigate(`/login?next=${encodeURIComponent(location)}`);
-  }, [loading, user, location, navigate]);
-  if (loading || !user) return <PageLoading />;
+    if (loading) return;
+    if (!user) { navigate(`/login?next=${encodeURIComponent(location)}`); return; }
+    // Restaurant staff accounts must never enter customer surfaces. Their
+    // explicitly assigned restaurant role owns routing for the whole session.
+    if (isRestaurantTeam) navigate("/restaurant/dashboard", { replace: true });
+  }, [loading, user, location, navigate, isRestaurantTeam]);
+  if (loading || !user || isRestaurantTeam) return <PageLoading />;
   return <>{children}</>;
 }
 function PricingRoute() {
