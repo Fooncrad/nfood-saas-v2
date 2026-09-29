@@ -1273,9 +1273,10 @@ export function autoTranslateText(source: string, language: Language): string {
   if (!entries) return source;
   const exactTranslation = entries.find(([re]) => { re.lastIndex = 0; const match = re.exec(source); re.lastIndex = 0; return match?.[0] === source; });
   if (exactTranslation) return exactTranslation[1];
-  // Never compose a sentence from word-by-word replacements. That produced mixed Arabic/English/French UI.
-  // For legacy text, use only a complete dictionary/database match; otherwise keep the original source until translated.
-  return source;
+  // For dynamic legacy strings, translate only known operational fragments and accept the result
+  // only when no Arabic remains. This preserves dynamic values without leaking mixed-language UI.
+  const composed = applyOperationalFragments(source, language);
+  return /[\u0600-\u06FF]/.test(composed) ? source : composed;
 }
 
 export function findUntranslatedArabic(source: string, language: Language): string[] {
