@@ -540,7 +540,7 @@ export default function RestaurantMenu() {
   const pageBg = dark ? "bg-[#071525] text-white" : "bg-[#f6f8fc] text-[#0b1d35]";
   const selectedHotelRooms = selectedHotel?.rooms ?? [];
 
-  return <main dir={direction} className={`min-h-screen w-full max-w-full overflow-x-clip overscroll-x-none touch-pan-y ${dark ? "dark" : ""} ${pageBg}`} style={{ fontFamily:restaurant.brandFontFamily || undefined, "--restaurant-primary":primary, "--restaurant-accent":accent } as React.CSSProperties}>
+  return <main dir={direction} className={`min-h-screen w-full max-w-[100vw] overflow-x-hidden overscroll-x-none touch-pan-y ${dark ? "dark" : ""} ${pageBg}`} style={{ overflowX: "hidden", overscrollBehaviorX: "none", touchAction: "pan-y", fontFamily:restaurant.brandFontFamily || undefined, "--restaurant-primary":primary, "--restaurant-accent":accent } as React.CSSProperties}>
     <header className={`sticky top-0 z-40 w-full max-w-full overflow-x-clip border-b backdrop-blur-xl ${dark ? "border-white/10 bg-[#071525]/92" : "border-slate-200 bg-white/92"}`}>
       <div className="mx-auto flex h-16 w-full max-w-7xl min-w-0 items-center justify-between gap-2 overflow-hidden px-3 sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
