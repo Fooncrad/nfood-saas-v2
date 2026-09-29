@@ -19,10 +19,10 @@ describe("NFOOD PWA contract", () => {
     expect(worker).toContain('addEventListener("sync"');
     expect(worker).toContain('addEventListener("fetch"');
     expect(worker).toContain("nfood-data-sync");
-    expect(worker).toContain("nfood-shell-v5");
+    expect(worker).toContain("nfood-shell-v7");
     expect(worker).toContain("networkFirstDocument");
-    expect(worker).toContain("cacheFirstAsset");
-    expect(worker).toContain('request.mode === "navigate" ? networkFirstDocument(request) : cacheFirstAsset(request)');
+    expect(worker).toContain("networkFirstAsset");
+    expect(worker).toContain("networkFirstDocument(request) : networkFirstAsset(request)");
     expect(worker).toContain("cache.put(request, response.clone())");
   });
 
