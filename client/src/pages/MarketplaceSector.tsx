@@ -19,9 +19,10 @@ export default function MarketplaceSector() {
   const { direction } = useLanguage(); // QA: use global RTL/LTR direction.
   const { slug } = useParams<{ slug: string }>();
   const [search, setSearch] = useState("");
-  const sectors = trpc.marketplace.publicSectors.useQuery(undefined, { retry: false });
-  const sector = (sectors.data ?? []).find((s) => s.slug === slug);
   const country = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("country") || localStorage.getItem("nfood-market-country") || "SA") : "SA";
+  const sectors = trpc.marketplace.publicSectors.useQuery({ countryCode: country }, { retry: false });
+  const sector = (sectors.data ?? []).find((s) => s.slug === slug);
+
   const stores = trpc.marketplace.publicStores.useQuery({ countryCode: country, sectorSlug: slug, search: search.trim() || undefined }, { retry: false, enabled: Boolean(slug) });
   const featuredListings = trpc.marketplace.publicListings.useQuery({ sectorId: sector?.id, featuredOnly: true, countryCode: country }, { retry: false, enabled: Boolean(sector?.id) });
   const Icon = SECTOR_ICONS[sector?.icon ?? ""] ?? Store;
