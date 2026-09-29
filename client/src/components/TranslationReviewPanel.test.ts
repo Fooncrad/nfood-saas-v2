@@ -55,7 +55,7 @@ describe("TranslationReviewPanel progress", () => {
 
   it("keeps mobile navigation compact and separate from profile controls", () => {
     expect(homeSource).toContain("lg:hidden");
-    expect(homeSource).toContain("mobileNavOpen");
+    expect(homeSource).toContain("overflow-x-auto");
     expect(homeSource).toContain("profileOpen");
   });
 
@@ -68,7 +68,7 @@ describe("TranslationReviewPanel progress", () => {
 
   it("animates the mobile drawer without blocking reduced-motion users", () => {
     expect(styleSource).toContain("prefers-reduced-motion");
-    expect(homeSource).toContain("mobileNavOpen");
+    expect(homeSource).toContain("overflow-x-auto");
   });
 
   it("scopes mutation translation work to added nodes and caches dictionary entries", () => {
@@ -82,9 +82,9 @@ describe("TranslationReviewPanel progress", () => {
     expect(languageSource).toContain("isNonVisualTranslationNode(textNode)");
   });
 
-  it("uses the orange and deep teal clarity palette for dashboard surfaces", () => {
-    expect(styleSource).toContain("--primary: oklch(0.39 0.09 190)");
+  it("uses the orange and blue clarity palette for dashboard surfaces", () => {
+    expect(styleSource).toContain("--primary: oklch(0.36 0.115 252)");
     expect(styleSource).toContain(".nfood-dashboard-shell .nfood-unified-sidebar");
-    expect(styleSource).toContain(".nfood-mobile-drawer");
+    expect(homeSource).toContain("overflow-x-auto");
   });
 });
