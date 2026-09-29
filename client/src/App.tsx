@@ -160,6 +160,21 @@ function CustomerRegisterRoute() {
   return <CustomerRegister />;
 }
 function RootRoute() { const { user, loading } = useAuth(); const [, navigate] = useLocation(); const isAdmin = user?.role === "admin" || user?.testRole === "admin" || user?.accountRole === "admin"; const role = String(user?.testRole ?? user?.accountRole ?? user?.role ?? ""); const isRestaurantAccount = Boolean(user && RESTAURANT_AREA_ROLES.has(role)); useEffect(() => { if (loading || !user) return; if (isAdmin) { navigate("/admin", { replace: true }); return; } if (isRestaurantAccount && window.location.pathname === "/") navigate("/restaurant/dashboard", { replace: true }); }, [loading, user, isAdmin, isRestaurantAccount, navigate]); if (loading || isAdmin || isRestaurantAccount) return <PageLoading />; return user ? <Home /> : <PublicHome />; }
+function RestaurantRoute() {
+  const { user, loading } = useAuth();
+  const [location, navigate] = useLocation();
+  const isAdmin = user?.role === "admin" || user?.testRole === "admin" || user?.accountRole === "admin";
+  const role = String(user?.testRole ?? user?.accountRole ?? user?.role ?? "");
+  const allowed = RESTAURANT_AREA_ROLES.has(role);
+  useEffect(() => {
+    if (loading) return;
+    if (!user) navigate(`/login?next=${encodeURIComponent(location)}`, { replace: true });
+    else if (isAdmin) navigate("/admin", { replace: true });
+    else if (!allowed) navigate("/customer-portal", { replace: true });
+  }, [loading, user, isAdmin, allowed, location, navigate]);
+  if (loading || !user || isAdmin || !allowed) return <PageLoading />;
+  return <Home />;
+}
 function SuperAdminRoute() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
@@ -178,8 +193,8 @@ function Router() {
     <Switch>
       <Route path="/admin/account" component={SuperAdminRoute} />
       <Route path="/admin" component={SuperAdminRoute} />
-      <Route path="/restaurant/dashboard" component={RootRoute} />
-      <Route path="/restaurant/account" component={RootRoute} />
+      <Route path="/restaurant/dashboard" component={RestaurantRoute} />
+      <Route path="/restaurant/account" component={RestaurantRoute} />
       <Route path="/" component={RootRoute} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterScreen} />
