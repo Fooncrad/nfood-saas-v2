@@ -76,9 +76,10 @@ function money(value: number) { return `${new Intl.NumberFormat("en-SA", { minim
 
 export default function Home() {
   const { user, loading, logout } = useAuth();
+  const utils = trpc.useUtils();
   const [testEmail, setTestEmail] = useState("nfood@ret.com");
   const [testPassword, setTestPassword] = useState("");
-  const testLogin = trpc.auth.testLogin.useMutation({ onSuccess: () => { toast.success("تم تسجيل الدخول لحساب الاختبار"); window.location.reload(); }, onError: (error) => toast.error(error.message || "بيانات الدخول غير صحيحة") });
+  const testLogin = trpc.auth.testLogin.useMutation({ onSuccess: async () => { await utils.auth.me.invalidate(); }, onError: (error) => toast.error(error.message || "بيانات الدخول غير صحيحة") });
   const [active, setActive] = useState<NavKey>("overview");
   useEffect(() => { if (user?.testRole === "cashier" && active !== "pos") setActive("pos"); }, [user?.testRole, active]);
   const visibleNavItems = useMemo(() => { if (user?.role === "admin" || user?.testRole === "admin") return []; const role = user?.testRole; if (!role) return navItems; const keys = roleNavigation[role as keyof typeof roleNavigation] ?? ["overview"]; return navItems.filter((item) => (keys as readonly string[]).includes(item.key)); }, [user?.role, user?.testRole]);
@@ -105,9 +106,8 @@ export default function Home() {
     }
   }, [active]);
   const adminPanelProps = isCentralAdmin ? { children: adminPanelChildren } : {};
-  const utils = trpc.useUtils();
   const workspaceReady = Boolean(user && workspaceState === "ready");
-  useEffect(() => { if (isCentralAdmin) setActive("admin"); }, [isCentralAdmin]);
+  useEffect(() => { if (isCentralAdmin && active !== "admin") setActive("admin"); }, [isCentralAdmin, active]);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileImageUploading, setProfileImageUploading] = useState(false);
   const profileImageUpload = trpc.uploadBrandAsset.useMutation({ onSuccess: async () => { await utils.platform.branding.invalidate({ restaurantId: selectedRestaurantId }); toast.success("تم تحديث أيقونة المطعم"); }, onError: (error) => toast.error(error.message || "تعذر تحديث أيقونة المطعم") });
@@ -278,8 +278,8 @@ export default function Home() {
   const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success("تم تسجيل الخروج"), notifyError: (message) => toast.error(message) }); };
   const handleSwitchAccount = async () => { await executeSwitchAccountFlow({ logout, closeMenu: () => setProfileOpen(false), startLogin, redirect: () => undefined, notifyError: (message) => toast.error(message) }); };
 
-  if (loading) return <div dir="rtl" className="flex min-h-screen items-center justify-center bg-[#f6f7f9] text-slate-500">جارٍ التحقق من الجلسة...</div>;
-    if (!user) return <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} />;
+  if (loading) return <div dir="rtl" className="fixed inset-0 bg-[#f6f7f9]" aria-label="جارٍ التحقق من الجلسة" />;
+  if (!user) return <TestLoginScreen email={testEmail} password={testPassword} setEmail={setTestEmail} setPassword={setTestPassword} onSubmit={() => testLogin.mutate({ email: testEmail, password: testPassword })} pending={testLogin.isPending} onOAuth={() => startLogin()} />;
   if (restaurantsQuery.isError && !isCentralAdmin) return <div dir="rtl" className="flex min-h-screen items-center justify-center bg-[#f6f7f9] p-6"><Card className="w-full max-w-lg rounded-3xl border-red-200 bg-white shadow-sm"><CardContent className="p-8 text-center"><Store className="mx-auto mb-4 h-12 w-12 text-red-500" /><h1 className="text-2xl font-bold text-slate-900">تعذر تحميل مساحة العمل</h1><p className="mt-3 text-sm leading-7 text-slate-500">تعذر الوصول إلى بيانات المطاعم الآن. Request ID: restaurants-workspace</p><div className="mt-6 flex flex-wrap items-center justify-center gap-3"><Button type="button" onClick={() => void restaurantsQuery.refetch()} className="rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]">إعادة المحاولة</Button><Button type="button" variant="outline" onClick={() => void handleLogout()} className="rounded-xl border-slate-200 text-slate-700">خروج</Button></div></CardContent></Card></div>;
   if (restaurantsQuery.isSuccess && workspaceState === "empty" && !isCentralAdmin) return <div dir="rtl" className="flex min-h-screen items-center justify-center bg-[#f6f7f9] p-6"><Card className="w-full max-w-lg rounded-3xl border-slate-200 bg-white shadow-sm"><CardContent className="p-8 text-center"><Store className="mx-auto mb-4 h-12 w-12 text-[#e76f3c]" /><h1 className="text-2xl font-bold text-slate-900">لا توجد مساحة عمل مرتبطة</h1><p className="mt-3 text-sm leading-7 text-slate-500">حسابك مسجل بنجاح، لكن لا يوجد مطعم مرتبط به حتى الآن. اطلب من مسؤول المنصة إنشاء المطعم أو ربط حسابك به، ثم أعد المحاولة.</p><div className="mt-6 flex flex-wrap items-center justify-center gap-3"><Button type="button" onClick={() => void restaurantsQuery.refetch()} className="rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]">إعادة المحاولة</Button><Button type="button" variant="outline" onClick={() => void handleLogout()} className="rounded-xl border-slate-200 text-slate-700">خروج</Button></div></CardContent></Card></div>;
   if (isCentralAdmin) return <CentralAdminCommandCenter active={active as CentralAdminNavKey} onNavigate={(key) => setActive(key as NavKey)} orders={orders} userName={user?.name ?? undefined} userEmail={user?.email ?? undefined} onLogout={() => void handleLogout()} {...adminPanelProps} />;
