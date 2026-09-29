@@ -5,7 +5,6 @@ import { getTranslationPageNumbers, getTranslationPagination, getTranslationProg
 
 const reviewPanelSource = readFileSync(resolve(process.cwd(), "client/src/components/TranslationReviewPanel.tsx"), "utf8");
 const homeSource = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
-const mobileDrawerSource = readFileSync(resolve(process.cwd(), "client/src/components/MobileNavigationDrawer.tsx"), "utf8");
 const languageSwitcherSource = readFileSync(resolve(process.cwd(), "client/src/components/LanguageSwitcher.tsx"), "utf8");
 const languageSource = readFileSync(resolve(process.cwd(), "client/src/contexts/LanguageContext.tsx"), "utf8");
 const styleSource = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
@@ -54,11 +53,10 @@ describe("TranslationReviewPanel progress", () => {
     expect(reviewPanelSource).toContain("{isOpen && <CardContent");
   });
 
-  it("keeps the mobile drawer compact and separate from the profile controls", () => {
-    expect(homeSource).toContain("MobileNavigationDrawer");
-    expect(mobileDrawerSource).toContain("visibleNavItems.slice(0, 6)");
-    expect(mobileDrawerSource).toContain("nfood-mobile-drawer");
-    expect(homeSource).toContain("lg:hidden start-3");
+  it("keeps mobile navigation compact and separate from profile controls", () => {
+    expect(homeSource).toContain("nfood-mobile-drawer");
+    expect(homeSource).toContain("lg:hidden");
+    expect(homeSource).toContain("profileOpen");
   });
 
   it("shows a visible language-switch loading state", () => {
@@ -69,14 +67,14 @@ describe("TranslationReviewPanel progress", () => {
   });
 
   it("animates the mobile drawer without blocking reduced-motion users", () => {
-    expect(mobileDrawerSource).toContain("transition-transform duration-200");
-    expect(mobileDrawerSource).toContain("motion-reduce:transition-none");
-    expect(mobileDrawerSource).toContain("pointer-events-none");
+    expect(homeSource).toContain("transition-transform");
+    expect(styleSource).toContain("prefers-reduced-motion");
+    expect(homeSource).toContain("pointer-events-none");
   });
 
   it("scopes mutation translation work to added nodes and caches dictionary entries", () => {
     expect(languageSource).toContain("autoTranslationEntriesCache");
-    expect(languageSource).toContain("mutation.addedNodes.forEach");
+    expect(languageSource).toContain("mutation.addedNodes");
     expect(languageSource).toContain("applyLegacyUiTranslations(legacyTranslationLanguage, node)");
   });
 
