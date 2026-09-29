@@ -501,11 +501,11 @@ export default function RestaurantMenu() {
       </div>
     </header>
 
-    <section className="relative h-[140px] max-h-[140px] overflow-hidden bg-[#071525] text-white sm:h-[165px] sm:max-h-[165px] md:h-[200px] md:max-h-[200px] lg:h-[220px] lg:max-h-[220px]">
+    <section className="relative h-[118px] max-h-[118px] overflow-hidden bg-[#071525] text-white sm:h-[145px] sm:max-h-[145px] md:h-[170px] md:max-h-[170px] lg:h-[190px] lg:max-h-[190px]">
       <div className="mx-auto h-full max-w-7xl">
         <div className="relative h-full overflow-hidden">
           {restaurant.coverUrl
-            ? <img src={restaurant.coverUrl} alt={restaurant.brandName || restaurant.name} className="absolute inset-0 h-full w-full object-cover" />
+            ? <img src={restaurant.coverUrl} alt={restaurant.brandName || restaurant.name} className="absolute inset-0 h-full w-full object-cover object-center" />
             : <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d35] via-[#12345a] to-[#071525]" />}
           <div className="absolute inset-0 bg-gradient-to-t from-[#071525]/55 via-transparent to-transparent" />
           <button type="button" onClick={() => document.getElementById("menu-grid")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="absolute bottom-3 start-1/2 z-10 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full border border-white/30 bg-[#071525]/70 text-white shadow-lg backdrop-blur transition hover:scale-105 hover:bg-[#071525]/90" aria-label={lang === "ar" ? "انتقل إلى قائمة الطعام" : "Go to menu"}><ChevronDown className="h-5 w-5" /></button>
