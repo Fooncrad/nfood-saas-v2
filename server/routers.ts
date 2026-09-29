@@ -104,6 +104,10 @@ function assertRestaurantAccess(ctx: { user: { role?: string; testRole?: string;
   // an explicit tenant id; never infer restaurant 1 and never allow an
   // unscoped restaurant_admin to cross tenant boundaries.
   const restaurantRoles = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver"];
+  // Scoped employees may intentionally have no legacy testRole. Their tenant is
+  // still explicit on the authenticated identity and action access is decided
+  // by requireScopedPermission at the endpoint.
+  if (!ctx.user.testRole && ctx.user.restaurantId === restaurantId) return;
   if (!ctx.user.testRole || !restaurantRoles.includes(ctx.user.testRole)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "هذا الحساب غير مخول للوصول إلى بيانات المطاعم" });
   }
