@@ -115,6 +115,7 @@ export function SuperAdminRestaurantCatalog() {
     { restaurantId: detailsRestaurant?.id ?? 1 },
     { enabled: Boolean(detailsRestaurant), retry: 1 }
   );
+  const utils = trpc.useUtils();
   const updateMarketplacePresentation = trpc.marketplace.adminUpdateRestaurantMarketplacePresentation.useMutation({
     onSuccess: async () => {
       if (detailsRestaurant) await utils.marketplace.adminRestaurantMarketplacePresentation.invalidate({ restaurantId: detailsRestaurant.id });
