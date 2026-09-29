@@ -50,7 +50,7 @@ describe("reservation operations wiring", () => {
 
   it("documents deposit preview and flexible daily capacity settings", () => {
     const policy = readFileSync(resolve(process.cwd(), "client/src/components/ReservationPolicyPanel.tsx"), "utf8");
-    const publicMenu = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantPublic.tsx"), "utf8");
+    const publicMenu = readFileSync(resolve(process.cwd(), "client/src/pages/RestaurantMenu.tsx"), "utf8");
     expect(policy).toContain("reservationMaxPerDay");
     expect(policy).toContain("reservationDepositEnabled");
     expect(policy).toContain("اتركه فارغًا لغير محدود");
