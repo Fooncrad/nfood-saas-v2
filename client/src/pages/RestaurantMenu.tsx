@@ -501,16 +501,14 @@ export default function RestaurantMenu() {
       </div>
     </header>
 
-    <section className="relative h-[118px] max-h-[118px] overflow-hidden bg-[#071525] text-white motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-500 sm:h-[145px] sm:max-h-[145px] md:h-[170px] md:max-h-[170px] lg:h-[190px] lg:max-h-[190px]">
-      <div className="mx-auto h-full max-w-7xl">
-        <div className="relative h-full overflow-hidden">
+    <section className="relative h-[118px] max-h-[118px] w-full overflow-hidden bg-[#071525] text-white motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-500 sm:h-[145px] sm:max-h-[145px] md:h-[170px] md:max-h-[170px] lg:h-[190px] lg:max-h-[190px]">
+      <div className="relative h-full w-full overflow-hidden">
           {restaurant.coverUrl
             ? <img src={restaurant.coverUrl} alt={restaurant.brandName || restaurant.name} className="absolute inset-0 h-full w-full object-cover object-center" />
             : <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d35] via-[#12345a] to-[#071525]" />}
           <div className="absolute inset-0 bg-gradient-to-t from-[#071525]/55 via-transparent to-transparent" />
           <button type="button" onClick={() => document.getElementById("menu-grid")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="absolute bottom-3 start-1/2 z-10 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full border border-white/30 bg-[#071525]/70 text-white shadow-lg backdrop-blur transition hover:scale-105 hover:bg-[#071525]/90" aria-label={lang === "ar" ? "انتقل إلى قائمة الطعام" : "Go to menu"}><ChevronDown className="h-5 w-5" /></button>
 
-        </div>
       </div>
     </section>
 
@@ -520,15 +518,14 @@ export default function RestaurantMenu() {
           {restaurant.brandLogoUrl ? <img src={restaurant.brandLogoUrl} alt="" className="h-10 w-10 shrink-0 rounded-xl border border-slate-200 bg-white object-contain p-1 dark:border-white/10" /> : null}
           <div className="min-w-0">
             <h2 className="truncate text-base font-black sm:text-lg">{restaurant.brandName || restaurant.name}</h2>
-            <div className="mt-0.5 flex items-center gap-2">
+            <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1.5">
               <span className={`h-2 w-2 shrink-0 rounded-full ${isOpen ? "bg-emerald-500" : "bg-red-500"}`} />
               <p className="text-xs font-black">{isOpen ? copy.open : copy.closed}</p>
-              {selectedBranch && <p className={`truncate text-[10px] font-bold ${muted}`}>{selectedBranch.name} · {selectedBranch.openingTime && minuteValue(selectedBranch.openingTime) === minuteValue(selectedBranch.closingTime) ? (lang === "ar" ? "24 ساعة" : "24 hours") : `${selectedBranch.openingTime || "—"}–${selectedBranch.closingTime || "—"}`}</p>}
+              {selectedBranch && <><span className={`inline-flex min-w-0 items-center gap-1 truncate rounded-full px-2 py-1 text-[10px] font-bold ${dark ? "bg-white/5" : "bg-slate-100"} ${muted}`}><MapPin className="h-3 w-3 shrink-0" />{selectedBranch.city || restaurant.city || selectedBranch.name}</span>{restaurant.reservationEnabled !== false && <button onClick={() => { setReservationStep(1); setReservationOpen(true); }} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black text-white shadow-sm transition active:scale-95" style={{ backgroundColor: primary }}><CalendarDays className="h-3 w-3" />{copy.reservation}</button>}</>}
             </div>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {restaurant.reservationEnabled !== false && <button onClick={() => { setReservationStep(1); setReservationOpen(true); }} className="rounded-xl px-3 py-2 text-xs font-black text-white shadow-sm" style={{ backgroundColor: primary }}><CalendarDays className="me-1 inline h-3.5 w-3.5" />{copy.reservation}</button>}
           <button onClick={() => setDrawerOpen(true)} className={`hidden rounded-xl border px-3 py-2 text-xs font-black sm:block ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`}>{copy.storeInfo}</button>
         </div>
       </div>
