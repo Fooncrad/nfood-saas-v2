@@ -409,10 +409,6 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const [deadLetterCount, setDeadLetterCount] = useState(0);
   const [customerDisplaySessionId] = useState(() => createCustomerDisplaySessionId());
   const [tableName, setTableName] = useState("");
-  useEffect(() => {
-    if (!remoteTables.isSuccess || !branchId || !tableName) return;
-    if (!availablePosTables.some((table) => table.name === tableName)) setTableName("");
-  }, [remoteTables.data, remoteTables.isSuccess, branchId, tableName]);
   const [serviceCustomerName, setServiceCustomerName] = useState("");
   const [serviceCustomerPhone, setServiceCustomerPhone] = useState("");
   const [reservationAt, setReservationAt] = useState("");
@@ -427,6 +423,10 @@ function PosView({ restaurantId }: { restaurantId: number }) {
   const [productSearch, setProductSearch] = useState("");
   const [printerSettingsOpen, setPrinterSettingsOpen] = useState(false);
   const [channel, setChannel] = useState<"dine_in" | "takeaway" | "delivery" | "reservation" | "hotel">("dine_in");
+  useEffect(() => {
+    if (channel !== "dine_in" || !remoteTables.isSuccess || !branchId || !tableName) return;
+    if (!availablePosTables.some((table) => table.name === tableName)) setTableName("");
+  }, [channel, remoteTables.data, remoteTables.isSuccess, branchId, tableName]);
   const channelLabel = channel === "dine_in" ? posText("داخل المطعم", "Dine in", "Sur place") : channel === "takeaway" ? posText("استلام", "Takeaway", "À emporter") : channel === "delivery" ? posText("توصيل", "Delivery", "Livraison") : channel === "reservation" ? posText("حجز مع الطلب", "Reservation + order", "Réservation + commande") : posText("طلب غرف الفنادق", "Hotel room order", "Commande en chambre");
   const submitOrder = async () => {
     if (!branchId) { toast.error("لا يوجد فرع مرتبط لاستقبال الطلب"); return; }
