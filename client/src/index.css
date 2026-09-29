@@ -7172,11 +7172,3 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 }
 
 
-/* NFOOD numeric policy: always render and enter numbers with Latin digits,
-   regardless of the selected interface language or RTL direction. */
-:where(input[type="number"], input[type="tel"], input[inputmode="numeric"], input[inputmode="decimal"], [data-numeric], .tabular-nums) {
-  direction: ltr !important;
-  unicode-bidi: isolate !important;
-  font-variant-numeric: lining-nums tabular-nums;
-  font-feature-settings: "lnum" 1, "tnum" 1;
-}
