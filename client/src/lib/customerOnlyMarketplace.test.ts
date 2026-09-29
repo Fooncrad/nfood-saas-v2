@@ -68,6 +68,8 @@ describe("customer-only content marketplace", () => {
     expect(marketplaceRouter).toContain('const includesRestaurantMenus = input.sectorSlug === "restaurant"');
     expect(marketplaceLanding).toContain('publicSectors.useQuery({ countryCode: country }');
     expect(marketplaceSector).toContain('publicSectors.useQuery({ countryCode: country }');
+    expect(marketplaceSector).toContain('marketLanguage === "ar" ? storeSector.ar');
+    expect(marketplaceSector).not.toContain('>{store.sector}</Badge>');
     expect(marketplaceLanding).toContain('lang === "ar" ? meta.ar : lang === "fr" ? meta.fr : meta.en');
     expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "QR الموقع"');
     expect(marketplaceLanding).not.toContain('$' + '{lang === "ar" ? "امسح للدخول إلى موقع NFOOD"');
