@@ -1,4 +1,4 @@
-export type ManagedAccountRole = "admin" | "restaurant_admin" | "waiter" | "kitchen" | "bar" | "cashier" | "customer" | "driver";
+export type ManagedAccountRole = "admin" | "restaurant_admin" | "waiter" | "kitchen" | "bar" | "cashier" | "accountant" | "customer" | "driver";
 export type ManagedAccount = { id: number; restaurantId: number | null; email: string; displayName: string; role: ManagedAccountRole; isActive: boolean; createdAt: Date | string | number };
 export type ManagedAccountFilters = { search?: string; role?: "all" | ManagedAccountRole; status?: "all" | "active" | "inactive" };
 

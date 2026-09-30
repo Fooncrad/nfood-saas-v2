@@ -557,6 +557,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   for (const field of textFields) { if (user[field] !== undefined) { values[field] = user[field] ?? null; updateSet[field] = user[field] ?? null; } }
   if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; }
   if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; } else if (user.openId === ENV.ownerOpenId) { values.role = "admin"; updateSet.role = "admin"; }
+  if (user.accountRole !== undefined) { values.accountRole = user.accountRole; updateSet.accountRole = user.accountRole; }
   if (!values.lastSignedIn) values.lastSignedIn = new Date();
   if (!Object.keys(updateSet).length) updateSet.lastSignedIn = new Date();
   await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });

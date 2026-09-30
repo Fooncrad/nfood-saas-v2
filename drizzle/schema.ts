@@ -1251,7 +1251,7 @@ export const testAccounts = mysqlTable("testAccounts", {
   email: varchar("email", { length: 320 }).notNull().unique(),
   displayName: varchar("displayName", { length: 120 }).notNull(),
   phone: varchar("phone", { length: 40 }),
-  role: mysqlEnum("role", ["admin", "restaurant_admin", "waiter", "kitchen", "bar", "cashier", "customer", "driver"]).notNull(),
+  role: mysqlEnum("role", ["admin", "restaurant_admin", "waiter", "kitchen", "bar", "cashier", "accountant", "customer", "driver"]).notNull(),
   passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
   permissionsJson: text("permissionsJson"),
   isActive: boolean("isActive").default(true).notNull(),
