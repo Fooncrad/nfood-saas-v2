@@ -27,6 +27,9 @@ export async function setupVite(app: Express, server: Server) {
     // Disable Vite HMR here; the server watcher still restarts on source changes,
     // while the app's own display WebSocket remains enabled separately.
     hmr: false,
+    // Do not let Vite create or advertise a dev-server websocket in the
+    // managed preview, where that socket is not publicly routable.
+    watch: null,
     allowedHosts: true as const,
   };
 
