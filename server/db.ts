@@ -7,16 +7,17 @@ import { ENV } from "./_core/env";
 import { driverSecurityDeposits, driverSecurityDepositTransactions, financialLedgerEntries } from "../drizzle/schema";
 import { normalizeMenuTemplateSchedule, resolveActiveMenuTemplate } from "../shared/menuTemplateSchedule";
 import { sendPushToUser } from "./push";
-import { isMissingDatabaseTableError } from "./databaseError";
+import { databaseErrorCode, isMissingDatabaseTableError } from "./databaseError";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _dbUrlWarningShown = false;
-const missingOptionalTableWarnings = new Set<string>();
+const optionalPublicReadWarnings = new Set<string>();
 
-function warnMissingOptionalTable(tableName: string) {
-  if (missingOptionalTableWarnings.has(tableName)) return;
-  missingOptionalTableWarnings.add(tableName);
-  console.warn(`[database] Optional table ${tableName} is missing; public reads are using safe defaults until migrations are applied.`);
+function warnOptionalPublicReadFailure(tableName: string, error: unknown) {
+  if (optionalPublicReadWarnings.has(tableName)) return;
+  optionalPublicReadWarnings.add(tableName);
+  const reason = isMissingDatabaseTableError(error) ? "missing-table" : databaseErrorCode(error);
+  console.warn(`[database] Optional public read failed for ${tableName} (${reason}); using safe defaults.`);
 }
 
 function getDatabaseUrl() {
@@ -436,8 +437,7 @@ export async function getPlatformSettings() {
     for (const row of rows) { if (row.key in defaults) defaults[row.key as PlatformSettingKey] = row.value; }
     return defaults;
   } catch (error) {
-    if (!isMissingDatabaseTableError(error)) throw error;
-    warnMissingOptionalTable("platformSettings");
+    warnOptionalPublicReadFailure("platformSettings", error);
     return defaults;
   }
 }
@@ -1226,8 +1226,7 @@ export async function listPublishedUiTranslations(targetLanguage?: string) {
   try {
     return await db.select({ translationKey: uiTranslationEntries.translationKey, sourceText: uiTranslationEntries.sourceText, targetLanguage: uiTranslationEntries.targetLanguage, translatedText: uiTranslationEntries.translatedText }).from(uiTranslationEntries).where(and(...conditions)).orderBy(uiTranslationEntries.translationKey);
   } catch (error) {
-    if (!isMissingDatabaseTableError(error)) throw error;
-    warnMissingOptionalTable("uiTranslationEntries");
+    warnOptionalPublicReadFailure("uiTranslationEntries", error);
     return [];
   }
 }
