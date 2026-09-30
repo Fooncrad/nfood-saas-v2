@@ -2357,14 +2357,18 @@ async function sendPushToUser(userId, payload) {
 }
 
 // server/databaseError.ts
-function isMissingDatabaseTableError(error) {
+function databaseErrorChain(error) {
+  const chain = [];
   let current = error;
   for (let depth = 0; depth < 6 && current && typeof current === "object"; depth += 1) {
     const candidate = current;
-    if (candidate.code === "ER_NO_SUCH_TABLE" || candidate.errno === 1146) return true;
+    chain.push(candidate);
     current = candidate.cause;
   }
-  return false;
+  return chain;
+}
+function isMissingDatabaseTableError(error) {
+  return databaseErrorChain(error).some((candidate) => candidate.code === "ER_NO_SUCH_TABLE" || candidate.errno === 1146);
 }
 
 // server/db.ts
