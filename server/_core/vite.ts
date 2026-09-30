@@ -7,7 +7,14 @@ import { createServer as createViteServer } from "vite";
 import viteConfig from "../../vite.config";
 
 export function prepareDevTemplate(template: string, analyticsEndpoint = process.env.VITE_ANALYTICS_ENDPOINT?.trim(), analyticsId = process.env.VITE_ANALYTICS_WEBSITE_ID?.trim()) {
-  const withEntryVersion = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid()}"`);
+  const withoutViteClient = template.replace(
+    /\s*<script\b[^>]*src=["']\/?@vite\/client[^"'][^>]*><\/script>/gi,
+    "",
+  );
+  const withEntryVersion = withoutViteClient.replace(
+    `src="/src/main.tsx"`,
+    `src="/src/main.tsx?v=${nanoid()}"`,
+  );
   return analyticsEndpoint && analyticsId
     ? withEntryVersion.replaceAll("%VITE_ANALYTICS_ENDPOINT%", analyticsEndpoint).replaceAll("%VITE_ANALYTICS_WEBSITE_ID%", analyticsId)
     : withEntryVersion.replace(/\s*<script defer src="%VITE_ANALYTICS_ENDPOINT%\/umami" data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"><\/script>/, "");
@@ -20,6 +27,9 @@ export async function setupVite(app: Express, server: Server) {
     // Disable Vite HMR here; the server watcher still restarts on source changes,
     // while the app's own display WebSocket remains enabled separately.
     hmr: false,
+    // Do not let Vite create or advertise a dev-server websocket in the
+    // managed preview, where that socket is not publicly routable.
+    watch: null,
     allowedHosts: true as const,
   };
 
@@ -30,9 +40,13 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  app.use(vite.middlewares);
+  // Serve the entry document before Vite's middleware. In middleware mode Vite
+  // can otherwise transform the HTML and inject /@vite/client, whose HMR
+  // socket is unavailable behind the managed preview proxy.
   app.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
+    if (req.method !== "GET" || !req.headers.accept?.includes("text/html")) {
+      return next();
+    }
 
     try {
       const clientTemplate = path.resolve(
@@ -54,6 +68,18 @@ export async function setupVite(app: Express, server: Server) {
       next(e);
     }
   });
+
+  // Keep Vite's asset transforms available without enabling its HMR client.
+  // Some preview layers can retain an older HTML response that still points at
+  // /@vite/client. Return a harmless module for that URL so the stale client
+  // cannot open a WebSocket that the managed preview proxy does not expose.
+  app.get("/@vite/client", (_req, res) => {
+    res.status(200).type("application/javascript").send("export {};\n");
+  });
+  app.get("/@vite/env", (_req, res) => {
+    res.status(200).type("application/javascript").send("export {};\n");
+  });
+  app.use(vite.middlewares);
 }
 
 export function serveStatic(app: Express) {
