@@ -5281,6 +5281,41 @@ var sdk = new SDKServer();
 
 // server/_core/oauth.ts
 import { nanoid as nanoid2 } from "nanoid";
+
+// server/oauthRouting.ts
+var RESTAURANT_ACCOUNT_ROLES = /* @__PURE__ */ new Set([
+  "restaurant",
+  "restaurant_admin",
+  "waiter",
+  "kitchen",
+  "bar",
+  "cashier",
+  "driver",
+  "accountant",
+  "merchant"
+]);
+function effectiveOAuthRole(user) {
+  if (!user) return "";
+  if (user.role === "admin" || user.testRole === "admin" || user.accountRole === "admin") return "admin";
+  return String(user.testRole ?? user.accountRole ?? user.role ?? "");
+}
+function safeRequestedPath(path5) {
+  return path5?.startsWith("/") && !path5.startsWith("//") && !path5.includes("\\") && !/[\r\n]/.test(path5) ? path5 : null;
+}
+function oauthLandingPath(user, restaurantId, requestedPath, customerFallback = "/customer-portal") {
+  const role = effectiveOAuthRole(user);
+  const requested = safeRequestedPath(requestedPath);
+  if (role === "admin") return requested?.startsWith("/admin") ? requested : "/admin";
+  if (RESTAURANT_ACCOUNT_ROLES.has(role) || restaurantId) {
+    return requested?.startsWith("/restaurant/") ? requested : "/restaurant/dashboard";
+  }
+  if (!requested || /^\/login(?:[/?#]|$)/.test(requested) || requested.startsWith("/admin") || requested.startsWith("/restaurant/")) {
+    return customerFallback;
+  }
+  return requested;
+}
+
+// server/_core/oauth.ts
 function getQueryParam(req, key) {
   const value = req.query[key];
   return typeof value === "string" ? value : void 0;
@@ -5374,10 +5409,8 @@ function registerOAuthRoutes(app) {
       const cookieOptions = getSessionCookieOptions(req);
       res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      if (user?.role === "admin" || user?.accountRole === "admin") return res.redirect(302, "/admin");
-      if (returnTo && !/^\/login(?:[/?#]|$)/.test(returnTo)) return res.redirect(302, returnTo);
       const restaurantId = user ? await getMerchantRestaurantId(user.id) : null;
-      return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/customer-portal?oauth=google");
+      return res.redirect(302, oauthLandingPath(user, restaurantId, returnTo, "/customer-portal?oauth=google"));
     } catch (error) {
       console.error("[Google OAuth] Callback failed", error);
       return res.redirect(302, "/login?oauth=google_failed");
@@ -5423,9 +5456,8 @@ function registerOAuthRoutes(app) {
       res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       res.clearCookie(COOKIE_NAME, cookieOptions);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      if (user?.role === "admin") return res.redirect(302, "/admin");
       const restaurantId = user ? await getMerchantRestaurantId(user.id) : null;
-      return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/customer-portal");
+      return res.redirect(302, oauthLandingPath(user, restaurantId));
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });
