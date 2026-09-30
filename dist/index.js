@@ -6842,6 +6842,22 @@ function buildAdminStoreRouterPlan(input, marketplaceSector) {
   });
 }
 
+// server/marketplaceCounts.ts
+function aggregateMarketplaceSectorCounts(listingCounts, restaurantSectorId, restaurantMenuCount) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const [sectorId, count2] of listingCounts) {
+    if (!Number.isFinite(sectorId) || !Number.isFinite(count2) || count2 <= 0) continue;
+    counts.set(sectorId, (counts.get(sectorId) ?? 0) + Math.trunc(count2));
+  }
+  if (restaurantSectorId != null && Number.isFinite(restaurantSectorId) && Number.isFinite(restaurantMenuCount) && restaurantMenuCount > 0) {
+    counts.set(
+      restaurantSectorId,
+      (counts.get(restaurantSectorId) ?? 0) + Math.trunc(restaurantMenuCount)
+    );
+  }
+  return counts;
+}
+
 // server/marketplaceRouter.ts
 async function getProviderEntity(user) {
   const db = await getDb();
@@ -6947,11 +6963,14 @@ var marketplaceRouter = router({
     }).from(platformEntities).where(and3(...entityConditions));
     const entityIds = entities.map((entity) => entity.id);
     const counts = entityIds.length ? await db.select({ sectorId: marketplaceListings.sectorId, total: sql2`count(*)` }).from(marketplaceListings).where(and3(eq3(marketplaceListings.status, "active"), inArray2(marketplaceListings.entityId, entityIds))).groupBy(marketplaceListings.sectorId) : [];
-    const countMap = new Map(counts.map((row) => [Number(row.sectorId), Number(row.total)]));
     const restaurantIds = entities.flatMap((entity) => entity.sector === "restaurant" && entity.restaurantId ? [Number(entity.restaurantId)] : []);
     const restaurantMenuCount = restaurantIds.length ? Number((await db.select({ total: sql2`count(*)` }).from(menuItems).where(and3(inArray2(menuItems.restaurantId, restaurantIds), eq3(menuItems.isAvailable, true))))[0]?.total ?? 0) : 0;
     const restaurantSector = sectors.find((sector) => sector.slug === "restaurant");
-    if (restaurantSector && restaurantMenuCount > 0) countMap.set(restaurantSector.id, restaurantMenuCount);
+    const countMap = aggregateMarketplaceSectorCounts(
+      counts.map((row) => [Number(row.sectorId), Number(row.total)]),
+      restaurantSector?.id,
+      restaurantMenuCount
+    );
     return sectors.map((sector) => ({ ...sector, listingCount: countMap.get(sector.id) ?? 0 }));
   }),
   publicFeaturedStores: publicProcedure.input(z2.object({
