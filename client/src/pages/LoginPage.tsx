@@ -2,6 +2,7 @@ import { Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, UtensilsCrossed } f
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { authenticatedLandingPath } from "@/lib/authRouting";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -114,17 +115,14 @@ export default function LoginPage() {
     // The response has set the cookie. A document navigation starts every guard
     // with a fresh session instead of racing the login page's cached auth query.
     const next = new URLSearchParams(window.location.search).get("next");
-    const safeNext = result.role === "admin" ? "/admin" : next?.startsWith("/") && !next.startsWith("//") ? next : result.next ?? "/";
-    window.location.assign(safeNext);
+    const requestedPath = next?.startsWith("/") && !next.startsWith("//") ? next : result.next;
+    window.location.assign(authenticatedLandingPath({ role: result.role }, requestedPath));
   }, onError: (error) => { if (error.message === "VERIFY_EMAIL_REQUIRED") { toast.error(language === "ar" ? "تحقق من بريدك الإلكتروني أولًا ثم ارجع لتسجيل الدخول." : language === "fr" ? "Vérifiez d’abord votre e-mail, puis reconnectez-vous." : "Verify your email first, then return to sign in."); return; } toast.error(error.message || copy.toastInvalid); } });
   const features = [copy.feat1, copy.feat2, copy.feat3];
   useEffect(() => {
     if (loading || !user) return;
     const next = new URLSearchParams(window.location.search).get("next");
-    if (next?.startsWith("/") && !next.startsWith("//")) { setLocation(next); return; }
-    if (user.role === "admin" || user.accountRole === "admin") { setLocation("/admin"); return; }
-    if (user.accountRole === "restaurant_admin") { setLocation("/restaurant/dashboard"); return; }
-    setLocation("/customer-portal");
+    setLocation(authenticatedLandingPath(user, next), { replace: true });
   }, [loading, user, setLocation]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#071525] text-white">{copy.checking}</div>;
