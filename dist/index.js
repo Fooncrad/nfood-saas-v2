@@ -2318,6 +2318,17 @@ function buildMenuTemplateCron() {
   return "0 */5 * * * *";
 }
 
+// shared/reservationAvailability.ts
+function validTime(value) {
+  const candidate = value?.slice(0, 5) ?? "";
+  return /^([01]\\d|2[0-3]):[0-5]\\d$/.test(candidate) ? candidate : null;
+}
+function normalizeBranchReservationWindow(openingTime, closingTime) {
+  const startTime = validTime(openingTime) ?? "09:00";
+  const endTime = validTime(closingTime) ?? "23:00";
+  return startTime === endTime ? { startTime: "00:00", endTime: "23:59" } : { startTime, endTime };
+}
+
 // server/push.ts
 import webpush from "web-push";
 import { and, eq } from "drizzle-orm";
@@ -2630,9 +2641,7 @@ async function listReservationSlots(restaurantId, branchId) {
   if (saved.length) return saved;
   const branch = (await db.select({ openingTime: branches.openingTime, closingTime: branches.closingTime }).from(branches).where(and2(eq2(branches.id, branchId), eq2(branches.restaurantId, restaurantId))).limit(1))[0];
   if (!branch) return [];
-  const startTime = branch.openingTime?.slice(0, 5) || "09:00";
-  const endTime = branch.closingTime?.slice(0, 5) || "23:00";
-  if (startTime === endTime) return [];
+  const { startTime, endTime } = normalizeBranchReservationWindow(branch.openingTime, branch.closingTime);
   return Array.from({ length: 7 }, (_, dayOfWeek) => ({ id: -(dayOfWeek + 1), restaurantId, branchId, dayOfWeek, startTime, endTime, capacity: 500, bookedCount: 0, slotDurationMinutes: 60, isActive: true, createdAt: /* @__PURE__ */ new Date(0), updatedAt: /* @__PURE__ */ new Date(0) }));
 }
 async function listRestaurantTables(restaurantId, branchId) {
@@ -13357,13 +13366,9 @@ var appRouter = router({
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), eq7(restaurants.status, "active"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
-      const branch = (await db.select({ id: branches.id, restaurantId: branches.restaurantId, status: branches.status, openingTime: branches.openingTime, closingTime: branches.closingTime }).from(branches).where(and7(eq7(branches.id, input.branchId), eq7(branches.restaurantId, restaurant.id))).limit(1))[0];
+      const branch = (await db.select({ id: branches.id, restaurantId: branches.restaurantId, status: branches.status }).from(branches).where(and7(eq7(branches.id, input.branchId), eq7(branches.restaurantId, restaurant.id))).limit(1))[0];
       if (!branch || branch.status !== "open") return [];
-      const configured2 = await listReservationSlots(restaurant.id, input.branchId);
-      if (configured2.length) return configured2;
-      const openingTime = branch.openingTime ?? "00:00";
-      const closingTime = branch.closingTime ?? "23:59";
-      return Array.from({ length: 7 }, (_, dayOfWeek) => ({ id: -(dayOfWeek + 1), restaurantId: restaurant.id, branchId: input.branchId, dayOfWeek, startTime: openingTime, endTime: closingTime, capacity: 999, bookedCount: 0, slotDurationMinutes: 60, isActive: true, createdAt: /* @__PURE__ */ new Date(0), updatedAt: /* @__PURE__ */ new Date(0), fallback: true }));
+      return listReservationSlots(restaurant.id, input.branchId);
     }),
     reservationBlackoutDates: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), branchId: z3.number().int().positive() })).query(async ({ input }) => {
       const db = await getDb();
