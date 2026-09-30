@@ -7,6 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { DatabaseTranslationBridge } from "./components/DatabaseTranslationBridge";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LANGUAGE_STORAGE_KEY, LanguageProvider, isUiLanguage, useLanguage, type Language } from "./contexts/LanguageContext";
+import { authenticatedLandingPath, effectiveAccountRole, isRestaurantAreaAccount } from "./lib/authRouting";
 const routeLoaders = {
   Home: () => import("./pages/Home"),
   SuperAdminApp: () => import("./pages/SuperAdminApp"),
@@ -126,8 +127,7 @@ function SessionIdleGuard() {
 function CustomerAreaGuard({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const [location, navigate] = useLocation();
-  const teamRole = user?.testRole;
-  const isRestaurantTeam = Boolean(teamRole && ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver"].includes(teamRole));
+  const isRestaurantTeam = isRestaurantAreaAccount(user);
   useEffect(() => {
     if (loading) return;
     if (!user) { navigate(`/login?next=${encodeURIComponent(location)}`); return; }
@@ -150,19 +150,18 @@ function CustomerRegisterRoute() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
   useEffect(() => {
-    if (!loading && user) navigate("/customer-portal");
+    if (!loading && user) navigate(authenticatedLandingPath(user), { replace: true });
   }, [loading, user, navigate]);
   if (loading || user) return <PageLoading />;
   return <CustomerRegister />;
 }
-const RESTAURANT_AREA_ROLES = new Set(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver", "accountant"]);
-function RootRoute() { const { user, loading } = useAuth(); const [, navigate] = useLocation(); const isAdmin = user?.role === "admin" || user?.testRole === "admin" || user?.accountRole === "admin"; const role = String(user?.testRole ?? user?.accountRole ?? user?.role ?? ""); const isRestaurantAccount = Boolean(user && RESTAURANT_AREA_ROLES.has(role)); useEffect(() => { if (loading || !user) return; if (isAdmin) { navigate("/admin", { replace: true }); return; } if (isRestaurantAccount && window.location.pathname === "/") navigate("/restaurant/dashboard", { replace: true }); }, [loading, user, isAdmin, isRestaurantAccount, navigate]); if (loading || isAdmin || isRestaurantAccount) return <PageLoading />; return user ? <Home /> : <PublicHome />; }
+function RootRoute() { const { user, loading } = useAuth(); const [, navigate] = useLocation(); const role = effectiveAccountRole(user); const isAdmin = role === "admin"; const isRestaurantAccount = isRestaurantAreaAccount(user); useEffect(() => { if (loading || !user) return; if (isAdmin) { navigate("/admin", { replace: true }); return; } if (isRestaurantAccount && window.location.pathname === "/") navigate("/restaurant/dashboard", { replace: true }); }, [loading, user, isAdmin, isRestaurantAccount, navigate]); if (loading || isAdmin || isRestaurantAccount) return <PageLoading />; return user ? <Home /> : <PublicHome />; }
 function RestaurantRoute() {
   const { user, loading } = useAuth();
   const [location, navigate] = useLocation();
-  const isAdmin = user?.role === "admin" || user?.testRole === "admin" || user?.accountRole === "admin";
-  const role = String(user?.testRole ?? user?.accountRole ?? user?.role ?? "");
-  const allowed = RESTAURANT_AREA_ROLES.has(role);
+  const role = effectiveAccountRole(user);
+  const isAdmin = role === "admin";
+  const allowed = isRestaurantAreaAccount(user);
   useEffect(() => {
     if (loading) return;
     if (!user) navigate(`/login?next=${encodeURIComponent(location)}`, { replace: true });
@@ -175,7 +174,7 @@ function RestaurantRoute() {
 function SuperAdminRoute() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
-  const isAdmin = user?.role === "admin" || user?.testRole === "admin" || user?.accountRole === "admin";
+  const isAdmin = effectiveAccountRole(user) === "admin";
   useEffect(() => {
     if (loading) return;
     if (!user) { navigate("/login?next=/admin"); return; }
