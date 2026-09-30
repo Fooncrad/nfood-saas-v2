@@ -23,7 +23,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      - run: pnpm exec vitest run server/sensitive-permissions.test.ts server/rbac.test.ts server/phase1-branch-controls.test.ts client/src/dashboard-theme-shortcuts.test.ts
+      - run: pnpm exec vitest run server/sensitive-permissions.test.ts server/rbac.test.ts server/phase1-branch-controls.test.ts client/src/dashboard-theme-shortcuts.test.ts client/src/pricingRoute.test.ts
       - name: Verify POS, orders, reservations, invoices and PWA
         run: pnpm exec vitest run server/orderPricing.test.ts server/payment-workflow.test.ts server/receiptDelivery.test.ts server/reservations.test.ts server/reservationNotifications.test.ts server/financial-ledger.test.ts client/src/lib/posPaymentModel.test.ts client/src/lib/posPricing.test.ts client/src/lib/waiterCallReservation.test.ts client/src/lib/customerOnlyMarketplace.test.ts client/src/pages/ReservationsView.test.ts client/src/pwa.test.ts
       - name: Verify translation coverage

@@ -139,11 +139,12 @@ function CustomerAreaGuard({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 function PricingRoute() {
-  const [, navigate] = useLocation();
   useEffect(() => {
-    navigate("/#plans", { replace: true });
-    window.setTimeout(() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-  }, [navigate]);
+    // Keep the legacy URL as a compatibility redirect, but let the browser
+    // perform a full hash navigation so the plans section is always present
+    // before it attempts to scroll.
+    window.location.replace("/#plans");
+  }, []);
   return <PageLoading />;
 }
 function CustomerRegisterRoute() {
