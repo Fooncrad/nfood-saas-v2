@@ -77,8 +77,15 @@ export async function setupVite(app: Express, server: Server) {
   // Some preview layers can retain an older HTML response that still points at
   // /@vite/client. Return a harmless module for that URL so the stale client
   // cannot open a WebSocket that the managed preview proxy does not expose.
-  app.get("/@vite/client", (_req, res) => {
-    res.status(200).type("application/javascript").send(`
+  app.use("/@vite/client", (_req, res) => {
+    // Vite-transformed modules can still import this module even when HMR is
+    // disabled. Keep the fallback uncached and expose the Vite client API that
+    // those modules expect, without opening an unreachable WebSocket.
+    res
+      .status(200)
+      .set("Cache-Control", "no-store")
+      .type("application/javascript")
+      .send(`
 const hotData = Object.create(null);
 const noop = () => {};
 
