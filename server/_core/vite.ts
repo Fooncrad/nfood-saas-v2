@@ -44,7 +44,11 @@ export async function setupVite(app: Express, server: Server) {
   // can otherwise transform the HTML and inject /@vite/client, whose HMR
   // socket is unavailable behind the managed preview proxy.
   app.use("*", async (req, res, next) => {
-    if (req.method !== "GET" || !req.headers.accept?.includes("text/html")) {
+    const acceptsHtml = req.headers.accept?.includes("text/html") ?? false;
+    const isDocumentRequest = req.method === "GET" &&
+      (acceptsHtml || req.path === "/" || (!path.extname(req.path) && !req.path.startsWith("/@")));
+
+    if (!isDocumentRequest) {
       return next();
     }
 
