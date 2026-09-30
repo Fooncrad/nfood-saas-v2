@@ -9,7 +9,7 @@ describe("role navigation matrix", () => {
   });
 
   it("keeps every role scoped to an explicit navigation allow-list", () => {
-    const roles = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "customer", "driver"] as const;
+    const roles = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "accountant", "customer", "driver"] as const;
     for (const role of roles) {
       expect(roleNavigation[role].length).toBeGreaterThan(0);
       expect(isRoleNavigationAllowed(role, "overview")).toBe(true);
@@ -18,13 +18,15 @@ describe("role navigation matrix", () => {
   });
 
   it("keeps action-level permissions aligned with operational roles", () => {
-    const roles = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "customer", "driver"] as const;
+    const roles = ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "accountant", "customer", "driver"] as const;
     for (const role of roles) expect(roleActions[role]).toBeDefined();
     expect(isRoleActionAllowed("restaurant_admin", "inventory.manage")).toBe(true);
     expect(isRoleActionAllowed("waiter", "orders.create")).toBe(true);
     expect(isRoleActionAllowed("cashier", "orders.create")).toBe(true);
+    expect(isRoleActionAllowed("cashier", "orders.status.update")).toBe(true);
     expect(isRoleActionAllowed("kitchen", "orders.create")).toBe(false);
     expect(isRoleActionAllowed("bar", "orders.status.update")).toBe(true);
+    expect(isRoleActionAllowed("accountant", "orders.create")).toBe(false);
     expect(isRoleActionAllowed("customer", "orders.create")).toBe(false);
     expect(isRoleActionAllowed("driver", "orders.create")).toBe(false);
   });
@@ -52,7 +54,8 @@ describe("role navigation matrix", () => {
     expect(getVisibleNavigation("restaurant_admin")).toContain("pos");
     expect(getVisibleNavigation("restaurant_admin")).not.toContain("admin");
     expect(getVisibleNavigation("restaurant_admin")).not.toContain("health");
-    expect(getVisibleNavigation("cashier")).toContain("pos");
+    expect(getVisibleNavigation("cashier")).toEqual(["overview", "pos"]);
+    expect(getVisibleNavigation("accountant")).toEqual(["overview", "finance", "inventory", "files", "security"]);
     expect(getVisibleNavigation("bar")).toEqual(["overview", "kds", "files", "trend", "security"]);
   });
 
