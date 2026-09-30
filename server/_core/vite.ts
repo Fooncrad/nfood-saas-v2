@@ -65,6 +65,11 @@ export async function setupVite(app: Express, server: Server) {
       next(e);
     }
   });
+
+  // Keep Vite's asset transforms available without enabling its HMR client.
+  // The managed preview proxy does not forward Vite's websocket endpoint, so
+  // the HTML route above must remain responsible for preventing client injection.
+  app.use(vite.middlewares);
 }
 
 export function serveStatic(app: Express) {
