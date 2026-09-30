@@ -78,7 +78,23 @@ export async function setupVite(app: Express, server: Server) {
   // /@vite/client. Return a harmless module for that URL so the stale client
   // cannot open a WebSocket that the managed preview proxy does not expose.
   app.get("/@vite/client", (_req, res) => {
-    res.status(200).type("application/javascript").send("export {};\n");
+    res.status(200).type("application/javascript").send(`
+const hotData = Object.create(null);
+const noop = () => {};
+
+export function createHotContext() {
+  return {
+    data: hotData,
+    accept: noop,
+    dispose: noop,
+    prune: noop,
+    invalidate: noop,
+    on: noop,
+    off: noop,
+    send: noop,
+  };
+}
+`);
   });
   app.get("/@vite/env", (_req, res) => {
     res.status(200).type("application/javascript").send("export {};\n");
