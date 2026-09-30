@@ -173,7 +173,7 @@ export const marketplaceRouter = router({
       : 0;
     const restaurantSector = sectors.find((sector) => sector.slug === "restaurant");
     const countMap = aggregateMarketplaceSectorCounts(
-      counts.map((row) => [Number(row.sectorId), Number(row.total)]),
+      counts.map((row) => [Number(row.sectorId), Number(row.total)] as const),
       restaurantSector?.id,
       restaurantMenuCount,
     );

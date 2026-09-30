@@ -1,5 +1,5 @@
 export function aggregateMarketplaceSectorCounts(
-  listingCounts: Iterable<readonly [number, number]>,
+  listingCounts: ReadonlyArray<readonly [number, number]>,
   restaurantSectorId: number | null | undefined,
   restaurantMenuCount: number,
 ) {
