@@ -6,6 +6,7 @@ import { InsertUser, branches, employees, inventoryItems, menuCategories, menuIt
 import { ENV } from "./_core/env";
 import { driverSecurityDeposits, driverSecurityDepositTransactions, financialLedgerEntries } from "../drizzle/schema";
 import { normalizeMenuTemplateSchedule, resolveActiveMenuTemplate } from "../shared/menuTemplateSchedule";
+import { normalizeBranchReservationWindow } from "../shared/reservationAvailability";
 import { sendPushToUser } from "./push";
 import { databaseErrorCode, isMissingDatabaseTableError } from "./databaseError";
 
@@ -126,11 +127,9 @@ export async function listReservationSlots(restaurantId: number, branchId: numbe
   if (saved.length) return saved;
   const branch = (await db.select({ openingTime: branches.openingTime, closingTime: branches.closingTime }).from(branches).where(and(eq(branches.id, branchId), eq(branches.restaurantId, restaurantId))).limit(1))[0];
   if (!branch) return [];
-  const startTime = branch.openingTime?.slice(0, 5) || "09:00";
-  const endTime = branch.closingTime?.slice(0, 5) || "23:00";
-  if (startTime === endTime) return [];
+  const { startTime, endTime } = normalizeBranchReservationWindow(branch.openingTime, branch.closingTime);
   // Modern fallback: a restaurant does not lose reservations just because the legacy slot table is empty.
-  // Persisted slot rules still take precedence as soon as the restaurant creates them.
+  // Equal opening and closing hours mean 24-hour service rather than an unavailable day.
   return Array.from({ length: 7 }, (_, dayOfWeek) => ({ id: -(dayOfWeek + 1), restaurantId, branchId, dayOfWeek, startTime, endTime, capacity: 500, bookedCount: 0, slotDurationMinutes: 60, isActive: true, createdAt: new Date(0), updatedAt: new Date(0) }));
 }
 export async function listRestaurantTables(restaurantId: number, branchId: number) { const db = await getDb(); if (!db) return []; return db.select({ id: restaurantTables.id, branchId: restaurantTables.branchId, name: restaurantTables.name, seats: restaurantTables.seats, status: restaurantTables.status, seatingSectionId: restaurantTables.seatingSectionId, tableType: restaurantTables.tableType, minimumCharge: restaurantTables.minimumCharge, tableFee: restaurantTables.tableFee, waiterUserId: sql<number | null>`(SELECT wta.waiterUserId FROM waiterTableAssignments wta WHERE wta.tableId = ${restaurantTables.id} AND wta.restaurantId = ${restaurantId} ORDER BY wta.createdAt DESC LIMIT 1)`, waiterName: sql<string | null>`(SELECT u.name FROM waiterTableAssignments wta INNER JOIN users u ON u.id = wta.waiterUserId WHERE wta.tableId = ${restaurantTables.id} AND wta.restaurantId = ${restaurantId} ORDER BY wta.createdAt DESC LIMIT 1)` }).from(restaurantTables).innerJoin(branches, eq(restaurantTables.branchId, branches.id)).where(and(eq(branches.restaurantId, restaurantId), eq(restaurantTables.branchId, branchId))).orderBy(restaurantTables.name); }
