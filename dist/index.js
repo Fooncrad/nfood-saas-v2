@@ -835,6 +835,7 @@ var orderItems = mysqlTable("orderItems", {
   menuItemId: int("menuItemId"),
   sourceType: mysqlEnum("sourceType", ["menu_item", "marketplace_variant"]).default("menu_item").notNull(),
   marketplaceVariantId: int("marketplaceVariantId"),
+  itemNameSnapshot: varchar("itemNameSnapshot", { length: 240 }),
   quantity: int("quantity").default(1).notNull(),
   unitPrice: decimal("unitPrice", { precision: 10, scale: 2 }).notNull(),
   selectedAddonsJson: text("selectedAddonsJson")
@@ -2389,6 +2390,14 @@ function isMissingDatabaseTableError(error) {
   return databaseErrorChain(error).some((candidate) => candidate.code === "ER_NO_SUCH_TABLE" || candidate.errno === 1146);
 }
 
+// server/orderItemSnapshot.ts
+function resolveOrderItemName(snapshot, currentName, fallback) {
+  const historical = snapshot?.trim();
+  if (historical) return historical;
+  const current = currentName?.trim();
+  return current || fallback;
+}
+
 // server/db.ts
 var _db = null;
 var _dbUrlWarningShown = false;
@@ -2918,6 +2927,7 @@ async function listCustomerOrders(customerId, limit = 100) {
     sourceType: orderItems.sourceType,
     menuItemId: orderItems.menuItemId,
     marketplaceVariantId: orderItems.marketplaceVariantId,
+    itemNameSnapshot: orderItems.itemNameSnapshot,
     quantity: orderItems.quantity,
     unitPrice: orderItems.unitPrice,
     menuItemName: menuItems.name,
@@ -2932,7 +2942,7 @@ async function listCustomerOrders(customerId, limit = 100) {
     marketplaceVariantId: item.marketplaceVariantId,
     quantity: item.quantity,
     unitPrice: item.unitPrice,
-    name: item.sourceType === "marketplace_variant" ? item.marketplaceItemName ?? "\u0645\u0646\u062A\u062C \u0645\u062A\u062C\u0631" : item.menuItemName ?? "\u0635\u0646\u0641 \u0645\u0646\u064A\u0648",
+    name: resolveOrderItemName(item.itemNameSnapshot, item.sourceType === "marketplace_variant" ? item.marketplaceItemName : item.menuItemName, item.sourceType === "marketplace_variant" ? "\u0645\u0646\u062A\u062C \u0645\u062A\u062C\u0631" : "\u0635\u0646\u0641 \u0645\u0646\u064A\u0648"),
     sku: item.sourceType === "marketplace_variant" ? item.marketplaceSku : null,
     barcode: item.sourceType === "marketplace_variant" ? item.marketplaceBarcode : null
   }));
@@ -3810,6 +3820,7 @@ async function listOrdersByRestaurant(restaurantId, limit = 200) {
     sourceType: orderItems.sourceType,
     menuItemId: orderItems.menuItemId,
     marketplaceVariantId: orderItems.marketplaceVariantId,
+    itemNameSnapshot: orderItems.itemNameSnapshot,
     menuItemName: menuItems.name,
     marketplaceItemName: marketplaceListings.title,
     marketplaceSku: marketplaceListingVariants.sku,
@@ -3824,7 +3835,7 @@ async function listOrdersByRestaurant(restaurantId, limit = 200) {
     sourceType: item.sourceType,
     menuItemId: item.menuItemId,
     marketplaceVariantId: item.marketplaceVariantId,
-    itemName: item.sourceType === "marketplace_variant" ? item.marketplaceItemName ?? "\u0645\u0646\u062A\u062C \u0645\u062A\u062C\u0631" : item.menuItemName ?? "\u0635\u0646\u0641 \u0645\u0646\u064A\u0648",
+    itemName: resolveOrderItemName(item.itemNameSnapshot, item.sourceType === "marketplace_variant" ? item.marketplaceItemName : item.menuItemName, item.sourceType === "marketplace_variant" ? "\u0645\u0646\u062A\u062C \u0645\u062A\u062C\u0631" : "\u0635\u0646\u0641 \u0645\u0646\u064A\u0648"),
     quantity: item.quantity,
     unitPrice: item.unitPrice,
     categoryName: item.sourceType === "marketplace_variant" ? null : item.categoryName,
@@ -10765,12 +10776,13 @@ var appRouter = router({
       if (order.paymentStatus !== "paid") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0625\u0635\u062F\u0627\u0631 \u0641\u0627\u062A\u0648\u0631\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 \u0642\u0628\u0644 \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062F\u0641\u0639" });
       const restaurant = await getRestaurantById(input.restaurantId);
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      const items = await db.select({ menuItemId: orderItems.menuItemId, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice, name: menuItems.name }).from(orderItems).leftJoin(menuItems, eq7(orderItems.menuItemId, menuItems.id)).where(eq7(orderItems.orderId, input.orderId));
+      const items = await db.select({ menuItemId: orderItems.menuItemId, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice, itemNameSnapshot: orderItems.itemNameSnapshot, currentName: menuItems.name }).from(orderItems).leftJoin(menuItems, eq7(orderItems.menuItemId, menuItems.id)).where(eq7(orderItems.orderId, input.orderId));
+      const invoiceItems = items.map((item) => ({ menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: item.unitPrice, name: resolveOrderItemName(item.itemNameSnapshot, item.currentName, "\u0635\u0646\u0641 \u0645\u0646\u064A\u0648") }));
       const invoiceNumber = `NF-${input.restaurantId}-${String(input.orderId).padStart(8, "0")}`;
       const issuedAt = /* @__PURE__ */ new Date();
       const qrPayload = JSON.stringify({ invoiceNumber, seller: restaurant.brandName ?? restaurant.name, taxNumber: restaurant.taxNumber ?? null, issuedAt: issuedAt.toISOString(), total: order.total, tax: order.taxAmount, currency: order.currencyCode });
       const actorUser = ctx.user;
-      const values = { restaurantId: input.restaurantId, orderId: input.orderId, customerId: order.customerId ?? null, invoiceNumber, invoiceType: input.invoiceType, status: "issued", currencyCode: order.currencyCode, sellerName: restaurant.brandName ?? restaurant.name, sellerTaxNumber: restaurant.taxNumber ?? null, customerName: input.customerName?.trim() || order.guestName || null, customerTaxNumber: input.customerTaxNumber?.trim() || null, subtotal: order.subtotal, discountAmount: order.discountAmount, taxAmount: order.taxAmount, total: order.total, itemsSnapshotJson: JSON.stringify(items), qrPayload, issuedAt, createdByUserId: actorUser.id };
+      const values = { restaurantId: input.restaurantId, orderId: input.orderId, customerId: order.customerId ?? null, invoiceNumber, invoiceType: input.invoiceType, status: "issued", currencyCode: order.currencyCode, sellerName: restaurant.brandName ?? restaurant.name, sellerTaxNumber: restaurant.taxNumber ?? null, customerName: input.customerName?.trim() || order.guestName || null, customerTaxNumber: input.customerTaxNumber?.trim() || null, subtotal: order.subtotal, discountAmount: order.discountAmount, taxAmount: order.taxAmount, total: order.total, itemsSnapshotJson: JSON.stringify(invoiceItems), qrPayload, issuedAt, createdByUserId: actorUser.id };
       await db.insert(electronicInvoices).values(values);
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: actorUser.id, actorRole: actorUser.testRole ?? actorUser.role, action: "electronic_invoice.issued", entityType: "electronic_invoice", entityId: invoiceNumber, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ orderId: input.orderId, invoiceType: input.invoiceType, total: order.total }) });
       return (await db.select().from(electronicInvoices).where(and7(eq7(electronicInvoices.restaurantId, input.restaurantId), eq7(electronicInvoices.orderId, input.orderId))).limit(1))[0];
@@ -11203,9 +11215,9 @@ var appRouter = router({
       const requested = /* @__PURE__ */ new Map();
       for (const item of input.items) requested.set(item.menuItemId, (requested.get(item.menuItemId) ?? 0) + item.quantity);
       const menuIds = Array.from(requested.keys());
-      const availableItems = await db.select({ id: menuItems.id, price: menuItems.price }).from(menuItems).where(and7(eq7(menuItems.restaurantId, restaurant.id), eq7(menuItems.isAvailable, true), inArray4(menuItems.id, menuIds)));
+      const availableItems = await db.select({ id: menuItems.id, name: menuItems.name, price: menuItems.price }).from(menuItems).where(and7(eq7(menuItems.restaurantId, restaurant.id), eq7(menuItems.isAvailable, true), inArray4(menuItems.id, menuIds)));
       if (availableItems.length !== menuIds.length) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u064A\u0648\u062C\u062F \u0635\u0646\u0641 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0623\u0648 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
-      const prices = new Map(availableItems.map((item) => [item.id, Number(item.price)]));
+      const catalog = new Map(availableItems.map((item) => [item.id, { name: item.name, price: Number(item.price) }]));
       const addonIds = Array.from(new Set(input.items.flatMap((item) => item.addons.map((addon) => addon.addonId))));
       const addonRows = addonIds.length ? await db.select({ id: menuItemAddons.id, menuItemId: menuItemAddons.menuItemId, name: menuItemAddons.name, price: menuItemAddons.price, isAvailable: menuItemAddons.isAvailable }).from(menuItemAddons).where(and7(eq7(menuItemAddons.restaurantId, restaurant.id), inArray4(menuItemAddons.id, addonIds))) : [];
       const addonById = new Map(addonRows.map((addon) => [addon.id, addon]));
@@ -11217,7 +11229,7 @@ var appRouter = router({
           return { id: addon.id, name: addon.name, price: Number(addon.price) };
         });
         const addonPrice = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
-        return { menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: ((prices.get(item.menuItemId) ?? 0) + addonPrice).toFixed(2), selectedAddonsJson: selectedAddons.length ? JSON.stringify(selectedAddons) : null };
+        return { menuItemId: item.menuItemId, itemNameSnapshot: catalog.get(item.menuItemId)?.name ?? "\u0635\u0646\u0641 \u0645\u0646\u064A\u0648", quantity: item.quantity, unitPrice: ((catalog.get(item.menuItemId)?.price ?? 0) + addonPrice).toFixed(2), selectedAddonsJson: selectedAddons.length ? JSON.stringify(selectedAddons) : null };
       });
       const checkoutIssue = validateGuestCheckoutDetails(input);
       if (checkoutIssue) throw new TRPCError7({ code: "BAD_REQUEST", message: checkoutIssue });
@@ -11253,7 +11265,7 @@ var appRouter = router({
           const referral = (await tx.select({ id: referralRecords.id, referrerCustomerId: referralRecords.referrerCustomerId }).from(referralRecords).where(and7(eq7(referralRecords.restaurantId, restaurant.id), eq7(referralRecords.code, input.referralCode.toUpperCase()), eq7(referralRecords.status, "pending"), isNull4(referralRecords.referredCustomerId))).limit(1))[0];
           if (referral && referral.referrerCustomerId !== customerId) await tx.update(referralRecords).set({ referredCustomerId: customerId }).where(and7(eq7(referralRecords.id, referral.id), eq7(referralRecords.status, "pending"), isNull4(referralRecords.referredCustomerId)));
         }
-        await tx.insert(orderItems).values(authoritativeItems.map((item) => ({ orderId, menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: item.unitPrice, selectedAddonsJson: item.selectedAddonsJson })));
+        await tx.insert(orderItems).values(authoritativeItems.map((item) => ({ orderId, menuItemId: item.menuItemId, itemNameSnapshot: item.itemNameSnapshot, quantity: item.quantity, unitPrice: item.unitPrice, selectedAddonsJson: item.selectedAddonsJson })));
         const orderQrToken = `ord_${nanoid4(32)}`;
         const orderQrTargetUrl = `/customer-orders?order=${orderId}`;
         await tx.insert(qrCodes).values({ restaurantId: restaurant.id, branchId: branch.id, type: "order", purpose: "order_tracking", token: orderQrToken, label: `\u0637\u0644\u0628 #${orderId}`, orderId, amount: total.toFixed(2), targetUrl: orderQrTargetUrl, createdByUserId: customerId });
@@ -11308,10 +11320,10 @@ var appRouter = router({
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       const source = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, channel: orders.channel, guestName: orders.guestName, guestPhone: orders.guestPhone }).from(orders).where(and7(eq7(orders.id, input.orderId), eq7(orders.restaurantId, restaurant.id), eq7(orders.guestPhone, input.guestPhone))).limit(1))[0];
       if (!source) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0644\u0645 \u064A\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628" });
-      const sourceItems = (await db.select({ menuItemId: orderItems.menuItemId, quantity: orderItems.quantity }).from(orderItems).where(eq7(orderItems.orderId, source.id))).filter((item) => item.menuItemId !== null);
+      const sourceItems = (await db.select({ menuItemId: orderItems.menuItemId, itemNameSnapshot: orderItems.itemNameSnapshot, quantity: orderItems.quantity }).from(orderItems).where(eq7(orderItems.orderId, source.id))).filter((item) => item.menuItemId !== null);
       if (!sourceItems.length) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0633\u0627\u0628\u0642 \u0644\u0627 \u064A\u062D\u062A\u0648\u064A \u0623\u0635\u0646\u0627\u0641\u064B\u0627 \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u0625\u0639\u0627\u062F\u0629" });
       const menuIds = sourceItems.map((item) => item.menuItemId);
-      const currentItems = await db.select({ id: menuItems.id, price: menuItems.price, isAvailable: menuItems.isAvailable }).from(menuItems).where(and7(eq7(menuItems.restaurantId, restaurant.id), inArray4(menuItems.id, menuIds)));
+      const currentItems = await db.select({ id: menuItems.id, name: menuItems.name, price: menuItems.price, isAvailable: menuItems.isAvailable }).from(menuItems).where(and7(eq7(menuItems.restaurantId, restaurant.id), inArray4(menuItems.id, menuIds)));
       const byId = new Map(currentItems.map((item) => [item.id, item]));
       if (currentItems.length !== menuIds.length || sourceItems.some((item) => !byId.get(item.menuItemId)?.isAvailable)) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0628\u0639\u0636 \u0623\u0635\u0646\u0627\u0641 \u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0633\u0627\u0628\u0642 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u064B\u0627" });
       const total = sourceItems.reduce((sum, item) => sum + Number(byId.get(item.menuItemId).price) * item.quantity, 0);
@@ -11319,7 +11331,7 @@ var appRouter = router({
         const inserted = await tx.insert(orders).values({ restaurantId: restaurant.id, branchId: source.branchId, channel: source.channel, status: "new", paymentMethod: "cash", paymentStatus: "unpaid", receiptPrintStatus: "queued", total: total.toFixed(2), guestName: source.guestName, guestPhone: source.guestPhone }).$returningId();
         const orderId = inserted[0]?.id;
         if (!orderId) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0645\u0639\u0627\u062F" });
-        await tx.insert(orderItems).values(sourceItems.map((item) => ({ orderId, menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: byId.get(item.menuItemId).price })));
+        await tx.insert(orderItems).values(sourceItems.map((item) => ({ orderId, menuItemId: item.menuItemId, itemNameSnapshot: item.itemNameSnapshot ?? byId.get(item.menuItemId).name, quantity: item.quantity, unitPrice: byId.get(item.menuItemId).price })));
         await insertAuditLog({ restaurantId: restaurant.id, branchId: source.branchId, actorUserId: null, actorRole: "guest", action: "guest.order.reorder", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid4(12) });
         return { success: true, orderId, total: total.toFixed(2), paymentMethod: "cash", paymentStatus: "unpaid", status: "new" };
       });
@@ -12721,6 +12733,7 @@ var appRouter = router({
         sourceType: orderItems.sourceType,
         menuItemId: orderItems.menuItemId,
         marketplaceVariantId: orderItems.marketplaceVariantId,
+        itemNameSnapshot: orderItems.itemNameSnapshot,
         quantity: orderItems.quantity,
         unitPrice: orderItems.unitPrice,
         menuName: menuItems.name,
@@ -12734,7 +12747,7 @@ var appRouter = router({
         id: line.id,
         sourceType: line.sourceType,
         sourceId: line.sourceType === "marketplace_variant" ? line.marketplaceVariantId : line.menuItemId,
-        name: line.sourceType === "marketplace_variant" ? line.retailName ?? "\u0645\u0646\u062A\u062C \u0645\u062A\u062C\u0631" : line.menuName ?? "\u0635\u0646\u0641 \u0645\u0646\u064A\u0648",
+        name: resolveOrderItemName(line.itemNameSnapshot, line.sourceType === "marketplace_variant" ? line.retailName : line.menuName, line.sourceType === "marketplace_variant" ? "\u0645\u0646\u062A\u062C \u0645\u062A\u062C\u0631" : "\u0635\u0646\u0641 \u0645\u0646\u064A\u0648"),
         quantity: line.quantity,
         unitPrice: line.unitPrice,
         categoryName: line.sourceType === "menu_item" ? line.categoryName : null,
@@ -12881,7 +12894,7 @@ var appRouter = router({
       if (!db) throw new Error("Database is not available");
       const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, routingSectionIdsJson: orders.routingSectionIdsJson }).from(orders).where(eq7(orders.id, input.orderId)).limit(1))[0];
       if (!order || order.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
-      const rows = await db.select({ orderItemId: orderItems.id, menuItemId: menuItems.id, itemName: menuItems.name, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice, categoryId: menuItems.categoryId, categorySectionId: menuCategories.kitchenSectionId, itemSectionId: menuItems.kitchenSectionId }).from(orderItems).innerJoin(menuItems, eq7(orderItems.menuItemId, menuItems.id)).leftJoin(menuCategories, eq7(menuItems.categoryId, menuCategories.id)).where(eq7(orderItems.orderId, input.orderId));
+      const rows = await db.select({ orderItemId: orderItems.id, menuItemId: orderItems.menuItemId, itemNameSnapshot: orderItems.itemNameSnapshot, currentItemName: menuItems.name, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice, categoryId: menuItems.categoryId, categorySectionId: menuCategories.kitchenSectionId, itemSectionId: menuItems.kitchenSectionId }).from(orderItems).leftJoin(menuItems, eq7(orderItems.menuItemId, menuItems.id)).leftJoin(menuCategories, eq7(menuItems.categoryId, menuCategories.id)).where(eq7(orderItems.orderId, input.orderId));
       const rules = await db.select().from(printerRoutingRules).where(and7(eq7(printerRoutingRules.restaurantId, input.restaurantId), eq7(printerRoutingRules.isEnabled, true))).orderBy(desc3(printerRoutingRules.priority));
       const sections = await db.select({ id: kitchenSections.id, name: kitchenSections.name, printerName: kitchenSections.printerName, printerType: kitchenSections.printerType, printerAddress: kitchenSections.printerAddress }).from(kitchenSections).where(eq7(kitchenSections.restaurantId, input.restaurantId));
       const sectionMap = new Map(sections.map((section) => [section.id, section]));
@@ -12894,7 +12907,8 @@ var appRouter = router({
       }
       const station = ctx.user?.testRole === "bar" ? "bar" : ctx.user?.testRole === "kitchen" ? "kitchen" : null;
       const grouped = /* @__PURE__ */ new Map();
-      for (const row of rows) {
+      for (const rawRow of rows) {
+        const row = { ...rawRow, itemName: resolveOrderItemName(rawRow.itemNameSnapshot, rawRow.currentItemName, "\u0635\u0646\u0641 \u0645\u0646\u064A\u0648") };
         const itemRule = rules.find((rule) => rule.menuItemId === row.menuItemId);
         const categoryRule = rules.find((rule) => rule.categoryId === row.categoryId && !rule.menuItemId);
         const routes = explicitSectionIds.length ? explicitSectionIds.map((id) => ({ id, source: "manual-selection" })) : [itemRule ? { id: itemRule.kitchenSectionId, source: "item-rule" } : categoryRule ? { id: categoryRule.kitchenSectionId, source: "category-rule" } : row.itemSectionId ? { id: row.itemSectionId, source: "item-section" } : row.categorySectionId ? { id: row.categorySectionId, source: "category-section" } : { id: null, source: "unassigned" }];
@@ -12941,16 +12955,16 @@ var appRouter = router({
       const menuInputItems = input.items.filter((item) => "menuItemId" in item && typeof item.menuItemId === "number");
       const retailInputItems = input.items.filter((item) => item.sourceType === "marketplace_variant");
       const menuIds = Array.from(new Set(menuInputItems.map((item) => item.menuItemId)));
-      const ownedItems = menuIds.length ? await db.select({ id: menuItems.id, categoryId: menuItems.categoryId, kitchenSectionId: menuItems.kitchenSectionId, price: menuItems.price, isAvailable: menuItems.isAvailable }).from(menuItems).where(and7(eq7(menuItems.restaurantId, input.restaurantId), inArray4(menuItems.id, menuIds))) : [];
+      const ownedItems = menuIds.length ? await db.select({ id: menuItems.id, name: menuItems.name, categoryId: menuItems.categoryId, kitchenSectionId: menuItems.kitchenSectionId, price: menuItems.price, isAvailable: menuItems.isAvailable }).from(menuItems).where(and7(eq7(menuItems.restaurantId, input.restaurantId), inArray4(menuItems.id, menuIds))) : [];
       if (ownedItems.length !== menuIds.length) throw new TRPCError7({ code: "FORBIDDEN", message: "\u064A\u0648\u062C\u062F \u0635\u0646\u0641 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       const categoryIds = Array.from(new Set(ownedItems.map((item) => item.categoryId)));
       const categoryRows = categoryIds.length ? await db.select({ id: menuCategories.id, kitchenSectionId: menuCategories.kitchenSectionId }).from(menuCategories).where(and7(eq7(menuCategories.restaurantId, input.restaurantId), inArray4(menuCategories.id, categoryIds))) : [];
       const categorySectionById = new Map(categoryRows.map((category) => [category.id, category.kitchenSectionId]));
-      const priceById = new Map(ownedItems.map((item) => [item.id, { price: Number(item.price), isAvailable: item.isAvailable, kitchenSectionId: item.kitchenSectionId ?? categorySectionById.get(item.categoryId) ?? null }]));
+      const priceById = new Map(ownedItems.map((item) => [item.id, { name: item.name, price: Number(item.price), isAvailable: item.isAvailable, kitchenSectionId: item.kitchenSectionId ?? categorySectionById.get(item.categoryId) ?? null }]));
       const retailVariantIds = Array.from(new Set(retailInputItems.map((item) => item.marketplaceVariantId)));
       const platformEntity = retailVariantIds.length ? (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq7(platformEntities.restaurantId, input.restaurantId)).limit(1))[0] : null;
       if (retailVariantIds.length && !platformEntity) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0645\u0646\u0634\u0623\u0629 NFOOD\u061B \u062A\u0639\u0630\u0631 \u0627\u0644\u062A\u062D\u0642\u0642 \u0645\u0646 \u0645\u0646\u062A\u062C\u0627\u062A \u0627\u0644\u062A\u062C\u0632\u0626\u0629" });
-      const retailRows = retailVariantIds.length ? await db.select({ variantId: marketplaceListingVariants.id, price: marketplaceListingVariants.price, stockQuantity: marketplaceListingVariants.stockQuantity, listingPrice: marketplaceListings.price, entityId: marketplaceListings.entityId, restaurantId: marketplaceListings.restaurantId, status: marketplaceListings.status, isActive: marketplaceListingVariants.isActive }).from(marketplaceListingVariants).innerJoin(marketplaceListings, eq7(marketplaceListingVariants.listingId, marketplaceListings.id)).where(and7(eq7(marketplaceListings.entityId, platformEntity.id), inArray4(marketplaceListingVariants.id, retailVariantIds))) : [];
+      const retailRows = retailVariantIds.length ? await db.select({ variantId: marketplaceListingVariants.id, listingName: marketplaceListings.title, price: marketplaceListingVariants.price, stockQuantity: marketplaceListingVariants.stockQuantity, listingPrice: marketplaceListings.price, entityId: marketplaceListings.entityId, restaurantId: marketplaceListings.restaurantId, status: marketplaceListings.status, isActive: marketplaceListingVariants.isActive }).from(marketplaceListingVariants).innerJoin(marketplaceListings, eq7(marketplaceListingVariants.listingId, marketplaceListings.id)).where(and7(eq7(marketplaceListings.entityId, platformEntity.id), inArray4(marketplaceListingVariants.id, retailVariantIds))) : [];
       if (retailRows.length !== retailVariantIds.length) throw new TRPCError7({ code: "FORBIDDEN", message: "\u064A\u0648\u062C\u062F \u0645\u0646\u062A\u062C \u062A\u062C\u0632\u0626\u0629 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u062A\u062C\u0631" });
       const retailById = new Map(retailRows.map((row) => [row.variantId, row]));
       const authoritativeItems = input.items.map((item) => {
@@ -12958,12 +12972,12 @@ var appRouter = router({
           const variant = retailById.get(item.marketplaceVariantId);
           if (!variant || variant.status !== "active" || !variant.isActive) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0623\u062D\u062F \u0645\u0646\u062A\u062C\u0627\u062A \u0627\u0644\u062A\u062C\u0632\u0626\u0629 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u062D\u0627\u0644\u064A\u064B\u0627" });
           if (variant.stockQuantity < item.quantity) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0644\u0643\u0645\u064A\u0629 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629 \u063A\u064A\u0631 \u0645\u062A\u0648\u0641\u0631\u0629 \u0641\u064A \u0627\u0644\u0645\u062E\u0632\u0648\u0646" });
-          return { sourceType: "marketplace_variant", marketplaceVariantId: item.marketplaceVariantId, menuItemId: null, quantity: item.quantity, unitPrice: Number(variant.price ?? variant.listingPrice).toFixed(2), kitchenSectionId: null };
+          return { sourceType: "marketplace_variant", marketplaceVariantId: item.marketplaceVariantId, menuItemId: null, itemNameSnapshot: variant.listingName, quantity: item.quantity, unitPrice: Number(variant.price ?? variant.listingPrice).toFixed(2), kitchenSectionId: null };
         }
         const catalogItem = priceById.get(item.menuItemId);
         if (!catalogItem) throw new TRPCError7({ code: "FORBIDDEN", message: "\u064A\u0648\u062C\u062F \u0635\u0646\u0641 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
         if (!catalogItem.isAvailable) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0623\u062D\u062F \u0627\u0644\u0623\u0635\u0646\u0627\u0641 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u062D\u0627\u0644\u064A\u064B\u0627" });
-        return { sourceType: "menu_item", marketplaceVariantId: null, menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: catalogItem.price.toFixed(2), kitchenSectionId: catalogItem.kitchenSectionId };
+        return { sourceType: "menu_item", marketplaceVariantId: null, menuItemId: item.menuItemId, itemNameSnapshot: catalogItem.name, quantity: item.quantity, unitPrice: catalogItem.price.toFixed(2), kitchenSectionId: catalogItem.kitchenSectionId };
       });
       const normalizedItems = Array.from(authoritativeItems.reduce((map, item) => {
         const key = item.sourceType === "marketplace_variant" ? `retail:${item.marketplaceVariantId}` : `menu:${item.menuItemId}`;
@@ -13007,7 +13021,7 @@ var appRouter = router({
           }
           const [orderResult] = await tx.insert(orders).values({ restaurantId: input.restaurantId, branchId: input.branchId, kitchenSectionId: normalizedItems.find((item) => item.kitchenSectionId)?.kitchenSectionId ?? null, routingSectionIdsJson: routingSectionIds.length ? JSON.stringify(routingSectionIds) : null, clientRequestId: input.clientRequestId ?? null, tableName: input.tableName ?? null, notes: input.notes ?? null, cashierNotes: input.cashierNotes ?? null, channel: input.channel, paymentMethod: input.paymentMethod, paymentStatus: "unpaid", receiptPrintStatus: "queued", paymentSplitsJson: paymentSplits.length ? JSON.stringify(paymentSplits) : null, countryCode: restaurant[0].countryCode, currencyCode: restaurant[0].currencyCode, currencyDecimals: restaurant[0].currencyDecimals, subtotal: centsToMoney(pricing.subtotalCents), discountAmount: centsToMoney(pricing.discountCents), taxAmount: centsToMoney(pricing.taxCents), serviceFeeAmount: centsToMoney(pricing.serviceFeeCents), tipAmount: centsToMoney(pricing.tipCents), total: authoritativeTotal, status: "new" });
           const orderId = Number(orderResult.insertId);
-          const rows = normalizedItems.map((item) => ({ orderId, menuItemId: item.menuItemId, sourceType: item.sourceType, marketplaceVariantId: item.marketplaceVariantId, quantity: item.quantity, unitPrice: item.unitPrice }));
+          const rows = normalizedItems.map((item) => ({ orderId, menuItemId: item.menuItemId, sourceType: item.sourceType, marketplaceVariantId: item.marketplaceVariantId, itemNameSnapshot: item.itemNameSnapshot, quantity: item.quantity, unitPrice: item.unitPrice }));
           await tx.insert(orderItems).values(rows);
           await insertAuditLog({ restaurantId: input.restaurantId, branchId: input.branchId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "order.create", entityType: "order", entityId: String(orderId), outcome: "success", requestId: nanoid4(12) });
           return { success: true, orderId, status: "new", paymentStatus: "unpaid", currency: { countryCode: restaurant[0].countryCode, currencyCode: restaurant[0].currencyCode, decimals: restaurant[0].currencyDecimals }, pricing: { subtotal: centsToMoney(pricing.subtotalCents), discountPercent: pricing.discountPercent, discountAmount: centsToMoney(pricing.discountCents), taxPercent: pricing.taxPercent, taxAmount: centsToMoney(pricing.taxCents), serviceFeePercent: pricing.serviceFeePercent, serviceFeeAmount: centsToMoney(pricing.serviceFeeCents), tipPercent: pricing.tipPercent, tipAmount: centsToMoney(pricing.tipCents), total: authoritativeTotal, couponCode: coupon?.code ?? null, discountSource: coupon ? "coupon_or_default" : "default" } };
