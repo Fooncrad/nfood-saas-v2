@@ -7,7 +7,14 @@ import { createServer as createViteServer } from "vite";
 import viteConfig from "../../vite.config";
 
 export function prepareDevTemplate(template: string, analyticsEndpoint = process.env.VITE_ANALYTICS_ENDPOINT?.trim(), analyticsId = process.env.VITE_ANALYTICS_WEBSITE_ID?.trim()) {
-  const withEntryVersion = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid()}"`);
+  const withoutViteClient = template.replace(
+    /\s*<script\b[^>]*src=["']\/?@vite\/client[^"'][^>]*><\/script>/gi,
+    "",
+  );
+  const withEntryVersion = withoutViteClient.replace(
+    `src="/src/main.tsx"`,
+    `src="/src/main.tsx?v=${nanoid()}"`,
+  );
   return analyticsEndpoint && analyticsId
     ? withEntryVersion.replaceAll("%VITE_ANALYTICS_ENDPOINT%", analyticsEndpoint).replaceAll("%VITE_ANALYTICS_WEBSITE_ID%", analyticsId)
     : withEntryVersion.replace(/\s*<script defer src="%VITE_ANALYTICS_ENDPOINT%\/umami" data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"><\/script>/, "");
