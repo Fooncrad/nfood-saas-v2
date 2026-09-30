@@ -37,9 +37,13 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  app.use(vite.middlewares);
+  // Serve the entry document before Vite's middleware. In middleware mode Vite
+  // can otherwise transform the HTML and inject /@vite/client, whose HMR
+  // socket is unavailable behind the managed preview proxy.
   app.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
+    if (req.method !== "GET" || !req.headers.accept?.includes("text/html")) {
+      return next();
+    }
 
     try {
       const clientTemplate = path.resolve(
