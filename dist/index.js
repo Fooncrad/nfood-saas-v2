@@ -1219,7 +1219,7 @@ var testAccounts = mysqlTable("testAccounts", {
   email: varchar("email", { length: 320 }).notNull().unique(),
   displayName: varchar("displayName", { length: 120 }).notNull(),
   phone: varchar("phone", { length: 40 }),
-  role: mysqlEnum("role", ["admin", "restaurant_admin", "waiter", "kitchen", "bar", "cashier", "customer", "driver"]).notNull(),
+  role: mysqlEnum("role", ["admin", "restaurant_admin", "waiter", "kitchen", "bar", "cashier", "accountant", "customer", "driver"]).notNull(),
   passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
   permissionsJson: text("permissionsJson"),
   isActive: boolean("isActive").default(true).notNull(),
@@ -3471,6 +3471,10 @@ async function upsertUser(user) {
   } else if (user.openId === ENV.ownerOpenId) {
     values.role = "admin";
     updateSet.role = "admin";
+  }
+  if (user.accountRole !== void 0) {
+    values.accountRole = user.accountRole;
+    updateSet.accountRole = user.accountRole;
   }
   if (!values.lastSignedIn) values.lastSignedIn = /* @__PURE__ */ new Date();
   if (!Object.keys(updateSet).length) updateSet.lastSignedIn = /* @__PURE__ */ new Date();
@@ -10626,7 +10630,7 @@ var appRouter = router({
       const accounts = await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, email: testAccounts.email, displayName: testAccounts.displayName, phone: testAccounts.phone, role: testAccounts.role, permissionsJson: testAccounts.permissionsJson, isActive: testAccounts.isActive, createdAt: testAccounts.createdAt }).from(testAccounts).where(eq7(testAccounts.restaurantId, input.restaurantId));
       return Promise.all(accounts.map(async (account) => {
         const openId = `test_${account.id}`;
-        await upsertUser({ openId, name: account.displayName, email: account.email, loginMethod: "test", role: "user", lastSignedIn: /* @__PURE__ */ new Date() });
+        await upsertUser({ openId, name: account.displayName, email: account.email, loginMethod: "test", role: "user", accountRole: account.role, lastSignedIn: /* @__PURE__ */ new Date() });
         return { ...account, userId: (await db.select({ id: users.id }).from(users).where(eq7(users.openId, openId)).limit(1))[0]?.id ?? null };
       }));
     }),
@@ -10642,7 +10646,7 @@ var appRouter = router({
       const assignments = linkedUser ? await db.select({ id: waiterTableAssignments.id, branchId: waiterTableAssignments.branchId, tableId: waiterTableAssignments.tableId, tableName: restaurantTables.name, assignedAt: waiterTableAssignments.createdAt }).from(waiterTableAssignments).innerJoin(restaurantTables, eq7(waiterTableAssignments.tableId, restaurantTables.id)).where(and7(eq7(waiterTableAssignments.restaurantId, input.restaurantId), eq7(waiterTableAssignments.waiterUserId, linkedUser.id))).orderBy(desc3(waiterTableAssignments.createdAt)) : [];
       return { ...account, userId: linkedUser?.id ?? null, lastSignedIn: linkedUser?.lastSignedIn ?? null, activity, calls, assignments };
     }),
-    createTeamAccount: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), email: z3.string().email().max(320), displayName: z3.string().trim().min(2).max(120), phone: z3.string().trim().min(7).max(40).optional(), role: z3.enum(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver"]), permissions: z3.array(z3.string().trim().min(2).max(80)).max(40).optional(), password: z3.string().min(8).max(128) })).mutation(async ({ ctx, input }) => {
+    createTeamAccount: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), email: z3.string().email().max(320), displayName: z3.string().trim().min(2).max(120), phone: z3.string().trim().min(7).max(40).optional(), role: z3.enum(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "accountant", "driver"]), permissions: z3.array(z3.string().trim().min(2).max(80)).max(40).optional(), password: z3.string().min(8).max(128) })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
@@ -10653,11 +10657,11 @@ var appRouter = router({
       const passwordHash = `scrypt$${salt}$${scryptSync2(input.password, Buffer.from(salt, "base64"), 64).toString("base64")}`;
       const result = await db.insert(testAccounts).values({ restaurantId: input.restaurantId, email, displayName: input.displayName.trim(), phone: input.phone?.trim() || null, role: input.role, permissionsJson: input.permissions?.length ? JSON.stringify(Array.from(new Set(input.permissions))) : null, passwordHash, isActive: true });
       const accountId = Number(result[0].insertId);
-      await upsertUser({ openId: `test_${accountId}`, name: input.displayName.trim(), email, loginMethod: "test", role: "user", lastSignedIn: /* @__PURE__ */ new Date() });
+      await upsertUser({ openId: `test_${accountId}`, name: input.displayName.trim(), email, loginMethod: "test", role: "user", accountRole: input.role, lastSignedIn: /* @__PURE__ */ new Date() });
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "team.account.created", entityType: "team_account", entityId: String(accountId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ email, role: input.role, hasPhone: Boolean(input.phone) }) });
       return { success: true, id: accountId, userId: (await getUserByOpenId(`test_${accountId}`))?.id ?? null };
     }),
-    updateTeamAccount: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive(), displayName: z3.string().trim().min(2).max(120).optional(), phone: z3.string().trim().min(7).max(40).nullable().optional(), role: z3.enum(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver"]).optional(), permissions: z3.array(z3.string().trim().min(2).max(80)).max(40).optional(), isActive: z3.boolean().optional(), password: z3.string().min(8).max(128).optional() })).mutation(async ({ ctx, input }) => {
+    updateTeamAccount: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive(), displayName: z3.string().trim().min(2).max(120).optional(), phone: z3.string().trim().min(7).max(40).nullable().optional(), role: z3.enum(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "accountant", "driver"]).optional(), permissions: z3.array(z3.string().trim().min(2).max(80)).max(40).optional(), isActive: z3.boolean().optional(), password: z3.string().min(8).max(128).optional() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
@@ -10674,6 +10678,7 @@ var appRouter = router({
         changes.passwordHash = `scrypt$${salt}$${scryptSync2(input.password, Buffer.from(salt, "base64"), 64).toString("base64")}`;
       }
       await db.update(testAccounts).set(changes).where(eq7(testAccounts.id, input.id));
+      if (input.role) await db.update(users).set({ accountRole: input.role, updatedAt: /* @__PURE__ */ new Date() }).where(eq7(users.openId, `test_${input.id}`));
       if (input.password) {
         const linkedUser = (await db.select({ id: users.id }).from(users).where(eq7(users.openId, `test_${input.id}`)).limit(1))[0];
         if (linkedUser) await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(authSessions.userId, linkedUser.id), isNull4(authSessions.revokedAt)));
