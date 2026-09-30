@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { authenticatedLandingPath, effectiveAccountRole, isRestaurantAreaAccount } from "./lib/authRouting";
 
 const read = (relativePath: string) => readFileSync(resolve(process.cwd(), "client/src", relativePath), "utf8");
 
@@ -88,6 +89,25 @@ describe("dashboard theme, notifications, and shortcuts", () => {
     for (const procedure of ["restaurants", "subscriptions", "customers", "saasMetrics"]) expect(admin).toContain(`trpc.admin.${procedure}.useQuery`);
     expect(admin).toContain("trpc.notifications.mine.useQuery");
     expect(admin).toContain("onLogout");
+  });
+
+  it("keeps staff and administrators out of customer-only routes", () => {
+    for (const role of ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "driver", "accountant"]) {
+      const user = { accountRole: role };
+      expect(effectiveAccountRole(user)).toBe(role);
+      expect(isRestaurantAreaAccount(user)).toBe(true);
+      expect(authenticatedLandingPath(user, "/customer-portal")).toBe("/restaurant/dashboard");
+    }
+
+    expect(authenticatedLandingPath({ role: "admin" }, "/customer-portal")).toBe("/admin");
+    expect(authenticatedLandingPath({ accountRole: "customer" }, "/restaurant/dashboard")).toBe("/customer-portal");
+    expect(authenticatedLandingPath({ accountRole: "customer" }, "/menu/nasser")).toBe("/menu/nasser");
+
+    const app = read("App.tsx");
+    const login = read("pages/LoginPage.tsx");
+    expect(app).toContain("isRestaurantAreaAccount(user)");
+    expect(app).not.toContain("const teamRole = user?.testRole");
+    expect(login).toContain("authenticatedLandingPath(user, next)");
   });
 
 });
