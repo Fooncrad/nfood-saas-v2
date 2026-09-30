@@ -67,8 +67,15 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   // Keep Vite's asset transforms available without enabling its HMR client.
-  // The managed preview proxy does not forward Vite's websocket endpoint, so
-  // the HTML route above must remain responsible for preventing client injection.
+  // Some preview layers can retain an older HTML response that still points at
+  // /@vite/client. Return a harmless module for that URL so the stale client
+  // cannot open a WebSocket that the managed preview proxy does not expose.
+  app.get("/@vite/client", (_req, res) => {
+    res.status(200).type("application/javascript").send("export {};\n");
+  });
+  app.get("/@vite/env", (_req, res) => {
+    res.status(200).type("application/javascript").send("export {};\n");
+  });
   app.use(vite.middlewares);
 }
 
