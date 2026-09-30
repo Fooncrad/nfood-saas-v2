@@ -1,0 +1,1 @@
+ALTER TABLE `orderItems`\n  ADD COLUMN `itemNameSnapshot` varchar(240) NULL AFTER `marketplaceVariantId`;\n

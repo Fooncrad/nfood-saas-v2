@@ -838,6 +838,7 @@ export const orderItems = mysqlTable("orderItems", {
   menuItemId: int("menuItemId"),
   sourceType: mysqlEnum("sourceType", ["menu_item", "marketplace_variant"]).default("menu_item").notNull(),
   marketplaceVariantId: int("marketplaceVariantId"),
+  itemNameSnapshot: varchar("itemNameSnapshot", { length: 240 }),
   quantity: int("quantity").default(1).notNull(),
   unitPrice: decimal("unitPrice", { precision: 10, scale: 2 }).notNull(),
   selectedAddonsJson: text("selectedAddonsJson"),

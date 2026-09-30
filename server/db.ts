@@ -9,6 +9,7 @@ import { normalizeMenuTemplateSchedule, resolveActiveMenuTemplate } from "../sha
 import { normalizeBranchReservationWindow } from "../shared/reservationAvailability";
 import { sendPushToUser } from "./push";
 import { databaseErrorCode, isMissingDatabaseTableError } from "./databaseError";
+import { resolveOrderItemName } from "./orderItemSnapshot";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _dbUrlWarningShown = false;
@@ -270,6 +271,7 @@ export async function listCustomerOrders(customerId: number, limit = 100) {
     sourceType: orderItems.sourceType,
     menuItemId: orderItems.menuItemId,
     marketplaceVariantId: orderItems.marketplaceVariantId,
+    itemNameSnapshot: orderItems.itemNameSnapshot,
     quantity: orderItems.quantity,
     unitPrice: orderItems.unitPrice,
     menuItemName: menuItems.name,
@@ -288,7 +290,7 @@ export async function listCustomerOrders(customerId: number, limit = 100) {
     marketplaceVariantId: item.marketplaceVariantId,
     quantity: item.quantity,
     unitPrice: item.unitPrice,
-    name: item.sourceType === "marketplace_variant" ? (item.marketplaceItemName ?? "منتج متجر") : (item.menuItemName ?? "صنف منيو"),
+    name: resolveOrderItemName(item.itemNameSnapshot, item.sourceType === "marketplace_variant" ? item.marketplaceItemName : item.menuItemName, item.sourceType === "marketplace_variant" ? "منتج متجر" : "صنف منيو"),
     sku: item.sourceType === "marketplace_variant" ? item.marketplaceSku : null,
     barcode: item.sourceType === "marketplace_variant" ? item.marketplaceBarcode : null,
   }));
@@ -767,6 +769,7 @@ export async function listOrdersByRestaurant(restaurantId: number, limit = 200) 
     sourceType: orderItems.sourceType,
     menuItemId: orderItems.menuItemId,
     marketplaceVariantId: orderItems.marketplaceVariantId,
+    itemNameSnapshot: orderItems.itemNameSnapshot,
     menuItemName: menuItems.name,
     marketplaceItemName: marketplaceListings.title,
     marketplaceSku: marketplaceListingVariants.sku,
@@ -787,7 +790,7 @@ export async function listOrdersByRestaurant(restaurantId: number, limit = 200) 
     sourceType: item.sourceType,
     menuItemId: item.menuItemId,
     marketplaceVariantId: item.marketplaceVariantId,
-    itemName: item.sourceType === "marketplace_variant" ? (item.marketplaceItemName ?? "منتج متجر") : (item.menuItemName ?? "صنف منيو"),
+    itemName: resolveOrderItemName(item.itemNameSnapshot, item.sourceType === "marketplace_variant" ? item.marketplaceItemName : item.menuItemName, item.sourceType === "marketplace_variant" ? "منتج متجر" : "صنف منيو"),
     quantity: item.quantity,
     unitPrice: item.unitPrice,
     categoryName: item.sourceType === "marketplace_variant" ? null : item.categoryName,
