@@ -42,6 +42,7 @@ import { getDb, getMerchantRestaurantId, getPlatformSettings, insertAuditLog } f
 import { sendPushToUser } from "./push";
 import { COUNTRIES, CURRENCIES } from "../shared/currencies";
 import { buildAdminStoreRouterPlan } from "./adminStoreRouterPlan";
+import { aggregateMarketplaceSectorCounts } from "./marketplaceCounts";
 
 async function getProviderEntity(user: AuthUser) {
   const db = await getDb();
@@ -166,13 +167,16 @@ export const marketplaceRouter = router({
     const counts = entityIds.length
       ? await db.select({ sectorId: marketplaceListings.sectorId, total: sql<number>`count(*)` }).from(marketplaceListings).where(and(eq(marketplaceListings.status, "active"), inArray(marketplaceListings.entityId, entityIds))).groupBy(marketplaceListings.sectorId)
       : [];
-    const countMap = new Map(counts.map((row) => [Number(row.sectorId), Number(row.total)]));
     const restaurantIds = entities.flatMap((entity) => entity.sector === "restaurant" && entity.restaurantId ? [Number(entity.restaurantId)] : []);
     const restaurantMenuCount = restaurantIds.length
       ? Number((await db.select({ total: sql<number>`count(*)` }).from(menuItems).where(and(inArray(menuItems.restaurantId, restaurantIds), eq(menuItems.isAvailable, true))))[0]?.total ?? 0)
       : 0;
     const restaurantSector = sectors.find((sector) => sector.slug === "restaurant");
-    if (restaurantSector && restaurantMenuCount > 0) countMap.set(restaurantSector.id, restaurantMenuCount);
+    const countMap = aggregateMarketplaceSectorCounts(
+      counts.map((row) => [Number(row.sectorId), Number(row.total)]),
+      restaurantSector?.id,
+      restaurantMenuCount,
+    );
     return sectors.map((sector) => ({ ...sector, listingCount: countMap.get(sector.id) ?? 0 }));
   }),
   publicFeaturedStores: publicProcedure.input(z.object({
