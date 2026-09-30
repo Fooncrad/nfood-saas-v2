@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MySqlDialect } from "drizzle-orm/mysql-core";
 import { getDb } from "./db";
 import { getEffectivePermissionKeys, requireScopedPermission } from "./rbac";
+import { isMissingDatabaseTableError } from "./databaseError";
 
 vi.mock("./db", () => ({ getDb: vi.fn() }));
 const where = vi.fn();
@@ -50,5 +51,17 @@ describe("scoped permission resolution", () => {
   it("fails closed when the database is unavailable", async () => {
     vi.mocked(getDb).mockResolvedValue(null);
     await expect(requireScopedPermission(10, "orders.refund")).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+  });
+});
+
+describe("optional database table error classification", () => {
+  it("recognizes direct and wrapped MySQL missing-table errors", () => {
+    expect(isMissingDatabaseTableError({ code: "ER_NO_SUCH_TABLE" })).toBe(true);
+    expect(isMissingDatabaseTableError({ cause: { errno: 1146 } })).toBe(true);
+  });
+
+  it("does not swallow connection or permission failures", () => {
+    expect(isMissingDatabaseTableError({ code: "ER_ACCESS_DENIED_ERROR", errno: 1045 })).toBe(false);
+    expect(isMissingDatabaseTableError({ cause: { code: "ECONNRESET" } })).toBe(false);
   });
 });
