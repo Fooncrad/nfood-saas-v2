@@ -2357,24 +2357,36 @@ async function sendPushToUser(userId, payload) {
 }
 
 // server/databaseError.ts
-function isMissingDatabaseTableError(error) {
+function databaseErrorChain(error) {
+  const chain = [];
   let current = error;
   for (let depth = 0; depth < 6 && current && typeof current === "object"; depth += 1) {
     const candidate = current;
-    if (candidate.code === "ER_NO_SUCH_TABLE" || candidate.errno === 1146) return true;
+    chain.push(candidate);
     current = candidate.cause;
   }
-  return false;
+  return chain;
+}
+function databaseErrorCode(error) {
+  for (const candidate of databaseErrorChain(error)) {
+    if (typeof candidate.code === "string" && candidate.code) return candidate.code;
+    if (typeof candidate.errno === "number") return String(candidate.errno);
+  }
+  return "UNKNOWN";
+}
+function isMissingDatabaseTableError(error) {
+  return databaseErrorChain(error).some((candidate) => candidate.code === "ER_NO_SUCH_TABLE" || candidate.errno === 1146);
 }
 
 // server/db.ts
 var _db = null;
 var _dbUrlWarningShown = false;
-var missingOptionalTableWarnings = /* @__PURE__ */ new Set();
-function warnMissingOptionalTable(tableName) {
-  if (missingOptionalTableWarnings.has(tableName)) return;
-  missingOptionalTableWarnings.add(tableName);
-  console.warn(`[database] Optional table ${tableName} is missing; public reads are using safe defaults until migrations are applied.`);
+var optionalPublicReadWarnings = /* @__PURE__ */ new Set();
+function warnOptionalPublicReadFailure(tableName, error) {
+  if (optionalPublicReadWarnings.has(tableName)) return;
+  optionalPublicReadWarnings.add(tableName);
+  const reason = isMissingDatabaseTableError(error) ? "missing-table" : databaseErrorCode(error);
+  console.warn(`[database] Optional public read failed for ${tableName} (${reason}); using safe defaults.`);
 }
 function getDatabaseUrl() {
   const raw = process.env.DATABASE_URL;
@@ -3308,8 +3320,7 @@ async function getPlatformSettings() {
     }
     return defaults;
   } catch (error) {
-    if (!isMissingDatabaseTableError(error)) throw error;
-    warnMissingOptionalTable("platformSettings");
+    warnOptionalPublicReadFailure("platformSettings", error);
     return defaults;
   }
 }
@@ -4590,8 +4601,7 @@ async function listPublishedUiTranslations(targetLanguage) {
   try {
     return await db.select({ translationKey: uiTranslationEntries.translationKey, sourceText: uiTranslationEntries.sourceText, targetLanguage: uiTranslationEntries.targetLanguage, translatedText: uiTranslationEntries.translatedText }).from(uiTranslationEntries).where(and2(...conditions)).orderBy(uiTranslationEntries.translationKey);
   } catch (error) {
-    if (!isMissingDatabaseTableError(error)) throw error;
-    warnMissingOptionalTable("uiTranslationEntries");
+    warnOptionalPublicReadFailure("uiTranslationEntries", error);
     return [];
   }
 }
