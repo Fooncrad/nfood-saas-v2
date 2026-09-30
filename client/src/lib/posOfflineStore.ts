@@ -16,16 +16,40 @@ const STORE = "outbox";
 const MAX_ATTEMPTS = 5;
 const TERMINAL_CODES = new Set(["BAD_REQUEST", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND", "PRECONDITION_FAILED", "UNPROCESSABLE_CONTENT"]);
 
-function getTrpcErrorCode(error: unknown) {
-  if (!error || typeof error !== "object") return undefined;
-  const candidate = error as { data?: { code?: string }; shape?: { data?: { code?: string } } };
-  return candidate.data?.code ?? candidate.shape?.data?.code;
+export type PosOfflineErrorDisposition = "duplicate" | "terminal" | "retry";
+
+type ErrorDetails = {
+  code?: string;
+  httpStatus?: number;
+};
+
+function getTrpcErrorDetails(error: unknown, seen = new Set<object>()): ErrorDetails {
+  if (!error || typeof error !== "object" || seen.has(error)) return {};
+  seen.add(error);
+  const candidate = error as {
+    data?: { code?: string; httpStatus?: number };
+    shape?: { data?: { code?: string; httpStatus?: number } };
+    cause?: unknown;
+    status?: number;
+    response?: { status?: number };
+  };
+  const nested = getTrpcErrorDetails(candidate.cause, seen);
+  return {
+    code: candidate.data?.code ?? candidate.shape?.data?.code ?? nested.code,
+    httpStatus: candidate.data?.httpStatus ?? candidate.shape?.data?.httpStatus ?? candidate.response?.status ?? candidate.status ?? nested.httpStatus,
+  };
+}
+
+export function classifyPosOfflineError(error: unknown): PosOfflineErrorDisposition {
+  const { code, httpStatus } = getTrpcErrorDetails(error);
+  if (code === "CONFLICT") return "duplicate";
+  if (code && TERMINAL_CODES.has(code)) return "terminal";
+  if (typeof httpStatus === "number" && httpStatus >= 400 && httpStatus < 500 && httpStatus !== 408 && httpStatus !== 429) return "terminal";
+  return "retry";
 }
 
 export function shouldRetryPosOffline(error: unknown) {
-  const code = getTrpcErrorCode(error);
-  if (!code) return true;
-  return !TERMINAL_CODES.has(code) && code !== "CONFLICT";
+  return classifyPosOfflineError(error) === "retry";
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -129,7 +153,15 @@ export async function replayPosOffline<T>(
       await removePosOffline(item.id);
       synced += 1;
     } catch (error) {
-      const terminal = !shouldRetryPosOffline(error);
+      const disposition = classifyPosOfflineError(error);
+      if (disposition === "duplicate") {
+        // The server already accepted this clientRequestId; removing it prevents
+        // a duplicate sale without misclassifying the order as invalid.
+        await removePosOffline(item.id);
+        synced += 1;
+        continue;
+      }
+      const terminal = disposition === "terminal";
       await markPosOfflineFailure(item, error, terminal);
       // A bad entry should not block valid orders queued behind it.
       if (!terminal) break;
