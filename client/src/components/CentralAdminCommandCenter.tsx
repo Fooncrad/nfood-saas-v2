@@ -76,13 +76,14 @@ const NAV_ICONS: Record<CentralAdminNavKey, LucideIcon> = {
   devAgent: Bot,
 };
 
-type AdminOrderStatus = "review" | "pending" | "payment" | "completed";
+type AdminOrderStatus = "review" | "pending" | "payment" | "completed" | "cancelled";
 
 const ORDER_STATUS_MAP: Record<Order["status"], AdminOrderStatus> = {
   new: "review",
   preparing: "pending",
   ready: "payment",
   completed: "completed",
+  cancelled: "cancelled",
 };
 
 const STATUS_META: Record<AdminOrderStatus, { label: { ar: string; en: string }; badge: string; dot: string }> = {
@@ -90,6 +91,7 @@ const STATUS_META: Record<AdminOrderStatus, { label: { ar: string; en: string };
   pending: { label: { ar: "قيد المعالجة", en: "Processing" }, badge: "border-sky-200 bg-sky-50 text-sky-600", dot: "bg-sky-500" },
   payment: { label: { ar: "بانتظار الدفع", en: "Awaiting payment" }, badge: "border-violet-200 bg-violet-50 text-violet-600", dot: "bg-violet-500" },
   completed: { label: { ar: "مكتمل", en: "Completed" }, badge: "border-emerald-200 bg-emerald-50 text-emerald-600", dot: "bg-emerald-500" },
+  cancelled: { label: { ar: "ملغى", en: "Cancelled" }, badge: "border-red-200 bg-red-50 text-red-600", dot: "bg-red-500" },
 };
 
 const COPY_AR = {
@@ -471,7 +473,7 @@ export function CentralAdminCommandCenter({
           />
         </div>
         <div className="flex items-center gap-1 rounded-xl border p-1" style={{ borderColor: divider }}>
-          {(["all", "review", "pending", "payment", "completed"] as const).map((key) => (
+          {(["all", "review", "pending", "payment", "completed", "cancelled"] as const).map((key) => (
             <button
               key={key}
               type="button"

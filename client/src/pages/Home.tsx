@@ -304,15 +304,16 @@ function ModuleView({ active, orders, advanceOrder, setActive, restaurantId, ord
   const info = labels[active]; const Icon = info.icon;
   if (active === "subscription") return <RestaurantSubscriptionCenter restaurantId={restaurantId} />;
   if (active === "orders" || active === "kds") {
-    const stages = (["new", "preparing", "ready", "completed"] as OrderStatus[]);
+    const stages = (["new", "preparing", "ready", "completed", "cancelled"] as OrderStatus[]);
     const stageMeta: Record<OrderStatus, { hint: string; dot: string; surface: string }> = {
       new: { hint: "وصلت الآن وتحتاج قبول", dot: "bg-orange-500", surface: "bg-orange-50/60" },
       preparing: { hint: "قيد التجهيز في المطبخ", dot: "bg-blue-500", surface: "bg-blue-50/60" },
       ready: { hint: "جاهزة للتقديم أو التسليم", dot: "bg-emerald-500", surface: "bg-emerald-50/60" },
       completed: { hint: "أغلقت بنجاح", dot: "bg-slate-400", surface: "bg-slate-50/80" },
+      cancelled: { hint: "ألغي ولن ينتقل إلى مرحلة أخرى", dot: "bg-red-500", surface: "bg-red-50/80" },
     };
     return <section className="space-y-5">
-      <div className="overflow-hidden rounded-[28px] bg-[#0d2138] text-white shadow-sm"><div className="flex flex-wrap items-center justify-between gap-4 p-6 sm:p-7"><div><div className="mb-2 flex items-center gap-2 text-xs font-bold text-orange-300"><span className="h-2 w-2 rounded-full bg-emerald-400" />مركز تشغيل الطلبات</div><h2 className="text-2xl font-black">{info.title}</h2><p className="mt-2 text-sm text-slate-300">{active === "kds" ? "متابعة تدفق المطبخ وحالة التجهيز لحظة بلحظة." : "استقبل الطلبات وتابعها من الوصول حتى الإغلاق."}</p></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{stages.map((status) => <div key={status} className="min-w-24 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center"><p className="text-2xl font-black">{orders.filter((o) => o.status === status).length}</p><p className="mt-1 text-[10px] text-slate-300">{statusLabels[status]}</p></div>)}</div></div></div>
+      <div className="overflow-hidden rounded-[28px] bg-[#0d2138] text-white shadow-sm"><div className="flex flex-wrap items-center justify-between gap-4 p-6 sm:p-7"><div><div className="mb-2 flex items-center gap-2 text-xs font-bold text-orange-300"><span className="h-2 w-2 rounded-full bg-emerald-400" />مركز تشغيل الطلبات</div><h2 className="text-2xl font-black">{info.title}</h2><p className="mt-2 text-sm text-slate-300">{active === "kds" ? "متابعة تدفق المطبخ وحالة التجهيز لحظة بلحظة." : "استقبل الطلبات وتابعها من الوصول حتى الإغلاق."}</p></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-5">{stages.map((status) => <div key={status} className="min-w-24 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center"><p className="text-2xl font-black">{orders.filter((o) => o.status === status).length}</p><p className="mt-1 text-[10px] text-slate-300">{statusLabels[status]}</p></div>)}</div></div></div>
       {ordersLoading && <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-500 shadow-sm">جارٍ مزامنة الطلبات...</div>}
       {ordersError && <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">تعذر مزامنة الطلبات مع الحساب الحالي. Request ID: orders-{restaurantId}</div>}
       {!ordersLoading && !ordersError && orders.length === 0 && <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center"><ShoppingBag className="mx-auto h-10 w-10 text-slate-300" /><p className="mt-3 font-black text-slate-700">لا توجد طلبات حالية</p><p className="mt-1 text-xs text-slate-500">ستظهر الطلبات الجديدة هنا فور وصولها.</p></div>}

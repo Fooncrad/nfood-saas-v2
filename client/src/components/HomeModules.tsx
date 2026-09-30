@@ -322,14 +322,14 @@ export function ModuleView({
 }) {
   const kdsOrdersByStatus = useMemo(
     () =>
-      (["new", "preparing", "ready", "completed"] as OrderStatus[]).reduce<
+      (["new", "preparing", "ready", "completed", "cancelled"] as OrderStatus[]).reduce<
         Record<OrderStatus, Order[]>
       >(
         (groups, status) => {
           groups[status] = orders.filter(order => order.status === status);
           return groups;
         },
-        { new: [], preparing: [], ready: [], completed: [] }
+        { new: [], preparing: [], ready: [], completed: [], cancelled: [] }
       ),
     [orders]
   );
