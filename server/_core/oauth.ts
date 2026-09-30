@@ -5,6 +5,7 @@ import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 import { nanoid } from "nanoid";
+import { oauthLandingPath } from "../oauthRouting";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -79,11 +80,8 @@ export function registerOAuthRoutes(app: Express) {
       // competing test cookie that can shadow the newly authenticated account.
       res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      if (user?.role === "admin" || user?.accountRole === "admin") return res.redirect(302, "/admin");
-      // Never return an authenticated Google session to the login route itself.
-      if (returnTo && !/^\/login(?:[/?#]|$)/.test(returnTo)) return res.redirect(302, returnTo);
       const restaurantId = user ? await db.getMerchantRestaurantId(user.id) : null;
-      return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/customer-portal?oauth=google");
+      return res.redirect(302, oauthLandingPath(user, restaurantId, returnTo, "/customer-portal?oauth=google"));
     } catch (error) { console.error("[Google OAuth] Callback failed", error); return res.redirect(302, "/login?oauth=google_failed"); }
   });
 
@@ -143,9 +141,8 @@ export function registerOAuthRoutes(app: Express) {
       res.clearCookie(COOKIE_NAME, cookieOptions);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      if (user?.role === "admin") return res.redirect(302, "/admin");
       const restaurantId = user ? await db.getMerchantRestaurantId(user.id) : null;
-      return res.redirect(302, restaurantId ? "/restaurant/dashboard" : "/customer-portal");
+      return res.redirect(302, oauthLandingPath(user, restaurantId));
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });
