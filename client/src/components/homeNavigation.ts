@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import type { TranslationKey } from "@/contexts/LanguageContext";
 
-export type OrderStatus = "new" | "preparing" | "ready" | "completed";
+export type OrderStatus = "new" | "preparing" | "ready" | "completed" | "cancelled";
 export type NavKey = "overview" | "admin" | "accounts" | "settings" | "operations" | "files" | "trend" | "branches" | "orders" | "finance" | "pos" | "printers" | "kds" | "menu" | "tables" | "qr" | "inventory" | "team" | "drivers" | "waiters" | "marketing" | "reservations" | "remote" | "languages" | "security" | "health";
 export type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string; ageMinutes: number; createdAt?: string | Date | null; paymentMethod?: string | null; currencyCode?: string | null; itemDetails?: { itemName: string; quantity: number; categoryName?: string | null }[]; guestName?: string | null; guestPhone?: string | null; customerNote?: string | null; cashierNotes?: string | null; deliveryNote?: string | null; kitchenSectionId?: number | null; reservationDate?: string | Date | null; reservationEventType?: string | null; partySize?: number | null; childrenCount?: number | null; splitBillMode?: string | null };
 

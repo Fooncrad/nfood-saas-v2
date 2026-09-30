@@ -17,6 +17,7 @@ import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { executeLogoutFlow, executeSwitchAccountFlow } from "@/lib/profileActions";
 import { orderAgeMinutes } from "@/lib/orderTiming";
+import { nextOrderStatus } from "@/lib/orderLifecycle";
 import { getWorkspaceState } from "@/lib/workspace";
 import { dashboardProfiles } from "@/lib/dashboardProfiles";
 import { isRoleActionAllowed, roleNavigation } from "@/lib/roleNavigation";
@@ -34,7 +35,7 @@ import { clearCustomerFacingState, createCustomerDisplaySessionId, publishCustom
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { QRCodeSVG } from "qrcode.react";
 
-type OrderStatus = "new" | "preparing" | "ready" | "completed";
+type OrderStatus = "new" | "preparing" | "ready" | "completed" | "cancelled";
 type NavKey = "overview" | "subscription" | "admin" | "activities" | "nfc" | "site" | "branches" | "orders" | "finance" | "pos" | "kds" | "menu" | "tables" | "inventory" | "team" | "marketing" | "storefront" | "reservations" | "remote" | "security" | "health" | "accounts" | "settings" | "languages" | "files" | "stores" | "trend";
 
 type Order = { id: string; table: string; items: string; total: number; status: OrderStatus; time: string; channel: string };
@@ -61,8 +62,8 @@ const navItems: { key: NavKey; label: string; icon: typeof LayoutDashboard }[] =
   { key: "health", label: "صحة النظام", icon: Activity },
 ];
 
-const statusLabels: Record<OrderStatus, string> = { new: "جديد", preparing: "قيد التحضير", ready: "جاهز", completed: "مكتمل" };
-const statusStyles: Record<OrderStatus, string> = { new: "bg-amber-50 text-amber-700 border-amber-200", preparing: "bg-blue-50 text-blue-700 border-blue-200", ready: "bg-emerald-50 text-emerald-700 border-emerald-200", completed: "bg-slate-100 text-slate-600 border-slate-200" };
+const statusLabels: Record<OrderStatus, string> = { new: "جديد", preparing: "قيد التحضير", ready: "جاهز", completed: "مكتمل", cancelled: "ملغى" };
+const statusStyles: Record<OrderStatus, string> = { new: "bg-amber-50 text-amber-700 border-amber-200", preparing: "bg-blue-50 text-blue-700 border-blue-200", ready: "bg-emerald-50 text-emerald-700 border-emerald-200", completed: "bg-slate-100 text-slate-600 border-slate-200", cancelled: "bg-red-50 text-red-700 border-red-200" };
 
 function money(value: number) { return `${new Intl.NumberFormat("en-SA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)} ر.س`; }
 
@@ -237,12 +238,13 @@ export default function Home() {
   const updateOrderStatus = trpc.platform.updateOrderStatus.useMutation({ onSuccess: () => { remoteOrders.refetch(); toast.success("تم حفظ حالة الطلب في قاعدة البيانات"); }, onError: (error) => toast.error(`تعذر تحديث الطلب: ${error.message}`) });
   useEffect(() => { const firstBranch = workspaceBranches.data?.[0]; setBranch((current) => current && workspaceBranches.data?.some((item) => item.name === current) ? current : firstBranch?.name ?? ""); }, [workspaceBranches.data]);
   const [query, setQuery] = useState("");
-  const orders = useMemo(() => (remoteOrders.data ?? []).map((order) => ({ id: formatOrderReference(order.id, order.channel), table: order.tableName ?? "بدون طاولة", items: order.items?.length ? order.items.map((item) => `${item.quantity > 1 ? `${item.quantity}× ` : ""}${item.itemName}`).join("، ") : "لا توجد أصناف مسجلة", total: Number(order.total), status: order.status === "cancelled" ? "completed" : order.status, time: new Date(order.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" }), channel: order.channel === "dine_in" ? "داخل المطعم" : order.channel === "takeaway" ? "استلام" : order.channel === "delivery" ? "توصيل" : order.channel === "reservation" ? "حجز مع الطلب" : order.channel === "hotel" ? "طلب غرف الفنادق" : "غير محدد", ageMinutes: orderAgeMinutes(order.createdAt) })), [remoteOrders.data]);
+  const orders = useMemo(() => (remoteOrders.data ?? []).map((order) => ({ id: formatOrderReference(order.id, order.channel), table: order.tableName ?? "بدون طاولة", items: order.items?.length ? order.items.map((item) => `${item.quantity > 1 ? `${item.quantity}× ` : ""}${item.itemName}`).join("، ") : "لا توجد أصناف مسجلة", total: Number(order.total), status: order.status, time: new Date(order.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" }), channel: order.channel === "dine_in" ? "داخل المطعم" : order.channel === "takeaway" ? "استلام" : order.channel === "delivery" ? "توصيل" : order.channel === "reservation" ? "حجز مع الطلب" : order.channel === "hotel" ? "طلب غرف الفنادق" : "غير محدد", ageMinutes: orderAgeMinutes(order.createdAt) })), [remoteOrders.data]);
   const visibleOrders = useMemo(() => orders.filter((order) => `${order.id} ${order.table} ${order.items}`.includes(query)), [orders, query]);
   const advanceOrder = (id: string) => {
     const current = orders.find((order) => order.id === id);
     if (!current) return;
-    const next: OrderStatus = current.status === "new" ? "preparing" : current.status === "preparing" ? "ready" : "completed";
+    const next = nextOrderStatus(current.status);
+    if (!next) { toast.info(current.status === "cancelled" ? "الطلب ملغى ولا يمكن نقله إلى مرحلة أخرى" : "الطلب مكتمل بالفعل"); return; }
     const numericId = Number(id.match(/(\d+)$/)?.[1] ?? "");
     if (!remoteOrders.data?.some((order) => order.id === numericId)) { toast.error("الطلب غير موجود في بيانات backend الحالية"); return; }
     updateOrderStatus.mutate({ restaurantId: selectedRestaurantId, orderId: numericId, status: next });
