@@ -29,7 +29,6 @@ const routeLoaders = {
   CustomerStudio: () => import("./pages/CustomerStudio"),
   CustomerStudioPlans: () => import("./pages/CustomerStudioPlans"),
   CustomerBenefits: () => import("./pages/CustomerBenefits"),
-  CustomerRegister: () => import("./pages/CustomerRegister"),
   PlatformContentModeration: () => import("./pages/PlatformContentModeration"),
   SupportManagement: () => import("./pages/SupportManagement"),
   VcardCardsAdmin: () => import("./pages/VcardCardsAdmin"),
@@ -62,7 +61,6 @@ const CustomerRewards = lazy(routeLoaders.CustomerRewards);
 const CustomerStudio = lazy(routeLoaders.CustomerStudio);
 const CustomerStudioPlans = lazy(routeLoaders.CustomerStudioPlans);
 const CustomerBenefits = lazy(routeLoaders.CustomerBenefits);
-const CustomerRegister = lazy(routeLoaders.CustomerRegister);
 const PlatformContentModeration = lazy(routeLoaders.PlatformContentModeration);
 const SupportManagement = lazy(routeLoaders.SupportManagement);
 const VcardCardsAdmin = lazy(routeLoaders.VcardCardsAdmin);
@@ -148,15 +146,6 @@ function PricingRoute() {
   }, []);
   return <PageLoading />;
 }
-function CustomerRegisterRoute() {
-  const { user, loading } = useAuth();
-  const [, navigate] = useLocation();
-  useEffect(() => {
-    if (!loading && user) navigate(authenticatedLandingPath(user), { replace: true });
-  }, [loading, user, navigate]);
-  if (loading || user) return <PageLoading />;
-  return <CustomerRegister />;
-}
 function RootRoute() { const { user, loading } = useAuth(); const [, navigate] = useLocation(); const role = effectiveAccountRole(user); const isAdmin = role === "admin"; const isRestaurantAccount = isRestaurantAreaAccount(user); useEffect(() => { if (loading || !user) return; if (isAdmin) { navigate("/admin", { replace: true }); return; } if (isRestaurantAccount && window.location.pathname === "/") navigate("/restaurant/dashboard", { replace: true }); }, [loading, user, isAdmin, isRestaurantAccount, navigate]); if (loading || isAdmin || isRestaurantAccount) return <PageLoading />; return user ? <Home /> : <PublicHome />; }
 function RestaurantRoute() {
   const { user, loading } = useAuth();
@@ -197,7 +186,6 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterScreen} />
       <Route path="/pricing" component={PricingRoute} />
-      <Route path="/customer-register" component={CustomerRegisterRoute} />
       <Route path="/admin/content-moderation" component={PlatformContentModeration} />
       <Route path="/restaurant/register" component={RegisterScreen} />
       <Route path="/terms" component={() => <LegalPage kind="terms" />} />
