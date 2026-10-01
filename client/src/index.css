@@ -7602,3 +7602,21 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 @media (prefers-reduced-motion: reduce) {
   .nfood-mobile-menu-button { transition: none !important; }
 }
+
+
+/* Emergency public-menu interaction guardrails: header/cover/cart must never overlap actions. */
+.nfood-menu-shell { position:relative; isolation:isolate; overflow-x:clip; }
+.nfood-menu-shell .nfood-menu-header { position:sticky !important; top:0; z-index:120 !important; overflow:visible !important; }
+.nfood-menu-shell .nfood-menu-header > div { overflow:visible !important; }
+.nfood-menu-shell .nfood-menu-cover { position:relative; z-index:1 !important; pointer-events:auto; }
+.nfood-menu-shell .nfood-menu-category-bar { position:relative; z-index:20 !important; }
+.nfood-menu-shell .nfood-mobile-bottom-nav { z-index:160 !important; pointer-events:auto !important; }
+.nfood-menu-shell .nfood-mobile-bottom-nav button { pointer-events:auto !important; }
+.nfood-menu-shell .nfood-menu-card-add { position:relative; z-index:2; pointer-events:auto !important; }
+.nfood-menu-shell [role="dialog"] { z-index:220 !important; }
+.nfood-language-switcher { position:relative; z-index:1000 !important; }
+.nfood-language-menu { z-index:2147483647 !important; pointer-events:auto !important; }
+@media (max-width:640px) {
+  .nfood-menu-shell { padding-bottom:6rem !important; }
+  .nfood-menu-shell .nfood-mobile-bottom-nav { display:flex !important; }
+}
