@@ -694,9 +694,9 @@ export function CentralAdminCommandCenter({
   );
 
   return (
-    <div dir={direction} lang={language} className="nfood-command-center h-dvh min-h-0 overflow-hidden" style={{ background: pageBg, color: textPrimary }}>
+    <div dir={direction} lang={language} className="nfood-command-center nfood-appem-admin h-dvh min-h-0 overflow-hidden" style={{ background: pageBg, color: textPrimary }}>
       <aside
-        className={`fixed inset-y-0 z-40 hidden w-[232px] flex-col shadow-2xl xl:w-[248px] lg:flex ${direction === "rtl" ? "right-0 border-l" : "left-0 border-r"} border-white/10`}
+        className={`nfood-appem-admin-sidebar fixed inset-y-0 z-40 hidden w-[244px] flex-col shadow-2xl lg:flex ${direction === "rtl" ? "right-0 border-l" : "left-0 border-r"} border-white/10`}
       >
         <div className="min-h-0 flex-1 bg-[#07182b]">{sidebarContent}</div>
       </aside>
@@ -722,7 +722,7 @@ export function CentralAdminCommandCenter({
         </div>
       )}
 
-      <div className={`flex min-h-[100dvh] h-[100dvh] min-w-0 flex-col ${direction === "rtl" ? "lg:mr-[232px] xl:mr-[248px]" : "lg:ml-[232px] xl:ml-[248px]"}`}>
+      <div className={`flex min-h-[100dvh] h-[100dvh] min-w-0 flex-col ${direction === "rtl" ? "lg:mr-[244px]" : "lg:ml-[244px]"}`}>
         <header className="sticky top-0 z-20 flex min-h-16 shrink-0 items-center justify-between gap-2 border-b px-3 py-2 backdrop-blur-xl sm:gap-4 md:min-h-[72px] md:px-6" style={{ background: headerBg, borderColor: divider }}>
           <div className="flex min-w-0 items-center gap-3">
             {onOpenTransfers && pendingTransferCount > 0 && !transferBannerDismissed && (
