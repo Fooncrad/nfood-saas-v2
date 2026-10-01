@@ -104,7 +104,7 @@ const COPY_AR = {
   sales: "إجمالي المبيعات",
   ordersToday: "طلبات اليوم",
   avgOrder: "متوسط الطلب",
-  activeRestaurants: "المطاعم النشطة",
+  activeRestaurants: "إجمالي المتاجر",
   platformCustomers: "عملاء المنصة",
   mrr: "الإيراد الشهري المتكرر",
   tabOrders: "الطلبات",
@@ -152,7 +152,7 @@ const COPY_EN = {
   sales: "Total sales",
   ordersToday: "Orders today",
   avgOrder: "Average order",
-  activeRestaurants: "Active restaurants",
+  activeRestaurants: "Total stores",
   platformCustomers: "Platform customers",
   mrr: "Monthly recurring revenue",
   tabOrders: "Orders",
@@ -301,21 +301,16 @@ export function CentralAdminCommandCenter({
 
   const restaurants = restaurantsQuery.data ?? [];
   const subscriptions = subscriptionsQuery.data ?? [];
-  const activeRestaurants = restaurants.filter((restaurant) => restaurant.status === "active").length;
+  const activeRestaurants = restaurants.length;
   const customerCount = customersQuery.data?.length ?? 0;
   const mrr = Number(metricsQuery.data?.mrr ?? 0);
   const arr = Number(metricsQuery.data?.arr ?? 0);
   const churn = Number(metricsQuery.data?.churnRate ?? 0) || 0;
   const byPlan = metricsQuery.data?.byPlan ?? {};
 
-  const totalSales = orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
-  const todayOrders = useMemo(() => {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const today = orders.filter((order) => order.createdAt && new Date(order.createdAt).getTime() >= startOfDay.getTime()).length;
-    return today;
-  }, [orders]);
-  const avgOrder = orders.length ? totalSales / orders.length : 0;
+  const totalSales = Number(metricsQuery.data?.totalSales ?? orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0));
+  const todayOrders = Number(metricsQuery.data?.ordersToday ?? 0);
+  const avgOrder = Number(metricsQuery.data?.averageOrder ?? (orders.length ? totalSales / orders.length : 0));
 
   const salesSpark = useMemo(
     () => dailySeries(subscriptions, (subscription) => subscription.startedAt, (subscription) => Number(subscription.monthlyPrice ?? 0)),
