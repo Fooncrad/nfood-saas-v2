@@ -124,10 +124,10 @@ export function SuperAdminRestaurantCatalog() {
     onError: error => toast.error(`تعذر تحديث عرض السوق: ${error.message}`),
   });
   const updateRestaurant = trpc.admin.updateRestaurant.useMutation({
-    onSuccess: () => {
-      void utils.admin.restaurants.invalidate();
+    onSuccess: async () => {
+      await Promise.all([utils.admin.restaurants.invalidate(), utils.admin.subscriptions.invalidate(), utils.admin.saasMetrics.invalidate()]);
       setPlanEditor(null);
-      toast.success("تم تحديث المطعم");
+      toast.success(language === "ar" ? "تم تحديث المنشأة والاشتراك" : "Restaurant and subscription updated");
     },
     onError: error => toast.error(`تعذر تحديث المطعم: ${error.message}`),
   });
@@ -334,6 +334,7 @@ export function SuperAdminRestaurantCatalog() {
                   updateRestaurant.mutate({
                     id: planEditor.id,
                     plan: selectedPlan.key,
+                    status: "active",
                   });
               }}
               className="rounded-xl bg-[#e76f3c] hover:bg-[#d85f2e]"
@@ -715,7 +716,7 @@ export function SuperAdminRestaurantCatalog() {
               {ui.empty}
             </div>
           ) : (
-            <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-4 xl:grid-cols-2">
               {rows.map((restaurant, index) => {
                 const status =
                   restaurant.status === "active"
@@ -730,11 +731,14 @@ export function SuperAdminRestaurantCatalog() {
                       ? "border-amber-200 bg-amber-50 text-amber-700"
                       : "border-slate-200 bg-slate-50 text-slate-600";
                 const statusLabel = status === "نشط" ? ui.statusActive : status === "تجربة" ? ui.statusTrial : ui.statusPending;
+                const currentPlan = plans.find(plan => plan.key === restaurant.plan || plan.name === restaurant.plan);
+                const enabledPlanFeatures = currentPlan?.features.filter(feature => feature.enabled) ?? [];
+                const planDisplayName = currentPlan?.name ?? restaurant.plan ?? ui.unspecified;
                 return (
                   <article
                     key={restaurant.id}
                     data-testid={`restaurant-card-${restaurant.id}`}
-                    className="group relative flex min-h-[230px] min-w-0 flex-col overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,.06)] transition duration-300 hover:-translate-y-1 hover:border-orange-300/70 hover:shadow-[0_18px_45px_rgba(15,23,42,.12)] dark:border-white/10 dark:bg-[#0d2038]"
+                    className="group relative flex min-h-[300px] min-w-0 flex-col overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,.06)] transition duration-300 hover:-translate-y-1 hover:border-orange-300/70 hover:shadow-[0_18px_45px_rgba(15,23,42,.12)] dark:border-white/10 dark:bg-[#0d2038]"
                   >
                     <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-orange-500 via-orange-400 to-blue-500" />
                     <div className="flex min-w-0 items-start justify-between gap-3">
@@ -763,8 +767,9 @@ export function SuperAdminRestaurantCatalog() {
                       <div className="min-w-0 rounded-2xl border border-slate-200/70 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900/80">
                         <p className="text-slate-400">{ui.plan}</p>
                         <p className="mt-0.5 truncate font-bold text-slate-800 dark:text-slate-200">
-                          {restaurant.plan ?? ui.unspecified}
+                          {planDisplayName}
                         </p>
+                        {currentPlan && <p className="mt-1 text-[9px] font-semibold text-slate-400">{enabledPlanFeatures.length} {language === "ar" ? "ميزة مفعلة" : language === "fr" ? "fonctionnalités actives" : "active features"} · {currentPlan.monthlyPrice} SAR/{language === "ar" ? "شهر" : "mo"}</p>}
                       </div>
                       <div className="min-w-0 rounded-2xl border border-slate-200/70 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900/80">
                         <p className="text-slate-400">{ui.publicLink}</p>
@@ -780,12 +785,12 @@ export function SuperAdminRestaurantCatalog() {
                       </div>
                     </div>
 
-                    <div className="mt-4 grid min-w-0 grid-cols-2 gap-2 border-t border-slate-100 pt-4 dark:border-white/10 sm:grid-cols-3">
+                    <div className="mt-4 grid min-w-0 grid-cols-1 gap-2 border-t border-slate-100 pt-4 dark:border-white/10 sm:grid-cols-2 2xl:grid-cols-3">
                       <a
                         href={`/menu/${encodeURIComponent(restaurant.slug ?? "")}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex h-7 max-w-full items-center gap-1 rounded-lg bg-[#e76f3c] px-2 text-[10px] font-black text-white shadow-sm transition hover:bg-[#d85f2e]"
+                        className="inline-flex h-10 w-full max-w-full items-center justify-center gap-1 rounded-xl bg-[#e76f3c] px-3 text-[11px] font-black text-white shadow-sm transition hover:bg-[#d85f2e]"
                       >
                         <Utensils className="h-3.5 w-3.5 shrink-0" /> فتح Menu
                         <ExternalLink className="h-3 w-3 shrink-0" />
@@ -801,7 +806,7 @@ export function SuperAdminRestaurantCatalog() {
                             plan: restaurant.plan,
                           })
                         }
-                        className="h-9 max-w-full gap-1 rounded-xl border-slate-200 px-3 text-[10px] font-bold dark:border-white/10"
+                        className="h-10 w-full max-w-full justify-center gap-1 rounded-xl border-slate-200 px-3 text-[11px] font-bold dark:border-white/10"
                       >
                         <Eye className="h-3.5 w-3.5 shrink-0" /> {ui.details}
                       </Button>
@@ -812,7 +817,7 @@ export function SuperAdminRestaurantCatalog() {
                         onClick={() =>
                           enterRestaurant.mutate({ id: restaurant.id })
                         }
-                        className="h-9 max-w-full gap-1 rounded-xl bg-[#071525] px-3 text-[10px] font-black text-white shadow-sm hover:bg-[#102844] dark:bg-orange-500 dark:hover:bg-orange-600"
+                        className="h-10 w-full max-w-full justify-center gap-1 rounded-xl bg-[#071525] px-3 text-[11px] font-black text-white shadow-sm hover:bg-[#102844] dark:bg-orange-500 dark:hover:bg-orange-600"
                       >
                         <LogIn className="h-3.5 w-3.5 shrink-0" /> {ui.login}
                       </Button>
@@ -822,7 +827,7 @@ export function SuperAdminRestaurantCatalog() {
                         variant="outline"
                         disabled={updateRestaurant.isPending}
                         onClick={() => updateRestaurant.mutate({ id: restaurant.id, status: restaurant.status === "suspended" ? "active" : "suspended" })}
-                        className={`h-9 max-w-full gap-1 rounded-xl px-3 text-[10px] font-bold ${restaurant.status === "suspended" ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-300" : "border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-300"}`}
+                        className={`h-10 w-full max-w-full justify-center gap-1 rounded-xl px-3 text-[11px] font-bold ${restaurant.status === "suspended" ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-300" : "border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-300"}`}
                         data-testid={`restaurant-status-toggle-${restaurant.id}`}
                       >
                         {restaurant.status === "suspended" ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0" />}
@@ -838,7 +843,7 @@ export function SuperAdminRestaurantCatalog() {
                           setPlanDraft(current?.key ?? planOptionsForEditor[0]?.key ?? "");
                           setPlanEditor({ id: restaurant.id, name: restaurant.name, currentPlan: restaurant.plan ?? "" });
                         }}
-                        className="h-10 max-w-full gap-1.5 rounded-xl border-orange-500 bg-orange-500 px-4 text-[11px] font-black text-white shadow-sm hover:bg-orange-600 dark:border-orange-500 dark:bg-orange-500 dark:text-white dark:hover:bg-orange-600"
+                        className="h-10 w-full max-w-full justify-center gap-1.5 rounded-xl border-orange-500 bg-orange-500 px-4 text-[11px] font-black text-white shadow-sm hover:bg-orange-600 dark:border-orange-500 dark:bg-orange-500 dark:text-white dark:hover:bg-orange-600"
                         data-testid={`restaurant-plan-${restaurant.id}`}
                       >
                         ترقية / تغيير الباقة
@@ -868,7 +873,7 @@ export function SuperAdminRestaurantCatalog() {
                         aria-disabled="true"
                         data-testid={`restaurant-delete-disabled-${restaurant.id}`}
                         title="حذف المطعم معطل للحماية من الحذف العرضي"
-                        className="h-9 max-w-full cursor-not-allowed gap-1 rounded-xl border-slate-200 px-3 text-[10px] font-bold text-slate-400 opacity-60 dark:border-white/10 dark:text-slate-500"
+                        className="h-10 w-full max-w-full cursor-not-allowed justify-center gap-1 rounded-xl border-slate-200 px-3 text-[10px] font-bold text-slate-400 opacity-60 dark:border-white/10 dark:text-slate-500"
                       >
                         <Trash2 className="h-3.5 w-3.5 shrink-0" /> الحذف معطل
                       </Button>
