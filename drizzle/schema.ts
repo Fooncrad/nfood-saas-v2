@@ -159,6 +159,7 @@ export const restaurants = mysqlTable("restaurants", {
   cancellationEnabled: boolean("cancellationEnabled").default(true).notNull(),
   cancellationWindowMinutes: int("cancellationWindowMinutes").default(15).notNull(),
   reservationNoShowGraceMinutes: int("reservationNoShowGraceMinutes").default(10).notNull(),
+  waitlistExpiryMinutes: int("waitlistExpiryMinutes").default(120).notNull(),
   reservationMaxPerDay: int("reservationMaxPerDay"),
   reservationDepositEnabled: boolean("reservationDepositEnabled").default(false).notNull(),
   reservationDepositAmount: decimal("reservationDepositAmount", { precision: 10, scale: 2 }).default("0").notNull(),
