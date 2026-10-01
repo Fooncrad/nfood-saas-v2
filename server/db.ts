@@ -725,7 +725,7 @@ export async function getRestaurantByBarcode(barcode: string) { const db = await
 export async function getBranchAllowance(restaurantId: number): Promise<{ plan: string | null; limit: number | null; used: number; canCreate: boolean; source: "subscription" | "unlimited" | "default" | "database_unavailable" }> {
   const db = await getDb();
   if (!db) return { plan: null, limit: null, used: 0, canCreate: false, source: "database_unavailable" };
-  const subscription = (await db.select({ plan: subscriptions.plan, status: subscriptions.status }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), ne(subscriptions.status, "cancelled"))).orderBy(desc(subscriptions.startedAt)).limit(1))[0];
+  const subscription = (await db.select({ plan: subscriptions.plan, status: subscriptions.status }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), inArray(subscriptions.status, ["active", "trial"]))).orderBy(desc(subscriptions.startedAt)).limit(1))[0];
   const used = Number((await db.select({ total: count() }).from(branches).where(eq(branches.restaurantId, restaurantId)))[0]?.total ?? 0);
   const plan = subscription?.plan ?? null;
   const normalizedPlan = plan?.trim().toLowerCase();
@@ -738,7 +738,7 @@ export async function getBranchAllowance(restaurantId: number): Promise<{ plan: 
 export async function getEmployeeAllowance(restaurantId: number): Promise<{ plan: string | null; limit: number | null; used: number; canCreate: boolean; source: "subscription" | "unlimited" | "default" | "database_unavailable" }> {
   const db = await getDb();
   if (!db) return { plan: null, limit: null, used: 0, canCreate: false, source: "database_unavailable" };
-  const subscription = (await db.select({ plan: subscriptions.plan, status: subscriptions.status }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), ne(subscriptions.status, "cancelled"))).orderBy(desc(subscriptions.startedAt)).limit(1))[0];
+  const subscription = (await db.select({ plan: subscriptions.plan, status: subscriptions.status }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), inArray(subscriptions.status, ["active", "trial"]))).orderBy(desc(subscriptions.startedAt)).limit(1))[0];
   const used = Number((await db.select({ total: count() }).from(employees).where(eq(employees.restaurantId, restaurantId)))[0]?.total ?? 0);
   const plan = subscription?.plan ?? null;
   const normalizedPlan = plan?.trim().toLowerCase();
@@ -999,7 +999,7 @@ async function loadFeatureAccessContext(restaurantId: number): Promise<FeatureAc
   if (!db) return null;
   const definitions = await db.select().from(featureDefinitions);
   const overrides = await db.select().from(restaurantFeatures).where(eq(restaurantFeatures.restaurantId, restaurantId));
-  const restaurant = (await db.select({ plan: restaurants.plan }).from(restaurants).where(eq(restaurants.id, restaurantId)).limit(1))[0];
+  const restaurant = (await db.select({ plan: restaurants.plan, status: restaurants.status }).from(restaurants).where(eq(restaurants.id, restaurantId)).limit(1))[0];
   const subscription = (await db.select({ plan: subscriptions.plan, status: subscriptions.status }).from(subscriptions).where(and(eq(subscriptions.restaurantId, restaurantId), inArray(subscriptions.status, ["active", "trial"]))).orderBy(desc(sql`CASE WHEN ${subscriptions.status} = "active" THEN 1 ELSE 0 END`), desc(subscriptions.id)).limit(1))[0];
   const legacyPlanMap: Record<string, string> = {
     Free: "hospitality_basic",
@@ -1008,7 +1008,7 @@ async function loadFeatureAccessContext(restaurantId: number): Promise<FeatureAc
     Enterprise: "hospitality_enterprise",
     "All Features": "hospitality_enterprise",
   };
-  const rawPlan = subscription?.plan ?? restaurant?.plan ?? "Free";
+  const rawPlan = subscription?.plan ?? (restaurant?.status === "trial" ? restaurant.plan : "Free");
   const activePlan = legacyPlanMap[rawPlan] ?? rawPlan;
   const configuredPlanRows = await db.select({ key: featureDefinitions.key, enabled: packagePlanFeatures.enabled, featureLimit: packagePlanFeatures.featureLimit }).from(packagePlanFeatures).innerJoin(packagePlans, eq(packagePlanFeatures.planId, packagePlans.id)).innerJoin(featureDefinitions, eq(packagePlanFeatures.featureId, featureDefinitions.id)).where(and(or(eq(packagePlans.key, activePlan), eq(packagePlans.name, activePlan)), eq(packagePlans.isActive, true)));
   return {
