@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Globe2, Check, ChevronDown, LoaderCircle } from "lucide-react";
 import { languageMeta, UI_LANGUAGES, useLanguage, type Language } from "@/contexts/LanguageContext";
 
@@ -6,6 +6,7 @@ export default function LanguageSwitcher({ compact = false, allowedLanguages, mi
   const { language, setLanguage, t, isLanguageChanging } = useLanguage();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 56, left: 8 });
   const languages = allowedLanguages?.filter((item) => UI_LANGUAGES.includes(item as (typeof UI_LANGUAGES)[number])).length
     ? allowedLanguages.filter((item) => UI_LANGUAGES.includes(item as (typeof UI_LANGUAGES)[number]))
     : [...UI_LANGUAGES];
@@ -18,17 +19,16 @@ export default function LanguageSwitcher({ compact = false, allowedLanguages, mi
     return () => document.removeEventListener("pointerdown", close);
   }, []);
 
+  useLayoutEffect(() => {
+    if (!open || !rootRef.current) return;
+    const rect = rootRef.current.getBoundingClientRect();
+    setMenuPosition({ top: rect.bottom + 8, left: Math.max(8, Math.min(window.innerWidth - 184, rect.left)) });
+  }, [open]);
+
   const chooseLanguage = (item: Language) => {
     setLanguage(item);
     setOpen(false);
   };
-
-  const menuStyle = rootRef.current
-    ? {
-        top: rootRef.current.getBoundingClientRect().bottom + 8,
-        left: Math.max(8, Math.min(window.innerWidth - 184, rootRef.current.getBoundingClientRect().left)),
-      }
-    : { top: 56, left: 8 };
 
   return (
     <div ref={rootRef} className="relative z-[1000] flex items-center gap-1.5 overflow-visible" aria-busy={isLanguageChanging}>
@@ -49,7 +49,7 @@ export default function LanguageSwitcher({ compact = false, allowedLanguages, mi
       {open && (
         <div
           className="nfood-language-menu fixed z-[2147483647] max-h-[min(22rem,calc(100dvh-5rem))] min-w-44 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-1.5 text-slate-800 shadow-2xl ring-1 ring-black/10"
-          style={menuStyle}
+          style={menuPosition}
           role="menu"
           aria-label={t("navigation.chooseLanguage")}
         >
