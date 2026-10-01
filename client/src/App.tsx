@@ -21,6 +21,7 @@ const routeLoaders = {
   AccountProfileSettings: () => import("./pages/AccountProfileSettings"),
   IntegrationsSettings: () => import("./pages/IntegrationsSettings"),
   CustomerPortal: () => import("./pages/CustomerPortal"),
+  CustomerRegister: () => import("./pages/CustomerRegister"),
   CustomerContentOrders: () => import("./pages/CustomerContentOrders"),
   CustomerContentLibrary: () => import("./pages/CustomerContentLibrary"),
   CustomerOrders: () => import("./pages/CustomerOrders"),
@@ -53,6 +54,7 @@ const CustomerProfileSettings = lazy(routeLoaders.CustomerProfileSettings);
 const AccountProfileSettings = lazy(routeLoaders.AccountProfileSettings);
 const IntegrationsSettings = lazy(routeLoaders.IntegrationsSettings);
 const CustomerPortal = lazy(routeLoaders.CustomerPortal);
+const CustomerRegister = lazy(routeLoaders.CustomerRegister);
 const CustomerContentOrders = lazy(routeLoaders.CustomerContentOrders);
 const CustomerContentLibrary = lazy(routeLoaders.CustomerContentLibrary);
 const CustomerOrders = lazy(routeLoaders.CustomerOrders);
@@ -198,6 +200,7 @@ function Router() {
       <Route path="/" component={RootRoute} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterScreen} />
+      <Route path="/customer-register" component={CustomerRegister} />
       <Route path="/pricing" component={PricingRoute} />
       <Route path="/admin/content-moderation" component={PlatformContentModeration} />
       <Route path="/restaurant/register" component={RegisterScreen} />
