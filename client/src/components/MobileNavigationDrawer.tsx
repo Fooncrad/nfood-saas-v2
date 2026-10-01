@@ -41,6 +41,14 @@ export function MobileNavigationDrawer({
   useEffect(() => {
     if (!open) setExpanded(false);
   }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose, open]);
 
   const navigate = (key: NavKey) => {
     onNavigate(key);
@@ -60,7 +68,7 @@ export function MobileNavigationDrawer({
         <div className="space-y-1.5">
           {mobileNavItems.map((item) => {
             const Icon = item.icon;
-            return <button key={item.key} type="button" onClick={() => navigate(item.key)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-start text-sm ${active === item.key ? "bg-[#e76f3c] font-semibold" : "text-slate-300 hover:bg-white/10"}`}><Icon className="h-5 w-5" /><span>{item.label}</span></button>;
+            return <button key={item.key} type="button" onClick={() => navigate(item.key)} aria-current={active === item.key ? "page" : undefined} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-3 text-start text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 ${active === item.key ? "bg-[#e76f3c] font-semibold" : "text-slate-300 hover:bg-white/10"}`}><Icon className="h-5 w-5" /><span>{item.label}</span></button>;
           })}
         </div>
         {visibleNavItems.length > 6 && <button type="button" onClick={() => setExpanded((value) => !value)} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-orange-300/20 bg-orange-400/10 px-3 py-2.5 text-xs font-bold text-orange-100 hover:bg-orange-400/20"><ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />{expanded ? copy.less : `${copy.more} (${visibleNavItems.length - 6})`}</button>}
