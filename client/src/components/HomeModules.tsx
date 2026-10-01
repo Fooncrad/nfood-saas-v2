@@ -2918,6 +2918,7 @@ type CachedPosKitchenSection = { id: number; name: string; isEnabled: boolean; d
 
 function PosView({ restaurantId }: { restaurantId: number }) {
   const { user } = useAuth();
+  const utils = trpc.useUtils();
   const { t, language } = useLanguage();
   const menuCacheKey = `nfood-pos-menu-cache:${restaurantId}`;
   const branchCacheKey = `nfood-pos-branches-cache:${restaurantId}`;
@@ -3060,6 +3061,10 @@ function PosView({ restaurantId }: { restaurantId: number }) {
         },
       });
       toast.success(`تم حفظ الطلب #${result.orderId} وإرساله للمطبخ`);
+      void utils.platform.ordersByRestaurant.invalidate({ restaurantId });
+      void utils.platform.orders.invalidate();
+      void utils.platform.listKitchenTickets.invalidate();
+      void utils.platform.tables.invalidate({ restaurantId });
       setCart([]);
       setPaymentSplits([]);
       setSplitMode("single");
