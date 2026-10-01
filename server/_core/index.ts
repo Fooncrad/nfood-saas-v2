@@ -59,6 +59,25 @@ async function runDbMigrations() {
   }
 }
 
+async function ensureOrderItemsCompatibility() {
+  if (!process.env.DATABASE_URL) return;
+  const { createConnection } = await import("mysql2/promise");
+  const connection = await createConnection(process.env.DATABASE_URL);
+  try {
+    const [rows] = await connection.query("SHOW COLUMNS FROM `orderItems`");
+    const columns = new Set((rows as Array<{ Field: string }>).map((row) => row.Field));
+    const statements: string[] = [];
+    if (!columns.has("sourceType")) statements.push("ALTER TABLE `orderItems` ADD COLUMN `sourceType` enum('menu_item','marketplace_variant') NOT NULL DEFAULT 'menu_item' AFTER `menuItemId`");
+    if (!columns.has("marketplaceVariantId")) statements.push("ALTER TABLE `orderItems` ADD COLUMN `marketplaceVariantId` int NULL AFTER `sourceType`");
+    if (!columns.has("itemNameSnapshot")) statements.push("ALTER TABLE `orderItems` ADD COLUMN `itemNameSnapshot` varchar(240) NULL AFTER `marketplaceVariantId`");
+    if (!columns.has("selectedAddonsJson")) statements.push("ALTER TABLE `orderItems` ADD COLUMN `selectedAddonsJson` text NULL AFTER `unitPrice`");
+    for (const statement of statements) await connection.query(statement);
+    if (statements.length) console.info(`[Database] Repaired orderItems compatibility (${statements.length} column(s))`);
+  } finally {
+    await connection.end();
+  }
+}
+
 type MenuLanguage = "ar" | "en" | "fr" | "ur";
 function normalizeMenuLanguage(value: unknown): MenuLanguage { const code = typeof value === "string" ? value.toLowerCase().split("-")[0] : "ar"; return code === "en" || code === "fr" || code === "ur" ? code : "ar"; }
 function localizeMenuEntity<T extends { name: string; description?: string | null; translationsJson?: string | null }>(entity: T, language: MenuLanguage): T { try { const parsed = entity.translationsJson ? JSON.parse(entity.translationsJson) : []; const entries = Array.isArray(parsed) ? parsed as Array<{ language?: string; name?: string; description?: string; status?: string }> : []; const approved = (entry: { status?: string }) => !entry.status || entry.status === "approved"; const match = entries.find((entry) => entry.language === language && approved(entry)) ?? entries.find((entry) => entry.language === "ar" && approved(entry)); return match?.name ? { ...entity, name: match.name, description: match.description ?? entity.description } : entity; } catch { return entity; } }
@@ -69,6 +88,7 @@ async function startServer() {
   } else {
     console.info("[Database] Automated migrations skipped; set RUN_DB_MIGRATIONS=true for an explicit migration run");
   }
+  await ensureOrderItemsCompatibility();
   const app = express();
   const server = createServer(app);
   attachDisplayRealtime(server);
