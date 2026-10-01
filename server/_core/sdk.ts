@@ -263,12 +263,12 @@ class SDKServer {
     // nfood_test_session cookie and the user is bounced back to login.
     const regularToken = cookies.get(COOKIE_NAME);
     const teamToken = cookies.get(TEST_SESSION_COOKIE);
-    // Team sign-in deliberately clears the regular cookie, but old deployments
-    // and proxy caches can leave both cookies in the browser. Prefer a valid
-    // NFOOD team session when its signed payload identifies a test/team account;
-    // otherwise keep the regular account session as the primary identity.
-    const teamSession = teamToken ? await this.verifySession(teamToken) : null;
-    let sessionToken = teamSession?.openId?.startsWith("test_") ? teamToken : (regularToken || teamToken);
+    // A successful Google/email login writes the regular account cookie. It must
+    // always win over a stale team/preview cookie left by an older deployment;
+    // otherwise OAuth returns to the menu but auth.me resolves the old session.
+    // Team login clears the regular cookie, so genuine team-only sessions still
+    // fall back to TEST_SESSION_COOKIE normally.
+    let sessionToken = regularToken || teamToken;
 
     // 2. Fallback to the Authorization header (Preview auto-login via
     //    sessionStorage), used when the browser blocks iframe cookies such as
