@@ -5,6 +5,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation, useParams } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { DatabaseTranslationBridge } from "./components/DatabaseTranslationBridge";
+import { NotificationEffects } from "./components/NotificationEffects";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LANGUAGE_STORAGE_KEY, LanguageProvider, isUiLanguage, useLanguage, type Language } from "./contexts/LanguageContext";
 import { authenticatedLandingPath, effectiveAccountRole, isRestaurantAreaAccount } from "./lib/authRouting";
@@ -101,7 +102,7 @@ function AppContent() {
     const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null;
     if (isUiLanguage(stored) && stored !== language) setLanguage(stored, false);
   }, [location]);
-  return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><Suspense fallback={<PageLoading />}><Router /></Suspense></div>;
+  return <div dir={direction} className="min-h-screen"><Toaster position={direction === "rtl" ? "top-left" : "top-right"} dir={direction} /><NotificationEffects /><Suspense fallback={<PageLoading />}><Router /></Suspense></div>;
 }
 
 function SessionIdleGuard() {
