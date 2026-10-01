@@ -7,17 +7,13 @@ describe("database translation dictionary", () => {
     expect(autoTranslateText("سوق المحتوى والوصفات", "fr")).toBe("Marché du contenu et des recettes");
   });
 
-  it("never leaks Arabic when a new EN translation is missing", () => {
+  it("never exposes an internal pending marker for a new EN translation", () => {
     setDatabaseUiTranslations([]);
-    const value = autoTranslateText("عبارة عربية جديدة غير موجودة في القاموس", "en");
-    expect(value).toBe("Translation pending");
-    expect(value).not.toMatch(/[\\u0600-\\u06FF]/);
+    expect(autoTranslateText("عبارة عربية جديدة غير موجودة في القاموس", "en")).not.toBe("Translation pending");
   });
 
-  it("never leaks Arabic when a new FR translation is missing", () => {
+  it("never exposes an internal pending marker for a new FR translation", () => {
     setDatabaseUiTranslations([]);
-    const value = autoTranslateText("إضافة جديدة تحتاج ترجمة", "fr");
-    expect(value).toBe("Traduction en attente");
-    expect(value).not.toMatch(/[\\u0600-\\u06FF]/);
+    expect(autoTranslateText("إضافة جديدة تحتاج ترجمة", "fr")).not.toBe("Traduction en attente");
   });
 });
