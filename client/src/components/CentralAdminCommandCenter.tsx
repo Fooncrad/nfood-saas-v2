@@ -725,8 +725,8 @@ export function CentralAdminCommandCenter({
       )}
 
       <div className={`flex min-h-[100dvh] h-[100dvh] min-w-0 flex-col ${direction === "rtl" ? "lg:mr-[244px]" : "lg:ml-[244px]"}`}>
-        <header className="sticky top-0 z-20 flex min-h-16 shrink-0 items-center justify-between gap-2 border-b px-3 py-2 backdrop-blur-xl sm:gap-4 md:min-h-[72px] md:px-6" style={{ background: headerBg, borderColor: divider }}>
-          <div className="flex min-w-0 items-center gap-3">
+        <header className="sticky top-0 z-20 flex min-h-16 shrink-0 items-center justify-between gap-1.5 border-b px-2 py-2 backdrop-blur-xl sm:gap-4 sm:px-3 md:min-h-[72px] md:px-6" style={{ background: headerBg, borderColor: divider }}>
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             {onOpenTransfers && pendingTransferCount > 0 && !transferBannerDismissed && (
               <button
                 type="button"
@@ -740,8 +740,8 @@ export function CentralAdminCommandCenter({
             <button type="button" aria-label="Open navigation" onClick={() => setMobileOpen(true)} className="rounded-xl border p-2 lg:hidden" style={{ borderColor: divider, color: textPrimary }}>
               <Menu className="h-4 w-4" />
             </button>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: textSecondary }}>
+            <div className="hidden min-w-0 xs:block sm:block">
+              <p className="text-[9px] font-bold uppercase tracking-[0.12em] sm:text-[10px] sm:tracking-[0.2em]" style={{ color: textSecondary }}>
                 {copy.centralAdmin}
               </p>
               <h1 className="truncate text-base font-black md:text-lg" style={{ color: textPrimary }}>
@@ -750,7 +750,7 @@ export function CentralAdminCommandCenter({
             </div>
           </div>
 
-          <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-1.5 md:gap-2">
+          <div className="flex min-w-0 shrink-0 items-center gap-1 md:gap-2">
             <a
               href="/"
               target="_blank"
@@ -769,7 +769,7 @@ export function CentralAdminCommandCenter({
                 aria-expanded={notificationsOpen}
                 aria-label={copy.notifications}
                 onClick={() => setNotificationsOpen((current) => !current)}
-                className="relative rounded-xl border p-2.5 transition hover:bg-orange-500/10"
+                className="relative rounded-xl border p-2 sm:p-2.5 transition hover:bg-orange-500/10"
                 style={{ borderColor: divider, color: textPrimary }}
               >
                 <Bell className="h-4 w-4" />
@@ -780,21 +780,21 @@ export function CentralAdminCommandCenter({
                 )}
               </button>
               {notificationsOpen && (
-                <div className="absolute end-0 top-12 z-30 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border shadow-2xl" style={{ background: cardBg, borderColor: divider, color: textPrimary }}>
-                  <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: divider }}>
+                <div className="fixed inset-x-2 top-[4.5rem] z-50 max-h-[calc(100dvh-5.5rem)] overflow-hidden rounded-2xl border shadow-2xl sm:absolute sm:inset-x-auto sm:end-0 sm:top-12 sm:w-80 sm:max-w-[calc(100vw-2rem)]" style={{ background: cardBg, borderColor: divider, color: textPrimary }}>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-3 sm:px-4" style={{ borderColor: divider }}>
                     <p className="text-xs font-black">{copy.notifications}</p>
-                    <div className="flex items-center gap-2">
-                      <button type="button" onClick={() => markAllRead.mutate()} className="text-[10px] font-semibold text-orange-500">
+                    <div className="flex shrink-0 items-center gap-3">
+                      <button type="button" onClick={() => markAllRead.mutate()} className="whitespace-nowrap text-[10px] font-semibold text-orange-500">
                         {copy.markAllRead}
                       </button>
                       {deleteAll.isPending ? null : (
-                        <button type="button" onClick={() => deleteAll.mutate()} className="text-[10px] font-semibold text-slate-400">
+                        <button type="button" onClick={() => deleteAll.mutate()} className="whitespace-nowrap text-[10px] font-semibold text-slate-400">
                           {copy.deleteAll}
                         </button>
                       )}
                     </div>
                   </div>
-                  <div className="nfood-command-scroll max-h-80 overflow-y-auto">
+                  <div className="nfood-command-scroll max-h-[calc(100dvh-9.5rem)] overflow-x-hidden overflow-y-auto sm:max-h-80">
                     {notifications.slice(0, 8).map((item) => (
                       <button
                         key={item.id}
@@ -802,7 +802,7 @@ export function CentralAdminCommandCenter({
                         onClick={() => {
                           if (!item.readAt) markRead.mutate({ notificationId: item.id });
                         }}
-                        className="block w-full border-b px-4 py-3 text-start transition hover:bg-orange-500/5"
+                        className="block w-full border-b px-3 py-3 text-start transition hover:bg-orange-500/5 sm:px-4"
                         style={{ borderColor: divider }}
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -831,7 +831,7 @@ export function CentralAdminCommandCenter({
               type="button"
               aria-label={dark ? "Light mode" : "Dark mode"}
               onClick={() => toggleTheme?.()}
-              className="rounded-xl border p-2.5 transition hover:bg-orange-500/10"
+              className="rounded-xl border p-2 sm:p-2.5 transition hover:bg-orange-500/10"
               style={{ borderColor: divider, color: textPrimary }}
             >
               {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
