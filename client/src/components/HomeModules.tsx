@@ -3066,7 +3066,7 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       toast.success(`تم حفظ الطلب #${result.orderId} وإرساله للمطبخ`);
       void utils.platform.ordersByRestaurant.invalidate({ restaurantId });
       void utils.platform.orders.invalidate();
-      void utils.platform.listKitchenTickets.invalidate();
+      void utils.platform.kitchenTickets.invalidate();
       void utils.platform.tables.invalidate({ restaurantId });
       setCart([]);
       setPaymentSplits([]);
