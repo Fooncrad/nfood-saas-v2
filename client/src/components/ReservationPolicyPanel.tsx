@@ -24,7 +24,7 @@ export function ReservationPolicyPanel({ restaurantId }: Props) {
       serviceFeeEnabled: Boolean(branding.data.serviceFeeEnabled),
       serviceFeePercent: Number(branding.data.serviceFeePercent ?? 0),
       reservationNoShowGraceMinutes: Number(branding.data.reservationNoShowGraceMinutes ?? 10),
-      waitlistExpiryMinutes: Number(branding.data.waitlistExpiryMinutes ?? 120),
+      waitlistExpiryMinutes: Number((branding.data as typeof branding.data & { waitlistExpiryMinutes?: number | null }).waitlistExpiryMinutes ?? 120),
     });
   }, [branding.data]);
   const update = trpc.platform.updateBranding.useMutation({
