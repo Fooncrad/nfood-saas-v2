@@ -90,6 +90,26 @@ const trpcClient = trpc.createClient({
   ],
 });
 
+const CHUNK_RECOVERY_KEY = "nfood:chunk-recovery";
+const recoverFromStaleChunk = async (reason: unknown) => {
+  const message = reason instanceof Error ? reason.message : String(reason ?? "");
+  if (!/dynamically imported module|Importing a module script failed|Failed to fetch/i.test(message)) return;
+  if (sessionStorage.getItem(CHUNK_RECOVERY_KEY) === "1") return;
+  sessionStorage.setItem(CHUNK_RECOVERY_KEY, "1");
+  try {
+    if ("serviceWorker" in navigator) {
+      const registration = await navigator.serviceWorker.getRegistration();
+      await registration?.update();
+      registration?.waiting?.postMessage({ type: "SKIP_WAITING" });
+    }
+  } finally {
+    window.location.reload();
+  }
+};
+window.addEventListener("error", (event) => { void recoverFromStaleChunk(event.error ?? event.message); });
+window.addEventListener("unhandledrejection", (event) => { void recoverFromStaleChunk(event.reason); });
+window.addEventListener("pageshow", () => sessionStorage.removeItem(CHUNK_RECOVERY_KEY));
+
 let pendingServiceWorker: ServiceWorker | null = null;
 
 function announcePwaUpdate(worker: ServiceWorker) {
