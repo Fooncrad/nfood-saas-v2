@@ -26,7 +26,7 @@ async function googleConfiguration(req: Request) {
   return null;
 }
 
-function oauthNonce(res: Response) { const nonce = nanoid(32); res.cookie(OAUTH_STATE_COOKIE, nonce, { httpOnly: true, path: "/", maxAge: 600000, sameSite: "lax", secure: true }); return nonce; }
+function oauthNonce(req: Request, res: Response) { const nonce = nanoid(32); res.cookie(OAUTH_STATE_COOKIE, nonce, { ...getSessionCookieOptions(req), maxAge: 600000 }); return nonce; }
 function verifyOauthNonce(req: Request, state: string) { return Boolean(state && state === parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE]); }
 function safeReturnTo(value: string | undefined): string | null {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\") || /[\r\n]/.test(value)) return null;
@@ -42,7 +42,7 @@ export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/google/start", async (req: Request, res: Response) => {
     const config = await googleConfiguration(req);
     if (!config) return res.redirect(302, "/login?oauth=google_not_configured");
-    const state = oauthNonce(res);
+    const state = oauthNonce(req, res);
     const returnTo = safeReturnTo(getQueryParam(req, "returnTo"));
     if (returnTo) res.cookie(GOOGLE_RETURN_COOKIE, returnTo, { httpOnly: true, path: "/", maxAge: 600000, sameSite: "lax", secure: true });
     else res.clearCookie(GOOGLE_RETURN_COOKIE, { path: "/" });
@@ -53,7 +53,7 @@ export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/google/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code"); const state = getQueryParam(req, "state");
     if (!code || !state || !verifyOauthNonce(req, state)) return res.redirect(302, "/login?oauth=invalid_state");
-    res.clearCookie(OAUTH_STATE_COOKIE, { path: "/" });
+    res.clearCookie(OAUTH_STATE_COOKIE, getSessionCookieOptions(req));
     const returnTo = safeReturnTo(parseCookieHeader(req.headers.cookie ?? "")[GOOGLE_RETURN_COOKIE]);
     res.clearCookie(GOOGLE_RETURN_COOKIE, { path: "/" });
     try {
