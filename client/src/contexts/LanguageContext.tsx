@@ -1296,11 +1296,11 @@ export function autoTranslateText(source: string, language: Language): string {
   const composed = applyOperationalFragments(source, language);
   if (!/[\u0600-\u06FF]/.test(composed)) return composed;
 
-  // Never leak Arabic into a non-Arabic UI. New strings can arrive from newly-added
-  // components before their EN/FR entry is published; fail closed until the translation
-  // bridge/database supplies the real value.
+  // Record newly-added untranslated UI for the translation editor, but never expose
+  // an internal "translation pending" marker to customers. Preserve the source until
+  // its EN/FR translation is published so content is never silently replaced.
   reportMissingRuntimeTranslation(source, language);
-  return language === "fr" ? "Traduction en attente" : "Translation pending";
+  return source;
 }
 
 export function findUntranslatedArabic(source: string, language: Language): string[] {
