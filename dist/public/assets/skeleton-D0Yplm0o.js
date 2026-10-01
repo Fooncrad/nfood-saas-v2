@@ -1,0 +1,1 @@
+import{j as s,a2 as n}from"./dashboard-operations-BjiS3wmg.js";function o({className:t,...e}){return s.jsx("div",{"data-loc":"client/src/components/ui/skeleton.tsx:5","data-slot":"skeleton",className:n("bg-accent animate-pulse rounded-md",t),...e})}export{o as S};
