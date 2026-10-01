@@ -7585,3 +7585,23 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     .dark .nfood-appem-admin,.dark .nfood-appem-restaurant-content { background:#07111e; }
   }
 }
+
+/* nfoodz-APP-em mobile navigation treatment: drawer, top trigger and touch-safe spacing */
+.nfood-mobile-nav__panel { border-inline-start: 3px solid #c96d3b; }
+.nfood-mobile-nav__panel nav button { min-height: 44px; }
+.nfood-mobile-menu-button { transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease; }
+.nfood-mobile-menu-button:active { transform: scale(.96); }
+@media (max-width: 639px) {
+  .nfood-appem-restaurant-content > header { min-height: 64px; padding-inline: 14px !important; }
+  .nfood-appem-restaurant-content > header h1 { font-size: 1rem; }
+  .nfood-appem-restaurant-content > header > div:last-child { gap: .45rem; }
+  .nfood-appem-restaurant-content > header > div:last-child > button[aria-label="فتح الإشعارات"] { padding: .6rem; }
+  .nfood-appem-restaurant-content > header + .border-b { background: #fffdfa !important; border-color: #e5dcd2 !important; }
+  .nfood-appem-restaurant-content > header + .border-b > div { scrollbar-width: none; }
+  .nfood-appem-restaurant-content > header + .border-b > div::-webkit-scrollbar { display: none; }
+  .nfood-appem-restaurant-content > div.p-4 { padding: 1rem .75rem 6rem; }
+  .nfood-mobile-nav__panel { padding: 1rem .85rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nfood-mobile-nav__panel, .nfood-mobile-nav__overlay, .nfood-mobile-menu-button { transition: none !important; }
+}
