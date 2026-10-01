@@ -25,7 +25,7 @@ for (const locale of locales) {
   const keys = new Set(Object.keys(flat[locale]));
   for (const key of baseKeys) if (!keys.has(key)) errors.push(`${locale}: missing ${key}`);
   for (const key of keys) if (!baseKeys.has(key)) errors.push(`ar: missing ${key} required by ${locale}`);
-  for (const [key, value] of Object.entries(flat[locale])) if (!String(value).trim()) errors.push(`${locale}: empty ${key}`);
+  for (const [key, value] of Object.entries(flat[locale])) {\n    if (!String(value).trim()) errors.push(`${locale}: empty ${key}`);\n    if (locale !== "ar" && /[\\u0600-\\u06FF]/.test(String(value))) errors.push(`${locale}: Arabic text leaked into ${key}`);\n  }
 }
 if (errors.length) {
   console.error(`i18n catalog check failed (${errors.length})`);
