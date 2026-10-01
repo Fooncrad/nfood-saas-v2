@@ -7487,3 +7487,101 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
     --ring: 18 100% 61%;
   }
 }
+
+
+/* APP-EM component-mapped shell: targets the real production admin and restaurant DOM */
+@layer components {
+  .nfood-appem-admin {
+    --appem-orange:#ff7436;
+    --appem-navy:#071a2d;
+    background:#f5f7fa !important;
+  }
+  .nfood-appem-admin-sidebar {
+    width:244px !important;
+    background:#071a2d !important;
+    box-shadow:-12px 0 30px rgba(7,26,45,.12);
+  }
+  .nfood-appem-admin-sidebar > div { background:#071a2d !important; }
+  .nfood-appem-admin-sidebar nav button {
+    min-height:38px;
+    border-radius:8px !important;
+    font-size:12px;
+  }
+  .nfood-appem-admin-sidebar nav button:hover { background:#102f49 !important; color:#fff !important; }
+  .nfood-appem-admin > div > header {
+    min-height:72px;
+    box-shadow:0 1px 0 rgba(7,26,45,.03),0 8px 24px rgba(7,26,45,.04);
+  }
+  .nfood-appem-admin main,
+  .nfood-appem-admin [class*="overflow-y-auto"] {
+    scrollbar-width:thin;
+  }
+
+  .nfood-appem-restaurant {
+    --restaurant-accent:#c96d3b;
+    --restaurant-ink:#2b2520;
+    --restaurant-line:#e5dcd2;
+    background:#f2eee8 !important;
+    color:#2b2520 !important;
+  }
+  .nfood-appem-restaurant-sidebar {
+    width:246px !important;
+    background:#171a1d !important;
+    border-inline-start:3px solid #c96d3b !important;
+    box-shadow:18px 0 42px rgba(24,18,12,.12);
+  }
+  .nfood-appem-restaurant-sidebar > div:first-child {
+    min-height:76px;
+    border-bottom-color:rgba(255,255,255,.12) !important;
+  }
+  .nfood-appem-restaurant-sidebar nav button {
+    border-radius:10px !important;
+    color:#b8bbb8;
+    min-height:40px;
+  }
+  .nfood-appem-restaurant-sidebar nav button:hover { background:#2b3134 !important; color:#fff !important; }
+  .nfood-appem-restaurant-sidebar nav button[class*="bg-[#e76f3c]"] {
+    background:#c96d3b !important;
+    box-shadow:0 10px 24px rgba(201,109,59,.28) !important;
+  }
+  .nfood-appem-restaurant-content {
+    min-height:100vh;
+    background:radial-gradient(circle at 80% 0%,rgba(201,109,59,.1),transparent 28rem),#f2eee8;
+  }
+  .nfood-appem-restaurant-content > header {
+    min-height:76px;
+    background:rgba(250,248,244,.92) !important;
+    border-bottom-color:#ded6cc !important;
+    backdrop-filter:blur(14px);
+  }
+  .nfood-appem-restaurant-content [data-slot="card"] {
+    background:rgba(255,253,250,.94) !important;
+    border-color:#e5dcd2 !important;
+    box-shadow:0 8px 22px rgba(75,48,30,.06) !important;
+  }
+  .nfood-appem-restaurant-content [data-slot="card"]:hover {
+    box-shadow:0 15px 28px rgba(75,48,30,.1) !important;
+  }
+  .nfood-appem-restaurant-content table thead { background:#f3eee8 !important; }
+  .nfood-appem-restaurant-content table tbody tr:hover { background:#fff4eb !important; }
+  .nfood-appem-restaurant-content button[class*="bg-[#e76f3c]"] { background:#c96d3b !important; }
+  .nfood-appem-restaurant-content :is(input,textarea,select) {
+    border-color:#e5dcd2 !important;
+    background:#fffdfa;
+  }
+
+  .dark .nfood-appem-admin { background:#041221 !important; }
+  .dark .nfood-appem-admin > div { background:radial-gradient(circle at 84% 0%,rgba(255,116,54,.12),transparent 26rem),#041221; }
+  .dark .nfood-appem-restaurant { background:#161514 !important; color:#f5eee8 !important; }
+  .dark .nfood-appem-restaurant-content { background:radial-gradient(circle at 80% 0%,rgba(201,109,59,.12),transparent 28rem),#161514; }
+  .dark .nfood-appem-restaurant-content > header { background:rgba(23,26,29,.92) !important; border-bottom-color:rgba(255,255,255,.1) !important; }
+  .dark .nfood-appem-restaurant-content [data-slot="card"] { background:#201f1d !important; border-color:rgba(255,255,255,.1) !important; }
+
+  @media(max-width:1023px){
+    .nfood-appem-restaurant-content { margin-right:0 !important; }
+  }
+  @media(max-width:760px){
+    .nfood-appem-admin,.nfood-appem-restaurant-content { background:#f5f7fa; }
+    .dark .nfood-appem-admin,.dark .nfood-appem-restaurant-content { background:#07111e; }
+  }
+}
