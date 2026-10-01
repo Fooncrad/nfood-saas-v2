@@ -1,4 +1,4 @@
-const CACHE_NAME = "nfood-shell-v8";
+const CACHE_NAME = "nfood-shell-v9";
 const NOTIFICATION_ICON = "/icon-maskable.svg";
 const SHELL = [
   "/",
@@ -110,5 +110,13 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
   const isVersionedAsset = url.pathname.startsWith("/assets/");
-  event.respondWith(request.mode === "navigate" || isVersionedAsset ? networkFirstDocument(request) : networkFirstAsset(request));
+  // Navigation may fall back to the cached app shell. Hashed JS/CSS assets must NEVER
+  // fall back to "/" because that returns text/html and browsers reject it as a
+  // JavaScript/CSS MIME type. A missing stale chunk should fail normally so the
+  // client recovery path can refresh to the current deployment.
+  event.respondWith(
+    request.mode === "navigate"
+      ? networkFirstDocument(request)
+      : networkFirstAsset(request)
+  );
 });
