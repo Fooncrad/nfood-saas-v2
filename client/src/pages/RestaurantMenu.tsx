@@ -129,6 +129,11 @@ export default function RestaurantMenu() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [registerName, setRegisterName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPhone, setRegisterPhone] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [activeCategory, setActiveCategory] = useState<number | "all">("all");
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(40);
@@ -172,6 +177,31 @@ export default function RestaurantMenu() {
   const [waiterName, setWaiterName] = useState("");
   const [installPrompt, setInstallPrompt] = useState<DeferredInstallPrompt | null>(null);
   const [pageScrolled, setPageScrolled] = useState(false);
+
+  // Persist the active checkout locally so OAuth/auth refreshes never empty the cart.
+  useEffect(() => {
+    const key = `nfood:checkout:${slug}`;
+    try {
+      const saved = JSON.parse(localStorage.getItem(key) || "null");
+      if (!saved) return;
+      if (Array.isArray(saved.cart)) setCart(saved.cart);
+      if (saved.cartStep === 1 || saved.cartStep === 2 || saved.cartStep === 3) setCartStep(saved.cartStep);
+      if (saved.orderMode) setOrderMode(saved.orderMode);
+      if (saved.selectedBranchId) setSelectedBranchId(saved.selectedBranchId);
+      if (saved.selectedTableId) setSelectedTableId(saved.selectedTableId);
+      if (saved.tableName) setTableName(saved.tableName);
+      if (saved.dineInPartySize) setDineInPartySize(saved.dineInPartySize);
+      if (saved.guestName) setGuestName(saved.guestName);
+      if (saved.guestPhone) setGuestPhone(saved.guestPhone);
+      if (saved.orderNotes) setOrderNotes(saved.orderNotes);
+      if (saved.paymentMethod) setPaymentMethod(saved.paymentMethod);
+      if (new URLSearchParams(window.location.search).get("resumeCheckout") === "1" && saved.cart?.length) setCartOpen(true);
+    } catch {}
+  }, [slug]);
+
+  useEffect(() => {
+    try { localStorage.setItem(`nfood:checkout:${slug}`, JSON.stringify({ cart, cartStep, orderMode, selectedBranchId, selectedTableId, tableName, dineInPartySize, guestName, guestPhone, orderNotes, paymentMethod })); } catch {}
+  }, [slug, cart, cartStep, orderMode, selectedBranchId, selectedTableId, tableName, dineInPartySize, guestName, guestPhone, orderNotes, paymentMethod]);
 
   // Keep registered-customer checkout details for one day. Only service-specific
   // choices (table/section/session) should change between visits.
@@ -410,6 +440,18 @@ export default function RestaurantMenu() {
   );
   const deliveryFee = orderMode === "delivery" && deliveryQuote.data?.available ? Number(deliveryQuote.data.fee || 0) : 0;
 
+  const inlineRegister = trpc.auth.registerCustomer.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      if (registerName.trim()) setGuestName(registerName.trim());
+      if (registerPhone.trim()) setGuestPhone(registerPhone.trim());
+      setLoginEmail(registerEmail.trim());
+      setRegisterPassword("");
+      toast.success(lang === "ar" ? "تم إنشاء الحساب وتسجيل دخولك، أكمل طلبك" : lang === "fr" ? "Compte créé et connexion réussie. Continuez votre commande." : "Account created and signed in. Continue your order.");
+    },
+    onError: (error) => toast.error(error.message || (lang === "ar" ? "تعذر إنشاء الحساب" : "Could not create account")),
+  });
+
   const inlineLogin = trpc.auth.testLogin.useMutation({
     onSuccess: async () => {
       await refresh();
@@ -427,6 +469,7 @@ export default function RestaurantMenu() {
   const checkout = trpc.platform.guestCheckout.useMutation({
     onSuccess: (result) => {
       setCart([]);
+      try { localStorage.removeItem(`nfood:checkout:${slug}`); } catch {}
       setCartOpen(false);
       toast.success(lang === "ar" ? "تم تأكيد الطلب" : lang === "fr" ? "Commande confirmée" : "Order confirmed");
       window.setTimeout(() => navigate(`/customer-orders?order=${result.orderId}`), 180);
@@ -819,18 +862,24 @@ export default function RestaurantMenu() {
             </div>
           </div>
           {!user && <div className="mt-5 rounded-2xl border border-orange-200 bg-orange-50/70 p-4 dark:border-orange-900/40 dark:bg-orange-950/20">
-            <p className="text-sm font-black text-slate-900 dark:text-white">{lang === "ar" ? "سجّل الدخول لإكمال الطلب" : lang === "fr" ? "Connectez-vous pour terminer la commande" : "Sign in to complete your order"}</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">{lang === "ar" ? "لن تغادر السلة ولن تفقد الأصناف أو نوع الطلب المختار." : lang === "fr" ? "Vous resterez dans le panier sans perdre vos articles ni le type de commande." : "You will stay in the cart without losing items or your selected order type."}</p>
-            <form onSubmit={(event) => { event.preventDefault(); if (loginEmail && loginPassword) inlineLogin.mutate({ email:loginEmail, password:loginPassword }); }} className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-white/70 p-1 dark:bg-white/5">
+              <button type="button" onClick={() => setAuthMode("login")} className={`h-9 rounded-lg text-xs font-black ${authMode === "login" ? "bg-orange-500 text-white" : "text-slate-500"}`}>{copy.login}</button>
+              <button type="button" onClick={() => setAuthMode("register")} className={`h-9 rounded-lg text-xs font-black ${authMode === "register" ? "bg-orange-500 text-white" : "text-slate-500"}`}>{lang === "ar" ? "حساب جديد" : lang === "fr" ? "Créer un compte" : "Create account"}</button>
+            </div>
+            {authMode === "login" ? <form onSubmit={(event) => { event.preventDefault(); if (loginEmail && loginPassword) inlineLogin.mutate({ email:loginEmail, password:loginPassword }); }} className="mt-3 grid gap-3 sm:grid-cols-2">
               <Input type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder={copy.email} dir="ltr" />
               <Input type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder={lang === "ar" ? "كلمة المرور" : lang === "fr" ? "Mot de passe" : "Password"} dir="ltr" />
-              <Button type="submit" disabled={inlineLogin.isPending} className="h-11 font-black text-white sm:col-span-2" style={{ background:primary }}>{inlineLogin.isPending ? (lang === "ar" ? "جارٍ تسجيل الدخول..." : "Signing in...") : copy.login}</Button>
-            </form>
+              <Button type="submit" disabled={inlineLogin.isPending} className="h-11 font-black text-white sm:col-span-2" style={{ background:primary }}>{inlineLogin.isPending ? (lang === "ar" ? "جارٍ تسجيل الدخول..." : lang === "fr" ? "Connexion..." : "Signing in...") : copy.login}</Button>
+            </form> : <form onSubmit={(event) => { event.preventDefault(); if (registerName.trim().length < 2 || !registerEmail.includes("@") || registerPassword.length < 8) return; inlineRegister.mutate({ name:registerName.trim(), email:registerEmail.trim(), password:registerPassword, restaurantId:restaurant?.id }); }} className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Input required value={registerName} onChange={(e) => setRegisterName(e.target.value)} placeholder={copy.name} />
+              <Input required value={registerPhone} onChange={(e) => setRegisterPhone(e.target.value)} placeholder={copy.phone} dir="ltr" />
+              <Input type="email" required value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} placeholder={copy.email} dir="ltr" />
+              <Input type="password" required minLength={8} value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} placeholder={lang === "ar" ? "كلمة المرور · 8 أحرف على الأقل" : lang === "fr" ? "Mot de passe · 8 caractères min." : "Password · 8 characters min."} dir="ltr" />
+              <Button type="submit" disabled={inlineRegister.isPending} className="h-11 font-black text-white sm:col-span-2" style={{ background:primary }}>{inlineRegister.isPending ? (lang === "ar" ? "جارٍ إنشاء الحساب..." : lang === "fr" ? "Création..." : "Creating account...") : (lang === "ar" ? "إنشاء الحساب والمتابعة" : lang === "fr" ? "Créer et continuer" : "Create and continue")}</Button>
+            </form>}
             <div className="my-3 flex items-center gap-2"><span className="h-px flex-1 bg-orange-200/70 dark:bg-white/10" /><span className="text-[10px] font-bold text-slate-400">{lang === "ar" ? "أو" : lang === "fr" ? "ou" : "or"}</span><span className="h-px flex-1 bg-orange-200/70 dark:bg-white/10" /></div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Button type="button" variant="outline" onClick={() => { const returnTo = `/menu/${encodeURIComponent(slug)}?resumeCheckout=1`; window.location.href = `/api/oauth/google/start?returnTo=${encodeURIComponent(returnTo)}`; }} className="h-11 rounded-xl bg-white font-black text-slate-800 dark:bg-white/5 dark:text-white"><span className="me-2 grid h-5 w-5 place-items-center rounded-full border text-xs font-black text-blue-600">G</span>{lang === "ar" ? "الدخول عبر Google" : lang === "fr" ? "Continuer avec Google" : "Continue with Google"}</Button>
-              <Button type="button" variant="outline" onClick={() => { try { sessionStorage.setItem(`nfood:checkout:${slug}`, JSON.stringify({ cart, cartStep, orderMode, selectedBranchId, selectedTableId, tableName, dineInPartySize, guestName, guestPhone, orderNotes, paymentMethod })); } catch {} navigate(`/customer-register?returnTo=${encodeURIComponent(`/menu/${slug}?resumeCheckout=1`)}`); }} className="h-11 rounded-xl border-orange-200 font-black text-orange-700 dark:text-orange-300">{lang === "ar" ? "تسجيل حساب جديد" : lang === "fr" ? "Créer un compte" : "Create account"}</Button>
-            </div>
+            <Button type="button" variant="outline" onClick={() => { const returnTo = `/menu/${encodeURIComponent(slug)}?resumeCheckout=1`; window.location.href = `/api/oauth/google/start?returnTo=${encodeURIComponent(returnTo)}`; }} className="h-11 w-full rounded-xl bg-white font-black text-slate-800 dark:bg-white/5 dark:text-white"><span className="me-2 grid h-5 w-5 place-items-center rounded-full border text-xs font-black text-blue-600">G</span>{lang === "ar" ? "المتابعة عبر Google" : lang === "fr" ? "Continuer avec Google" : "Continue with Google"}</Button>
+            <p className="mt-3 text-center text-[11px] leading-5 text-slate-500">{lang === "ar" ? "لن تغادر السلة ولن تفقد المنتجات أو خيارات الطلب." : lang === "fr" ? "Votre panier et vos choix seront conservés." : "Your cart and checkout choices will be preserved."}</p>
           </div>}
           <div className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm dark:bg-slate-900"><div className="flex justify-between"><span>{copy.total}</span><b>{formatMoney(subtotal + deliveryFee, currency)}</b></div>{deliveryFee > 0 && <p className="mt-1 text-xs text-slate-500">{copy.delivery}: {formatMoney(deliveryFee, currency)}</p>}</div>
           <Button disabled={checkout.isPending || !cart.length || !isOpen || !user} onClick={submitOrder} className="mt-4 h-12 w-full rounded-2xl font-black text-white" style={{ background:primary }}>{!user ? (lang === "ar" ? "سجّل الدخول أولًا" : lang === "fr" ? "Connectez-vous d’abord" : "Sign in first") : isOpen ? copy.checkout : copy.closed}</Button>
