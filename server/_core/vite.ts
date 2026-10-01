@@ -44,7 +44,11 @@ export async function setupVite(app: Express, server: Server) {
   // can otherwise transform the HTML and inject /@vite/client, whose HMR
   // socket is unavailable behind the managed preview proxy.
   app.use("*", async (req, res, next) => {
-    if (req.method !== "GET" || !req.headers.accept?.includes("text/html")) {
+    const acceptsHtml = req.headers.accept?.includes("text/html") ?? false;
+    const isDocumentRequest = req.method === "GET" &&
+      (acceptsHtml || req.path === "/" || (!path.extname(req.path) && !req.path.startsWith("/@")));
+
+    if (!isDocumentRequest) {
       return next();
     }
 
@@ -73,8 +77,31 @@ export async function setupVite(app: Express, server: Server) {
   // Some preview layers can retain an older HTML response that still points at
   // /@vite/client. Return a harmless module for that URL so the stale client
   // cannot open a WebSocket that the managed preview proxy does not expose.
-  app.get("/@vite/client", (_req, res) => {
-    res.status(200).type("application/javascript").send("export {};\n");
+  app.use("/@vite/client", (_req, res) => {
+    // Vite-transformed modules can still import this module even when HMR is
+    // disabled. Keep the fallback uncached and expose the Vite client API that
+    // those modules expect, without opening an unreachable WebSocket.
+    res
+      .status(200)
+      .set("Cache-Control", "no-store")
+      .type("application/javascript")
+      .send(`
+const hotData = Object.create(null);
+const noop = () => {};
+
+export function createHotContext() {
+  return {
+    data: hotData,
+    accept: noop,
+    dispose: noop,
+    prune: noop,
+    invalidate: noop,
+    on: noop,
+    off: noop,
+    send: noop,
+  };
+}
+`);
   });
   app.get("/@vite/env", (_req, res) => {
     res.status(200).type("application/javascript").send("export {};\n");
