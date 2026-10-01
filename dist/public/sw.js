@@ -1,4 +1,5 @@
-const CACHE_NAME = "nfood-shell-v7";
+const CACHE_NAME = "nfood-shell-v9";
+const NOTIFICATION_ICON = "/icon-maskable.svg";
 const SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -70,27 +71,36 @@ self.addEventListener("sync", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "NFOOD", body: "لديك تحديث جديد في مساحة العمل." };
+  let data = { title: "NFOOD", body: "لديك تحديث جديد في مساحة العمل.", url: "/", tag: `nfood-update-${Date.now()}` };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch {
     /* Keep the localized fallback notification. */
   }
-  event.waitUntil(self.registration.showNotification(data.title, {
-    body: data.body,
-    dir: "rtl",
-    lang: "ar",
-    tag: "nfood-update",
-  }));
+  event.waitUntil(Promise.all([
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      dir: "rtl",
+      lang: "ar",
+      icon: NOTIFICATION_ICON,
+      badge: NOTIFICATION_ICON,
+      vibrate: [160, 80, 160],
+      renotify: true,
+      tag: data.tag || `nfood-update-${Date.now()}`,
+      data: { url: data.url || "/" },
+    }),
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => clients.forEach((client) => client.postMessage({ type: "NFOOD_PUSH_RECEIVED", payload: data }))),
+  ]));
 });
 
 self.addEventListener("notificationclick", (event) => {
+  const targetUrl = event.notification.data?.url || "/";
   event.notification.close();
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       const first = clients[0];
-      if (first) return first.focus();
-      return self.clients.openWindow("/");
+      if (first) return first.focus().then(() => first.navigate?.(new URL(targetUrl, self.location.origin).href));
+      return self.clients.openWindow(new URL(targetUrl, self.location.origin).href);
     })
   );
 });
@@ -100,5 +110,13 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
   const isVersionedAsset = url.pathname.startsWith("/assets/");
-  event.respondWith(request.mode === "navigate" || isVersionedAsset ? networkFirstDocument(request) : networkFirstAsset(request));
+  // Navigation may fall back to the cached app shell. Hashed JS/CSS assets must NEVER
+  // fall back to "/" because that returns text/html and browsers reject it as a
+  // JavaScript/CSS MIME type. A missing stale chunk should fail normally so the
+  // client recovery path can refresh to the current deployment.
+  event.respondWith(
+    request.mode === "navigate"
+      ? networkFirstDocument(request)
+      : networkFirstAsset(request)
+  );
 });
