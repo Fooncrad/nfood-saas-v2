@@ -3167,7 +3167,17 @@ function PosView({ restaurantId }: { restaurantId: number }) {
       toast.info("تم حفظ الطلب محليًا وسيُرسل تلقائيًا عند عودة الاتصال");
       return;
     }
-    createOrder.mutate(payload);
+    void createOrder.mutateAsync(payload).catch(error => {
+      const message = String(error?.message ?? "");
+      const retryable = !navigator.onLine || /network|fetch|timeout|failed to fetch|load failed|connection/i.test(message);
+      if (!retryable) {
+        toast.error(`تعذر حفظ الطلب: ${message || "رفض الخادم الطلب"}`);
+        return;
+      }
+      const queue = enqueueOfflineItem(localStorage, queueKey, payload, payload.clientRequestId);
+      setQueuedCount(queue.length);
+      toast.warning("تعذر الاتصال بالخادم. حُفظ الطلب للمزامنة بنفس رقم العملية.");
+    });
   };
   useEffect(() => {
     const refresh = () => {
