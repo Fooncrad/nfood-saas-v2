@@ -197,6 +197,7 @@ var restaurants = mysqlTable("restaurants", {
   cancellationEnabled: boolean("cancellationEnabled").default(true).notNull(),
   cancellationWindowMinutes: int("cancellationWindowMinutes").default(15).notNull(),
   reservationNoShowGraceMinutes: int("reservationNoShowGraceMinutes").default(10).notNull(),
+  waitlistExpiryMinutes: int("waitlistExpiryMinutes").default(120).notNull(),
   reservationMaxPerDay: int("reservationMaxPerDay"),
   reservationDepositEnabled: boolean("reservationDepositEnabled").default(false).notNull(),
   reservationDepositAmount: decimal("reservationDepositAmount", { precision: 10, scale: 2 }).default("0").notNull(),
@@ -1244,6 +1245,21 @@ var notifications = mysqlTable("notifications", {
   body: text("body").notNull(),
   readAt: timestamp("readAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull()
+});
+var scheduledNotifications = mysqlTable("scheduledNotifications", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 180 }).notNull(),
+  body: text("body").notNull(),
+  type: mysqlEnum("type", ["task", "message", "payment", "system"]).default("system").notNull(),
+  targetType: mysqlEnum("targetType", ["all", "customers", "restaurants", "admins", "selected"]).default("all").notNull(),
+  targetUserIdsJson: text("targetUserIdsJson"),
+  scheduleCron: varchar("scheduleCron", { length: 80 }).notNull(),
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
+  status: mysqlEnum("status", ["scheduled", "paused", "deleted"]).default("scheduled").notNull(),
+  createdByUserId: int("createdByUserId").notNull().references(() => users.id),
+  lastRunAt: timestamp("lastRunAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
 });
 var authSessions = mysqlTable("authSessions", {
   id: int("id").autoincrement().primaryKey(),
@@ -2438,7 +2454,7 @@ async function getDb() {
   }
   return _db;
 }
-var PLATFORM_SETTING_KEYS = ["headerConfigJson", "footerConfigJson", "customPagesJson", "homepageContentEn", "homepageContentFr", "siteDescriptionEn", "siteDescriptionFr", "termsOfServiceEn", "termsOfServiceFr", "privacyPolicyEn", "privacyPolicyFr", "refundPolicyEn", "refundPolicyFr", "supportEmail", "supportPhone", "defaultCurrency", "defaultTimezone", "baseDomain", "maintenanceMode", "allowGuestCheckout", "allowCustomerContentPurchase", "allowRestaurantContentPurchase", "siteLanguage", "availableLanguages", "country", "siteName", "siteLogoUrl", "socialLinks", "copyrightYear", "currencyDisplayMode", "numberFormat", "pricingLayout", "analyticsId", "facebookPixelId", "siteDescription", "homepageContent", "termsOfService", "privacyPolicy", "refundPolicy", "subscriptionTaxRate", "taxNumber", "companyDetails", "bankAccountName", "bankName", "bankAccountNumber", "bankTransferInstructions", "vcardEnabledRoles", "profileCustomerEnabled", "profileRestaurantEnabled", "profileDriverEnabled", "profilePlansJson", "profileAccountOverridesJson", "referralReferrerPoints", "referralReferredPoints", "contentImagePrice", "customerStudioLimitBytes", "sectorGovernanceJson", "seoTitle", "seoDescription", "seoKeywords", "seoHashtags", "seoImageUrl", "seoCanonicalUrl", "seoRobots", "googleSearchConsoleVerification", "googleAnalyticsMeasurementId", "googleTagManagerId", "structuredDataJson", "translateWidgetCode", "marketplaceAppearanceJson", "notificationPolicyJson", "publicFeaturesJson", "publicPricingJson"];
+var PLATFORM_SETTING_KEYS = ["headerConfigJson", "footerConfigJson", "customPagesJson", "homepageContentEn", "homepageContentFr", "siteDescriptionEn", "siteDescriptionFr", "termsOfServiceEn", "termsOfServiceFr", "privacyPolicyEn", "privacyPolicyFr", "refundPolicyEn", "refundPolicyFr", "supportEmail", "supportPhone", "defaultCurrency", "defaultTimezone", "baseDomain", "maintenanceMode", "allowGuestCheckout", "allowCustomerContentPurchase", "allowRestaurantContentPurchase", "siteLanguage", "availableLanguages", "country", "siteName", "siteLogoUrl", "socialLinks", "copyrightYear", "currencyDisplayMode", "numberFormat", "pricingLayout", "analyticsId", "facebookPixelId", "siteDescription", "homepageContent", "termsOfService", "privacyPolicy", "refundPolicy", "subscriptionTaxRate", "taxNumber", "companyDetails", "bankAccountName", "bankName", "bankAccountNumber", "bankTransferInstructions", "vcardEnabledRoles", "profileCustomerEnabled", "profileRestaurantEnabled", "profileDriverEnabled", "profilePlansJson", "profileAccountOverridesJson", "referralReferrerPoints", "referralReferredPoints", "contentImagePrice", "customerStudioLimitBytes", "sectorGovernanceJson", "seoTitle", "seoDescription", "seoKeywords", "seoHashtags", "seoImageUrl", "seoCanonicalUrl", "seoRobots", "googleSearchConsoleVerification", "googleAnalyticsMeasurementId", "googleTagManagerId", "structuredDataJson", "translateWidgetCode", "marketplaceAppearanceJson", "notificationPolicyJson", "publicFeaturesJson", "publicPricingJson", "loadingScreenJson"];
 function getLoyaltyTier(points) {
   const safePoints = Math.max(0, points);
   return safePoints >= 1e3 ? "gold" : safePoints >= 500 ? "silver" : "standard";
@@ -3330,7 +3346,7 @@ var DEFAULT_TRANSLATE_WIDGET_CODE = `<div class="gtranslate_wrapper"></div>
 <script src="https://cdn.gtranslate.net/widgets/latest/float.js" defer></script>`;
 async function getPlatformSettings() {
   const db = await getDb();
-  const defaults = { headerConfigJson: "{}", footerConfigJson: "{}", customPagesJson: "[]", homepageContentEn: "", homepageContentFr: "", siteDescriptionEn: "", siteDescriptionFr: "", termsOfServiceEn: "", termsOfServiceFr: "", privacyPolicyEn: "", privacyPolicyFr: "", refundPolicyEn: "", refundPolicyFr: "", supportEmail: "", supportPhone: "", defaultCurrency: "SAR", defaultTimezone: "Asia/Riyadh", baseDomain: "", maintenanceMode: "false", allowGuestCheckout: "true", allowCustomerContentPurchase: "false", allowRestaurantContentPurchase: "true", siteLanguage: "ar", availableLanguages: "ar,en,fr", country: "Saudi Arabia", siteName: "NFOOD Restaurant SaaS", siteLogoUrl: "", socialLinks: "", copyrightYear: String((/* @__PURE__ */ new Date()).getFullYear()), currencyDisplayMode: "symbol", numberFormat: "1,000.00", pricingLayout: "style-1", analyticsId: "", facebookPixelId: "", siteDescription: "", homepageContent: "", termsOfService: "", privacyPolicy: "", refundPolicy: "", subscriptionTaxRate: "0", taxNumber: "", companyDetails: "", bankAccountName: "NFOOD", bankName: "", bankAccountNumber: "", bankTransferInstructions: "", vcardEnabledRoles: "customer", profileCustomerEnabled: "true", profileRestaurantEnabled: "true", profileDriverEnabled: "false", profilePlansJson: '[{"key":"customer-basic","label":"Customer Profile","role":"customer","enabled":true,"price":"0.00"},{"key":"restaurant-business","label":"Restaurant Profile","role":"restaurant","enabled":true,"price":"0.00"}]', profileAccountOverridesJson: "{}", referralReferrerPoints: "100", referralReferredPoints: "50", contentImagePrice: "5.00", customerStudioLimitBytes: "104857600", sectorGovernanceJson: "{}", seoTitle: "", seoDescription: "", seoKeywords: "", seoHashtags: "", seoImageUrl: "", seoCanonicalUrl: "", seoRobots: "index,follow", googleSearchConsoleVerification: "", googleAnalyticsMeasurementId: "", googleTagManagerId: "", structuredDataJson: "", translateWidgetCode: DEFAULT_TRANSLATE_WIDGET_CODE, notificationPolicyJson: "{}", publicFeaturesJson: '{"ar":{"title":"\u0643\u0644 \u0623\u062F\u0648\u0627\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644 \u0641\u064A \u0645\u0646\u0635\u0629 \u0648\u0627\u062D\u062F\u0629","subtitle":"\u0627\u0633\u062A\u0628\u062F\u0644 \u0627\u0644\u0623\u062F\u0648\u0627\u062A \u0627\u0644\u0645\u062A\u0641\u0631\u0642\u0629 \u0628\u0645\u0646\u0635\u0629 \u0645\u062A\u0643\u0627\u0645\u0644\u0629 \u062A\u0631\u0628\u0637 \u0627\u0644\u0625\u062F\u0627\u0631\u0629 \u0648\u0627\u0644\u062A\u0634\u063A\u064A\u0644 \u0648\u0627\u0644\u0645\u0628\u064A\u0639\u0627\u062A \u0648\u062A\u062C\u0631\u0628\u0629 \u0627\u0644\u0639\u0645\u064A\u0644.","homeCards":[{"title":"\u0625\u062F\u0627\u0631\u0629 \u0645\u0648\u062D\u062F\u0629","body":"\u0623\u062F\u0631 \u0627\u0644\u0641\u0631\u0648\u0639 \u0648\u0627\u0644\u0637\u0644\u0628\u0627\u062A \u0648\u0627\u0644\u0645\u0648\u0638\u0641\u064A\u0646 \u0648\u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u0645\u0646 \u0644\u0648\u062D\u0629 \u0648\u0627\u062D\u062F\u0629."},{"title":"\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0648\u0627\u0636\u062D\u0629","body":"\u0631\u0627\u0642\u0628 \u0627\u0644\u0645\u0628\u064A\u0639\u0627\u062A \u0648\u0627\u0644\u0623\u062F\u0627\u0621 \u0648\u0627\u062A\u062E\u0630 \u0642\u0631\u0627\u0631\u0627\u062A \u0645\u0628\u0646\u064A\u0629 \u0639\u0644\u0649 \u0628\u064A\u0627\u0646\u0627\u062A \u0648\u0627\u0636\u062D\u0629."},{"title":"\u062A\u062C\u0631\u0628\u0629 \u0639\u0645\u064A\u0644 \u0645\u062A\u0635\u0644\u0629","body":"\u0645\u0646\u064A\u0648 \u0631\u0642\u0645\u064A\u060C \u0637\u0644\u0628\u0627\u062A\u060C \u062D\u062C\u0648\u0632\u0627\u062A\u060C \u0637\u0627\u0628\u0648\u0631\u060C \u0625\u0634\u0639\u0627\u0631\u0627\u062A \u0648\u0645\u0643\u0627\u0641\u0622\u062A."},{"title":"\u0635\u0644\u0627\u062D\u064A\u0627\u062A \u0648\u0623\u0645\u0627\u0646","body":"\u062A\u062D\u0643\u0645 \u062F\u0642\u064A\u0642 \u0641\u064A \u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0627\u062A \u0648\u0627\u0644\u062C\u0644\u0633\u0627\u062A \u0644\u0643\u0644 \u062F\u0648\u0631 \u062F\u0627\u062E\u0644 \u0627\u0644\u0646\u0634\u0627\u0637."}],"groups":[{"title":"\u0627\u0644\u0645\u0628\u064A\u0639\u0627\u062A \u0648\u062A\u062C\u0631\u0628\u0629 \u0627\u0644\u0639\u0645\u064A\u0644","items":["\u0645\u0646\u064A\u0648 \u0648\u0645\u062A\u0627\u062C\u0631 \u0631\u0642\u0645\u064A\u0629","\u0637\u0644\u0628\u0627\u062A \u0648\u062D\u062C\u0648\u0632\u0627\u062A \u0648\u0637\u0627\u0628\u0648\u0631","QR \u0648NFC \u0648\u0625\u0634\u0639\u0627\u0631\u0627\u062A"]},{"title":"\u0627\u0644\u062A\u0634\u063A\u064A\u0644","items":["POS \u0648KDS","\u0627\u0644\u0637\u0627\u0648\u0644\u0627\u062A \u0648\u0627\u0644\u0645\u0648\u0638\u0641\u0648\u0646","\u0627\u0644\u0645\u062E\u0632\u0648\u0646 \u0648\u0627\u0644\u0645\u0634\u062A\u0631\u064A\u0627\u062A"]},{"title":"\u0627\u0644\u0646\u0645\u0648 \u0648\u0627\u0644\u0625\u062F\u0627\u0631\u0629","items":["\u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0648\u0627\u0644\u0648\u0644\u0627\u0621","\u0627\u0644\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0648\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631","\u0627\u0644\u062A\u0643\u0627\u0645\u0644\u0627\u062A \u0648\u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0627\u062A"]}]},"en":{"title":"Everything you need to run your business","subtitle":"Replace scattered tools with one platform connecting operations, sales, management, and customer experience.","homeCards":[{"title":"Unified management","body":"Manage branches, orders, teams, and subscriptions from one workspace."},{"title":"Clear analytics","body":"Track sales and performance with actionable business insights."},{"title":"Connected customer experience","body":"Digital menus, orders, bookings, queues, notifications, and rewards."},{"title":"Security and permissions","body":"Fine-grained permissions and protected sessions for every role."}],"groups":[{"title":"Sales and customer experience","items":["Digital menus and stores","Orders, bookings, and queues","QR, NFC, and notifications"]},{"title":"Operations","items":["POS and KDS","Tables and employees","Inventory and purchasing"]},{"title":"Growth and management","items":["Customers and loyalty","Analytics and reports","Integrations and permissions"]}]},"fr":{"title":"Tous les outils pour piloter votre activit\xE9","subtitle":"Remplacez les outils dispers\xE9s par une plateforme qui relie op\xE9rations, ventes, gestion et exp\xE9rience client.","homeCards":[{"title":"Gestion unifi\xE9e","body":"G\xE9rez sites, commandes, \xE9quipes et abonnements depuis un seul espace."},{"title":"Analyses claires","body":"Suivez ventes et performances avec des indicateurs exploitables."},{"title":"Exp\xE9rience client connect\xE9e","body":"Menus, commandes, r\xE9servations, files d\u2019attente, notifications et fid\xE9lit\xE9."},{"title":"S\xE9curit\xE9 et permissions","body":"Permissions pr\xE9cises et sessions prot\xE9g\xE9es pour chaque r\xF4le."}],"groups":[{"title":"Ventes et exp\xE9rience client","items":["Menus et boutiques num\xE9riques","Commandes, r\xE9servations et files","QR, NFC et notifications"]},{"title":"Op\xE9rations","items":["POS et KDS","Tables et employ\xE9s","Stock et achats"]},{"title":"Croissance et gestion","items":["Clients et fid\xE9lit\xE9","Analyses et rapports","Int\xE9grations et permissions"]}]}}', publicPricingJson: '{"ar":{"title":"\u0627\u062E\u062A\u0631 \u0627\u0644\u0628\u0627\u0642\u0629 \u0627\u0644\u0645\u0646\u0627\u0633\u0628\u0629 \u0644\u0646\u0634\u0627\u0637\u0643","subtitle":"\u0627\u0628\u062F\u0623 \u0628\u0627\u0644\u062E\u0635\u0627\u0626\u0635 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 \u062B\u0645 \u062A\u0648\u0633\u0651\u0639 \u062D\u0633\u0628 \u0627\u062D\u062A\u064A\u0627\u062C\u0627\u062A \u0646\u0634\u0627\u0637\u0643 \u0648\u0639\u062F\u062F \u0627\u0644\u0641\u0631\u0648\u0639 \u0648\u0627\u0644\u0645\u0648\u0638\u0641\u064A\u0646.","monthly":"\u0634\u0647\u0631\u064A","yearly":"\u0633\u0646\u0648\u064A","save":"\u0648\u0641\u0651\u0631 20%","plans":[{"name":"Starter","price":"0","yearlyPrice":"0","desc":"\u0644\u0628\u062F\u0621 \u062D\u0636\u0648\u0631\u0643 \u0627\u0644\u0631\u0642\u0645\u064A \u0648\u062A\u062C\u0631\u0628\u0629 NFOOD","items":["\u0645\u0646\u064A\u0648 \u0631\u0642\u0645\u064A\u0629","\u0641\u0631\u0639 \u0648\u0627\u062D\u062F","\u0623\u062F\u0648\u0627\u062A \u0623\u0633\u0627\u0633\u064A\u0629"],"featured":false},{"name":"Pro","price":"149","yearlyPrice":"1430.40","desc":"\u0644\u0644\u0645\u0637\u0627\u0639\u0645 \u0648\u0627\u0644\u0645\u062A\u0627\u062C\u0631 \u0627\u0644\u062A\u064A \u062A\u062D\u062A\u0627\u062C \u062A\u0634\u063A\u064A\u0644\u064B\u0627 \u0645\u062A\u0643\u0627\u0645\u0644\u064B\u0627","items":["POS \u0648KDS","\u062D\u062A\u0649 3 \u0641\u0631\u0648\u0639","\u0627\u0644\u062D\u062C\u0648\u0632\u0627\u062A \u0648\u0627\u0644\u0637\u0627\u0648\u0644\u0627\u062A","\u062A\u0642\u0627\u0631\u064A\u0631 \u062A\u0634\u063A\u064A\u0644\u064A\u0629"],"featured":false},{"name":"Business","price":"399","yearlyPrice":"3830.40","desc":"\u0644\u0644\u0623\u0646\u0634\u0637\u0629 \u0645\u062A\u0639\u062F\u062F\u0629 \u0627\u0644\u0641\u0631\u0648\u0639 \u0648\u0627\u0644\u0641\u0631\u0642 \u0627\u0644\u0643\u0628\u064A\u0631\u0629","items":["\u0641\u0631\u0648\u0639 \u0645\u062A\u0639\u062F\u062F\u0629","\u0645\u062E\u0632\u0648\u0646 \u0648\u0645\u0634\u062A\u0631\u064A\u0627\u062A","\u062A\u0648\u0635\u064A\u0644 \u0648\u062A\u0633\u0648\u064A\u0642","API \u0648\u062A\u0643\u0627\u0645\u0644\u0627\u062A"],"featured":true}]},"en":{"title":"Choose the right plan for your business","subtitle":"Start with the essentials and expand as your branches, team, and operations grow.","monthly":"Monthly","yearly":"Yearly","save":"Save 20%","plans":[{"name":"Starter","price":"0","yearlyPrice":"0","desc":"Launch your digital presence and explore NFOOD","items":["Digital menu","1 branch","Core tools"],"featured":false},{"name":"Pro","price":"149","yearlyPrice":"1430.40","desc":"For restaurants and stores that need connected operations","items":["POS and KDS","Up to 3 branches","Bookings and tables","Operations reports"],"featured":false},{"name":"Business","price":"399","yearlyPrice":"3830.40","desc":"For multi-branch businesses and larger teams","items":["Multiple branches","Inventory and purchasing","Delivery and marketing","API and integrations"],"featured":true}]},"fr":{"title":"Choisissez l\u2019offre adapt\xE9e \xE0 votre activit\xE9","subtitle":"Commencez avec l\u2019essentiel puis \xE9voluez selon vos sites, votre \xE9quipe et vos op\xE9rations.","monthly":"Mensuel","yearly":"Annuel","save":"\xC9conomisez 20%","plans":[{"name":"Starter","price":"0","yearlyPrice":"0","desc":"Lancez votre pr\xE9sence num\xE9rique et d\xE9couvrez NFOOD","items":["Menu num\xE9rique","1 site","Outils essentiels"],"featured":false},{"name":"Pro","price":"149","yearlyPrice":"1430.40","desc":"Pour les restaurants et boutiques avec des op\xE9rations connect\xE9es","items":["POS et KDS","Jusqu\u2019\xE0 3 sites","R\xE9servations et tables","Rapports op\xE9rationnels"],"featured":false},{"name":"Business","price":"399","yearlyPrice":"3830.40","desc":"Pour les entreprises multi-sites et grandes \xE9quipes","items":["Plusieurs sites","Stock et achats","Livraison et marketing","API et int\xE9grations"],"featured":true}]}}', marketplaceAppearanceJson: '{"marketplaceEnabled":true,"theme":"system","primaryColor":"#f97316","accentColor":"#2563eb","heroImageUrl":"","heroTitleAr":"\u0627\u0643\u062A\u0634\u0641 \u0623\u0641\u0636\u0644 \u0627\u0644\u0623\u0646\u0634\u0637\u0629 \u0648\u0627\u0644\u0645\u0646\u062A\u062C\u0627\u062A \u0641\u064A \u0645\u0643\u0627\u0646 \u0648\u0627\u062D\u062F","heroTitleEn":"Discover standout businesses and products in one place","heroTitleFr":"D\xE9couvrez les meilleures activit\xE9s et produits en un seul endroit","heroSubtitleAr":"\u0645\u062A\u0627\u062C\u0631 \u0645\u0633\u062A\u0642\u0644\u0629\u060C \u062A\u062C\u0627\u0631\u0628 \u0645\u062E\u062A\u0627\u0631\u0629\u060C \u0648\u0623\u0641\u0636\u0644 \u0645\u0627 \u064A\u0642\u062F\u0645\u0647 \u0643\u0644 \u0646\u0634\u0627\u0637 \u2014 \u0645\u0631\u062A\u0628 \u062D\u0633\u0628 \u062F\u0648\u0644\u062A\u0643 \u0648\u0627\u0647\u062A\u0645\u0627\u0645\u0627\u062A\u0643.","heroSubtitleEn":"Independent stores, curated experiences, and the best of every sector \u2014 organized for your country and interests.","heroSubtitleFr":"Des boutiques ind\xE9pendantes, des exp\xE9riences s\xE9lectionn\xE9es et le meilleur de chaque secteur, organis\xE9 selon votre pays.","promoTextAr":"\u0627\u0643\u062A\u0634\u0641 \u062C\u062F\u064A\u062F NFOOD \u0643\u0644 \u064A\u0648\u0645","promoTextEn":"Discover something new on NFOOD every day","promoTextFr":"D\xE9couvrez chaque jour de nouvelles exp\xE9riences sur NFOOD","homeFeaturedLimit":5,"trendingPerSector":5,"bestSellingPerSector":5,"trendingWindowDays":30,"showPromo":true,"showTrustBar":true,"cardRadius":"24"}' };
+  const defaults = { headerConfigJson: "{}", footerConfigJson: "{}", customPagesJson: "[]", homepageContentEn: "", homepageContentFr: "", siteDescriptionEn: "", siteDescriptionFr: "", termsOfServiceEn: "", termsOfServiceFr: "", privacyPolicyEn: "", privacyPolicyFr: "", refundPolicyEn: "", refundPolicyFr: "", supportEmail: "", supportPhone: "", defaultCurrency: "SAR", defaultTimezone: "Asia/Riyadh", baseDomain: "", maintenanceMode: "false", allowGuestCheckout: "true", allowCustomerContentPurchase: "false", allowRestaurantContentPurchase: "true", siteLanguage: "ar", availableLanguages: "ar,en,fr", country: "Saudi Arabia", siteName: "NFOOD Restaurant SaaS", siteLogoUrl: "", socialLinks: "", copyrightYear: String((/* @__PURE__ */ new Date()).getFullYear()), currencyDisplayMode: "symbol", numberFormat: "1,000.00", pricingLayout: "style-1", analyticsId: "", facebookPixelId: "", siteDescription: "", homepageContent: "", termsOfService: "", privacyPolicy: "", refundPolicy: "", subscriptionTaxRate: "0", taxNumber: "", companyDetails: "", bankAccountName: "NFOOD", bankName: "", bankAccountNumber: "", bankTransferInstructions: "", vcardEnabledRoles: "customer", profileCustomerEnabled: "true", profileRestaurantEnabled: "true", profileDriverEnabled: "false", profilePlansJson: '[{"key":"customer-basic","label":"Customer Profile","role":"customer","enabled":true,"price":"0.00"},{"key":"restaurant-business","label":"Restaurant Profile","role":"restaurant","enabled":true,"price":"0.00"}]', profileAccountOverridesJson: "{}", referralReferrerPoints: "100", referralReferredPoints: "50", contentImagePrice: "5.00", customerStudioLimitBytes: "104857600", sectorGovernanceJson: "{}", seoTitle: "", seoDescription: "", seoKeywords: "", seoHashtags: "", seoImageUrl: "", seoCanonicalUrl: "", seoRobots: "index,follow", googleSearchConsoleVerification: "", googleAnalyticsMeasurementId: "", googleTagManagerId: "", structuredDataJson: "", translateWidgetCode: DEFAULT_TRANSLATE_WIDGET_CODE, notificationPolicyJson: "{}", loadingScreenJson: "{}", publicFeaturesJson: '{"ar":{"title":"\u0643\u0644 \u0623\u062F\u0648\u0627\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644 \u0641\u064A \u0645\u0646\u0635\u0629 \u0648\u0627\u062D\u062F\u0629","subtitle":"\u0627\u0633\u062A\u0628\u062F\u0644 \u0627\u0644\u0623\u062F\u0648\u0627\u062A \u0627\u0644\u0645\u062A\u0641\u0631\u0642\u0629 \u0628\u0645\u0646\u0635\u0629 \u0645\u062A\u0643\u0627\u0645\u0644\u0629 \u062A\u0631\u0628\u0637 \u0627\u0644\u0625\u062F\u0627\u0631\u0629 \u0648\u0627\u0644\u062A\u0634\u063A\u064A\u0644 \u0648\u0627\u0644\u0645\u0628\u064A\u0639\u0627\u062A \u0648\u062A\u062C\u0631\u0628\u0629 \u0627\u0644\u0639\u0645\u064A\u0644.","homeCards":[{"title":"\u0625\u062F\u0627\u0631\u0629 \u0645\u0648\u062D\u062F\u0629","body":"\u0623\u062F\u0631 \u0627\u0644\u0641\u0631\u0648\u0639 \u0648\u0627\u0644\u0637\u0644\u0628\u0627\u062A \u0648\u0627\u0644\u0645\u0648\u0638\u0641\u064A\u0646 \u0648\u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u0645\u0646 \u0644\u0648\u062D\u0629 \u0648\u0627\u062D\u062F\u0629."},{"title":"\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0648\u0627\u0636\u062D\u0629","body":"\u0631\u0627\u0642\u0628 \u0627\u0644\u0645\u0628\u064A\u0639\u0627\u062A \u0648\u0627\u0644\u0623\u062F\u0627\u0621 \u0648\u0627\u062A\u062E\u0630 \u0642\u0631\u0627\u0631\u0627\u062A \u0645\u0628\u0646\u064A\u0629 \u0639\u0644\u0649 \u0628\u064A\u0627\u0646\u0627\u062A \u0648\u0627\u0636\u062D\u0629."},{"title":"\u062A\u062C\u0631\u0628\u0629 \u0639\u0645\u064A\u0644 \u0645\u062A\u0635\u0644\u0629","body":"\u0645\u0646\u064A\u0648 \u0631\u0642\u0645\u064A\u060C \u0637\u0644\u0628\u0627\u062A\u060C \u062D\u062C\u0648\u0632\u0627\u062A\u060C \u0637\u0627\u0628\u0648\u0631\u060C \u0625\u0634\u0639\u0627\u0631\u0627\u062A \u0648\u0645\u0643\u0627\u0641\u0622\u062A."},{"title":"\u0635\u0644\u0627\u062D\u064A\u0627\u062A \u0648\u0623\u0645\u0627\u0646","body":"\u062A\u062D\u0643\u0645 \u062F\u0642\u064A\u0642 \u0641\u064A \u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0627\u062A \u0648\u0627\u0644\u062C\u0644\u0633\u0627\u062A \u0644\u0643\u0644 \u062F\u0648\u0631 \u062F\u0627\u062E\u0644 \u0627\u0644\u0646\u0634\u0627\u0637."}],"groups":[{"title":"\u0627\u0644\u0645\u0628\u064A\u0639\u0627\u062A \u0648\u062A\u062C\u0631\u0628\u0629 \u0627\u0644\u0639\u0645\u064A\u0644","items":["\u0645\u0646\u064A\u0648 \u0648\u0645\u062A\u0627\u062C\u0631 \u0631\u0642\u0645\u064A\u0629","\u0637\u0644\u0628\u0627\u062A \u0648\u062D\u062C\u0648\u0632\u0627\u062A \u0648\u0637\u0627\u0628\u0648\u0631","QR \u0648NFC \u0648\u0625\u0634\u0639\u0627\u0631\u0627\u062A"]},{"title":"\u0627\u0644\u062A\u0634\u063A\u064A\u0644","items":["POS \u0648KDS","\u0627\u0644\u0637\u0627\u0648\u0644\u0627\u062A \u0648\u0627\u0644\u0645\u0648\u0638\u0641\u0648\u0646","\u0627\u0644\u0645\u062E\u0632\u0648\u0646 \u0648\u0627\u0644\u0645\u0634\u062A\u0631\u064A\u0627\u062A"]},{"title":"\u0627\u0644\u0646\u0645\u0648 \u0648\u0627\u0644\u0625\u062F\u0627\u0631\u0629","items":["\u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0648\u0627\u0644\u0648\u0644\u0627\u0621","\u0627\u0644\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0648\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631","\u0627\u0644\u062A\u0643\u0627\u0645\u0644\u0627\u062A \u0648\u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0627\u062A"]}]},"en":{"title":"Everything you need to run your business","subtitle":"Replace scattered tools with one platform connecting operations, sales, management, and customer experience.","homeCards":[{"title":"Unified management","body":"Manage branches, orders, teams, and subscriptions from one workspace."},{"title":"Clear analytics","body":"Track sales and performance with actionable business insights."},{"title":"Connected customer experience","body":"Digital menus, orders, bookings, queues, notifications, and rewards."},{"title":"Security and permissions","body":"Fine-grained permissions and protected sessions for every role."}],"groups":[{"title":"Sales and customer experience","items":["Digital menus and stores","Orders, bookings, and queues","QR, NFC, and notifications"]},{"title":"Operations","items":["POS and KDS","Tables and employees","Inventory and purchasing"]},{"title":"Growth and management","items":["Customers and loyalty","Analytics and reports","Integrations and permissions"]}]},"fr":{"title":"Tous les outils pour piloter votre activit\xE9","subtitle":"Remplacez les outils dispers\xE9s par une plateforme qui relie op\xE9rations, ventes, gestion et exp\xE9rience client.","homeCards":[{"title":"Gestion unifi\xE9e","body":"G\xE9rez sites, commandes, \xE9quipes et abonnements depuis un seul espace."},{"title":"Analyses claires","body":"Suivez ventes et performances avec des indicateurs exploitables."},{"title":"Exp\xE9rience client connect\xE9e","body":"Menus, commandes, r\xE9servations, files d\u2019attente, notifications et fid\xE9lit\xE9."},{"title":"S\xE9curit\xE9 et permissions","body":"Permissions pr\xE9cises et sessions prot\xE9g\xE9es pour chaque r\xF4le."}],"groups":[{"title":"Ventes et exp\xE9rience client","items":["Menus et boutiques num\xE9riques","Commandes, r\xE9servations et files","QR, NFC et notifications"]},{"title":"Op\xE9rations","items":["POS et KDS","Tables et employ\xE9s","Stock et achats"]},{"title":"Croissance et gestion","items":["Clients et fid\xE9lit\xE9","Analyses et rapports","Int\xE9grations et permissions"]}]}}', publicPricingJson: '{"ar":{"title":"\u0627\u062E\u062A\u0631 \u0627\u0644\u0628\u0627\u0642\u0629 \u0627\u0644\u0645\u0646\u0627\u0633\u0628\u0629 \u0644\u0646\u0634\u0627\u0637\u0643","subtitle":"\u0627\u0628\u062F\u0623 \u0628\u0627\u0644\u062E\u0635\u0627\u0626\u0635 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 \u062B\u0645 \u062A\u0648\u0633\u0651\u0639 \u062D\u0633\u0628 \u0627\u062D\u062A\u064A\u0627\u062C\u0627\u062A \u0646\u0634\u0627\u0637\u0643 \u0648\u0639\u062F\u062F \u0627\u0644\u0641\u0631\u0648\u0639 \u0648\u0627\u0644\u0645\u0648\u0638\u0641\u064A\u0646.","monthly":"\u0634\u0647\u0631\u064A","yearly":"\u0633\u0646\u0648\u064A","save":"\u0648\u0641\u0651\u0631 20%","plans":[{"name":"Starter","price":"0","yearlyPrice":"0","desc":"\u0644\u0628\u062F\u0621 \u062D\u0636\u0648\u0631\u0643 \u0627\u0644\u0631\u0642\u0645\u064A \u0648\u062A\u062C\u0631\u0628\u0629 NFOOD","items":["\u0645\u0646\u064A\u0648 \u0631\u0642\u0645\u064A\u0629","\u0641\u0631\u0639 \u0648\u0627\u062D\u062F","\u0623\u062F\u0648\u0627\u062A \u0623\u0633\u0627\u0633\u064A\u0629"],"featured":false},{"name":"Pro","price":"149","yearlyPrice":"1430.40","desc":"\u0644\u0644\u0645\u0637\u0627\u0639\u0645 \u0648\u0627\u0644\u0645\u062A\u0627\u062C\u0631 \u0627\u0644\u062A\u064A \u062A\u062D\u062A\u0627\u062C \u062A\u0634\u063A\u064A\u0644\u064B\u0627 \u0645\u062A\u0643\u0627\u0645\u0644\u064B\u0627","items":["POS \u0648KDS","\u062D\u062A\u0649 3 \u0641\u0631\u0648\u0639","\u0627\u0644\u062D\u062C\u0648\u0632\u0627\u062A \u0648\u0627\u0644\u0637\u0627\u0648\u0644\u0627\u062A","\u062A\u0642\u0627\u0631\u064A\u0631 \u062A\u0634\u063A\u064A\u0644\u064A\u0629"],"featured":false},{"name":"Business","price":"399","yearlyPrice":"3830.40","desc":"\u0644\u0644\u0623\u0646\u0634\u0637\u0629 \u0645\u062A\u0639\u062F\u062F\u0629 \u0627\u0644\u0641\u0631\u0648\u0639 \u0648\u0627\u0644\u0641\u0631\u0642 \u0627\u0644\u0643\u0628\u064A\u0631\u0629","items":["\u0641\u0631\u0648\u0639 \u0645\u062A\u0639\u062F\u062F\u0629","\u0645\u062E\u0632\u0648\u0646 \u0648\u0645\u0634\u062A\u0631\u064A\u0627\u062A","\u062A\u0648\u0635\u064A\u0644 \u0648\u062A\u0633\u0648\u064A\u0642","API \u0648\u062A\u0643\u0627\u0645\u0644\u0627\u062A"],"featured":true}]},"en":{"title":"Choose the right plan for your business","subtitle":"Start with the essentials and expand as your branches, team, and operations grow.","monthly":"Monthly","yearly":"Yearly","save":"Save 20%","plans":[{"name":"Starter","price":"0","yearlyPrice":"0","desc":"Launch your digital presence and explore NFOOD","items":["Digital menu","1 branch","Core tools"],"featured":false},{"name":"Pro","price":"149","yearlyPrice":"1430.40","desc":"For restaurants and stores that need connected operations","items":["POS and KDS","Up to 3 branches","Bookings and tables","Operations reports"],"featured":false},{"name":"Business","price":"399","yearlyPrice":"3830.40","desc":"For multi-branch businesses and larger teams","items":["Multiple branches","Inventory and purchasing","Delivery and marketing","API and integrations"],"featured":true}]},"fr":{"title":"Choisissez l\u2019offre adapt\xE9e \xE0 votre activit\xE9","subtitle":"Commencez avec l\u2019essentiel puis \xE9voluez selon vos sites, votre \xE9quipe et vos op\xE9rations.","monthly":"Mensuel","yearly":"Annuel","save":"\xC9conomisez 20%","plans":[{"name":"Starter","price":"0","yearlyPrice":"0","desc":"Lancez votre pr\xE9sence num\xE9rique et d\xE9couvrez NFOOD","items":["Menu num\xE9rique","1 site","Outils essentiels"],"featured":false},{"name":"Pro","price":"149","yearlyPrice":"1430.40","desc":"Pour les restaurants et boutiques avec des op\xE9rations connect\xE9es","items":["POS et KDS","Jusqu\u2019\xE0 3 sites","R\xE9servations et tables","Rapports op\xE9rationnels"],"featured":false},{"name":"Business","price":"399","yearlyPrice":"3830.40","desc":"Pour les entreprises multi-sites et grandes \xE9quipes","items":["Plusieurs sites","Stock et achats","Livraison et marketing","API et int\xE9grations"],"featured":true}]}}', marketplaceAppearanceJson: '{"marketplaceEnabled":true,"theme":"system","primaryColor":"#f97316","accentColor":"#2563eb","heroImageUrl":"","heroTitleAr":"\u0627\u0643\u062A\u0634\u0641 \u0623\u0641\u0636\u0644 \u0627\u0644\u0623\u0646\u0634\u0637\u0629 \u0648\u0627\u0644\u0645\u0646\u062A\u062C\u0627\u062A \u0641\u064A \u0645\u0643\u0627\u0646 \u0648\u0627\u062D\u062F","heroTitleEn":"Discover standout businesses and products in one place","heroTitleFr":"D\xE9couvrez les meilleures activit\xE9s et produits en un seul endroit","heroSubtitleAr":"\u0645\u062A\u0627\u062C\u0631 \u0645\u0633\u062A\u0642\u0644\u0629\u060C \u062A\u062C\u0627\u0631\u0628 \u0645\u062E\u062A\u0627\u0631\u0629\u060C \u0648\u0623\u0641\u0636\u0644 \u0645\u0627 \u064A\u0642\u062F\u0645\u0647 \u0643\u0644 \u0646\u0634\u0627\u0637 \u2014 \u0645\u0631\u062A\u0628 \u062D\u0633\u0628 \u062F\u0648\u0644\u062A\u0643 \u0648\u0627\u0647\u062A\u0645\u0627\u0645\u0627\u062A\u0643.","heroSubtitleEn":"Independent stores, curated experiences, and the best of every sector \u2014 organized for your country and interests.","heroSubtitleFr":"Des boutiques ind\xE9pendantes, des exp\xE9riences s\xE9lectionn\xE9es et le meilleur de chaque secteur, organis\xE9 selon votre pays.","promoTextAr":"\u0627\u0643\u062A\u0634\u0641 \u062C\u062F\u064A\u062F NFOOD \u0643\u0644 \u064A\u0648\u0645","promoTextEn":"Discover something new on NFOOD every day","promoTextFr":"D\xE9couvrez chaque jour de nouvelles exp\xE9riences sur NFOOD","homeFeaturedLimit":5,"trendingPerSector":5,"bestSellingPerSector":5,"trendingWindowDays":30,"showPromo":true,"showTrustBar":true,"cardRadius":"24"}' };
   if (!db) return defaults;
   try {
     const rows = await db.select({ key: platformSettings.settingKey, value: platformSettings.settingValue }).from(platformSettings);
@@ -5693,7 +5709,7 @@ var systemRouter = router({
 });
 
 // server/routers.ts
-import { and as and7, desc as desc3, eq as eq7, gt, gte as gte3, inArray as inArray4, isNotNull as isNotNull2, isNull as isNull4, lte as lte3, ne as ne2, or as or4, sql as sql3 } from "drizzle-orm";
+import { and as and8, desc as desc3, eq as eq8, gt, gte as gte3, inArray as inArray5, isNotNull as isNotNull2, isNull as isNull4, lte as lte3, ne as ne2, or as or5, sql as sql3 } from "drizzle-orm";
 
 // server/deliveryAccounting.ts
 function calculateDeliveryAccounting(input) {
@@ -9174,6 +9190,9 @@ async function updateHeartbeatJob(taskUid, patch, userSession) {
     userSession
   );
 }
+async function deleteHeartbeatJob(taskUid, userSession) {
+  await callForge("DeleteHeartbeatJob", { taskUid }, userSession);
+}
 
 // server/displayRealtime.ts
 import { WebSocketServer, WebSocket } from "ws";
@@ -9258,6 +9277,53 @@ function calculateOrderPricing(items, discountPercent = 0, taxPercent = 0, servi
   return { subtotalCents, discountPercent: safeDiscountPercent, discountCents, taxPercent: safeTaxPercent, taxCents, serviceFeePercent: safeServiceFeePercent, serviceFeeCents, tipPercent: safeTipPercent, tipCents, totalCents: taxableCents + taxCents + serviceFeeCents + tipCents };
 }
 var centsToMoney = (cents) => (Math.max(0, Math.round(cents)) / 100).toFixed(2);
+
+// server/scheduledNotifications.ts
+import { and as and7, eq as eq7, inArray as inArray4, or as or4 } from "drizzle-orm";
+async function resolveNotificationRecipients(db, targetType, idsJson) {
+  if (targetType === "selected") {
+    let ids = [];
+    try {
+      const parsed = JSON.parse(idsJson || "[]");
+      ids = Array.isArray(parsed) ? parsed.map(Number).filter(Number.isInteger).slice(0, 5e3) : [];
+    } catch {
+      ids = [];
+    }
+    if (!ids.length) return [];
+    return (await db.select({ id: users.id }).from(users).where(inArray4(users.id, ids))).map((row) => row.id);
+  }
+  if (targetType === "customers") return (await db.select({ id: users.id }).from(users).where(eq7(users.accountRole, "customer"))).map((row) => row.id);
+  if (targetType === "restaurants") return (await db.select({ id: users.id }).from(users).where(inArray4(users.accountRole, ["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "accountant"]))).map((row) => row.id);
+  if (targetType === "admins") return (await db.select({ id: users.id }).from(users).where(or4(eq7(users.role, "admin"), eq7(users.accountRole, "admin")))).map((row) => row.id);
+  return (await db.select({ id: users.id }).from(users)).map((row) => row.id);
+}
+async function deliverNotification(db, userIds, payload) {
+  const uniqueIds = Array.from(new Set(userIds));
+  if (!uniqueIds.length) return { notified: 0, pushSent: 0 };
+  await db.insert(notifications).values(uniqueIds.map((userId) => ({ userId, type: payload.type, title: payload.title, body: payload.body })));
+  const results = await Promise.all(uniqueIds.map((userId) => sendPushToUser(userId, { title: payload.title, body: payload.body, url: "/" })));
+  return { notified: uniqueIds.length, pushSent: results.reduce((sum, result) => sum + result.sent, 0) };
+}
+async function scheduledNotificationHeartbeatHandler(req, res) {
+  const timestamp2 = (/* @__PURE__ */ new Date()).toISOString();
+  try {
+    const user = await sdk.authenticateRequest(req);
+    if (!user.isCron || !user.taskUid) return res.status(403).json({ error: "cron-only" });
+    const db = await getDb();
+    if (!db) return res.status(500).json({ error: "Database is not available", timestamp: timestamp2 });
+    const campaign = (await db.select().from(scheduledNotifications).where(and7(eq7(scheduledNotifications.scheduleCronTaskUid, user.taskUid), eq7(scheduledNotifications.status, "scheduled"))).limit(1))[0];
+    if (!campaign) return res.json({ ok: true, skipped: "orphan-or-paused", timestamp: timestamp2 });
+    const recipientIds = await resolveNotificationRecipients(db, campaign.targetType, campaign.targetUserIdsJson);
+    const result = await deliverNotification(db, recipientIds, { title: campaign.title, body: campaign.body, type: campaign.type });
+    await db.update(scheduledNotifications).set({ lastRunAt: /* @__PURE__ */ new Date() }).where(eq7(scheduledNotifications.id, campaign.id));
+    return res.json({ ok: true, campaignId: campaign.id, ...result, timestamp: timestamp2 });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : String(error), timestamp: timestamp2 });
+  }
+}
+function registerScheduledNotificationHeartbeat(app) {
+  app.post("/api/scheduled/notification", scheduledNotificationHeartbeatHandler);
+}
 
 // server/routers.ts
 var SECTOR_ALIAS = { veg: "vegetables", grocery: "grocery", laundry: "laundry", auto: "automotive", barber: "beauty_salon", public: "public_works", fashion: "fashion", restaurant: "restaurant", sweets: "sweets" };
@@ -9345,6 +9411,19 @@ function isMerchantContext(ctx, restaurantId) {
   if (isAdminContext(ctx)) return true;
   if (!ctx.user || ["customer", "driver", "waiter", "kitchen", "cashier"].includes(ctx.user.testRole ?? "")) return false;
   return ctx.user.testRole === "restaurant_admin" || ctx.user.restaurantId === restaurantId;
+}
+async function assertResolvedRestaurantAccess(ctx, restaurantId) {
+  if (!ctx.user) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644" });
+  if (isAdminContext(ctx)) return;
+  if (ctx.user.restaurantId === restaurantId) return;
+  const merchantRestaurantId = await getMerchantRestaurantId(ctx.user.id);
+  if (merchantRestaurantId === restaurantId) return;
+  const db = await getDb();
+  if (db && ctx.user.email) {
+    const entityRestaurantId = (await db.select({ restaurantId: platformEntities.restaurantId }).from(platformEntities).where(and8(eq8(platformEntities.email, ctx.user.email), eq8(platformEntities.status, true))).limit(1))[0]?.restaurantId ?? null;
+    if (entityRestaurantId === restaurantId) return;
+  }
+  assertRestaurantAccess(ctx, restaurantId);
 }
 function assertRestaurantAccess(ctx, restaurantId) {
   if (!ctx.user) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644" });
@@ -9453,10 +9532,10 @@ async function getRemoteTaskAccess(ctx, taskId) {
   if (!ctx.user) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644" });
   const db = await getDb();
   if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-  const task = (await db.select().from(remoteTasks).where(eq7(remoteTasks.id, taskId)).limit(1))[0];
+  const task = (await db.select().from(remoteTasks).where(eq8(remoteTasks.id, taskId)).limit(1))[0];
   if (!task) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0647\u0645\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
   assertRestaurantAccess(ctx, task.restaurantId);
-  const worker = (await db.select().from(remoteWorkers).where(and7(eq7(remoteWorkers.userId, ctx.user.id), eq7(remoteWorkers.restaurantId, task.restaurantId))).limit(1))[0];
+  const worker = (await db.select().from(remoteWorkers).where(and8(eq8(remoteWorkers.userId, ctx.user.id), eq8(remoteWorkers.restaurantId, task.restaurantId))).limit(1))[0];
   if (!isAdminContext(ctx) && (!worker || task.assignedWorkerId !== null && task.assignedWorkerId !== worker.id)) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0647\u0630\u0647 \u0627\u0644\u0645\u0647\u0645\u0629" });
   return { db, task, worker };
 }
@@ -9477,11 +9556,11 @@ var restaurantContentRouter = router({
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const lookup = resolvePublicDisplayLookup(input.token);
-    const screen = (await db.select({ id: restaurantDisplayScreens.id, restaurantId: restaurantDisplayScreens.restaurantId, branchId: restaurantDisplayScreens.branchId, name: restaurantDisplayScreens.name, publicToken: restaurantDisplayScreens.publicToken, refreshSeconds: restaurantDisplayScreens.refreshSeconds, qrEnabled: restaurantDisplayScreens.qrEnabled, qrPosition: restaurantDisplayScreens.qrPosition, qrSize: restaurantDisplayScreens.qrSize, qrForeground: restaurantDisplayScreens.qrForeground, qrBackground: restaurantDisplayScreens.qrBackground, copyBackground: restaurantDisplayScreens.copyBackground, adBackground: restaurantDisplayScreens.adBackground, restaurantSlug: restaurants.slug }).from(restaurantDisplayScreens).innerJoin(restaurants, eq7(restaurantDisplayScreens.restaurantId, restaurants.id)).where(and7(lookup.kind === "id" ? eq7(restaurantDisplayScreens.id, lookup.id) : eq7(restaurantDisplayScreens.publicToken, lookup.token), eq7(restaurantDisplayScreens.publicLinkEnabled, true), eq7(restaurantDisplayScreens.status, "active"))).limit(1))[0];
+    const screen = (await db.select({ id: restaurantDisplayScreens.id, restaurantId: restaurantDisplayScreens.restaurantId, branchId: restaurantDisplayScreens.branchId, name: restaurantDisplayScreens.name, publicToken: restaurantDisplayScreens.publicToken, refreshSeconds: restaurantDisplayScreens.refreshSeconds, qrEnabled: restaurantDisplayScreens.qrEnabled, qrPosition: restaurantDisplayScreens.qrPosition, qrSize: restaurantDisplayScreens.qrSize, qrForeground: restaurantDisplayScreens.qrForeground, qrBackground: restaurantDisplayScreens.qrBackground, copyBackground: restaurantDisplayScreens.copyBackground, adBackground: restaurantDisplayScreens.adBackground, restaurantSlug: restaurants.slug }).from(restaurantDisplayScreens).innerJoin(restaurants, eq8(restaurantDisplayScreens.restaurantId, restaurants.id)).where(and8(lookup.kind === "id" ? eq8(restaurantDisplayScreens.id, lookup.id) : eq8(restaurantDisplayScreens.publicToken, lookup.token), eq8(restaurantDisplayScreens.publicLinkEnabled, true), eq8(restaurantDisplayScreens.status, "active"))).limit(1))[0];
     if (!screen) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0631\u0627\u0628\u0637 \u0627\u0644\u0634\u0627\u0634\u0629 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D \u0623\u0648 \u0627\u0644\u0634\u0627\u0634\u0629 \u0645\u062A\u0648\u0642\u0641\u0629" });
-    const rows = await db.select({ slide: restaurantDisplaySlides, campaign: campaigns, menuItem: menuItems, mediaFile: mediaFiles }).from(restaurantDisplaySlides).leftJoin(campaigns, eq7(restaurantDisplaySlides.campaignId, campaigns.id)).leftJoin(menuItems, eq7(restaurantDisplaySlides.menuItemId, menuItems.id)).leftJoin(mediaFiles, eq7(restaurantDisplaySlides.mediaFileId, mediaFiles.id)).where(and7(eq7(restaurantDisplaySlides.screenId, screen.id), eq7(restaurantDisplaySlides.restaurantId, screen.restaurantId), eq7(restaurantDisplaySlides.isActive, true))).orderBy(restaurantDisplaySlides.sortOrder);
+    const rows = await db.select({ slide: restaurantDisplaySlides, campaign: campaigns, menuItem: menuItems, mediaFile: mediaFiles }).from(restaurantDisplaySlides).leftJoin(campaigns, eq8(restaurantDisplaySlides.campaignId, campaigns.id)).leftJoin(menuItems, eq8(restaurantDisplaySlides.menuItemId, menuItems.id)).leftJoin(mediaFiles, eq8(restaurantDisplaySlides.mediaFileId, mediaFiles.id)).where(and8(eq8(restaurantDisplaySlides.screenId, screen.id), eq8(restaurantDisplaySlides.restaurantId, screen.restaurantId), eq8(restaurantDisplaySlides.isActive, true))).orderBy(restaurantDisplaySlides.sortOrder);
     const slides = rows.filter(({ slide, campaign }) => isDisplaySlideActive(slide, campaign ?? void 0)).map(({ slide, campaign: _campaign, ...content }) => ({ ...slide, ...content }));
-    const matchRows = await db.select({ match: restaurantDisplayMatchModes, mediaFile: mediaFiles }).from(restaurantDisplayMatchModes).leftJoin(mediaFiles, eq7(restaurantDisplayMatchModes.mediaFileId, mediaFiles.id)).where(and7(eq7(restaurantDisplayMatchModes.restaurantId, screen.restaurantId), eq7(restaurantDisplayMatchModes.status, "live"), sql3`(${restaurantDisplayMatchModes.branchId} IS NULL OR ${restaurantDisplayMatchModes.branchId} = ${screen.branchId})`)).orderBy(desc3(restaurantDisplayMatchModes.updatedAt)).limit(1);
+    const matchRows = await db.select({ match: restaurantDisplayMatchModes, mediaFile: mediaFiles }).from(restaurantDisplayMatchModes).leftJoin(mediaFiles, eq8(restaurantDisplayMatchModes.mediaFileId, mediaFiles.id)).where(and8(eq8(restaurantDisplayMatchModes.restaurantId, screen.restaurantId), eq8(restaurantDisplayMatchModes.status, "live"), sql3`(${restaurantDisplayMatchModes.branchId} IS NULL OR ${restaurantDisplayMatchModes.branchId} = ${screen.branchId})`)).orderBy(desc3(restaurantDisplayMatchModes.updatedAt)).limit(1);
     const rawMatch = matchRows[0] ? { ...matchRows[0].match, mediaFile: matchRows[0].mediaFile } : null;
     const match = rawMatch && (!rawMatch.countdownEndsAt || rawMatch.countdownEndsAt.getTime() >= Date.now()) ? rawMatch : null;
     return { screen, slides, match };
@@ -9490,9 +9569,9 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const campaign = (await db.select({ id: campaigns.id, name: campaigns.name }).from(campaigns).where(and7(eq7(campaigns.id, input.campaignId), eq7(campaigns.restaurantId, input.restaurantId))).limit(1))[0];
+    const campaign = (await db.select({ id: campaigns.id, name: campaigns.name }).from(campaigns).where(and8(eq8(campaigns.id, input.campaignId), eq8(campaigns.restaurantId, input.restaurantId))).limit(1))[0];
     if (!campaign) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u062D\u0645\u0644\u0629 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
-    const item = input.menuItemId ? (await db.select({ id: menuItems.id, name: menuItems.name, description: menuItems.description }).from(menuItems).where(and7(eq7(menuItems.id, input.menuItemId), eq7(menuItems.restaurantId, input.restaurantId))).limit(1))[0] : null;
+    const item = input.menuItemId ? (await db.select({ id: menuItems.id, name: menuItems.name, description: menuItems.description }).from(menuItems).where(and8(eq8(menuItems.id, input.menuItemId), eq8(menuItems.restaurantId, input.restaurantId))).limit(1))[0] : null;
     if (input.menuItemId && !item) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0635\u0646\u0641 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
     const response = await invokeLLM({ model: "gpt-5-mini", messages: [{ role: "system", content: "\u0623\u0646\u062A \u0643\u0627\u062A\u0628 \u062A\u0633\u0648\u064A\u0642 \u0644\u0644\u0645\u0637\u0627\u0639\u0645. \u0623\u0646\u0634\u0626 \u0646\u0635\u064B\u0627 \u0642\u0635\u064A\u0631\u064B\u0627 \u0648\u0627\u0636\u062D\u064B\u0627 \u0648\u0645\u0646\u0627\u0633\u0628\u064B\u0627 \u0644\u0644\u063A\u0629 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629\u060C \u062F\u0648\u0646 \u0627\u062F\u0639\u0627\u0621\u0627\u062A \u0635\u062D\u064A\u0629 \u0623\u0648 \u0623\u0633\u0639\u0627\u0631 \u0623\u0648 \u0639\u0631\u0648\u0636 \u063A\u064A\u0631 \u0645\u0630\u0643\u0648\u0631\u0629. \u0623\u0639\u062F JSON \u0641\u0642\u0637." }, { role: "user", content: `\u0627\u0644\u062D\u0645\u0644\u0629: ${campaign.name}
 \u0627\u0644\u0635\u0646\u0641: ${item?.name ?? "\u062D\u0645\u0644\u0629 \u0639\u0627\u0645\u0629"}
@@ -9517,7 +9596,7 @@ var restaurantContentRouter = router({
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const ids = Array.from(new Set(input.listingIds));
-    const listings = await db.select({ id: contentListings.id, title: contentListings.title, price: contentListings.price, currencyCode: contentListings.currencyCode, restaurantId: contentListings.restaurantId }).from(contentListings).where(and7(eq7(contentListings.status, "published"), inArray4(contentListings.id, ids)));
+    const listings = await db.select({ id: contentListings.id, title: contentListings.title, price: contentListings.price, currencyCode: contentListings.currencyCode, restaurantId: contentListings.restaurantId }).from(contentListings).where(and8(eq8(contentListings.status, "published"), inArray5(contentListings.id, ids)));
     if (listings.length !== ids.length) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u064A\u0648\u062C\u062F \u0645\u062D\u062A\u0648\u0649 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0644\u0644\u0634\u0631\u0627\u0621" });
     const currencies = new Set(listings.map((listing) => listing.currencyCode));
     if (currencies.size !== 1) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u062C\u0645\u0639 \u0645\u062D\u062A\u0648\u0649 \u0628\u0639\u0645\u0644\u0627\u062A \u0645\u062E\u062A\u0644\u0641\u0629" });
@@ -9528,7 +9607,7 @@ var restaurantContentRouter = router({
   uploadContentReceipt: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive(), fileName: z3.string().trim().min(1).max(240), contentType: z3.enum(["image/png", "image/jpeg", "image/webp"]), base64: z3.string().min(32).max(8e6) })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const order = (await db.select({ id: contentPurchaseOrders.id, restaurantId: contentPurchaseOrders.restaurantId, customerUserId: contentPurchaseOrders.customerUserId, status: contentPurchaseOrders.status }).from(contentPurchaseOrders).where(eq7(contentPurchaseOrders.id, input.orderId)).limit(1))[0];
+    const order = (await db.select({ id: contentPurchaseOrders.id, restaurantId: contentPurchaseOrders.restaurantId, customerUserId: contentPurchaseOrders.customerUserId, status: contentPurchaseOrders.status }).from(contentPurchaseOrders).where(eq8(contentPurchaseOrders.id, input.orderId)).limit(1))[0];
     if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0637\u0644\u0628 \u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
     if (!order.restaurantId) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0645\u062D\u0641\u0638\u0629 \u0644\u0627 \u062A\u062D\u062A\u0627\u062C \u0625\u0644\u0649 \u0625\u064A\u0635\u0627\u0644 \u062A\u062D\u0648\u064A\u0644" });
     if (!isAdminContext(ctx) && order.customerUserId !== ctx.user.id) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0625\u0631\u0641\u0627\u0642 \u0647\u0630\u0627 \u0627\u0644\u0625\u064A\u0635\u0627\u0644" });
@@ -9552,7 +9631,7 @@ var restaurantContentRouter = router({
   markContentPurchaseInvoicePrinted: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const order = (await db.select({ id: contentPurchaseOrders.id, restaurantId: contentPurchaseOrders.restaurantId, buyerUserId: contentPurchaseOrders.buyerUserId, customerUserId: contentPurchaseOrders.customerUserId }).from(contentPurchaseOrders).where(eq7(contentPurchaseOrders.id, input.orderId)).limit(1))[0];
+    const order = (await db.select({ id: contentPurchaseOrders.id, restaurantId: contentPurchaseOrders.restaurantId, buyerUserId: contentPurchaseOrders.buyerUserId, customerUserId: contentPurchaseOrders.customerUserId }).from(contentPurchaseOrders).where(eq8(contentPurchaseOrders.id, input.orderId)).limit(1))[0];
     if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0641\u0627\u062A\u0648\u0631\u0629 \u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
     const allowed = isAdminContext(ctx) || order.buyerUserId === ctx.user.id || order.customerUserId === ctx.user.id || (order.restaurantId ? isMerchantContext(ctx, order.restaurantId) : false);
     if (!allowed) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0637\u0628\u0627\u0639\u0629 \u0647\u0630\u0647 \u0627\u0644\u0641\u0627\u062A\u0648\u0631\u0629" });
@@ -9563,12 +9642,12 @@ var restaurantContentRouter = router({
   analyzeContentReceipt: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const order = (await db.select({ id: contentPurchaseOrders.id, restaurantId: contentPurchaseOrders.restaurantId, total: contentPurchaseOrders.total, receiptMediaFileId: contentPurchaseOrders.receiptMediaFileId, status: contentPurchaseOrders.status }).from(contentPurchaseOrders).where(eq7(contentPurchaseOrders.id, input.orderId)).limit(1))[0];
+    const order = (await db.select({ id: contentPurchaseOrders.id, restaurantId: contentPurchaseOrders.restaurantId, total: contentPurchaseOrders.total, receiptMediaFileId: contentPurchaseOrders.receiptMediaFileId, status: contentPurchaseOrders.status }).from(contentPurchaseOrders).where(eq8(contentPurchaseOrders.id, input.orderId)).limit(1))[0];
     if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0637\u0644\u0628 \u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
     if (!order.restaurantId) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0625\u064A\u0635\u0627\u0644 \u062A\u062D\u0648\u064A\u0644 \u0645\u0631\u062A\u0628\u0637 \u0628\u0637\u0644\u0628 \u0627\u0644\u0645\u062D\u0641\u0638\u0629" });
     assertRestaurantAccess(ctx, order.restaurantId);
     if (!order.receiptMediaFileId) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0625\u064A\u0635\u0627\u0644 \u0644\u062A\u062D\u0644\u064A\u0644\u0647" });
-    const media = (await db.select({ publicUrl: mediaFiles.publicUrl, contentType: mediaFiles.contentType, isDeleted: mediaFiles.isDeleted }).from(mediaFiles).where(eq7(mediaFiles.id, order.receiptMediaFileId)).limit(1))[0];
+    const media = (await db.select({ publicUrl: mediaFiles.publicUrl, contentType: mediaFiles.contentType, isDeleted: mediaFiles.isDeleted }).from(mediaFiles).where(eq8(mediaFiles.id, order.receiptMediaFileId)).limit(1))[0];
     if (!media?.publicUrl || media.isDeleted || !["image/png", "image/jpeg", "image/webp"].includes(media.contentType)) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0645\u0644\u0641 \u0627\u0644\u0625\u064A\u0635\u0627\u0644 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D \u0644\u0644\u062A\u062D\u0644\u064A\u0644" });
     const response = await invokeLLM({ model: "gemini-3-flash-preview", messages: [{ role: "system", content: "\u0627\u0633\u062A\u062E\u0631\u062C \u0645\u0646 \u0635\u0648\u0631\u0629 \u0625\u064A\u0635\u0627\u0644 \u0627\u0644\u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0628\u0646\u0643\u064A \u0627\u0644\u0645\u0628\u0644\u063A \u0648\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0641\u0642\u0637. \u0623\u0639\u062F JSON \u0645\u0637\u0627\u0628\u0642\u064B\u0627 \u0644\u0644\u0645\u062E\u0637\u0637. \u0625\u0630\u0627 \u0644\u0645 \u062A\u062C\u062F \u0642\u064A\u0645\u0629 \u0641\u0627\u062C\u0639\u0644\u0647\u0627 null. \u0644\u0627 \u062A\u0639\u062A\u0645\u062F \u0627\u0644\u062F\u0641\u0639 \u0648\u0644\u0627 \u062A\u0633\u062A\u0646\u062A\u062C \u0628\u064A\u0627\u0646\u0627\u062A \u063A\u064A\u0631 \u0638\u0627\u0647\u0631\u0629." }, { role: "user", content: [{ type: "text", text: "\u0627\u0642\u0631\u0623 \u0627\u0644\u0645\u0628\u0644\u063A \u0648\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0638\u0627\u0647\u0631\u064A\u0646 \u0641\u064A \u0625\u064A\u0635\u0627\u0644 \u0627\u0644\u062A\u062D\u0648\u064A\u0644. \u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0628\u0635\u064A\u063A\u0629 YYYY-MM-DD \u0625\u0646 \u0623\u0645\u0643\u0646\u060C \u0648\u0627\u0644\u062B\u0642\u0629 \u0628\u064A\u0646 0 \u06481." }, { type: "image_url", image_url: { url: media.publicUrl, detail: "high" } }] }], response_format: { type: "json_schema", json_schema: { name: "receipt_extraction", strict: true, schema: { type: "object", properties: { amount: { type: ["string", "null"], description: "\u0627\u0644\u0645\u0628\u0644\u063A \u0627\u0644\u0631\u0642\u0645\u064A \u0641\u0642\u0637" }, date: { type: ["string", "null"], description: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u062A\u062D\u0648\u064A\u0644" }, confidence: { type: "number", description: "\u0627\u0644\u062B\u0642\u0629 \u0645\u0646 \u0635\u0641\u0631 \u0625\u0644\u0649 \u0648\u0627\u062D\u062F" } }, required: ["amount", "date", "confidence"], additionalProperties: false } } }, maxTokens: 1200 });
     const raw = response.choices?.[0]?.message?.content;
@@ -9586,7 +9665,7 @@ var restaurantContentRouter = router({
     if (input.status === "rejected" && (!input.rejectionReason || input.rejectionReason.length < 3)) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0643\u062A\u0628 \u0633\u0628\u0628 \u0631\u0641\u0636 \u0627\u0644\u0625\u064A\u0635\u0627\u0644 \u0642\u0628\u0644 \u062D\u0641\u0638 \u0627\u0644\u062D\u0627\u0644\u0629" });
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const current = (await db.select({ status: contentPurchaseOrders.status, itemsJson: contentPurchaseOrders.itemsJson, customerUserId: contentPurchaseOrders.customerUserId, total: contentPurchaseOrders.total, currencyCode: contentPurchaseOrders.currencyCode }).from(contentPurchaseOrders).where(and7(eq7(contentPurchaseOrders.id, input.id), eq7(contentPurchaseOrders.restaurantId, input.restaurantId))).limit(1))[0];
+    const current = (await db.select({ status: contentPurchaseOrders.status, itemsJson: contentPurchaseOrders.itemsJson, customerUserId: contentPurchaseOrders.customerUserId, total: contentPurchaseOrders.total, currencyCode: contentPurchaseOrders.currencyCode }).from(contentPurchaseOrders).where(and8(eq8(contentPurchaseOrders.id, input.id), eq8(contentPurchaseOrders.restaurantId, input.restaurantId))).limit(1))[0];
     if (!current) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0637\u0644\u0628 \u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
     const id = await updateContentPurchaseOrder({ id: input.id, restaurantId: input.restaurantId, status: input.status, paymentStatus: input.status === "approved" ? "paid" : input.status === "rejected" ? "failed" : input.status === "verifying" ? "pending" : "unpaid", paidAt: input.status === "approved" ? /* @__PURE__ */ new Date() : null, rejectionReason: input.status === "rejected" ? input.rejectionReason ?? null : null });
     let totalReward = 0;
@@ -9600,20 +9679,20 @@ var restaurantContentRouter = router({
       }
       for (const item of items) {
         if (!item.listingId) continue;
-        const listing = (await db.select({ ownerUserId: contentListings.ownerUserId, price: contentListings.price, currencyCode: contentListings.currencyCode }).from(contentListings).where(eq7(contentListings.id, item.listingId)).limit(1))[0];
+        const listing = (await db.select({ ownerUserId: contentListings.ownerUserId, price: contentListings.price, currencyCode: contentListings.currencyCode }).from(contentListings).where(eq8(contentListings.id, item.listingId)).limit(1))[0];
         if (!listing || listing.ownerUserId === ctx.user?.id) continue;
         const reward = (Number(item.price ?? listing.price ?? 0) * 0.8).toFixed(2);
         if (Number(reward) <= 0) continue;
-        let account = (await db.select().from(walletAccounts).where(eq7(walletAccounts.customerId, listing.ownerUserId)).limit(1))[0];
+        let account = (await db.select().from(walletAccounts).where(eq8(walletAccounts.customerId, listing.ownerUserId)).limit(1))[0];
         if (!account) {
           const created = await db.insert(walletAccounts).values({ customerId: listing.ownerUserId, currencyCode: listing.currencyCode, balance: "0.00" });
-          account = (await db.select().from(walletAccounts).where(eq7(walletAccounts.id, Number(created[0].insertId))).limit(1))[0];
+          account = (await db.select().from(walletAccounts).where(eq8(walletAccounts.id, Number(created[0].insertId))).limit(1))[0];
         }
         if (!account) continue;
         const nextBalance = (Number(account.balance) + Number(reward)).toFixed(2);
-        const existingCredit = (await db.select({ id: walletTransactions.id }).from(walletTransactions).where(and7(eq7(walletTransactions.walletAccountId, account.id), eq7(walletTransactions.referenceType, "content_purchase"), eq7(walletTransactions.referenceId, input.id), eq7(walletTransactions.type, "credit"))).limit(1))[0];
+        const existingCredit = (await db.select({ id: walletTransactions.id }).from(walletTransactions).where(and8(eq8(walletTransactions.walletAccountId, account.id), eq8(walletTransactions.referenceType, "content_purchase"), eq8(walletTransactions.referenceId, input.id), eq8(walletTransactions.type, "credit"))).limit(1))[0];
         if (!existingCredit) {
-          await db.update(walletAccounts).set({ balance: nextBalance, updatedAt: /* @__PURE__ */ new Date() }).where(eq7(walletAccounts.id, account.id));
+          await db.update(walletAccounts).set({ balance: nextBalance, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(walletAccounts.id, account.id));
           await db.insert(walletTransactions).values({ walletAccountId: account.id, customerId: listing.ownerUserId, type: "credit", amount: reward, balanceAfter: nextBalance, referenceType: "content_purchase", referenceId: input.id, note: "\u0645\u0643\u0627\u0641\u0623\u0629 \u0628\u064A\u0639 \u0645\u062D\u062A\u0648\u0649 \u0628\u0639\u062F \u0627\u0639\u062A\u0645\u0627\u062F \u0627\u0644\u0637\u0644\u0628" });
           totalReward += Number(reward);
         }
@@ -9630,39 +9709,39 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const screens = await db.select({ id: restaurantDisplayScreens.id, restaurantId: restaurantDisplayScreens.restaurantId, branchId: restaurantDisplayScreens.branchId, name: restaurantDisplayScreens.name, deviceKey: restaurantDisplayScreens.deviceKey, publicToken: restaurantDisplayScreens.publicToken, publicLinkEnabled: restaurantDisplayScreens.publicLinkEnabled, status: restaurantDisplayScreens.status, refreshSeconds: restaurantDisplayScreens.refreshSeconds, qrEnabled: restaurantDisplayScreens.qrEnabled, qrPosition: restaurantDisplayScreens.qrPosition, qrSize: restaurantDisplayScreens.qrSize, qrForeground: restaurantDisplayScreens.qrForeground, qrBackground: restaurantDisplayScreens.qrBackground, copyBackground: restaurantDisplayScreens.copyBackground, adBackground: restaurantDisplayScreens.adBackground, displayLayout: restaurantDisplayScreens.displayLayout, createdAt: restaurantDisplayScreens.createdAt, updatedAt: restaurantDisplayScreens.updatedAt }).from(restaurantDisplayScreens).where(eq7(restaurantDisplayScreens.restaurantId, input.restaurantId)).orderBy(desc3(restaurantDisplayScreens.updatedAt));
-    const slides = await db.select({ slide: restaurantDisplaySlides, menuItem: menuItems, mediaFile: mediaFiles }).from(restaurantDisplaySlides).leftJoin(menuItems, eq7(restaurantDisplaySlides.menuItemId, menuItems.id)).leftJoin(mediaFiles, eq7(restaurantDisplaySlides.mediaFileId, mediaFiles.id)).where(eq7(restaurantDisplaySlides.restaurantId, input.restaurantId)).orderBy(restaurantDisplaySlides.sortOrder);
+    const screens = await db.select({ id: restaurantDisplayScreens.id, restaurantId: restaurantDisplayScreens.restaurantId, branchId: restaurantDisplayScreens.branchId, name: restaurantDisplayScreens.name, deviceKey: restaurantDisplayScreens.deviceKey, publicToken: restaurantDisplayScreens.publicToken, publicLinkEnabled: restaurantDisplayScreens.publicLinkEnabled, status: restaurantDisplayScreens.status, refreshSeconds: restaurantDisplayScreens.refreshSeconds, qrEnabled: restaurantDisplayScreens.qrEnabled, qrPosition: restaurantDisplayScreens.qrPosition, qrSize: restaurantDisplayScreens.qrSize, qrForeground: restaurantDisplayScreens.qrForeground, qrBackground: restaurantDisplayScreens.qrBackground, copyBackground: restaurantDisplayScreens.copyBackground, adBackground: restaurantDisplayScreens.adBackground, displayLayout: restaurantDisplayScreens.displayLayout, createdAt: restaurantDisplayScreens.createdAt, updatedAt: restaurantDisplayScreens.updatedAt }).from(restaurantDisplayScreens).where(eq8(restaurantDisplayScreens.restaurantId, input.restaurantId)).orderBy(desc3(restaurantDisplayScreens.updatedAt));
+    const slides = await db.select({ slide: restaurantDisplaySlides, menuItem: menuItems, mediaFile: mediaFiles }).from(restaurantDisplaySlides).leftJoin(menuItems, eq8(restaurantDisplaySlides.menuItemId, menuItems.id)).leftJoin(mediaFiles, eq8(restaurantDisplaySlides.mediaFileId, mediaFiles.id)).where(eq8(restaurantDisplaySlides.restaurantId, input.restaurantId)).orderBy(restaurantDisplaySlides.sortOrder);
     return screens.map((screen) => ({ ...screen, isConnected: isDisplayConnected(screen.publicToken), lastSeenAt: isDisplayConnected(screen.publicToken) ? /* @__PURE__ */ new Date() : null, slides: slides.filter((row) => row.slide.screenId === screen.id) }));
   }),
   matchModes: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    return db.select({ match: restaurantDisplayMatchModes, mediaFile: mediaFiles }).from(restaurantDisplayMatchModes).leftJoin(mediaFiles, eq7(restaurantDisplayMatchModes.mediaFileId, mediaFiles.id)).where(eq7(restaurantDisplayMatchModes.restaurantId, input.restaurantId)).orderBy(desc3(restaurantDisplayMatchModes.updatedAt));
+    return db.select({ match: restaurantDisplayMatchModes, mediaFile: mediaFiles }).from(restaurantDisplayMatchModes).leftJoin(mediaFiles, eq8(restaurantDisplayMatchModes.mediaFileId, mediaFiles.id)).where(eq8(restaurantDisplayMatchModes.restaurantId, input.restaurantId)).orderBy(desc3(restaurantDisplayMatchModes.updatedAt));
   }),
   saveMatchMode: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive().optional(), branchId: z3.number().int().positive().nullable().optional(), name: z3.string().trim().min(2).max(160), headline: z3.string().trim().min(2).max(180), body: z3.string().trim().max(4e3).nullable().optional(), callToAction: z3.string().trim().max(120).nullable().optional(), mediaFileId: z3.number().int().positive().nullable().optional(), qrTargetUrl: z3.string().trim().url().max(700).nullable().optional(), countdownEndsAt: z3.date().nullable().optional() })).mutation(async ({ ctx, input }) => {
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     if (input.branchId) {
-      const branch = (await db.select({ id: branches.id }).from(branches).where(and7(eq7(branches.id, input.branchId), eq7(branches.restaurantId, input.restaurantId))).limit(1))[0];
+      const branch = (await db.select({ id: branches.id }).from(branches).where(and8(eq8(branches.id, input.branchId), eq8(branches.restaurantId, input.restaurantId))).limit(1))[0];
       if (!branch) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0641\u0631\u0639 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
     }
     if (input.mediaFileId) {
-      const media = (await db.select({ id: mediaFiles.id }).from(mediaFiles).where(and7(eq7(mediaFiles.id, input.mediaFileId), eq7(mediaFiles.restaurantId, input.restaurantId), eq7(mediaFiles.isDeleted, false))).limit(1))[0];
+      const media = (await db.select({ id: mediaFiles.id }).from(mediaFiles).where(and8(eq8(mediaFiles.id, input.mediaFileId), eq8(mediaFiles.restaurantId, input.restaurantId), eq8(mediaFiles.isDeleted, false))).limit(1))[0];
       if (!media) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0635\u0648\u0631\u0629 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
     }
-    const actor = ctx.user.id > 0 ? { id: ctx.user.id } : (await db.select({ id: users.id }).from(users).where(eq7(users.email, ctx.user.email ?? "")).limit(1))[0];
+    const actor = ctx.user.id > 0 ? { id: ctx.user.id } : (await db.select({ id: users.id }).from(users).where(eq8(users.email, ctx.user.email ?? "")).limit(1))[0];
     if (!actor) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062A\u062D\u062F\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0648\u0636\u0639 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629" });
     const values = { restaurantId: input.restaurantId, branchId: input.branchId ?? null, name: input.name, headline: input.headline, body: input.body ?? null, callToAction: input.callToAction ?? null, mediaFileId: input.mediaFileId ?? null, qrTargetUrl: input.qrTargetUrl ?? null, countdownEndsAt: input.countdownEndsAt ?? null, createdByUserId: actor.id };
     const notify = async () => {
-      const tokens = await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and7(eq7(restaurantDisplayScreens.restaurantId, input.restaurantId), sql3`(${restaurantDisplayScreens.branchId} IS NULL OR ${restaurantDisplayScreens.branchId} = ${input.branchId ?? 0})`));
+      const tokens = await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and8(eq8(restaurantDisplayScreens.restaurantId, input.restaurantId), sql3`(${restaurantDisplayScreens.branchId} IS NULL OR ${restaurantDisplayScreens.branchId} = ${input.branchId ?? 0})`));
       tokens.forEach(({ publicToken }) => notifyDisplayChanged(publicToken));
     };
     if (input.id) {
-      const existing = (await db.select({ id: restaurantDisplayMatchModes.id }).from(restaurantDisplayMatchModes).where(and7(eq7(restaurantDisplayMatchModes.id, input.id), eq7(restaurantDisplayMatchModes.restaurantId, input.restaurantId))).limit(1))[0];
+      const existing = (await db.select({ id: restaurantDisplayMatchModes.id }).from(restaurantDisplayMatchModes).where(and8(eq8(restaurantDisplayMatchModes.id, input.id), eq8(restaurantDisplayMatchModes.restaurantId, input.restaurantId))).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0648\u0636\u0639 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      await db.update(restaurantDisplayMatchModes).set(values).where(eq7(restaurantDisplayMatchModes.id, input.id));
+      await db.update(restaurantDisplayMatchModes).set(values).where(eq8(restaurantDisplayMatchModes.id, input.id));
       await notify();
       return { success: true, id: input.id };
     }
@@ -9674,11 +9753,11 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const current = (await db.select({ id: restaurantDisplayMatchModes.id, branchId: restaurantDisplayMatchModes.branchId }).from(restaurantDisplayMatchModes).where(and7(eq7(restaurantDisplayMatchModes.id, input.id), eq7(restaurantDisplayMatchModes.restaurantId, input.restaurantId))).limit(1))[0];
+    const current = (await db.select({ id: restaurantDisplayMatchModes.id, branchId: restaurantDisplayMatchModes.branchId }).from(restaurantDisplayMatchModes).where(and8(eq8(restaurantDisplayMatchModes.id, input.id), eq8(restaurantDisplayMatchModes.restaurantId, input.restaurantId))).limit(1))[0];
     if (!current) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0648\u0636\u0639 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-    await db.update(restaurantDisplayMatchModes).set({ status: "idle" }).where(and7(eq7(restaurantDisplayMatchModes.restaurantId, input.restaurantId), sql3`(${restaurantDisplayMatchModes.branchId} IS NULL OR ${restaurantDisplayMatchModes.branchId} = ${current.branchId ?? 0})`));
-    await db.update(restaurantDisplayMatchModes).set({ status: "live" }).where(eq7(restaurantDisplayMatchModes.id, input.id));
-    const tokens = await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and7(eq7(restaurantDisplayScreens.restaurantId, input.restaurantId), sql3`(${restaurantDisplayScreens.branchId} IS NULL OR ${restaurantDisplayScreens.branchId} = ${current.branchId ?? 0})`));
+    await db.update(restaurantDisplayMatchModes).set({ status: "idle" }).where(and8(eq8(restaurantDisplayMatchModes.restaurantId, input.restaurantId), sql3`(${restaurantDisplayMatchModes.branchId} IS NULL OR ${restaurantDisplayMatchModes.branchId} = ${current.branchId ?? 0})`));
+    await db.update(restaurantDisplayMatchModes).set({ status: "live" }).where(eq8(restaurantDisplayMatchModes.id, input.id));
+    const tokens = await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and8(eq8(restaurantDisplayScreens.restaurantId, input.restaurantId), sql3`(${restaurantDisplayScreens.branchId} IS NULL OR ${restaurantDisplayScreens.branchId} = ${current.branchId ?? 0})`));
     tokens.forEach(({ publicToken }) => notifyDisplayChanged(publicToken));
     return { success: true, id: input.id };
   }),
@@ -9686,10 +9765,10 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const current = (await db.select({ id: restaurantDisplayMatchModes.id }).from(restaurantDisplayMatchModes).where(and7(eq7(restaurantDisplayMatchModes.id, input.id), eq7(restaurantDisplayMatchModes.restaurantId, input.restaurantId))).limit(1))[0];
+    const current = (await db.select({ id: restaurantDisplayMatchModes.id }).from(restaurantDisplayMatchModes).where(and8(eq8(restaurantDisplayMatchModes.id, input.id), eq8(restaurantDisplayMatchModes.restaurantId, input.restaurantId))).limit(1))[0];
     if (!current) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0648\u0636\u0639 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-    await db.update(restaurantDisplayMatchModes).set({ status: "idle" }).where(eq7(restaurantDisplayMatchModes.id, input.id));
-    const tokens = await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(eq7(restaurantDisplayScreens.restaurantId, input.restaurantId));
+    await db.update(restaurantDisplayMatchModes).set({ status: "idle" }).where(eq8(restaurantDisplayMatchModes.id, input.id));
+    const tokens = await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(eq8(restaurantDisplayScreens.restaurantId, input.restaurantId));
     tokens.forEach(({ publicToken }) => notifyDisplayChanged(publicToken));
     return { success: true, id: input.id };
   }),
@@ -9698,10 +9777,10 @@ var restaurantContentRouter = router({
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     if (input.branchId) {
-      const branch = (await db.select({ id: branches.id }).from(branches).where(and7(eq7(branches.id, input.branchId), eq7(branches.restaurantId, input.restaurantId))).limit(1))[0];
+      const branch = (await db.select({ id: branches.id }).from(branches).where(and8(eq8(branches.id, input.branchId), eq8(branches.restaurantId, input.restaurantId))).limit(1))[0];
       if (!branch) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0641\u0631\u0639 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
     }
-    const actor = ctx.user.id > 0 ? { id: ctx.user.id } : (await db.select({ id: users.id }).from(users).where(eq7(users.email, ctx.user.email ?? "")).limit(1))[0];
+    const actor = ctx.user.id > 0 ? { id: ctx.user.id } : (await db.select({ id: users.id }).from(users).where(eq8(users.email, ctx.user.email ?? "")).limit(1))[0];
     if (!actor) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062A\u062D\u062F\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0634\u0627\u0634\u0629" });
     const result = await db.insert(restaurantDisplayScreens).values({ restaurantId: input.restaurantId, branchId: input.branchId ?? null, name: input.name, status: input.status, refreshSeconds: input.refreshSeconds, createdByUserId: actor.id, deviceKey: `screen-${input.restaurantId}-${nanoid4(12)}`, publicToken: `display-${input.restaurantId}-${nanoid4(18)}` });
     return { success: true, id: Number(result[0].insertId) };
@@ -9710,10 +9789,10 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const existing = (await db.select({ id: restaurantDisplayScreens.id, publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and7(eq7(restaurantDisplayScreens.id, input.screenId), eq7(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
+    const existing = (await db.select({ id: restaurantDisplayScreens.id, publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and8(eq8(restaurantDisplayScreens.id, input.screenId), eq8(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
     if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0634\u0627\u0634\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
     const publicToken = `display-${input.restaurantId}-${nanoid4(24)}`;
-    await db.update(restaurantDisplayScreens).set({ publicToken, publicLinkEnabled: true }).where(eq7(restaurantDisplayScreens.id, input.screenId));
+    await db.update(restaurantDisplayScreens).set({ publicToken, publicLinkEnabled: true }).where(eq8(restaurantDisplayScreens.id, input.screenId));
     notifyDisplayChanged(existing.publicToken);
     return { success: true, publicToken };
   }),
@@ -9721,9 +9800,9 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const existing = (await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and7(eq7(restaurantDisplayScreens.id, input.screenId), eq7(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
+    const existing = (await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and8(eq8(restaurantDisplayScreens.id, input.screenId), eq8(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
     if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0634\u0627\u0634\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
-    await db.update(restaurantDisplayScreens).set({ publicLinkEnabled: input.enabled }).where(eq7(restaurantDisplayScreens.id, input.screenId));
+    await db.update(restaurantDisplayScreens).set({ publicLinkEnabled: input.enabled }).where(eq8(restaurantDisplayScreens.id, input.screenId));
     notifyDisplayChanged(existing.publicToken);
     return { success: true, enabled: input.enabled };
   }),
@@ -9731,9 +9810,9 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const existing = (await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and7(eq7(restaurantDisplayScreens.id, input.screenId), eq7(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
+    const existing = (await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and8(eq8(restaurantDisplayScreens.id, input.screenId), eq8(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
     if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0634\u0627\u0634\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
-    await db.update(restaurantDisplayScreens).set({ kioskPinHash: input.pin ? hashKioskPin(input.pin) : null }).where(eq7(restaurantDisplayScreens.id, input.screenId));
+    await db.update(restaurantDisplayScreens).set({ kioskPinHash: input.pin ? hashKioskPin(input.pin) : null }).where(eq8(restaurantDisplayScreens.id, input.screenId));
     notifyDisplayChanged(existing.publicToken);
     return { success: true, enabled: Boolean(input.pin) };
   }),
@@ -9741,7 +9820,7 @@ var restaurantContentRouter = router({
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
     const lookup = resolvePublicDisplayLookup(input.token);
-    const screen = (await db.select({ kioskPinHash: restaurantDisplayScreens.kioskPinHash, publicLinkEnabled: restaurantDisplayScreens.publicLinkEnabled, status: restaurantDisplayScreens.status }).from(restaurantDisplayScreens).where(lookup.kind === "id" ? eq7(restaurantDisplayScreens.id, lookup.id) : eq7(restaurantDisplayScreens.publicToken, lookup.token)).limit(1))[0];
+    const screen = (await db.select({ kioskPinHash: restaurantDisplayScreens.kioskPinHash, publicLinkEnabled: restaurantDisplayScreens.publicLinkEnabled, status: restaurantDisplayScreens.status }).from(restaurantDisplayScreens).where(lookup.kind === "id" ? eq8(restaurantDisplayScreens.id, lookup.id) : eq8(restaurantDisplayScreens.publicToken, lookup.token)).limit(1))[0];
     if (!screen || !screen.publicLinkEnabled || screen.status !== "active") throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0634\u0627\u0634\u0629 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629" });
     if (screen.kioskPinHash && !verifyKioskPin(input.pin, screen.kioskPinHash)) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u0631\u0645\u0632 PIN \u063A\u064A\u0631 \u0635\u062D\u064A\u062D" });
     return { success: true };
@@ -9750,10 +9829,10 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const existing = (await db.select({ id: restaurantDisplayScreens.id, publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and7(eq7(restaurantDisplayScreens.id, input.id), eq7(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
+    const existing = (await db.select({ id: restaurantDisplayScreens.id, publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and8(eq8(restaurantDisplayScreens.id, input.id), eq8(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
     if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0634\u0627\u0634\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
     const { id: _id, restaurantId: _restaurantId, ...changes } = input;
-    await db.update(restaurantDisplayScreens).set(changes).where(eq7(restaurantDisplayScreens.id, input.id));
+    await db.update(restaurantDisplayScreens).set(changes).where(eq8(restaurantDisplayScreens.id, input.id));
     notifyDisplayChanged(existing.publicToken);
     return { success: true, id: input.id };
   }),
@@ -9761,10 +9840,10 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const existing = (await db.select({ id: restaurantDisplayScreens.id, publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and7(eq7(restaurantDisplayScreens.id, input.id), eq7(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
+    const existing = (await db.select({ id: restaurantDisplayScreens.id, publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and8(eq8(restaurantDisplayScreens.id, input.id), eq8(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
     if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0634\u0627\u0634\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
-    await db.delete(restaurantDisplaySlides).where(eq7(restaurantDisplaySlides.screenId, input.id));
-    await db.delete(restaurantDisplayScreens).where(eq7(restaurantDisplayScreens.id, input.id));
+    await db.delete(restaurantDisplaySlides).where(eq8(restaurantDisplaySlides.screenId, input.id));
+    await db.delete(restaurantDisplayScreens).where(eq8(restaurantDisplayScreens.id, input.id));
     notifyDisplayChanged(existing.publicToken);
     return { success: true, id: input.id };
   }),
@@ -9772,21 +9851,21 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const screen = (await db.select({ id: restaurantDisplayScreens.id, publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and7(eq7(restaurantDisplayScreens.id, input.screenId), eq7(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
+    const screen = (await db.select({ id: restaurantDisplayScreens.id, publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and8(eq8(restaurantDisplayScreens.id, input.screenId), eq8(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
     if (!screen) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0634\u0627\u0634\u0629 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
     if (input.menuItemId) {
-      const item = (await db.select({ id: menuItems.id }).from(menuItems).where(and7(eq7(menuItems.id, input.menuItemId), eq7(menuItems.restaurantId, input.restaurantId))).limit(1))[0];
+      const item = (await db.select({ id: menuItems.id }).from(menuItems).where(and8(eq8(menuItems.id, input.menuItemId), eq8(menuItems.restaurantId, input.restaurantId))).limit(1))[0];
       if (!item) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0635\u0646\u0641 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
     }
     if (input.mediaFileId) {
-      const media = (await db.select({ id: mediaFiles.id }).from(mediaFiles).where(and7(eq7(mediaFiles.id, input.mediaFileId), eq7(mediaFiles.restaurantId, input.restaurantId), eq7(mediaFiles.isDeleted, false))).limit(1))[0];
+      const media = (await db.select({ id: mediaFiles.id }).from(mediaFiles).where(and8(eq8(mediaFiles.id, input.mediaFileId), eq8(mediaFiles.restaurantId, input.restaurantId), eq8(mediaFiles.isDeleted, false))).limit(1))[0];
       if (!media) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0648\u0633\u064A\u0637 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0641\u064A \u0645\u0643\u062A\u0628\u0629 \u0627\u0644\u0645\u0637\u0639\u0645" });
     }
     const values = { menuItemId: input.menuItemId ?? null, mediaFileId: input.mediaFileId ?? null, externalImageUrl: input.externalImageUrl ?? null, externalVideoUrl: input.externalVideoUrl ?? null, videoLoop: input.videoLoop ?? true, campaignId: input.campaignId ?? null, title: input.title ?? null, subtitle: input.subtitle ?? null, titleEn: input.titleEn ?? null, subtitleEn: input.subtitleEn ?? null, sortOrder: input.sortOrder, durationSeconds: input.durationSeconds, transitionEffect: input.transitionEffect, badgeText: input.badgeText ?? null, startsAt: input.startsAt ?? null, endsAt: input.endsAt ?? null, isActive: input.isActive };
     if (input.id) {
-      const existing = (await db.select({ id: restaurantDisplaySlides.id }).from(restaurantDisplaySlides).where(and7(eq7(restaurantDisplaySlides.id, input.id), eq7(restaurantDisplaySlides.screenId, input.screenId), eq7(restaurantDisplaySlides.restaurantId, input.restaurantId))).limit(1))[0];
+      const existing = (await db.select({ id: restaurantDisplaySlides.id }).from(restaurantDisplaySlides).where(and8(eq8(restaurantDisplaySlides.id, input.id), eq8(restaurantDisplaySlides.screenId, input.screenId), eq8(restaurantDisplaySlides.restaurantId, input.restaurantId))).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0634\u0631\u064A\u062D\u0629 \u0627\u0644\u0639\u0631\u0636 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
-      await db.update(restaurantDisplaySlides).set(values).where(eq7(restaurantDisplaySlides.id, input.id));
+      await db.update(restaurantDisplaySlides).set(values).where(eq8(restaurantDisplaySlides.id, input.id));
       notifyDisplayChanged(screen.publicToken);
       return { success: true, id: input.id };
     }
@@ -9798,10 +9877,10 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const existing = (await db.select({ id: restaurantDisplaySlides.id, screenId: restaurantDisplaySlides.screenId }).from(restaurantDisplaySlides).where(and7(eq7(restaurantDisplaySlides.id, input.id), eq7(restaurantDisplaySlides.restaurantId, input.restaurantId))).limit(1))[0];
+    const existing = (await db.select({ id: restaurantDisplaySlides.id, screenId: restaurantDisplaySlides.screenId }).from(restaurantDisplaySlides).where(and8(eq8(restaurantDisplaySlides.id, input.id), eq8(restaurantDisplaySlides.restaurantId, input.restaurantId))).limit(1))[0];
     if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0634\u0631\u064A\u062D\u0629 \u0627\u0644\u0639\u0631\u0636 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
-    const screen = (await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and7(eq7(restaurantDisplayScreens.id, existing.screenId), eq7(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
-    await db.delete(restaurantDisplaySlides).where(eq7(restaurantDisplaySlides.id, input.id));
+    const screen = (await db.select({ publicToken: restaurantDisplayScreens.publicToken }).from(restaurantDisplayScreens).where(and8(eq8(restaurantDisplayScreens.id, existing.screenId), eq8(restaurantDisplayScreens.restaurantId, input.restaurantId))).limit(1))[0];
+    await db.delete(restaurantDisplaySlides).where(eq8(restaurantDisplaySlides.id, input.id));
     if (screen) notifyDisplayChanged(screen.publicToken);
     return { success: true, id: input.id };
   }),
@@ -9809,21 +9888,21 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const campaign = (await db.select({ id: campaigns.id }).from(campaigns).where(and7(eq7(campaigns.id, input.campaignId), eq7(campaigns.restaurantId, input.restaurantId))).limit(1))[0];
+    const campaign = (await db.select({ id: campaigns.id }).from(campaigns).where(and8(eq8(campaigns.id, input.campaignId), eq8(campaigns.restaurantId, input.restaurantId))).limit(1))[0];
     if (!campaign) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u062D\u0645\u0644\u0629 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
-    return db.select({ content: campaignContents, menuItem: menuItems, mediaFile: mediaFiles }).from(campaignContents).leftJoin(menuItems, eq7(campaignContents.menuItemId, menuItems.id)).leftJoin(mediaFiles, eq7(campaignContents.mediaFileId, mediaFiles.id)).where(and7(eq7(campaignContents.campaignId, input.campaignId), eq7(campaignContents.restaurantId, input.restaurantId))).orderBy(campaignContents.sortOrder);
+    return db.select({ content: campaignContents, menuItem: menuItems, mediaFile: mediaFiles }).from(campaignContents).leftJoin(menuItems, eq8(campaignContents.menuItemId, menuItems.id)).leftJoin(mediaFiles, eq8(campaignContents.mediaFileId, mediaFiles.id)).where(and8(eq8(campaignContents.campaignId, input.campaignId), eq8(campaignContents.restaurantId, input.restaurantId))).orderBy(campaignContents.sortOrder);
   }),
   saveCampaignContent: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), campaignId: z3.number().int().positive(), id: z3.number().int().positive().optional(), menuItemId: z3.number().int().positive().nullable().optional(), mediaFileId: z3.number().int().positive().nullable().optional(), locale: z3.enum(["ar", "en", "fr", "ur", "es", "de", "tr"]).default("ar"), headline: z3.string().trim().min(2).max(180), body: z3.string().trim().max(4e3).nullable().optional(), callToAction: z3.string().trim().max(120).nullable().optional(), sortOrder: z3.number().int().min(0).max(9999).default(0), isApproved: z3.boolean().default(false) })).mutation(async ({ ctx, input }) => {
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const campaign = (await db.select({ id: campaigns.id }).from(campaigns).where(and7(eq7(campaigns.id, input.campaignId), eq7(campaigns.restaurantId, input.restaurantId))).limit(1))[0];
+    const campaign = (await db.select({ id: campaigns.id }).from(campaigns).where(and8(eq8(campaigns.id, input.campaignId), eq8(campaigns.restaurantId, input.restaurantId))).limit(1))[0];
     if (!campaign) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u062D\u0645\u0644\u0629 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
     const values = { menuItemId: input.menuItemId ?? null, mediaFileId: input.mediaFileId ?? null, locale: input.locale, headline: input.headline, body: input.body ?? null, callToAction: input.callToAction ?? null, sortOrder: input.sortOrder, isApproved: input.isApproved };
     if (input.id) {
-      const existing = (await db.select({ id: campaignContents.id }).from(campaignContents).where(and7(eq7(campaignContents.id, input.id), eq7(campaignContents.campaignId, input.campaignId), eq7(campaignContents.restaurantId, input.restaurantId))).limit(1))[0];
+      const existing = (await db.select({ id: campaignContents.id }).from(campaignContents).where(and8(eq8(campaignContents.id, input.id), eq8(campaignContents.campaignId, input.campaignId), eq8(campaignContents.restaurantId, input.restaurantId))).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u0627\u0644\u062A\u0633\u0648\u064A\u0642\u064A \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      await db.update(campaignContents).set(values).where(eq7(campaignContents.id, input.id));
+      await db.update(campaignContents).set(values).where(eq8(campaignContents.id, input.id));
       return { success: true, id: input.id };
     }
     const result = await db.insert(campaignContents).values({ ...values, campaignId: input.campaignId, restaurantId: input.restaurantId });
@@ -9833,9 +9912,9 @@ var restaurantContentRouter = router({
     assertRestaurantAccess(ctx, input.restaurantId);
     const db = await getDb();
     if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-    const existing = (await db.select({ id: campaignContents.id }).from(campaignContents).where(and7(eq7(campaignContents.id, input.id), eq7(campaignContents.restaurantId, input.restaurantId))).limit(1))[0];
+    const existing = (await db.select({ id: campaignContents.id }).from(campaignContents).where(and8(eq8(campaignContents.id, input.id), eq8(campaignContents.restaurantId, input.restaurantId))).limit(1))[0];
     if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u0627\u0644\u062A\u0633\u0648\u064A\u0642\u064A \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-    await db.delete(campaignContents).where(eq7(campaignContents.id, input.id));
+    await db.delete(campaignContents).where(eq8(campaignContents.id, input.id));
     return { success: true, id: input.id };
   })
 });
@@ -9883,9 +9962,9 @@ var appRouter = router({
     if (bytes.byteLength > 5 * 1024 * 1024) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u062D\u062C\u0645 \u0627\u0644\u0635\u0648\u0631\u0629 \u064A\u062A\u062C\u0627\u0648\u0632 5MB" });
     const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-80) || "brand-image";
     const upload = await storagePut(`restaurants/${input.restaurantId}/branding/${input.assetType}-${nanoid4(10)}-${safeName}`, bytes, input.mimeType);
-    if (input.assetType === "logo") await db.update(restaurants).set({ brandLogoUrl: upload.url }).where(eq7(restaurants.id, input.restaurantId));
-    else if (input.assetType === "pwaIcon") await db.update(restaurants).set({ pwaInstallIconUrl: upload.url }).where(eq7(restaurants.id, input.restaurantId));
-    else await db.update(restaurants).set({ coverUrl: upload.url }).where(eq7(restaurants.id, input.restaurantId));
+    if (input.assetType === "logo") await db.update(restaurants).set({ brandLogoUrl: upload.url }).where(eq8(restaurants.id, input.restaurantId));
+    else if (input.assetType === "pwaIcon") await db.update(restaurants).set({ pwaInstallIconUrl: upload.url }).where(eq8(restaurants.id, input.restaurantId));
+    else await db.update(restaurants).set({ coverUrl: upload.url }).where(eq8(restaurants.id, input.restaurantId));
     return { success: true, assetType: input.assetType, key: upload.key, url: upload.url };
   }),
   restaurantContent: restaurantContentRouter,
@@ -9957,7 +10036,7 @@ var appRouter = router({
       const stored = await storagePut(`media/${scope.scope}/${scope.restaurantId ?? scope.ownerUserId ?? "platform"}/${nanoid4(12)}-${safeName}`, buffer, input.contentType || "application/octet-stream");
       const archiveFolderId = !input.folderId && scope.scope === "restaurant" && input.category === "menu" ? await getOrCreateRestaurantArchiveFolder(scope.restaurantId ?? input.restaurantId ?? 0, ctx.user.id) : input.folderId;
       const id = await createMediaFile({ ...scope, folderId: archiveFolderId, originalName: input.fileName, storageKey: stored.key, publicUrl: stored.url, contentType: input.contentType, sizeBytes: buffer.length, category: input.category, uploadedByUserId: ctx.user.id });
-      if (virusScan) await db.update(mediaFiles).set({ virusScanStatus: virusScan.status === "unavailable" ? "unavailable" : "clean", virusScanName: null, virusScanVersion: virusScan.version, virusScannedAt: /* @__PURE__ */ new Date() }).where(eq7(mediaFiles.id, id));
+      if (virusScan) await db.update(mediaFiles).set({ virusScanStatus: virusScan.status === "unavailable" ? "unavailable" : "clean", virusScanName: null, virusScanVersion: virusScan.version, virusScannedAt: /* @__PURE__ */ new Date() }).where(eq8(mediaFiles.id, id));
       if (scope.scope === "user" && input.category === "image" && input.contentType.startsWith("image/")) {
         const decision = moderateCustomerContent({ fileName: input.fileName, contentType: input.contentType, sizeBytes: buffer.length });
         const aiReview = input.marketplace ? await classifyMarketplaceImage(stored.url) : null;
@@ -9986,7 +10065,7 @@ var appRouter = router({
       throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0645\u0637\u0627\u0639\u0645 \u062A\u0639\u0631\u0636 \u0646\u0634\u0627\u0637\u0647\u0627 \u0641\u0642\u0637 \u0648\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0628\u064A\u0639 \u0627\u0644\u0645\u062D\u062A\u0648\u0649" });
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const media = (await db.select({ id: mediaFiles.id, restaurantId: mediaFiles.restaurantId, contentType: mediaFiles.contentType, isDeleted: mediaFiles.isDeleted }).from(mediaFiles).where(and7(eq7(mediaFiles.id, input.mediaFileId), eq7(mediaFiles.restaurantId, input.restaurantId))).limit(1))[0];
+      const media = (await db.select({ id: mediaFiles.id, restaurantId: mediaFiles.restaurantId, contentType: mediaFiles.contentType, isDeleted: mediaFiles.isDeleted }).from(mediaFiles).where(and8(eq8(mediaFiles.id, input.mediaFileId), eq8(mediaFiles.restaurantId, input.restaurantId))).limit(1))[0];
       if (!media || media.isDeleted || !media.contentType.startsWith("video/")) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u062E\u062A\u0631 \u0645\u0642\u0637\u0639 \u0641\u064A\u062F\u064A\u0648 \u0645\u062D\u0641\u0648\u0638\u064B\u0627 \u0641\u064A \u0645\u0643\u062A\u0628\u0629 \u0627\u0644\u0645\u0637\u0639\u0645" });
       if (Number(input.price) < 0) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0633\u0639\u0631 \u0644\u0627 \u064A\u0645\u0643\u0646 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0633\u0627\u0644\u0628\u064B\u0627" });
       const id = await createContentListing({ ...input, ownerUserId: ctx.user.id });
@@ -10001,7 +10080,7 @@ var appRouter = router({
       const email = input.email.trim().toLowerCase();
       let account;
       try {
-        account = (await db.select({ id: users.id, openId: users.openId, name: users.name, email: users.email, passwordHash: users.passwordHash, accountRole: users.accountRole, role: users.role, emailVerified: users.emailVerified, deletedAt: users.deletedAt }).from(users).where(eq7(users.email, email)).limit(1))[0];
+        account = (await db.select({ id: users.id, openId: users.openId, name: users.name, email: users.email, passwordHash: users.passwordHash, accountRole: users.accountRole, role: users.role, emailVerified: users.emailVerified, deletedAt: users.deletedAt }).from(users).where(eq8(users.email, email)).limit(1))[0];
       } catch (error) {
         const cause = error?.cause ?? error;
         console.error("[Auth][Database] Login query failed", {
@@ -10015,7 +10094,7 @@ var appRouter = router({
       if (!account || account.deletedAt) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u0627\u0644\u062D\u0633\u0627\u0628 \u063A\u064A\u0631 \u0645\u0641\u0639\u0644 \u0623\u0648 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062F\u062E\u0648\u0644 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629" });
       if (account.openId.startsWith("test_")) {
         const teamAccountId = Number(account.openId.slice(5));
-        const teamAccount = (await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, role: testAccounts.role, passwordHash: testAccounts.passwordHash, isActive: testAccounts.isActive, displayName: testAccounts.displayName }).from(testAccounts).where(eq7(testAccounts.id, teamAccountId)).limit(1))[0];
+        const teamAccount = (await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, role: testAccounts.role, passwordHash: testAccounts.passwordHash, isActive: testAccounts.isActive, displayName: testAccounts.displayName }).from(testAccounts).where(eq8(testAccounts.id, teamAccountId)).limit(1))[0];
         if (!teamAccount || !teamAccount.isActive) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u0627\u0644\u062D\u0633\u0627\u0628 \u063A\u064A\u0631 \u0645\u0641\u0639\u0644 \u0623\u0648 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062F\u062E\u0648\u0644 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629" });
         if (!teamAccount.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u062D\u0633\u0627\u0628 \u0627\u0644\u0645\u0648\u0638\u0641 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0645\u062A\u062C\u0631 \u0645\u062D\u062F\u062F" });
         const [teamScheme, teamSalt, teamStoredKey] = teamAccount.passwordHash.split("$");
@@ -10024,8 +10103,8 @@ var appRouter = router({
         const teamExpectedKey = Buffer.from(teamStoredKey, "base64");
         if (teamDerivedKey.length !== teamExpectedKey.length || !timingSafeEqual2(teamDerivedKey, teamExpectedKey)) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062F\u062E\u0648\u0644 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629" });
         const token2 = await sdk.signSession({ openId: account.openId, appId: `team_${nanoid4(12)}`, name: teamAccount.displayName ?? account.name ?? account.email ?? "NFOOD" });
-        await db.update(users).set({ lastSignedIn: /* @__PURE__ */ new Date(), loginMethod: "local" }).where(eq7(users.id, account.id));
-        await db.delete(authSessions).where(eq7(authSessions.userId, account.id));
+        await db.update(users).set({ lastSignedIn: /* @__PURE__ */ new Date(), loginMethod: "local" }).where(eq8(users.id, account.id));
+        await db.delete(authSessions).where(eq8(authSessions.userId, account.id));
         await db.insert(authSessions).values({ userId: account.id, sessionTokenHash: createHash2("sha256").update(token2).digest("hex"), deviceLabel: input.deviceLabel ?? "\u062A\u0633\u062C\u064A\u0644 \u062F\u062E\u0648\u0644 \u0641\u0631\u064A\u0642", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 12) });
         const cookieOptions2 = getSessionCookieOptions(ctx.req);
         ctx.res.clearCookie(COOKIE_NAME, cookieOptions2);
@@ -10042,18 +10121,18 @@ var appRouter = router({
       const effectiveRole = account.role === "admin" ? "admin" : account.accountRole;
       if (effectiveRole !== "admin" && !account.emailVerified) throw new TRPCError7({ code: "FORBIDDEN", message: "VERIFY_EMAIL_REQUIRED" });
       if (effectiveRole !== "admin" && input.deviceFingerprintHash) {
-        const device = (await db.select({ status: trustedDevices.status }).from(trustedDevices).where(and7(eq7(trustedDevices.userId, account.id), eq7(trustedDevices.fingerprintHash, input.deviceFingerprintHash))).limit(1))[0];
+        const device = (await db.select({ status: trustedDevices.status }).from(trustedDevices).where(and8(eq8(trustedDevices.userId, account.id), eq8(trustedDevices.fingerprintHash, input.deviceFingerprintHash))).limit(1))[0];
         if (!device || device.status !== "active") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u062C\u0647\u0627\u0632 \u063A\u064A\u0631 \u0645\u0639\u062A\u0645\u062F \u0644\u0647\u0630\u0627 \u0627\u0644\u062D\u0633\u0627\u0628. \u0627\u0637\u0644\u0628 \u0627\u0639\u062A\u0645\u0627\u062F \u0627\u0644\u062C\u0647\u0627\u0632 \u0645\u0646 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0646\u0635\u0629." });
       }
       const token = await sdk.signSession({ openId: account.openId, appId: `local_${nanoid4(12)}`, name: account.name ?? account.email ?? "NFOOD" });
-      await db.update(users).set({ lastSignedIn: /* @__PURE__ */ new Date(), loginMethod: "local" }).where(eq7(users.id, account.id));
-      await db.delete(authSessions).where(eq7(authSessions.userId, account.id));
+      await db.update(users).set({ lastSignedIn: /* @__PURE__ */ new Date(), loginMethod: "local" }).where(eq8(users.id, account.id));
+      await db.delete(authSessions).where(eq8(authSessions.userId, account.id));
       await db.insert(authSessions).values({ userId: account.id, sessionTokenHash: createHash2("sha256").update(token).digest("hex"), deviceLabel: input.deviceLabel ?? "\u062A\u0633\u062C\u064A\u0644 \u062F\u062E\u0648\u0644", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 12) });
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, cookieOptions);
       ctx.res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       ctx.res.cookie(TEST_SESSION_COOKIE, token, { ...cookieOptions, httpOnly: true, maxAge: 1e3 * 60 * 60 * 12 });
-      const membership = effectiveRole === "admin" ? void 0 : (await db.select({ restaurantId: restaurantMembers.restaurantId }).from(restaurantMembers).where(eq7(restaurantMembers.userId, account.id)).limit(1))[0];
+      const membership = effectiveRole === "admin" ? void 0 : (await db.select({ restaurantId: restaurantMembers.restaurantId }).from(restaurantMembers).where(eq8(restaurantMembers.userId, account.id)).limit(1))[0];
       return { success: true, role: effectiveRole, name: account.name ?? account.email ?? "NFOOD", onboardingRequired: effectiveRole !== "admin" && !membership?.restaurantId, next: effectiveRole === "admin" ? "/admin" : membership?.restaurantId ? "/restaurant/dashboard" : "/register" };
     }),
     submitSubscriptionTransferReceipt: publicProcedure.input(z3.object({ email: z3.string().trim().email().max(320), plan: z3.enum(["Basic", "Pro", "Business"]), billingCycle: z3.enum(["monthly", "yearly"]), amount: z3.string().regex(/^\d+(\.\d{1,2})?$/), fileName: z3.string().trim().min(1).max(160), contentType: z3.enum(["image/jpeg", "image/png", "image/webp", "application/pdf"]), base64: z3.string().min(10).max(8e6) })).mutation(async ({ input }) => {
@@ -10066,9 +10145,9 @@ var appRouter = router({
       const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
       const stored = await storagePut(`subscription-receipts/${nanoid4(16)}-${safeName}`, buffer, input.contentType);
       const normalizedEmail = input.email.toLowerCase();
-      const accountUser = (await db.select({ id: users.id }).from(users).where(eq7(users.email, normalizedEmail)).limit(1))[0];
-      const membership = accountUser ? (await db.select({ restaurantId: restaurantMembers.restaurantId }).from(restaurantMembers).where(eq7(restaurantMembers.userId, accountUser.id)).limit(1))[0] : void 0;
-      const restaurant = membership ? (await db.select({ id: restaurants.id }).from(restaurants).where(eq7(restaurants.id, membership.restaurantId)).limit(1))[0] : (await db.select({ id: restaurants.id }).from(restaurants).where(eq7(restaurants.plan, input.plan)).limit(1))[0];
+      const accountUser = (await db.select({ id: users.id }).from(users).where(eq8(users.email, normalizedEmail)).limit(1))[0];
+      const membership = accountUser ? (await db.select({ restaurantId: restaurantMembers.restaurantId }).from(restaurantMembers).where(eq8(restaurantMembers.userId, accountUser.id)).limit(1))[0] : void 0;
+      const restaurant = membership ? (await db.select({ id: restaurants.id }).from(restaurants).where(eq8(restaurants.id, membership.restaurantId)).limit(1))[0] : (await db.select({ id: restaurants.id }).from(restaurants).where(eq8(restaurants.plan, input.plan)).limit(1))[0];
       const result = await db.insert(subscriptionTransferReceipts).values({ restaurantId: restaurant?.id ?? null, email: input.email.toLowerCase(), plan: input.plan, billingCycle: input.billingCycle, amount: input.amount, fileKey: stored.key, fileUrl: stored.url, status: "pending" });
       const owner = process.env.OWNER_OPEN_ID ? await getUserByOpenId(process.env.OWNER_OPEN_ID) : null;
       const recipientIds = new Set(owner ? [owner.id] : []);
@@ -10083,7 +10162,7 @@ var appRouter = router({
       const email = input.email.trim().toLowerCase();
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628 \u0627\u0644\u0639\u0645\u064A\u0644 \u062D\u0627\u0644\u064A\u0627\u064B" });
-      const duplicate = await db.select({ id: testAccounts.id }).from(testAccounts).where(eq7(testAccounts.email, email)).limit(1);
+      const duplicate = await db.select({ id: testAccounts.id }).from(testAccounts).where(eq8(testAccounts.email, email)).limit(1);
       if (duplicate[0]) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A \u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u0628\u0642\u064B\u0627. \u0627\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u062F\u062E\u0648\u0644 \u0628\u062F\u0644 \u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628 \u062C\u062F\u064A\u062F." });
       const salt = randomBytes2(16).toString("base64");
       const passwordHash = `scrypt$${salt}$${scryptSync2(input.password, Buffer.from(salt, "base64"), 64).toString("base64")}`;
@@ -10114,7 +10193,7 @@ var appRouter = router({
       const existingProfile = await getCustomerProfile(user.id);
       if (!existingProfile) await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId ?? null, slug: `customer-${user.id}-${nanoid4(8)}`, isPublic: false, displayName: account.displayName, email });
       else if (!existingProfile.restaurantId && input.restaurantId) await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId });
-      const device = (await db.select({ status: trustedDevices.status }).from(trustedDevices).where(and7(eq7(trustedDevices.userId, user.id), eq7(trustedDevices.fingerprintHash, input.deviceFingerprintHash))).limit(1))[0];
+      const device = (await db.select({ status: trustedDevices.status }).from(trustedDevices).where(and8(eq8(trustedDevices.userId, user.id), eq8(trustedDevices.fingerprintHash, input.deviceFingerprintHash))).limit(1))[0];
       if (!device || device.status !== "active") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u062C\u0647\u0627\u0632 \u063A\u064A\u0631 \u0645\u0639\u062A\u0645\u062F \u0644\u0647\u0630\u0627 \u0627\u0644\u062D\u0633\u0627\u0628. \u0627\u0637\u0644\u0628 \u0627\u0639\u062A\u0645\u0627\u062F \u0627\u0644\u062C\u0647\u0627\u0632 \u0645\u0646 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0646\u0635\u0629." });
       const token = await sdk.signSession({ openId, appId: "customer_email", name: user.name || account.displayName });
       await db.insert(authSessions).values({ userId: user.id, sessionTokenHash: createHash2("sha256").update(token).digest("hex"), deviceLabel: input.deviceLabel ?? "\u062F\u062E\u0648\u0644 \u0627\u0644\u0639\u0645\u064A\u0644 \u0628\u0627\u0644\u0628\u0631\u064A\u062F", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 24 * 30) });
@@ -10127,12 +10206,12 @@ var appRouter = router({
       const phone = input.phone.replace(/[^\d+]/g, "");
       const code = String(randomInt2(1e5, 1e6));
       const codeHash = createHash2("sha256").update(`customer:${phone}:${code}`).digest("hex");
-      await db.delete(customerAuthOtps).where(eq7(customerAuthOtps.phone, phone));
+      await db.delete(customerAuthOtps).where(eq8(customerAuthOtps.phone, phone));
       await db.insert(customerAuthOtps).values({ phone, name: input.name.trim(), codeHash, expiresAt: new Date(Date.now() + 10 * 60 * 1e3), attempts: 0 });
       const secret2 = await getEffectiveIntegrationSecret(input.restaurantId, "otp_sms");
       const delivery = await sendCustomerOtpSms({ to: phone, code, secret: secret2 });
       if (!delivery.sent) {
-        await db.delete(customerAuthOtps).where(eq7(customerAuthOtps.phone, phone));
+        await db.delete(customerAuthOtps).where(eq8(customerAuthOtps.phone, phone));
         throw new TRPCError7({ code: "PRECONDITION_FAILED", message: "\u062A\u0633\u062C\u064A\u0644 SMS \u063A\u064A\u0631 \u0645\u0641\u0639\u0651\u0644 \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645. \u0641\u0639\u0651\u0644 \u062A\u0643\u0627\u0645\u0644 OTP/SMS \u0645\u0646 \u0645\u0631\u0643\u0632 \u0627\u0644\u062A\u0643\u0627\u0645\u0644\u0627\u062A \u062B\u0645 \u0623\u0639\u062F \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629." });
       }
       return { success: true, expiresInSeconds: 600 };
@@ -10141,15 +10220,15 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0643\u0645\u0627\u0644 \u0627\u0644\u062A\u062D\u0642\u0642 \u062D\u0627\u0644\u064A\u0627\u064B" });
       const phone = input.phone.replace(/[^\d+]/g, "");
-      const row = (await db.select().from(customerAuthOtps).where(and7(eq7(customerAuthOtps.phone, phone), isNull4(customerAuthOtps.consumedAt), gt(customerAuthOtps.expiresAt, /* @__PURE__ */ new Date()))).orderBy(desc3(customerAuthOtps.createdAt)).limit(1))[0];
+      const row = (await db.select().from(customerAuthOtps).where(and8(eq8(customerAuthOtps.phone, phone), isNull4(customerAuthOtps.consumedAt), gt(customerAuthOtps.expiresAt, /* @__PURE__ */ new Date()))).orderBy(desc3(customerAuthOtps.createdAt)).limit(1))[0];
       if (!row) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0631\u0645\u0632 \u0627\u0644\u062A\u062D\u0642\u0642 \u0645\u0646\u062A\u0647\u064A \u0623\u0648 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       if (row.attempts >= 5) throw new TRPCError7({ code: "TOO_MANY_REQUESTS", message: "\u062A\u062C\u0627\u0648\u0632\u062A \u0639\u062F\u062F \u0645\u062D\u0627\u0648\u0644\u0627\u062A \u0627\u0644\u062A\u062D\u0642\u0642. \u0623\u0631\u0633\u0644 \u0631\u0645\u0632\u0627\u064B \u062C\u062F\u064A\u062F\u0627\u064B." });
       const expected = createHash2("sha256").update(`customer:${phone}:${input.code}`).digest("hex");
       if (expected !== row.codeHash) {
-        await db.update(customerAuthOtps).set({ attempts: row.attempts + 1 }).where(eq7(customerAuthOtps.id, row.id));
+        await db.update(customerAuthOtps).set({ attempts: row.attempts + 1 }).where(eq8(customerAuthOtps.id, row.id));
         throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u0631\u0645\u0632 \u0627\u0644\u062A\u062D\u0642\u0642 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D" });
       }
-      await db.update(customerAuthOtps).set({ consumedAt: /* @__PURE__ */ new Date() }).where(eq7(customerAuthOtps.id, row.id));
+      await db.update(customerAuthOtps).set({ consumedAt: /* @__PURE__ */ new Date() }).where(eq8(customerAuthOtps.id, row.id));
       const openId = `customer_phone_${createHash2("sha256").update(phone).digest("hex").slice(0, 48)}`;
       await upsertUser({ openId, name: row.name || "\u0639\u0645\u064A\u0644 NFOOD", loginMethod: "sms", lastSignedIn: /* @__PURE__ */ new Date() });
       const user = await getUserByOpenId(openId);
@@ -10157,7 +10236,7 @@ var appRouter = router({
       const existingProfile = await getCustomerProfile(user.id);
       if (!existingProfile) await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId ?? null, slug: `customer-${user.id}-${nanoid4(8)}`, isPublic: false, displayName: user.name || "\u0639\u0645\u064A\u0644 NFOOD" });
       else if (!existingProfile.restaurantId && input.restaurantId) await upsertCustomerProfile(user.id, { restaurantId: input.restaurantId });
-      const device = (await db.select({ status: trustedDevices.status }).from(trustedDevices).where(and7(eq7(trustedDevices.userId, user.id), eq7(trustedDevices.fingerprintHash, input.deviceFingerprintHash))).limit(1))[0];
+      const device = (await db.select({ status: trustedDevices.status }).from(trustedDevices).where(and8(eq8(trustedDevices.userId, user.id), eq8(trustedDevices.fingerprintHash, input.deviceFingerprintHash))).limit(1))[0];
       if (!device || device.status !== "active") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u062C\u0647\u0627\u0632 \u063A\u064A\u0631 \u0645\u0639\u062A\u0645\u062F \u0644\u0647\u0630\u0627 \u0627\u0644\u062D\u0633\u0627\u0628. \u0627\u0637\u0644\u0628 \u0627\u0639\u062A\u0645\u0627\u062F \u0627\u0644\u062C\u0647\u0627\u0632 \u0645\u0646 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0646\u0635\u0629." });
       const token = await sdk.signSession({ openId, appId: "customer_sms", name: user.name || "\u0639\u0645\u064A\u0644 NFOOD" });
       await db.insert(authSessions).values({ userId: user.id, sessionTokenHash: createHash2("sha256").update(token).digest("hex"), deviceLabel: input.deviceLabel ?? "\u062A\u0633\u062C\u064A\u0644 SMS \u0645\u0646 \u0627\u0644\u0645\u0646\u064A\u0648", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 24 * 30) });
@@ -10169,11 +10248,11 @@ var appRouter = router({
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const normalizedEmail = input.email.toLowerCase();
       const generic = { success: true, message: "\u0625\u0630\u0627 \u0643\u0627\u0646 \u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062C\u0644\u064B\u0627\u060C \u0633\u062A\u0635\u0644\u0643 \u0631\u0633\u0627\u0644\u0629 \u062A\u062D\u062A\u0648\u064A \u0639\u0644\u0649 \u0631\u0627\u0628\u0637 \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u062F\u0629." };
-      const user = (await db.select({ id: users.id, email: users.email, name: users.name, deletedAt: users.deletedAt }).from(users).where(eq7(users.email, normalizedEmail)).limit(1))[0];
+      const user = (await db.select({ id: users.id, email: users.email, name: users.name, deletedAt: users.deletedAt }).from(users).where(eq8(users.email, normalizedEmail)).limit(1))[0];
       if (!user || user.deletedAt || !user.email) return generic;
       const rawToken = randomBytes2(32).toString("base64url");
       const tokenHash = createHash2("sha256").update(rawToken).digest("hex");
-      await db.update(users).set({ emailVerificationToken: tokenHash, emailVerificationExpiresAt: new Date(Date.now() + 60 * 60 * 1e3) }).where(eq7(users.id, user.id));
+      await db.update(users).set({ emailVerificationToken: tokenHash, emailVerificationExpiresAt: new Date(Date.now() + 60 * 60 * 1e3) }).where(eq8(users.id, user.id));
       const forwardedProto = String(ctx.req.headers["x-forwarded-proto"] ?? ctx.req.protocol ?? "http").split(",")[0];
       const host = ctx.req.get("host");
       const origin = `${forwardedProto}://${host}`;
@@ -10184,21 +10263,21 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const tokenHash = createHash2("sha256").update(input.token).digest("hex");
-      const user = (await db.select({ id: users.id, expiresAt: users.emailVerificationExpiresAt }).from(users).where(eq7(users.emailVerificationToken, tokenHash)).limit(1))[0];
+      const user = (await db.select({ id: users.id, expiresAt: users.emailVerificationExpiresAt }).from(users).where(eq8(users.emailVerificationToken, tokenHash)).limit(1))[0];
       if (!user || !user.expiresAt || user.expiresAt.getTime() < Date.now()) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0631\u0627\u0628\u0637 \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u062F\u0629 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D \u0623\u0648 \u0645\u0646\u062A\u0647\u064A" });
       const salt = randomBytes2(16).toString("base64");
       const passwordHash = `scrypt$${salt}$${scryptSync2(input.password, Buffer.from(salt, "base64"), 64).toString("base64")}`;
-      await db.update(users).set({ passwordHash, loginMethod: "local", emailVerificationToken: null, emailVerificationExpiresAt: null }).where(eq7(users.id, user.id));
-      await db.delete(authSessions).where(eq7(authSessions.userId, user.id));
+      await db.update(users).set({ passwordHash, loginMethod: "local", emailVerificationToken: null, emailVerificationExpiresAt: null }).where(eq8(users.id, user.id));
+      await db.delete(authSessions).where(eq8(authSessions.userId, user.id));
       return { success: true, message: "\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631. \u064A\u0645\u0643\u0646\u0643 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0627\u0644\u0622\u0646." };
     }),
     registerRestaurant: publicProcedure.input(z3.object({ restaurantName: z3.string().trim().min(2).max(160), sector: z3.string().trim().min(2).max(80).regex(/^[a-z0-9_-]+$/).default("restaurant"), country: z3.string().trim().min(2).max(120).optional(), countryCode: z3.string().length(2).default("SA"), currencyCode: z3.string().length(3).optional(), primaryLanguage: z3.enum(["ar", "en", "fr", "ur", "es", "de", "tr"]).default("ar"), city: z3.string().trim().min(2).max(120), email: z3.string().trim().email().max(320), phone: z3.string().trim().min(7).max(40), plan: z3.enum(["Free", "Starter", "Growth", "Business", "Enterprise"]).default("Free"), captchaChallenge: z3.string().min(20).max(1e3), captchaAnswer: z3.string().trim().regex(/^\d{1,2}$/) })).mutation(async ({ ctx, input }) => {
       if (!verifyRegistrationCaptcha(input.captchaChallenge, input.captchaAnswer)) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0623\u0643\u0645\u0644 \u0627\u062E\u062A\u0628\u0627\u0631 \u0627\u0644\u062A\u062D\u0642\u0642 \u0628\u0634\u0643\u0644 \u0635\u062D\u064A\u062D" });
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const marketplaceSector = (await db.select({ id: marketplaceSectors.id, isActive: marketplaceSectors.isActive }).from(marketplaceSectors).where(eq7(marketplaceSectors.slug, input.sector)).limit(1))[0];
+      const marketplaceSector = (await db.select({ id: marketplaceSectors.id, isActive: marketplaceSectors.isActive }).from(marketplaceSectors).where(eq8(marketplaceSectors.slug, input.sector)).limit(1))[0];
       const normalizedEmail = input.email.trim().toLowerCase();
-      const existingUser = (await db.select({ id: users.id, email: users.email, emailVerified: users.emailVerified }).from(users).where(eq7(users.email, normalizedEmail)).limit(1))[0] ?? null;
+      const existingUser = (await db.select({ id: users.id, email: users.email, emailVerified: users.emailVerified }).from(users).where(eq8(users.email, normalizedEmail)).limit(1))[0] ?? null;
       const runtimePlan = buildRegistrationRuntimePlan({
         sector: input.sector,
         submittedEmail: normalizedEmail,
@@ -10213,12 +10292,12 @@ var appRouter = router({
       if (!resolvedCurrency) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0639\u0645\u0644\u0629 \u0627\u0644\u062F\u0648\u0644\u0629 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645\u0629" });
       const email = runtimePlan.normalizedEmail;
       const ownerPlan = buildRegistrationOwnerPersistencePlan({ normalizedEmail: email, account: runtimePlan.account });
-      const duplicate = ownerPlan.mode === "create_identity" ? await db.select({ id: testAccounts.id }).from(testAccounts).where(eq7(testAccounts.email, email)).limit(1) : [];
+      const duplicate = ownerPlan.mode === "create_identity" ? await db.select({ id: testAccounts.id }).from(testAccounts).where(eq8(testAccounts.email, email)).limit(1) : [];
       if (duplicate[0]) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u0628\u0642\u064B\u0627" });
       const slugBase = input.restaurantName.toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120) || `restaurant-${nanoid4(6).toLowerCase()}`;
       let slug = slugBase;
       let suffix = 2;
-      while ((await db.select({ id: restaurants.id }).from(restaurants).where(eq7(restaurants.slug, slug)).limit(1))[0]) slug = `${slugBase}-${suffix++}`;
+      while ((await db.select({ id: restaurants.id }).from(restaurants).where(eq8(restaurants.slug, slug)).limit(1))[0]) slug = `${slugBase}-${suffix++}`;
       let temporaryPassword = null;
       let emailVerificationToken = null;
       let owner = null;
@@ -10239,7 +10318,7 @@ var appRouter = router({
         await upsertUser({ openId: sessionOpenId, name: `\u0645\u062F\u064A\u0631 ${input.restaurantName}`, email, loginMethod: "local", role: "user" });
         owner = await getUserByOpenId(sessionOpenId) ?? null;
         if (!owner) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u0645\u0627\u0644\u0643 \u0627\u0644\u0646\u0634\u0627\u0637" });
-        await db.update(users).set({ emailVerified: false, emailVerificationToken: emailVerificationTokenHash, emailVerificationExpiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 24) }).where(eq7(users.id, owner.id));
+        await db.update(users).set({ emailVerified: false, emailVerificationToken: emailVerificationTokenHash, emailVerificationExpiresAt: new Date(Date.now() + 1e3 * 60 * 60 * 24) }).where(eq8(users.id, owner.id));
       }
       const restaurantResult = await db.insert(restaurants).values({ name: input.restaurantName, slug, barcode: `NFOOD-${nanoid4(10).toUpperCase()}`, status: "trial", plan: input.plan, phone: input.phone, country: input.country ?? countryDef.nameAr, countryCode: countryDef.code, currencyCode: resolvedCurrency.code, currencyDecimals: resolvedCurrency.decimals, primaryLanguage: input.primaryLanguage, languagesJson: JSON.stringify(Array.from(/* @__PURE__ */ new Set([input.primaryLanguage, "ar", "en", "fr"]))), city: input.city, brandName: input.restaurantName });
       const restaurantId = Number(restaurantResult[0].insertId);
@@ -10268,13 +10347,13 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const tokenHash = createHash2("sha256").update(input.token).digest("hex");
-      const row = (await db.select({ id: users.id, expiresAt: users.emailVerificationExpiresAt }).from(users).where(and7(eq7(users.emailVerificationToken, tokenHash), eq7(users.emailVerified, false))).limit(1))[0];
+      const row = (await db.select({ id: users.id, expiresAt: users.emailVerificationExpiresAt }).from(users).where(and8(eq8(users.emailVerificationToken, tokenHash), eq8(users.emailVerified, false))).limit(1))[0];
       if (!row || !row.expiresAt || row.expiresAt.getTime() < Date.now()) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0631\u0627\u0628\u0637 \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u0628\u0631\u064A\u062F \u063A\u064A\u0631 \u0635\u0627\u0644\u062D \u0623\u0648 \u0645\u0646\u062A\u0647\u064A" });
-      await db.update(users).set({ emailVerified: true, emailVerificationToken: null, emailVerificationExpiresAt: null }).where(eq7(users.id, row.id));
-      const verifiedUser = (await db.select({ email: users.email, name: users.name }).from(users).where(eq7(users.id, row.id)).limit(1))[0];
-      const membership = (await db.select({ restaurantId: restaurantMembers.restaurantId }).from(restaurantMembers).where(eq7(restaurantMembers.userId, row.id)).limit(1))[0];
+      await db.update(users).set({ emailVerified: true, emailVerificationToken: null, emailVerificationExpiresAt: null }).where(eq8(users.id, row.id));
+      const verifiedUser = (await db.select({ email: users.email, name: users.name }).from(users).where(eq8(users.id, row.id)).limit(1))[0];
+      const membership = (await db.select({ restaurantId: restaurantMembers.restaurantId }).from(restaurantMembers).where(eq8(restaurantMembers.userId, row.id)).limit(1))[0];
       if (verifiedUser?.email && membership?.restaurantId) {
-        const restaurant = (await db.select({ name: restaurants.name }).from(restaurants).where(eq7(restaurants.id, membership.restaurantId)).limit(1))[0];
+        const restaurant = (await db.select({ name: restaurants.name }).from(restaurants).where(eq8(restaurants.id, membership.restaurantId)).limit(1))[0];
         if (restaurant) await sendWelcomeEmail({ to: verifiedUser.email, customerName: verifiedUser.name || "\u0645\u062F\u064A\u0631 \u0627\u0644\u0645\u0637\u0639\u0645", restaurantName: restaurant.name, restaurantId: membership.restaurantId });
       }
       return { success: true, emailVerified: true };
@@ -10299,7 +10378,7 @@ var appRouter = router({
       if (ctx.user.testRole && ctx.user.testRole !== "customer") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0647\u0630\u0627 \u0627\u0644\u0631\u0628\u0637 \u0645\u062A\u0627\u062D \u0644\u062D\u0633\u0627\u0628\u0627\u062A \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0641\u0642\u0637" });
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0631\u0628\u0637 \u0627\u0644\u062D\u0633\u0627\u0628 \u0628\u0627\u0644\u0645\u0637\u0639\u0645 \u062D\u0627\u0644\u064A\u0627\u064B" });
-      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const profile = await getCustomerProfile(ctx.user.id);
       if (!profile) await upsertCustomerProfile(ctx.user.id, { restaurantId: input.restaurantId, displayName: ctx.user.name ?? "\u0639\u0645\u064A\u0644 NFOOD", email: ctx.user.email ?? null });
@@ -10322,15 +10401,15 @@ var appRouter = router({
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u063A\u0644\u0627\u0642 \u0627\u0644\u062D\u0633\u0627\u0628 \u062D\u0627\u0644\u064A\u0627\u064B" });
       const profile = await getCustomerProfile(ctx.user.id);
       if (!profile) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u062D\u0633\u0627\u0628 \u0639\u0645\u064A\u0644 \u0642\u0627\u0628\u0644 \u0644\u0644\u0625\u063A\u0644\u0627\u0642" });
-      const current = (await db.select({ email: users.email }).from(users).where(eq7(users.id, ctx.user.id)).limit(1))[0];
-      await db.update(users).set({ deletedAt: /* @__PURE__ */ new Date(), name: "\u062D\u0633\u0627\u0628 \u0645\u062D\u0630\u0648\u0641", email: null }).where(eq7(users.id, ctx.user.id));
-      await db.update(customerProfiles).set({ displayName: "\u062D\u0633\u0627\u0628 \u0645\u062D\u0630\u0648\u0641", email: null, phone: null, whatsapp: null, isPublic: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq7(customerProfiles.userId, ctx.user.id));
-      if (current?.email) await db.update(testAccounts).set({ isActive: false }).where(eq7(testAccounts.email, current.email.toLowerCase()));
-      await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(authSessions.userId, ctx.user.id), isNull4(authSessions.revokedAt)));
+      const current = (await db.select({ email: users.email }).from(users).where(eq8(users.id, ctx.user.id)).limit(1))[0];
+      await db.update(users).set({ deletedAt: /* @__PURE__ */ new Date(), name: "\u062D\u0633\u0627\u0628 \u0645\u062D\u0630\u0648\u0641", email: null }).where(eq8(users.id, ctx.user.id));
+      await db.update(customerProfiles).set({ displayName: "\u062D\u0633\u0627\u0628 \u0645\u062D\u0630\u0648\u0641", email: null, phone: null, whatsapp: null, isPublic: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(customerProfiles.userId, ctx.user.id));
+      if (current?.email) await db.update(testAccounts).set({ isActive: false }).where(eq8(testAccounts.email, current.email.toLowerCase()));
+      await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(authSessions.userId, ctx.user.id), isNull4(authSessions.revokedAt)));
       await insertAuditLog({ restaurantId: profile.restaurantId ?? null, actorUserId: ctx.user.id, actorRole: "customer", action: "customer.account.deleted_by_self", entityType: "customer", entityId: String(ctx.user.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ retainedOrderHistory: true, emailChanged: true }) });
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      ctx.res.clearCookie(TEST_SESSION_COOKIE, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(COOKIE_NAME, cookieOptions);
+      ctx.res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       return { success: true };
     }),
     adminReturn: publicProcedure.mutation(async ({ ctx }) => {
@@ -10350,23 +10429,23 @@ var appRouter = router({
       let startedAt = null;
       if (db && ctx.user?.id && currentToken) {
         const tokenHash = createHash2("sha256").update(currentToken).digest("hex");
-        const session = (await db.select({ createdAt: authSessions.createdAt }).from(authSessions).where(and7(eq7(authSessions.userId, ctx.user.id), eq7(authSessions.sessionTokenHash, tokenHash))).limit(1))[0];
+        const session = (await db.select({ createdAt: authSessions.createdAt }).from(authSessions).where(and8(eq8(authSessions.userId, ctx.user.id), eq8(authSessions.sessionTokenHash, tokenHash))).limit(1))[0];
         startedAt = session?.createdAt ?? null;
-        await db.update(authSessions).set({ revokedAt: endedAt }).where(and7(eq7(authSessions.userId, ctx.user.id), eq7(authSessions.sessionTokenHash, tokenHash), isNull4(authSessions.revokedAt)));
+        await db.update(authSessions).set({ revokedAt: endedAt }).where(and8(eq8(authSessions.userId, ctx.user.id), eq8(authSessions.sessionTokenHash, tokenHash), isNull4(authSessions.revokedAt)));
         await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "customer", action: "admin.customer.session.ended", entityType: "customer_impersonation_session", entityId: String(ctx.user.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ startedAt: startedAt?.toISOString() ?? null, endedAt: endedAt.toISOString(), reason: "admin_requested_immediate_end", actions: ["\u0625\u0628\u0637\u0627\u0644 \u062C\u0644\u0633\u0629 \u0627\u0644\u0639\u0645\u064A\u0644", "\u062D\u0641\u0638 \u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062C\u0644\u0633\u0629", "\u0625\u0639\u0627\u062F\u0629 \u062C\u0644\u0633\u0629 \u0627\u0644\u0625\u062F\u0627\u0631\u0629"] }) });
       }
       const durationMinutes = startedAt ? Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 6e4)) : null;
       const report = { customerUserId: ctx.user?.id ?? null, startedAt: startedAt?.toISOString() ?? null, endedAt: endedAt.toISOString(), durationMinutes, actions: ["\u0625\u0628\u0637\u0627\u0644 \u062C\u0644\u0633\u0629 \u0627\u0644\u0639\u0645\u064A\u0644 \u0641\u0648\u0631\u064B\u0627", "\u062A\u0633\u062C\u064A\u0644 \u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0625\u062C\u0631\u0627\u0621\u0627\u062A", "\u0625\u0639\u0627\u062F\u0629 \u062C\u0644\u0633\u0629 \u0627\u0644\u0625\u062F\u0627\u0631\u0629"], result: "success" };
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      ctx.res.clearCookie(TEST_SESSION_COOKIE, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(COOKIE_NAME, cookieOptions);
+      ctx.res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       ctx.res.cookie(saved.cookieName, saved.token, { ...cookieOptions, maxAge: 1e3 * 60 * 60 * 12 });
-      ctx.res.clearCookie(ADMIN_RETURN_COOKIE, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(ADMIN_RETURN_COOKIE, cookieOptions);
       return { success: true, report };
     }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      ctx.res.clearCookie(TEST_SESSION_COOKIE, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(COOKIE_NAME, cookieOptions);
+      ctx.res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       return { success: true };
     })
   }),
@@ -10379,8 +10458,8 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062D\u0641\u0638 \u0642\u0627\u0644\u0628 \u0627\u0644\u0628\u0631\u064A\u062F \u062D\u0627\u0644\u064A\u0627\u064B" });
-      const existing = (await db.select({ id: emailTemplates.id }).from(emailTemplates).where(and7(eq7(emailTemplates.restaurantId, input.restaurantId), eq7(emailTemplates.scope, "restaurant"), eq7(emailTemplates.eventKey, input.eventKey), eq7(emailTemplates.locale, input.locale))).limit(1))[0];
-      if (existing) await db.update(emailTemplates).set({ subject: input.subject, htmlBody: input.htmlBody, textBody: input.textBody, isEnabled: input.isEnabled, updatedByUserId: ctx.user?.id ?? null, updatedAt: /* @__PURE__ */ new Date() }).where(eq7(emailTemplates.id, existing.id));
+      const existing = (await db.select({ id: emailTemplates.id }).from(emailTemplates).where(and8(eq8(emailTemplates.restaurantId, input.restaurantId), eq8(emailTemplates.scope, "restaurant"), eq8(emailTemplates.eventKey, input.eventKey), eq8(emailTemplates.locale, input.locale))).limit(1))[0];
+      if (existing) await db.update(emailTemplates).set({ subject: input.subject, htmlBody: input.htmlBody, textBody: input.textBody, isEnabled: input.isEnabled, updatedByUserId: ctx.user?.id ?? null, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailTemplates.id, existing.id));
       else await db.insert(emailTemplates).values({ scope: "restaurant", restaurantId: input.restaurantId, eventKey: input.eventKey, locale: input.locale, subject: input.subject, htmlBody: input.htmlBody, textBody: input.textBody, isEnabled: input.isEnabled, updatedByUserId: ctx.user?.id ?? null });
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "email.template.updated", entityType: "email_template", entityId: `${input.eventKey}:${input.locale}`, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ locale: input.locale, enabled: input.isEnabled }) });
       return { success: true };
@@ -10415,7 +10494,7 @@ var appRouter = router({
     deliveryMessages: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062A\u062D\u0645\u064A\u0644 \u0627\u0644\u0645\u0631\u0627\u0633\u0644\u0629" });
-      const order = (await db.select({ customerId: orders.customerId, driverId: orders.driverId, restaurantId: orders.restaurantId, deliveryStatus: orders.deliveryStatus }).from(orders).where(eq7(orders.id, input.orderId)).limit(1))[0];
+      const order = (await db.select({ customerId: orders.customerId, driverId: orders.driverId, restaurantId: orders.restaurantId, deliveryStatus: orders.deliveryStatus }).from(orders).where(eq8(orders.id, input.orderId)).limit(1))[0];
       if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const isAdmin = isAdminContext(ctx);
       const isRestaurant = isAdmin || ["restaurant_admin", "waiter"].includes(ctx.user.testRole ?? "");
@@ -10424,14 +10503,14 @@ var appRouter = router({
       const isParticipant = isCustomer || isDriver;
       if (!isAdmin && !isRestaurant && !isParticipant) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0631\u0624\u064A\u0629 \u0647\u0630\u0647 \u0627\u0644\u0645\u0631\u0627\u0633\u0644\u0629" });
       const customerCanChatWithDriver = ["picked_up", "out_for_delivery", "delivered"].includes(order.deliveryStatus ?? "");
-      const messageFilter = !isAdmin && isCustomer && !customerCanChatWithDriver ? and7(eq7(deliveryMessages.orderId, input.orderId), eq7(deliveryMessages.senderRole, "restaurant")) : eq7(deliveryMessages.orderId, input.orderId);
+      const messageFilter = !isAdmin && isCustomer && !customerCanChatWithDriver ? and8(eq8(deliveryMessages.orderId, input.orderId), eq8(deliveryMessages.senderRole, "restaurant")) : eq8(deliveryMessages.orderId, input.orderId);
       return db.select({ id: deliveryMessages.id, orderId: deliveryMessages.orderId, senderUserId: deliveryMessages.senderUserId, senderRole: deliveryMessages.senderRole, body: deliveryMessages.body, createdAt: deliveryMessages.createdAt, readAt: deliveryMessages.readAt }).from(deliveryMessages).where(messageFilter).orderBy(deliveryMessages.createdAt);
     }),
     sendDeliveryMessage: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive(), body: z3.string().trim().min(1).max(1e3) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0631\u0633\u0627\u0644\u0629" });
       if (/\b(?:05\d{8}|\+?9665\d{8}|\d{9,})\b/.test(input.body) || /(https?:\/\/|www\.)/i.test(input.body)) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0625\u0631\u0633\u0627\u0644 \u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062C\u0648\u0627\u0644 \u0623\u0648 \u0627\u0644\u0631\u0648\u0627\u0628\u0637 \u062E\u0627\u0631\u062C \u0627\u0644\u062A\u0637\u0628\u064A\u0642" });
-      const order = (await db.select({ customerId: orders.customerId, driverId: orders.driverId, restaurantId: orders.restaurantId, channel: orders.channel, deliveryStatus: orders.deliveryStatus }).from(orders).where(eq7(orders.id, input.orderId)).limit(1))[0];
+      const order = (await db.select({ customerId: orders.customerId, driverId: orders.driverId, restaurantId: orders.restaurantId, channel: orders.channel, deliveryStatus: orders.deliveryStatus }).from(orders).where(eq8(orders.id, input.orderId)).limit(1))[0];
       if (!order || order.channel !== "delivery") throw new TRPCError7({ code: "NOT_FOUND", message: "\u0637\u0644\u0628 \u0627\u0644\u062A\u0648\u0635\u064A\u0644 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const isAdmin = isAdminContext(ctx);
       const isRestaurant = isAdmin || ["restaurant_admin", "waiter"].includes(ctx.user.testRole ?? "");
@@ -10446,19 +10525,19 @@ var appRouter = router({
     grantDeliveryLocationAccess: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive(), expiresInMinutes: z3.number().int().min(5).max(240).default(60) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062A\u0641\u0639\u064A\u0644 \u0645\u0648\u0642\u0639 \u0627\u0644\u062A\u0648\u0635\u064A\u0644" });
-      const order = (await db.select({ driverId: orders.driverId, restaurantId: orders.restaurantId, deliveryStatus: orders.deliveryStatus, channel: orders.channel }).from(orders).where(eq7(orders.id, input.orderId)).limit(1))[0];
+      const order = (await db.select({ driverId: orders.driverId, restaurantId: orders.restaurantId, deliveryStatus: orders.deliveryStatus, channel: orders.channel }).from(orders).where(eq8(orders.id, input.orderId)).limit(1))[0];
       if (!order || order.channel !== "delivery" || !order.driverId) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0633\u0627\u0626\u0642 \u0645\u0642\u062A\u0631\u0646 \u0628\u0637\u0644\u0628 \u0627\u0644\u062A\u0648\u0635\u064A\u0644" });
       if (!isAdminContext(ctx) && !["restaurant_admin"].includes(ctx.user.testRole ?? "")) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0645\u0634\u0627\u0631\u0643\u0629 \u0627\u0644\u0645\u0648\u0642\u0639" });
       if (!["assigned", "picked_up", "out_for_delivery"].includes(order.deliveryStatus)) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u062A\u064F\u0641\u062A\u062D \u0645\u0634\u0627\u0631\u0643\u0629 \u0627\u0644\u0645\u0648\u0642\u0639 \u0623\u062B\u0646\u0627\u0621 \u062F\u0648\u0631\u0629 \u0627\u0644\u062A\u0648\u0635\u064A\u0644 \u0641\u0642\u0637" });
       const expiresAt = new Date(Date.now() + input.expiresInMinutes * 6e4);
-      await db.update(deliveryLocationAccess).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(deliveryLocationAccess.orderId, input.orderId), isNull4(deliveryLocationAccess.revokedAt)));
+      await db.update(deliveryLocationAccess).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(deliveryLocationAccess.orderId, input.orderId), isNull4(deliveryLocationAccess.revokedAt)));
       const result = await db.insert(deliveryLocationAccess).values({ orderId: input.orderId, driverUserId: order.driverId, grantedByUserId: ctx.user.id, expiresAt });
       return { success: true, id: Number(result[0].insertId), expiresAt };
     }),
     getDeliveryLocationAccess: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0642\u0631\u0627\u0621\u0629 \u0635\u0644\u0627\u062D\u064A\u0629 \u0627\u0644\u0645\u0648\u0642\u0639" });
-      const row = (await db.select({ access: deliveryLocationAccess, order: orders }).from(deliveryLocationAccess).innerJoin(orders, eq7(deliveryLocationAccess.orderId, orders.id)).where(and7(eq7(deliveryLocationAccess.orderId, input.orderId), isNull4(deliveryLocationAccess.revokedAt), gt(deliveryLocationAccess.expiresAt, /* @__PURE__ */ new Date()))).orderBy(desc3(deliveryLocationAccess.createdAt)).limit(1))[0];
+      const row = (await db.select({ access: deliveryLocationAccess, order: orders }).from(deliveryLocationAccess).innerJoin(orders, eq8(deliveryLocationAccess.orderId, orders.id)).where(and8(eq8(deliveryLocationAccess.orderId, input.orderId), isNull4(deliveryLocationAccess.revokedAt), gt(deliveryLocationAccess.expiresAt, /* @__PURE__ */ new Date()))).orderBy(desc3(deliveryLocationAccess.createdAt)).limit(1))[0];
       if (!row) return { active: false, latitude: null, longitude: null, expiresAt: null };
       const allowed = isAdminContext(ctx) || row.order.driverId === ctx.user.id || ["restaurant_admin", "waiter"].includes(ctx.user.testRole ?? "");
       if (!allowed) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0645\u0648\u0642\u0639 \u0627\u0644\u062A\u0648\u0635\u064A\u0644" });
@@ -10467,9 +10546,9 @@ var appRouter = router({
     revokeDeliveryLocationAccess: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u064A\u0642\u0627\u0641 \u0645\u0634\u0627\u0631\u0643\u0629 \u0627\u0644\u0645\u0648\u0642\u0639" });
-      const order = (await db.select({ restaurantId: orders.restaurantId }).from(orders).where(eq7(orders.id, input.orderId)).limit(1))[0];
+      const order = (await db.select({ restaurantId: orders.restaurantId }).from(orders).where(eq8(orders.id, input.orderId)).limit(1))[0];
       if (!order || !isAdminContext(ctx) && ctx.user.testRole !== "restaurant_admin") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0625\u064A\u0642\u0627\u0641 \u0645\u0634\u0627\u0631\u0643\u0629 \u0627\u0644\u0645\u0648\u0642\u0639" });
-      await db.update(deliveryLocationAccess).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(deliveryLocationAccess.orderId, input.orderId), isNull4(deliveryLocationAccess.revokedAt)));
+      await db.update(deliveryLocationAccess).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(deliveryLocationAccess.orderId, input.orderId), isNull4(deliveryLocationAccess.revokedAt)));
       return { success: true };
     }),
     publicContentMarket: publicProcedure.query(() => listPublicContentMarket()),
@@ -10515,7 +10594,7 @@ var appRouter = router({
     inviteContentFriend: protectedProcedure.input(z3.object({ listingId: z3.number().int().positive(), invitedUserId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062F\u0639\u0648\u0629" });
-      const listing = (await db.select({ ownerUserId: contentListings.ownerUserId, visibility: contentListings.visibility }).from(contentListings).where(eq7(contentListings.id, input.listingId)).limit(1))[0];
+      const listing = (await db.select({ ownerUserId: contentListings.ownerUserId, visibility: contentListings.visibility }).from(contentListings).where(eq8(contentListings.id, input.listingId)).limit(1))[0];
       if (!listing || listing.ownerUserId !== ctx.user.id || listing.visibility !== "friends") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u062F\u0639\u0648\u0627\u062A \u0645\u062A\u0627\u062D\u0629 \u0644\u0635\u0627\u062D\u0628 \u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u0627\u0644\u062E\u0627\u0635 \u0641\u0642\u0637" });
       await db.insert(contentListingInvites).values({ listingId: input.listingId, ownerUserId: ctx.user.id, invitedUserId: input.invitedUserId, status: "pending" });
       return { success: true };
@@ -10523,19 +10602,19 @@ var appRouter = router({
     acceptContentInvite: protectedProcedure.input(z3.object({ listingId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0642\u0628\u0648\u0644 \u0627\u0644\u062F\u0639\u0648\u0629" });
-      await db.update(contentListingInvites).set({ status: "accepted", updatedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(contentListingInvites.listingId, input.listingId), eq7(contentListingInvites.invitedUserId, ctx.user.id), eq7(contentListingInvites.status, "pending")));
+      await db.update(contentListingInvites).set({ status: "accepted", updatedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(contentListingInvites.listingId, input.listingId), eq8(contentListingInvites.invitedUserId, ctx.user.id), eq8(contentListingInvites.status, "pending")));
       return { success: true };
     }),
     myContentListings: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062A\u062D\u0645\u064A\u0644 \u0645\u062D\u062A\u0648\u0649 \u0627\u0644\u0639\u0645\u064A\u0644" });
-      return db.select({ listing: contentListings, media: mediaFiles, restaurant: restaurants }).from(contentListings).innerJoin(mediaFiles, eq7(contentListings.mediaFileId, mediaFiles.id)).leftJoin(restaurants, eq7(contentListings.restaurantId, restaurants.id)).where(and7(eq7(contentListings.ownerUserId, ctx.user.id), eq7(mediaFiles.ownerUserId, ctx.user.id), eq7(mediaFiles.isDeleted, false))).orderBy(desc3(contentListings.createdAt));
+      return db.select({ listing: contentListings, media: mediaFiles, restaurant: restaurants }).from(contentListings).innerJoin(mediaFiles, eq8(contentListings.mediaFileId, mediaFiles.id)).leftJoin(restaurants, eq8(contentListings.restaurantId, restaurants.id)).where(and8(eq8(contentListings.ownerUserId, ctx.user.id), eq8(mediaFiles.ownerUserId, ctx.user.id), eq8(mediaFiles.isDeleted, false))).orderBy(desc3(contentListings.createdAt));
     }),
     createCustomerContentListing: protectedProcedure.input(z3.object({ mediaFileId: z3.number().int().positive(), title: z3.string().trim().min(2).max(180), description: z3.string().trim().max(1e3).optional(), contentCategory: z3.enum(["other_food", "fashion", "beauty", "travel", "cars", "real_estate", "lifestyle", "products", "services", "other"]).default("other"), visibility: z3.enum(["public", "friends"]).default("public"), foodTags: z3.array(z3.string().trim().min(1).max(80)).max(20).default([]) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062D\u0641\u0638 \u0627\u0644\u0645\u062D\u062A\u0648\u0649" });
-      const media = (await db.select({ id: mediaFiles.id, ownerUserId: mediaFiles.ownerUserId, scope: mediaFiles.scope, contentType: mediaFiles.contentType, isDeleted: mediaFiles.isDeleted }).from(mediaFiles).where(eq7(mediaFiles.id, input.mediaFileId)).limit(1))[0];
-      const moderation = (await db.select({ status: contentModerationReviews.status, watermarkApplied: contentModerationReviews.watermarkApplied }).from(contentModerationReviews).where(eq7(contentModerationReviews.mediaFileId, input.mediaFileId)).limit(1))[0];
+      const media = (await db.select({ id: mediaFiles.id, ownerUserId: mediaFiles.ownerUserId, scope: mediaFiles.scope, contentType: mediaFiles.contentType, isDeleted: mediaFiles.isDeleted }).from(mediaFiles).where(eq8(mediaFiles.id, input.mediaFileId)).limit(1))[0];
+      const moderation = (await db.select({ status: contentModerationReviews.status, watermarkApplied: contentModerationReviews.watermarkApplied }).from(contentModerationReviews).where(eq8(contentModerationReviews.mediaFileId, input.mediaFileId)).limit(1))[0];
       if (!media || media.ownerUserId !== ctx.user.id || media.scope !== "user" || media.isDeleted) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0647\u0630\u0627 \u0627\u0644\u0645\u0644\u0641" });
       if (!moderation || !["approved", "pending"].includes(moderation.status) || !moderation.watermarkApplied) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u0642\u064A\u062F \u0627\u0644\u0645\u0631\u0627\u062C\u0639\u0629 \u0648\u0644\u0627 \u064A\u0645\u0643\u0646 \u0639\u0631\u0636\u0647 \u0628\u0639\u062F" });
       if (!media.contentType.startsWith("image/")) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0645\u0633\u0645\u0648\u062D \u0628\u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631 \u0627\u0644\u063A\u0630\u0627\u0626\u064A\u0629 \u0641\u0642\u0637 \u0641\u064A \u0627\u0644\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u062D\u0627\u0644\u064A\u0629" });
@@ -10549,15 +10628,15 @@ var appRouter = router({
     getCustomerContentOriginal: protectedProcedure.input(z3.object({ listingId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062A\u062D\u0645\u064A\u0644 \u0627\u0644\u0645\u062D\u062A\u0648\u0649" });
-      const row = (await db.select({ listing: contentListings, media: mediaFiles }).from(contentListings).innerJoin(mediaFiles, eq7(contentListings.mediaFileId, mediaFiles.id)).where(eq7(contentListings.id, input.listingId)).limit(1))[0];
+      const row = (await db.select({ listing: contentListings, media: mediaFiles }).from(contentListings).innerJoin(mediaFiles, eq8(contentListings.mediaFileId, mediaFiles.id)).where(eq8(contentListings.id, input.listingId)).limit(1))[0];
       if (!row) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const testDownloadBypass = process.env.NODE_ENV !== "production" && ctx.user.testRole === "customer";
       if (row.listing.visibility === "friends" && row.listing.ownerUserId !== ctx.user.id && !testDownloadBypass) {
-        const invited = (await db.select({ id: contentListingInvites.id }).from(contentListingInvites).where(and7(eq7(contentListingInvites.listingId, input.listingId), eq7(contentListingInvites.invitedUserId, ctx.user.id), eq7(contentListingInvites.status, "accepted"))).limit(1))[0];
+        const invited = (await db.select({ id: contentListingInvites.id }).from(contentListingInvites).where(and8(eq8(contentListingInvites.listingId, input.listingId), eq8(contentListingInvites.invitedUserId, ctx.user.id), eq8(contentListingInvites.status, "accepted"))).limit(1))[0];
         if (!invited) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0647\u0630\u0627 \u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u062E\u0627\u0635 \u0628\u0627\u0644\u0623\u0635\u062F\u0642\u0627\u0621 \u0627\u0644\u0645\u062F\u0639\u0648\u064A\u0646 \u0641\u0642\u0637" });
       }
       if (row.listing.ownerUserId !== ctx.user.id && !testDownloadBypass) {
-        const purchases2 = await db.select({ status: contentPurchaseOrders.status, itemsJson: contentPurchaseOrders.itemsJson }).from(contentPurchaseOrders).where(and7(eq7(contentPurchaseOrders.customerUserId, ctx.user.id), eq7(contentPurchaseOrders.status, "approved")));
+        const purchases2 = await db.select({ status: contentPurchaseOrders.status, itemsJson: contentPurchaseOrders.itemsJson }).from(contentPurchaseOrders).where(and8(eq8(contentPurchaseOrders.customerUserId, ctx.user.id), eq8(contentPurchaseOrders.status, "approved")));
         const approved = purchases2.some((purchase) => {
           try {
             const items = JSON.parse(purchase.itemsJson);
@@ -10574,7 +10653,7 @@ var appRouter = router({
       throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0645\u0637\u0627\u0639\u0645 \u0644\u0627 \u062A\u0634\u062A\u0631\u064A \u0627\u0644\u0645\u062D\u062A\u0648\u0649\u061B \u0627\u0644\u0634\u0631\u0627\u0621 \u062D\u0635\u0631\u064A \u0644\u0644\u0639\u0645\u0644\u0627\u0621" });
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u0637\u0644\u0628 \u0627\u0644\u0634\u0631\u0627\u0621" });
-      const row = (await db.select({ listing: contentListings, restaurantName: restaurants.name }).from(contentListings).leftJoin(restaurants, eq7(contentListings.restaurantId, restaurants.id)).where(and7(eq7(contentListings.id, input.listingId), eq7(contentListings.status, "published"))).limit(1))[0];
+      const row = (await db.select({ listing: contentListings, restaurantName: restaurants.name }).from(contentListings).leftJoin(restaurants, eq8(contentListings.restaurantId, restaurants.id)).where(and8(eq8(contentListings.id, input.listingId), eq8(contentListings.status, "published"))).limit(1))[0];
       if (!row) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0644\u0644\u0634\u0631\u0627\u0621" });
       const buyerRestaurantId = input.buyerRestaurantId ?? row.listing.restaurantId;
       if (!buyerRestaurantId) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u064A\u062C\u0628 \u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0645\u0637\u0639\u0645 \u0627\u0644\u0645\u0634\u062A\u0631\u064A \u0642\u0628\u0644 \u0637\u0644\u0628 \u0627\u0644\u0645\u062D\u062A\u0648\u0649" });
@@ -10584,7 +10663,7 @@ var appRouter = router({
     myWalletTransactions: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062A\u062D\u0645\u064A\u0644 \u0633\u062C\u0644 \u0627\u0644\u0645\u062D\u0641\u0638\u0629" });
-      return db.select().from(walletTransactions).where(eq7(walletTransactions.customerId, ctx.user.id)).orderBy(desc3(walletTransactions.createdAt)).limit(100);
+      return db.select().from(walletTransactions).where(eq8(walletTransactions.customerId, ctx.user.id)).orderBy(desc3(walletTransactions.createdAt)).limit(100);
     }),
     createWalletTopup: protectedProcedure.input(z3.object({ amount: z3.coerce.number().positive().max(1e6), currencyCode: z3.string().length(3).default("SAR"), paymentMethod: z3.enum(["bank_transfer", "cash", "apple_pay"]).default("bank_transfer"), receiptUrl: z3.string().url().max(1e3).nullable().optional(), receiptBase64: z3.string().min(10).max(8e6).optional(), receiptFileName: z3.string().trim().min(1).max(160).optional(), receiptContentType: z3.enum(["image/png", "image/jpeg", "image/webp", "application/pdf"]).optional() })).mutation(async ({ ctx, input }) => {
       let receiptUrl = input.receiptUrl ?? null;
@@ -10610,15 +10689,15 @@ var appRouter = router({
       assertTeamPermission(ctx, "customers.password_reset");
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062D\u0641\u0638 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u062D\u0627\u0644\u064A\u0627\u064B" });
-      const profile = (await db.select({ userId: customerProfiles.userId, restaurantId: customerProfiles.restaurantId, email: users.email, name: users.name }).from(customerProfiles).innerJoin(users, eq7(customerProfiles.userId, users.id)).where(and7(eq7(customerProfiles.userId, input.userId), eq7(customerProfiles.restaurantId, input.restaurantId))).limit(1))[0];
+      const profile = (await db.select({ userId: customerProfiles.userId, restaurantId: customerProfiles.restaurantId, email: users.email, name: users.name }).from(customerProfiles).innerJoin(users, eq8(customerProfiles.userId, users.id)).where(and8(eq8(customerProfiles.userId, input.userId), eq8(customerProfiles.restaurantId, input.restaurantId))).limit(1))[0];
       if (!profile) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0639\u0645\u064A\u0644 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645" });
       if (!profile.email) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u062A\u0639\u064A\u064A\u0646 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631 \u0644\u062D\u0633\u0627\u0628 \u0628\u0644\u0627 \u0628\u0631\u064A\u062F \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A" });
       const salt = randomBytes2(16).toString("base64");
       const passwordHash = `scrypt$${salt}$${scryptSync2(input.password, Buffer.from(salt, "base64"), 64).toString("base64")}`;
-      const existing = (await db.select({ id: testAccounts.id }).from(testAccounts).where(eq7(testAccounts.email, profile.email.toLowerCase())).limit(1))[0];
-      if (existing) await db.update(testAccounts).set({ restaurantId: input.restaurantId, displayName: profile.name ?? "\u0639\u0645\u064A\u0644", role: "customer", passwordHash, isActive: true }).where(eq7(testAccounts.id, existing.id));
+      const existing = (await db.select({ id: testAccounts.id }).from(testAccounts).where(eq8(testAccounts.email, profile.email.toLowerCase())).limit(1))[0];
+      if (existing) await db.update(testAccounts).set({ restaurantId: input.restaurantId, displayName: profile.name ?? "\u0639\u0645\u064A\u0644", role: "customer", passwordHash, isActive: true }).where(eq8(testAccounts.id, existing.id));
       else await db.insert(testAccounts).values({ restaurantId: input.restaurantId, email: profile.email.toLowerCase(), displayName: profile.name ?? "\u0639\u0645\u064A\u0644", role: "customer", passwordHash, isActive: true });
-      await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(authSessions.userId, input.userId), isNull4(authSessions.revokedAt)));
+      await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(authSessions.userId, input.userId), isNull4(authSessions.revokedAt)));
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "customer.password_reset_by_restaurant", entityType: "customer", entityId: String(input.userId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ emailChanged: false }) });
       return { success: true, userId: input.userId };
     }),
@@ -10627,23 +10706,23 @@ var appRouter = router({
       await requireRestaurantFeature(input.restaurantId, "employees");
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const accounts = await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, email: testAccounts.email, displayName: testAccounts.displayName, phone: testAccounts.phone, role: testAccounts.role, permissionsJson: testAccounts.permissionsJson, isActive: testAccounts.isActive, createdAt: testAccounts.createdAt }).from(testAccounts).where(eq7(testAccounts.restaurantId, input.restaurantId));
+      const accounts = await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, email: testAccounts.email, displayName: testAccounts.displayName, phone: testAccounts.phone, role: testAccounts.role, permissionsJson: testAccounts.permissionsJson, isActive: testAccounts.isActive, createdAt: testAccounts.createdAt }).from(testAccounts).where(eq8(testAccounts.restaurantId, input.restaurantId));
       return Promise.all(accounts.map(async (account) => {
         const openId = `test_${account.id}`;
         await upsertUser({ openId, name: account.displayName, email: account.email, loginMethod: "test", role: "user", accountRole: account.role, lastSignedIn: /* @__PURE__ */ new Date() });
-        return { ...account, userId: (await db.select({ id: users.id }).from(users).where(eq7(users.openId, openId)).limit(1))[0]?.id ?? null };
+        return { ...account, userId: (await db.select({ id: users.id }).from(users).where(eq8(users.openId, openId)).limit(1))[0]?.id ?? null };
       }));
     }),
     waiterAdminProfile: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), accountId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const account = (await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, email: testAccounts.email, displayName: testAccounts.displayName, phone: testAccounts.phone, role: testAccounts.role, permissionsJson: testAccounts.permissionsJson, isActive: testAccounts.isActive, createdAt: testAccounts.createdAt }).from(testAccounts).where(eq7(testAccounts.id, input.accountId)).limit(1))[0];
+      const account = (await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, email: testAccounts.email, displayName: testAccounts.displayName, phone: testAccounts.phone, role: testAccounts.role, permissionsJson: testAccounts.permissionsJson, isActive: testAccounts.isActive, createdAt: testAccounts.createdAt }).from(testAccounts).where(eq8(testAccounts.id, input.accountId)).limit(1))[0];
       if (!account || account.restaurantId !== input.restaurantId || account.role !== "waiter") throw new TRPCError7({ code: "NOT_FOUND", message: "\u062D\u0633\u0627\u0628 \u0627\u0644\u0646\u0627\u062F\u0644 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      const linkedUser = (await db.select({ id: users.id, lastSignedIn: users.lastSignedIn }).from(users).where(eq7(users.openId, `test_${account.id}`)).limit(1))[0] ?? null;
+      const linkedUser = (await db.select({ id: users.id, lastSignedIn: users.lastSignedIn }).from(users).where(eq8(users.openId, `test_${account.id}`)).limit(1))[0] ?? null;
       const activity = linkedUser ? await listAuditLogs({ restaurantId: input.restaurantId, actorUserId: linkedUser.id, limit: 100 }) : [];
-      const calls = linkedUser ? await db.select({ id: waiterCalls.id, branchId: waiterCalls.branchId, tableId: waiterCalls.tableId, reason: waiterCalls.reason, status: waiterCalls.status, createdAt: waiterCalls.createdAt, acknowledgedAt: waiterCalls.acknowledgedAt, closedAt: waiterCalls.closedAt }).from(waiterCalls).where(and7(eq7(waiterCalls.restaurantId, input.restaurantId), eq7(waiterCalls.waiterUserId, linkedUser.id))).orderBy(desc3(waiterCalls.createdAt)).limit(100) : [];
-      const assignments = linkedUser ? await db.select({ id: waiterTableAssignments.id, branchId: waiterTableAssignments.branchId, tableId: waiterTableAssignments.tableId, tableName: restaurantTables.name, assignedAt: waiterTableAssignments.createdAt }).from(waiterTableAssignments).innerJoin(restaurantTables, eq7(waiterTableAssignments.tableId, restaurantTables.id)).where(and7(eq7(waiterTableAssignments.restaurantId, input.restaurantId), eq7(waiterTableAssignments.waiterUserId, linkedUser.id))).orderBy(desc3(waiterTableAssignments.createdAt)) : [];
+      const calls = linkedUser ? await db.select({ id: waiterCalls.id, branchId: waiterCalls.branchId, tableId: waiterCalls.tableId, reason: waiterCalls.reason, status: waiterCalls.status, createdAt: waiterCalls.createdAt, acknowledgedAt: waiterCalls.acknowledgedAt, closedAt: waiterCalls.closedAt }).from(waiterCalls).where(and8(eq8(waiterCalls.restaurantId, input.restaurantId), eq8(waiterCalls.waiterUserId, linkedUser.id))).orderBy(desc3(waiterCalls.createdAt)).limit(100) : [];
+      const assignments = linkedUser ? await db.select({ id: waiterTableAssignments.id, branchId: waiterTableAssignments.branchId, tableId: waiterTableAssignments.tableId, tableName: restaurantTables.name, assignedAt: waiterTableAssignments.createdAt }).from(waiterTableAssignments).innerJoin(restaurantTables, eq8(waiterTableAssignments.tableId, restaurantTables.id)).where(and8(eq8(waiterTableAssignments.restaurantId, input.restaurantId), eq8(waiterTableAssignments.waiterUserId, linkedUser.id))).orderBy(desc3(waiterTableAssignments.createdAt)) : [];
       return { ...account, userId: linkedUser?.id ?? null, lastSignedIn: linkedUser?.lastSignedIn ?? null, activity, calls, assignments };
     }),
     createTeamAccount: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), email: z3.string().email().max(320), displayName: z3.string().trim().min(2).max(120), phone: z3.string().trim().min(7).max(40).optional(), role: z3.enum(["restaurant_admin", "waiter", "kitchen", "bar", "cashier", "accountant", "driver"]), permissions: z3.array(z3.string().trim().min(2).max(80)).max(40).optional(), password: z3.string().min(8).max(128) })).mutation(async ({ ctx, input }) => {
@@ -10651,7 +10730,7 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const email = input.email.trim().toLowerCase();
-      const duplicate = await db.select({ id: testAccounts.id }).from(testAccounts).where(eq7(testAccounts.email, email)).limit(1);
+      const duplicate = await db.select({ id: testAccounts.id }).from(testAccounts).where(eq8(testAccounts.email, email)).limit(1);
       if (duplicate[0]) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0644\u062D\u0633\u0627\u0628 \u0622\u062E\u0631" });
       const salt = randomBytes2(16).toString("base64");
       const passwordHash = `scrypt$${salt}$${scryptSync2(input.password, Buffer.from(salt, "base64"), 64).toString("base64")}`;
@@ -10665,7 +10744,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId }).from(testAccounts).where(eq7(testAccounts.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId }).from(testAccounts).where(eq8(testAccounts.id, input.id)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u062D\u0633\u0627\u0628 \u0644\u0627 \u064A\u0646\u062A\u0645\u064A \u0625\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645" });
       const changes = {};
       if (input.displayName) changes.displayName = input.displayName.trim();
@@ -10677,11 +10756,11 @@ var appRouter = router({
         const salt = randomBytes2(16).toString("base64");
         changes.passwordHash = `scrypt$${salt}$${scryptSync2(input.password, Buffer.from(salt, "base64"), 64).toString("base64")}`;
       }
-      await db.update(testAccounts).set(changes).where(eq7(testAccounts.id, input.id));
-      if (input.role) await db.update(users).set({ accountRole: input.role, updatedAt: /* @__PURE__ */ new Date() }).where(eq7(users.openId, `test_${input.id}`));
+      await db.update(testAccounts).set(changes).where(eq8(testAccounts.id, input.id));
+      if (input.role) await db.update(users).set({ accountRole: input.role, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(users.openId, `test_${input.id}`));
       if (input.password) {
-        const linkedUser = (await db.select({ id: users.id }).from(users).where(eq7(users.openId, `test_${input.id}`)).limit(1))[0];
-        if (linkedUser) await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(authSessions.userId, linkedUser.id), isNull4(authSessions.revokedAt)));
+        const linkedUser = (await db.select({ id: users.id }).from(users).where(eq8(users.openId, `test_${input.id}`)).limit(1))[0];
+        if (linkedUser) await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(authSessions.userId, linkedUser.id), isNull4(authSessions.revokedAt)));
       }
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "team.account.updated", entityType: "team_account", entityId: String(input.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ changedFields: Object.keys(changes).filter((key) => key !== "passwordHash"), passwordChanged: Boolean(input.password) }) });
       return { success: true, id: input.id };
@@ -10690,14 +10769,14 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, role: testAccounts.role, email: testAccounts.email, displayName: testAccounts.displayName, isActive: testAccounts.isActive }).from(testAccounts).where(eq7(testAccounts.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ id: testAccounts.id, restaurantId: testAccounts.restaurantId, role: testAccounts.role, email: testAccounts.email, displayName: testAccounts.displayName, isActive: testAccounts.isActive }).from(testAccounts).where(eq8(testAccounts.id, input.id)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u062D\u0633\u0627\u0628 \u0644\u0627 \u064A\u0646\u062A\u0645\u064A \u0625\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645" });
-      const linkedUser = (await db.select({ id: users.id }).from(users).where(eq7(users.openId, `test_${input.id}`)).limit(1))[0];
+      const linkedUser = (await db.select({ id: users.id }).from(users).where(eq8(users.openId, `test_${input.id}`)).limit(1))[0];
       if (linkedUser) {
-        await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(authSessions.userId, linkedUser.id), isNull4(authSessions.revokedAt)));
-        await db.delete(waiterTableAssignments).where(and7(eq7(waiterTableAssignments.restaurantId, input.restaurantId), eq7(waiterTableAssignments.waiterUserId, linkedUser.id)));
+        await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(authSessions.userId, linkedUser.id), isNull4(authSessions.revokedAt)));
+        await db.delete(waiterTableAssignments).where(and8(eq8(waiterTableAssignments.restaurantId, input.restaurantId), eq8(waiterTableAssignments.waiterUserId, linkedUser.id)));
       }
-      await db.update(testAccounts).set({ isActive: false }).where(and7(eq7(testAccounts.id, input.id), eq7(testAccounts.restaurantId, input.restaurantId)));
+      await db.update(testAccounts).set({ isActive: false }).where(and8(eq8(testAccounts.id, input.id), eq8(testAccounts.restaurantId, input.restaurantId)));
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "team.account.archived", entityType: "team_account", entityId: String(input.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ email: existing.email, displayName: existing.displayName, role: existing.role, preservedUserId: linkedUser?.id ?? null, previousActive: existing.isActive, terminationReason: input.reason.trim() }) });
       return { success: true, id: input.id };
     }),
@@ -10706,7 +10785,7 @@ var appRouter = router({
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062A\u063A\u064A\u064A\u0631 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u062D\u0627\u0644\u064A\u0627\u064B" });
       if (!ctx.user.openId.startsWith("test_")) throw new TRPCError7({ code: "FORBIDDEN", message: "\u062A\u063A\u064A\u064A\u0631 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631 \u0647\u0630\u0627 \u0627\u0644\u0646\u0648\u0639 \u0645\u0646 \u0627\u0644\u062D\u0633\u0627\u0628\u0627\u062A \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0645\u0646 \u0647\u0630\u0627 \u0627\u0644\u0645\u0633\u0627\u0631" });
       const accountId = Number(ctx.user.openId.slice(5));
-      const account = (await db.select({ id: testAccounts.id, passwordHash: testAccounts.passwordHash, restaurantId: testAccounts.restaurantId, role: testAccounts.role, isActive: testAccounts.isActive }).from(testAccounts).where(eq7(testAccounts.id, accountId)).limit(1))[0];
+      const account = (await db.select({ id: testAccounts.id, passwordHash: testAccounts.passwordHash, restaurantId: testAccounts.restaurantId, role: testAccounts.role, isActive: testAccounts.isActive }).from(testAccounts).where(eq8(testAccounts.id, accountId)).limit(1))[0];
       if (!account || !account.isActive) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u0627\u0644\u062D\u0633\u0627\u0628 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       const [scheme, salt, storedKey] = account.passwordHash.split("$");
       const derivedKey = scryptSync2(input.currentPassword, Buffer.from(salt, "base64"), 64);
@@ -10714,8 +10793,8 @@ var appRouter = router({
       if (scheme !== "scrypt" || derivedKey.length !== expectedKey.length || !timingSafeEqual2(derivedKey, expectedKey)) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062D\u0627\u0644\u064A\u0629 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629" });
       const nextSalt = randomBytes2(16).toString("base64");
       const passwordHash = `scrypt$${nextSalt}$${scryptSync2(input.newPassword, Buffer.from(nextSalt, "base64"), 64).toString("base64")}`;
-      await db.update(testAccounts).set({ passwordHash }).where(eq7(testAccounts.id, accountId));
-      await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(authSessions.userId, ctx.user.id), isNull4(authSessions.revokedAt)));
+      await db.update(testAccounts).set({ passwordHash }).where(eq8(testAccounts.id, accountId));
+      await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(authSessions.userId, ctx.user.id), isNull4(authSessions.revokedAt)));
       await insertAuditLog({ restaurantId: account.restaurantId ?? null, actorUserId: ctx.user.id, actorRole: ctx.user.testRole ?? ctx.user.role, action: "team.account.self_password_changed", entityType: "team_account", entityId: String(accountId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ role: account.role }) });
       return { success: true };
     }),
@@ -10728,9 +10807,9 @@ var appRouter = router({
       if (bytes.byteLength > 5 * 1024 * 1024) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u062D\u062C\u0645 \u0627\u0644\u0635\u0648\u0631\u0629 \u064A\u062A\u062C\u0627\u0648\u0632 5MB" });
       const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-80) || "brand-image";
       const upload = await storagePut(`restaurants/${input.restaurantId}/branding/${input.assetType}-${nanoid4(10)}-${safeName}`, bytes, input.mimeType);
-      if (input.assetType === "logo") await db.update(restaurants).set({ brandLogoUrl: upload.url }).where(eq7(restaurants.id, input.restaurantId));
-      else if (input.assetType === "pwaIcon") await db.update(restaurants).set({ pwaInstallIconUrl: upload.url }).where(eq7(restaurants.id, input.restaurantId));
-      else await db.update(restaurants).set({ coverUrl: upload.url }).where(eq7(restaurants.id, input.restaurantId));
+      if (input.assetType === "logo") await db.update(restaurants).set({ brandLogoUrl: upload.url }).where(eq8(restaurants.id, input.restaurantId));
+      else if (input.assetType === "pwaIcon") await db.update(restaurants).set({ pwaInstallIconUrl: upload.url }).where(eq8(restaurants.id, input.restaurantId));
+      else await db.update(restaurants).set({ coverUrl: upload.url }).where(eq8(restaurants.id, input.restaurantId));
       return { success: true, assetType: input.assetType, key: upload.key, url: upload.url };
     }),
     updateRestaurantPricing: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), defaultDiscountPercent: z3.coerce.number().min(0).max(100), taxPercent: z3.coerce.number().min(0).max(100), countryCode: z3.string().length(2).optional(), currencyCode: z3.string().length(3).optional(), integrationMode: z3.enum(["platform", "custom"]).optional() })).mutation(async ({ ctx, input }) => {
@@ -10738,7 +10817,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ id: restaurants.id, defaultDiscountPercent: restaurants.defaultDiscountPercent, taxPercent: restaurants.taxPercent, countryCode: restaurants.countryCode, currencyCode: restaurants.currencyCode, currencyDecimals: restaurants.currencyDecimals, integrationMode: restaurants.integrationMode }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1);
+      const existing = await db.select({ id: restaurants.id, defaultDiscountPercent: restaurants.defaultDiscountPercent, taxPercent: restaurants.taxPercent, countryCode: restaurants.countryCode, currencyCode: restaurants.currencyCode, currencyDecimals: restaurants.currencyDecimals, integrationMode: restaurants.integrationMode }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const countryCode = input.countryCode ?? existing[0].countryCode;
       const currencyCode = input.currencyCode ?? existing[0].currencyCode;
@@ -10748,7 +10827,7 @@ var appRouter = router({
       if (!currency) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0631\u0645\u0632 \u0627\u0644\u0639\u0645\u0644\u0629 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645" });
       const after = { defaultDiscountPercent: Number(input.defaultDiscountPercent.toFixed(2)), taxPercent: Number(input.taxPercent.toFixed(2)), countryCode: country.code, currencyCode: currency.code, currencyDecimals: currency.decimals, integrationMode: input.integrationMode ?? existing[0].integrationMode };
       const before = { defaultDiscountPercent: Number(existing[0].defaultDiscountPercent), taxPercent: Number(existing[0].taxPercent), countryCode: existing[0].countryCode, currencyCode: existing[0].currencyCode, currencyDecimals: existing[0].currencyDecimals, integrationMode: existing[0].integrationMode };
-      await db.update(restaurants).set({ defaultDiscountPercent: after.defaultDiscountPercent.toFixed(2), taxPercent: after.taxPercent.toFixed(2), countryCode: after.countryCode, currencyCode: after.currencyCode, currencyDecimals: after.currencyDecimals, integrationMode: after.integrationMode }).where(eq7(restaurants.id, input.restaurantId));
+      await db.update(restaurants).set({ defaultDiscountPercent: after.defaultDiscountPercent.toFixed(2), taxPercent: after.taxPercent.toFixed(2), countryCode: after.countryCode, currencyCode: after.currencyCode, currencyDecimals: after.currencyDecimals, integrationMode: after.integrationMode }).where(eq8(restaurants.id, input.restaurantId));
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "restaurant.pricing.updated", entityType: "restaurant_pricing", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ before, after }) });
       return { success: true, restaurantId: input.restaurantId, ...after };
     }),
@@ -10795,25 +10874,25 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      return db.select().from(electronicInvoices).where(eq7(electronicInvoices.restaurantId, input.restaurantId)).orderBy(desc3(electronicInvoices.issuedAt)).limit(input.limit);
+      return db.select().from(electronicInvoices).where(eq8(electronicInvoices.restaurantId, input.restaurantId)).orderBy(desc3(electronicInvoices.issuedAt)).limit(input.limit);
     }),
     myElectronicInvoices: protectedProcedure.input(z3.object({ limit: z3.number().int().min(1).max(100).default(50) }).optional()).query(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      return db.select().from(electronicInvoices).where(eq7(electronicInvoices.customerId, ctx.user.id)).orderBy(desc3(electronicInvoices.issuedAt)).limit(input?.limit ?? 50);
+      return db.select().from(electronicInvoices).where(eq8(electronicInvoices.customerId, ctx.user.id)).orderBy(desc3(electronicInvoices.issuedAt)).limit(input?.limit ?? 50);
     }),
     issueElectronicInvoice: testRoleProcedure("restaurant_admin", "cashier", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive(), invoiceType: z3.enum(["simplified", "tax"]).default("simplified"), customerName: z3.string().trim().max(180).optional(), customerTaxNumber: z3.string().trim().max(64).optional() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select().from(electronicInvoices).where(and7(eq7(electronicInvoices.restaurantId, input.restaurantId), eq7(electronicInvoices.orderId, input.orderId))).limit(1))[0];
+      const existing = (await db.select().from(electronicInvoices).where(and8(eq8(electronicInvoices.restaurantId, input.restaurantId), eq8(electronicInvoices.orderId, input.orderId))).limit(1))[0];
       if (existing) return existing;
-      const order = (await db.select().from(orders).where(and7(eq7(orders.id, input.orderId), eq7(orders.restaurantId, input.restaurantId))).limit(1))[0];
+      const order = (await db.select().from(orders).where(and8(eq8(orders.id, input.orderId), eq8(orders.restaurantId, input.restaurantId))).limit(1))[0];
       if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       if (order.paymentStatus !== "paid") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0625\u0635\u062F\u0627\u0631 \u0641\u0627\u062A\u0648\u0631\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 \u0642\u0628\u0644 \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062F\u0641\u0639" });
       const restaurant = await getRestaurantById(input.restaurantId);
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      const items = await db.select({ menuItemId: orderItems.menuItemId, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice, itemNameSnapshot: orderItems.itemNameSnapshot, currentName: menuItems.name }).from(orderItems).leftJoin(menuItems, eq7(orderItems.menuItemId, menuItems.id)).where(eq7(orderItems.orderId, input.orderId));
+      const items = await db.select({ menuItemId: orderItems.menuItemId, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice, itemNameSnapshot: orderItems.itemNameSnapshot, currentName: menuItems.name }).from(orderItems).leftJoin(menuItems, eq8(orderItems.menuItemId, menuItems.id)).where(eq8(orderItems.orderId, input.orderId));
       const invoiceItems = items.map((item) => ({ menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: item.unitPrice, name: resolveOrderItemName(item.itemNameSnapshot, item.currentName, "\u0635\u0646\u0641 \u0645\u0646\u064A\u0648") }));
       const invoiceNumber = `NF-${input.restaurantId}-${String(input.orderId).padStart(8, "0")}`;
       const issuedAt = /* @__PURE__ */ new Date();
@@ -10822,18 +10901,18 @@ var appRouter = router({
       const values = { restaurantId: input.restaurantId, orderId: input.orderId, customerId: order.customerId ?? null, invoiceNumber, invoiceType: input.invoiceType, status: "issued", currencyCode: order.currencyCode, sellerName: restaurant.brandName ?? restaurant.name, sellerTaxNumber: restaurant.taxNumber ?? null, customerName: input.customerName?.trim() || order.guestName || null, customerTaxNumber: input.customerTaxNumber?.trim() || null, subtotal: order.subtotal, discountAmount: order.discountAmount, taxAmount: order.taxAmount, total: order.total, itemsSnapshotJson: JSON.stringify(invoiceItems), qrPayload, issuedAt, createdByUserId: actorUser.id };
       await db.insert(electronicInvoices).values(values);
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: actorUser.id, actorRole: actorUser.testRole ?? actorUser.role, action: "electronic_invoice.issued", entityType: "electronic_invoice", entityId: invoiceNumber, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ orderId: input.orderId, invoiceType: input.invoiceType, total: order.total }) });
-      return (await db.select().from(electronicInvoices).where(and7(eq7(electronicInvoices.restaurantId, input.restaurantId), eq7(electronicInvoices.orderId, input.orderId))).limit(1))[0];
+      return (await db.select().from(electronicInvoices).where(and8(eq8(electronicInvoices.restaurantId, input.restaurantId), eq8(electronicInvoices.orderId, input.orderId))).limit(1))[0];
     }),
     sendReceipt: testRoleProcedure("restaurant_admin", "cashier", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive(), channel: z3.enum(["email", "sms"]), recipient: z3.string().trim().max(320).optional(), locale: z3.enum(["ar", "en", "fr"]).optional() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, customerId: orders.customerId, guestName: orders.guestName, guestPhone: orders.guestPhone, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, total: orders.total, paymentStatus: orders.paymentStatus }).from(orders).where(and7(eq7(orders.id, input.orderId), eq7(orders.restaurantId, input.restaurantId))).limit(1))[0];
+      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, customerId: orders.customerId, guestName: orders.guestName, guestPhone: orders.guestPhone, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, total: orders.total, paymentStatus: orders.paymentStatus }).from(orders).where(and8(eq8(orders.id, input.orderId), eq8(orders.restaurantId, input.restaurantId))).limit(1))[0];
       if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0636\u0645\u0646 \u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645" });
       if (order.paymentStatus !== "paid") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0623\u0643\u062F \u062F\u0641\u0639 \u0627\u0644\u0637\u0644\u0628 \u0623\u0648\u0644\u064B\u0627 \u0642\u0628\u0644 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0625\u064A\u0635\u0627\u0644" });
-      const items = await db.select({ name: menuItems.name, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice }).from(orderItems).innerJoin(menuItems, eq7(orderItems.menuItemId, menuItems.id)).where(eq7(orderItems.orderId, input.orderId));
-      const customer = order.customerId ? (await db.select({ email: users.email }).from(users).where(eq7(users.id, order.customerId)).limit(1))[0] : void 0;
-      const customerPreference = order.customerId ? (await db.select({ language: userPreferences.language }).from(userPreferences).where(eq7(userPreferences.userId, order.customerId)).limit(1))[0] : void 0;
+      const items = await db.select({ name: menuItems.name, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice }).from(orderItems).innerJoin(menuItems, eq8(orderItems.menuItemId, menuItems.id)).where(eq8(orderItems.orderId, input.orderId));
+      const customer = order.customerId ? (await db.select({ email: users.email }).from(users).where(eq8(users.id, order.customerId)).limit(1))[0] : void 0;
+      const customerPreference = order.customerId ? (await db.select({ language: userPreferences.language }).from(userPreferences).where(eq8(userPreferences.userId, order.customerId)).limit(1))[0] : void 0;
       const target = input.recipient?.trim() || (input.channel === "email" ? customer?.email : order.guestPhone) || "";
       if (!target) throw new TRPCError7({ code: "BAD_REQUEST", message: input.channel === "email" ? "\u0623\u062F\u062E\u0644 \u0628\u0631\u064A\u062F \u0627\u0644\u0639\u0645\u064A\u0644 \u0623\u0648 \u0627\u0631\u0628\u0637 \u0627\u0644\u0637\u0644\u0628 \u0628\u0639\u0645\u064A\u0644 \u0644\u062F\u064A\u0647 \u0628\u0631\u064A\u062F" : "\u0623\u062F\u062E\u0644 \u0631\u0642\u0645 \u062C\u0648\u0627\u0644 \u0627\u0644\u0639\u0645\u064A\u0644" });
       if (input.channel === "email" && !z3.string().email().safeParse(target).success) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0635\u064A\u063A\u0629 \u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629" });
@@ -10901,7 +10980,7 @@ var appRouter = router({
       if (!db) return { success: false, recorded: false };
       const visitorKey = input.visitorKey ?? null;
       if (visitorKey) {
-        const recent = await db.select({ id: menuAnalyticsEvents.id }).from(menuAnalyticsEvents).where(and7(eq7(menuAnalyticsEvents.restaurantId, page.restaurant.id), eq7(menuAnalyticsEvents.eventType, input.eventType), eq7(menuAnalyticsEvents.visitorKey, visitorKey), sql3`${menuAnalyticsEvents.occurredAt} > DATE_SUB(NOW(), INTERVAL 30 MINUTE)`)).limit(1);
+        const recent = await db.select({ id: menuAnalyticsEvents.id }).from(menuAnalyticsEvents).where(and8(eq8(menuAnalyticsEvents.restaurantId, page.restaurant.id), eq8(menuAnalyticsEvents.eventType, input.eventType), eq8(menuAnalyticsEvents.visitorKey, visitorKey), sql3`${menuAnalyticsEvents.occurredAt} > DATE_SUB(NOW(), INTERVAL 30 MINUTE)`)).limit(1);
         if (recent[0]) return { success: true, recorded: false };
       }
       await db.insert(menuAnalyticsEvents).values({ restaurantId: page.restaurant.id, eventType: input.eventType, visitorKey, source: input.source });
@@ -10911,7 +10990,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const rows = await db.select({ eventType: menuAnalyticsEvents.eventType, count: sql3`COUNT(*)`, day: sql3`DATE(${menuAnalyticsEvents.occurredAt})` }).from(menuAnalyticsEvents).where(and7(eq7(menuAnalyticsEvents.restaurantId, input.restaurantId), sql3`${menuAnalyticsEvents.occurredAt} >= DATE_SUB(CURDATE(), INTERVAL ${input.days - 1} DAY)`)).groupBy(menuAnalyticsEvents.eventType, sql3`DATE(${menuAnalyticsEvents.occurredAt})`);
+      const rows = await db.select({ eventType: menuAnalyticsEvents.eventType, count: sql3`COUNT(*)`, day: sql3`DATE(${menuAnalyticsEvents.occurredAt})` }).from(menuAnalyticsEvents).where(and8(eq8(menuAnalyticsEvents.restaurantId, input.restaurantId), sql3`${menuAnalyticsEvents.occurredAt} >= DATE_SUB(CURDATE(), INTERVAL ${input.days - 1} DAY)`)).groupBy(menuAnalyticsEvents.eventType, sql3`DATE(${menuAnalyticsEvents.occurredAt})`);
       const totals = rows.reduce((acc, row) => {
         acc[row.eventType] += Number(row.count ?? 0);
         return acc;
@@ -10951,7 +11030,7 @@ var appRouter = router({
     }),
     publicSiteMeta: publicProcedure.query(async () => {
       const settings = await getPlatformSettings();
-      return { siteName: settings.siteName, siteDescription: settings.siteDescription, seoTitle: settings.seoTitle, seoDescription: settings.seoDescription, seoKeywords: settings.seoKeywords, seoHashtags: settings.seoHashtags, seoImageUrl: settings.seoImageUrl, seoCanonicalUrl: settings.seoCanonicalUrl, seoRobots: settings.seoRobots, googleSearchConsoleVerification: settings.googleSearchConsoleVerification, googleAnalyticsMeasurementId: settings.googleAnalyticsMeasurementId, googleTagManagerId: settings.googleTagManagerId, structuredDataJson: settings.structuredDataJson, translateWidgetCode: settings.translateWidgetCode };
+      return { siteName: settings.siteName, siteDescription: settings.siteDescription, seoTitle: settings.seoTitle, seoDescription: settings.seoDescription, seoKeywords: settings.seoKeywords, seoHashtags: settings.seoHashtags, seoImageUrl: settings.seoImageUrl, seoCanonicalUrl: settings.seoCanonicalUrl, seoRobots: settings.seoRobots, googleSearchConsoleVerification: settings.googleSearchConsoleVerification, googleAnalyticsMeasurementId: settings.googleAnalyticsMeasurementId, googleTagManagerId: settings.googleTagManagerId, structuredDataJson: settings.structuredDataJson, translateWidgetCode: settings.translateWidgetCode, loadingScreenJson: settings.loadingScreenJson };
     }),
     publicPaymentSettings: publicProcedure.query(async () => {
       const settings = await getPlatformSettings();
@@ -11011,12 +11090,12 @@ var appRouter = router({
       const account = await getUserByOpenId(ctx.user.openId);
       const email = account?.email?.toLowerCase();
       if (!email) return [];
-      return db.select({ id: subscriptionTransferReceipts.id, plan: subscriptionTransferReceipts.plan, billingCycle: subscriptionTransferReceipts.billingCycle, amount: subscriptionTransferReceipts.amount, status: subscriptionTransferReceipts.status, reviewNote: subscriptionTransferReceipts.reviewNote, createdAt: subscriptionTransferReceipts.createdAt, reviewedAt: subscriptionTransferReceipts.reviewedAt }).from(subscriptionTransferReceipts).where(eq7(subscriptionTransferReceipts.email, email)).orderBy(desc3(subscriptionTransferReceipts.createdAt)).limit(20);
+      return db.select({ id: subscriptionTransferReceipts.id, plan: subscriptionTransferReceipts.plan, billingCycle: subscriptionTransferReceipts.billingCycle, amount: subscriptionTransferReceipts.amount, status: subscriptionTransferReceipts.status, reviewNote: subscriptionTransferReceipts.reviewNote, createdAt: subscriptionTransferReceipts.createdAt, reviewedAt: subscriptionTransferReceipts.reviewedAt }).from(subscriptionTransferReceipts).where(eq8(subscriptionTransferReceipts.email, email)).orderBy(desc3(subscriptionTransferReceipts.createdAt)).limit(20);
     }),
     publicSubscriptionTransferStatus: publicProcedure.input(z3.object({ email: z3.string().trim().email().max(320) })).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      return db.select({ id: subscriptionTransferReceipts.id, plan: subscriptionTransferReceipts.plan, billingCycle: subscriptionTransferReceipts.billingCycle, amount: subscriptionTransferReceipts.amount, status: subscriptionTransferReceipts.status, reviewNote: subscriptionTransferReceipts.reviewNote, createdAt: subscriptionTransferReceipts.createdAt, reviewedAt: subscriptionTransferReceipts.reviewedAt }).from(subscriptionTransferReceipts).where(eq7(subscriptionTransferReceipts.email, input.email.toLowerCase())).orderBy(desc3(subscriptionTransferReceipts.createdAt)).limit(20);
+      return db.select({ id: subscriptionTransferReceipts.id, plan: subscriptionTransferReceipts.plan, billingCycle: subscriptionTransferReceipts.billingCycle, amount: subscriptionTransferReceipts.amount, status: subscriptionTransferReceipts.status, reviewNote: subscriptionTransferReceipts.reviewNote, createdAt: subscriptionTransferReceipts.createdAt, reviewedAt: subscriptionTransferReceipts.reviewedAt }).from(subscriptionTransferReceipts).where(eq8(subscriptionTransferReceipts.email, input.email.toLowerCase())).orderBy(desc3(subscriptionTransferReceipts.createdAt)).limit(20);
     }),
     publicCustomerProfile: publicProcedure.input(z3.object({ slug: z3.string().trim().min(3).max(160).regex(/^[a-z0-9-]+$/) })).query(async ({ input }) => {
       const profile = await getPublicCustomerProfile(input.slug);
@@ -11121,7 +11200,7 @@ var appRouter = router({
         if (!profile) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0634\u0631\u0627\u0621 \u0628\u0637\u0627\u0642\u0627\u062A V Card \u0645\u062A\u0627\u062D \u0644\u0644\u0639\u0645\u0644\u0627\u0621 \u0641\u0642\u0637" });
         if (input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0631\u0628\u0637 \u0628\u0637\u0627\u0642\u0629 \u0639\u0645\u064A\u0644 \u0628\u0645\u0637\u0639\u0645" });
       }
-      const product = (await db.select({ id: vcardCardProducts.id, targetRole: vcardCardProducts.targetRole, isActive: vcardCardProducts.isActive }).from(vcardCardProducts).where(eq7(vcardCardProducts.id, input.productId)).limit(1))[0];
+      const product = (await db.select({ id: vcardCardProducts.id, targetRole: vcardCardProducts.targetRole, isActive: vcardCardProducts.isActive }).from(vcardCardProducts).where(eq8(vcardCardProducts.id, input.productId)).limit(1))[0];
       if (!product || !product.isActive || product.targetRole !== "customer") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0645\u0646\u062A\u062C \u0627\u0644\u0628\u0637\u0627\u0642\u0629 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0644\u0644\u0639\u0645\u0644\u0627\u0621" });
       return { id: await createVcardOrder({ productId: input.productId, userId: ctx.user.id }) };
     }),
@@ -11150,12 +11229,12 @@ var appRouter = router({
     reviewCardRequest: adminProcedure.input(z3.object({ id: z3.number().int().positive(), status: z3.enum(["approved", "rejected", "fulfilled", "cancelled"]), adminNote: z3.string().trim().max(2e3).optional(), price: z3.string().regex(/^\d+(\.\d{1,2})?$/).optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const request = (await db.select({ requesterUserId: customerCardRequests.requesterUserId, customerProfileId: customerCardRequests.customerProfileId, bindingId: customerCardRequests.bindingId }).from(customerCardRequests).where(eq7(customerCardRequests.id, input.id)).limit(1))[0];
+      const request = (await db.select({ requesterUserId: customerCardRequests.requesterUserId, customerProfileId: customerCardRequests.customerProfileId, bindingId: customerCardRequests.bindingId }).from(customerCardRequests).where(eq8(customerCardRequests.id, input.id)).limit(1))[0];
       if (!request) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0637\u0644\u0628 \u0627\u0644\u0628\u0637\u0627\u0642\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       let rawCode = null;
       let bindingId = request.bindingId;
       if (input.status === "approved" && !bindingId && request.customerProfileId) {
-        let product = (await db.select({ id: vcardCardProducts.id }).from(vcardCardProducts).where(and7(eq7(vcardCardProducts.targetRole, "customer"), eq7(vcardCardProducts.isActive, true))).orderBy(desc3(vcardCardProducts.createdAt)).limit(1))[0];
+        let product = (await db.select({ id: vcardCardProducts.id }).from(vcardCardProducts).where(and8(eq8(vcardCardProducts.targetRole, "customer"), eq8(vcardCardProducts.isActive, true))).orderBy(desc3(vcardCardProducts.createdAt)).limit(1))[0];
         if (!product) {
           const productResult = await db.insert(vcardCardProducts).values({ name: "Customer Profile NFC", description: "\u0628\u0637\u0627\u0642\u0629 NFC \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0645\u0644\u0641 \u0627\u0644\u0639\u0645\u064A\u0644", price: input.price ?? "0.00", currency: "SAR", targetRole: "customer", isActive: true });
           product = { id: Number(productResult[0].insertId) };
@@ -11192,17 +11271,17 @@ var appRouter = router({
     customerDisplay: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), branchId: z3.number().int().positive().optional() })).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id, name: restaurants.name, brandName: restaurants.brandName, brandColor: restaurants.brandColor }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), eq7(restaurants.status, "active"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id, name: restaurants.name, brandName: restaurants.brandName, brandColor: restaurants.brandColor }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), eq8(restaurants.status, "active"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
-      const rows = await db.select({ id: orders.id, status: orders.status, createdAt: orders.createdAt, branchId: orders.branchId }).from(orders).where(and7(eq7(orders.restaurantId, restaurant.id), ...input.branchId ? [eq7(orders.branchId, input.branchId)] : [], inArray4(orders.status, ["preparing", "ready"]))).orderBy(desc3(orders.createdAt)).limit(30);
+      const rows = await db.select({ id: orders.id, status: orders.status, createdAt: orders.createdAt, branchId: orders.branchId }).from(orders).where(and8(eq8(orders.restaurantId, restaurant.id), ...input.branchId ? [eq8(orders.branchId, input.branchId)] : [], inArray5(orders.status, ["preparing", "ready"]))).orderBy(desc3(orders.createdAt)).limit(30);
       return { restaurant: { name: restaurant.brandName ?? restaurant.name, brandColor: restaurant.brandColor ?? "#e76f3c" }, orders: rows.map(({ id, status, createdAt }) => ({ id, status, createdAt })) };
     }),
     trackGuestOrder: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), orderId: z3.number().int().positive(), guestPhone: z3.string().trim().min(7).max(32) })).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id, name: restaurants.name, brandName: restaurants.brandName, brandColor: restaurants.brandColor }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id, name: restaurants.name, brandName: restaurants.brandName, brandColor: restaurants.brandColor }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
-      const order = (await db.select({ id: orders.id, status: orders.status, createdAt: orders.createdAt, total: orders.total, paymentMethod: orders.paymentMethod, paymentStatus: orders.paymentStatus, guestName: orders.guestName }).from(orders).where(and7(eq7(orders.id, input.orderId), eq7(orders.restaurantId, restaurant.id), eq7(orders.guestPhone, input.guestPhone))).limit(1))[0];
+      const order = (await db.select({ id: orders.id, status: orders.status, createdAt: orders.createdAt, total: orders.total, paymentMethod: orders.paymentMethod, paymentStatus: orders.paymentStatus, guestName: orders.guestName }).from(orders).where(and8(eq8(orders.id, input.orderId), eq8(orders.restaurantId, restaurant.id), eq8(orders.guestPhone, input.guestPhone))).limit(1))[0];
       if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0623\u0648 \u0631\u0642\u0645 \u0627\u0644\u062C\u0648\u0627\u0644 \u063A\u064A\u0631 \u0645\u0637\u0627\u0628\u0642" });
       return { restaurant: { name: restaurant.brandName ?? restaurant.name, brandColor: restaurant.brandColor ?? "#e76f3c" }, ...order };
     }),
@@ -11236,27 +11315,27 @@ var appRouter = router({
       await upsertUser({ openId: ctx.user.openId, name: ctx.user.name ?? null, email: ctx.user.email ?? null, loginMethod: "oauth", lastSignedIn: /* @__PURE__ */ new Date() });
       const syncedCustomer = await getUserByOpenId(ctx.user.openId);
       const customerId = syncedCustomer?.id ?? null;
-      const restaurant = (await db.select({ id: restaurants.id, status: restaurants.status }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), inArray4(restaurants.status, ["active", "trial"]))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id, status: restaurants.status }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), inArray5(restaurants.status, ["active", "trial"]))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       const platformSettings2 = await getPlatformSettings();
       if (platformSettings2.allowGuestCheckout !== "true") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0639\u0627\u0645 \u0645\u062A\u0648\u0642\u0641 \u0645\u0624\u0642\u062A\u064B\u0627 \u0645\u0646 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0646\u0635\u0629" });
-      const branch = (await db.select({ id: branches.id, status: branches.status, latitude: branches.latitude, longitude: branches.longitude, openingTime: branches.openingTime, closingTime: branches.closingTime, operatingWindowsJson: branches.operatingWindowsJson }).from(branches).where(and7(eq7(branches.id, input.branchId), eq7(branches.restaurantId, restaurant.id), eq7(branches.status, "open"))).limit(1))[0];
+      const branch = (await db.select({ id: branches.id, status: branches.status, latitude: branches.latitude, longitude: branches.longitude, openingTime: branches.openingTime, closingTime: branches.closingTime, operatingWindowsJson: branches.operatingWindowsJson }).from(branches).where(and8(eq8(branches.id, input.branchId), eq8(branches.restaurantId, restaurant.id), eq8(branches.status, "open"))).limit(1))[0];
       if (!branch) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0641\u0631\u0639 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       const syncedHotelRoom = input.channel === "hotel" && input.hotelId && input.hotelRoomId ? await getSyncedHotelRoom({ restaurantId: restaurant.id, branchId: branch.id, hotelId: input.hotelId, roomId: input.hotelRoomId }) : null;
       if (input.channel === "hotel" && !syncedHotelRoom) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u062E\u062A\u0631 \u0641\u0646\u062F\u0642\u064B\u0627 \u0648\u063A\u0631\u0641\u0629 \u0645\u062A\u0632\u0627\u0645\u0646\u0629 \u0645\u0646 \u0627\u0644\u0646\u0638\u0627\u0645" });
       if (!isBranchAcceptingOrders(branch, input.channel)) throw new TRPCError7({ code: "BAD_REQUEST", message: `\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0627\u0644\u0622\u0646 \u0644\u0647\u0630\u0647 \u0627\u0644\u0642\u0646\u0627\u0629. ${getNextBranchOpeningLabel(branch, input.channel) ? `\u0627\u0644\u0641\u062A\u062D\u0629 \u0627\u0644\u0642\u0627\u062F\u0645\u0629: ${getNextBranchOpeningLabel(branch, input.channel)}` : "\u062A\u062D\u0642\u0642 \u0645\u0646 \u0633\u0627\u0639\u0627\u062A \u062A\u0634\u063A\u064A\u0644 \u0627\u0644\u0641\u0631\u0639."}` });
       if (input.channel === "takeaway") {
-        const pickupRows = await db.select({ id: pickupPoints.id }).from(pickupPoints).where(and7(eq7(pickupPoints.restaurantId, restaurant.id), eq7(pickupPoints.branchId, branch.id), eq7(pickupPoints.isActive, true))).limit(1);
+        const pickupRows = await db.select({ id: pickupPoints.id }).from(pickupPoints).where(and8(eq8(pickupPoints.restaurantId, restaurant.id), eq8(pickupPoints.branchId, branch.id), eq8(pickupPoints.isActive, true))).limit(1);
         if (pickupRows.length > 0 && !input.pickupPoint?.trim()) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u062E\u062A\u0631 \u0646\u0642\u0637\u0629 \u0627\u0644\u0627\u0633\u062A\u0644\u0627\u0645" });
       }
       const requested = /* @__PURE__ */ new Map();
       for (const item of input.items) requested.set(item.menuItemId, (requested.get(item.menuItemId) ?? 0) + item.quantity);
       const menuIds = Array.from(requested.keys());
-      const availableItems = await db.select({ id: menuItems.id, name: menuItems.name, price: menuItems.price }).from(menuItems).where(and7(eq7(menuItems.restaurantId, restaurant.id), eq7(menuItems.isAvailable, true), inArray4(menuItems.id, menuIds)));
+      const availableItems = await db.select({ id: menuItems.id, name: menuItems.name, price: menuItems.price }).from(menuItems).where(and8(eq8(menuItems.restaurantId, restaurant.id), eq8(menuItems.isAvailable, true), inArray5(menuItems.id, menuIds)));
       if (availableItems.length !== menuIds.length) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u064A\u0648\u062C\u062F \u0635\u0646\u0641 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0623\u0648 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       const catalog = new Map(availableItems.map((item) => [item.id, { name: item.name, price: Number(item.price) }]));
       const addonIds = Array.from(new Set(input.items.flatMap((item) => item.addons.map((addon) => addon.addonId))));
-      const addonRows = addonIds.length ? await db.select({ id: menuItemAddons.id, menuItemId: menuItemAddons.menuItemId, name: menuItemAddons.name, price: menuItemAddons.price, isAvailable: menuItemAddons.isAvailable }).from(menuItemAddons).where(and7(eq7(menuItemAddons.restaurantId, restaurant.id), inArray4(menuItemAddons.id, addonIds))) : [];
+      const addonRows = addonIds.length ? await db.select({ id: menuItemAddons.id, menuItemId: menuItemAddons.menuItemId, name: menuItemAddons.name, price: menuItemAddons.price, isAvailable: menuItemAddons.isAvailable }).from(menuItemAddons).where(and8(eq8(menuItemAddons.restaurantId, restaurant.id), inArray5(menuItemAddons.id, addonIds))) : [];
       const addonById = new Map(addonRows.map((addon) => [addon.id, addon]));
       const authoritativeItems = input.items.map((item) => {
         const selectedAddons = item.addons.map(({ addonId }) => {
@@ -11290,17 +11369,17 @@ var appRouter = router({
       const total = subtotal + deliveryFee;
       return db.transaction(async (tx) => {
         if (input.channel === "dine_in") {
-          const table = (await tx.select({ id: restaurantTables.id }).from(restaurantTables).where(and7(eq7(restaurantTables.branchId, branch.id), input.tableId ? eq7(restaurantTables.id, input.tableId) : eq7(restaurantTables.name, input.tableName.trim()), eq7(restaurantTables.status, "available"), gte3(restaurantTables.seats, input.partySize ?? 1), input.seatingSectionId ? eq7(restaurantTables.seatingSectionId, input.seatingSectionId) : void 0)).limit(1))[0];
+          const table = (await tx.select({ id: restaurantTables.id }).from(restaurantTables).where(and8(eq8(restaurantTables.branchId, branch.id), input.tableId ? eq8(restaurantTables.id, input.tableId) : eq8(restaurantTables.name, input.tableName.trim()), eq8(restaurantTables.status, "available"), gte3(restaurantTables.seats, input.partySize ?? 1), input.seatingSectionId ? eq8(restaurantTables.seatingSectionId, input.seatingSectionId) : void 0)).limit(1))[0];
           if (!table) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0644\u0637\u0627\u0648\u0644\u0629 \u0644\u0645 \u062A\u0639\u062F \u0634\u0627\u063A\u0631\u0629\u060C \u0627\u062E\u062A\u0631 \u0637\u0627\u0648\u0644\u0629 \u0623\u062E\u0631\u0649" });
-          const claimed = await tx.update(restaurantTables).set({ status: "occupied" }).where(and7(eq7(restaurantTables.id, table.id), eq7(restaurantTables.status, "available")));
+          const claimed = await tx.update(restaurantTables).set({ status: "occupied" }).where(and8(eq8(restaurantTables.id, table.id), eq8(restaurantTables.status, "available")));
           if (Number(claimed[0].affectedRows ?? 0) !== 1) throw new TRPCError7({ code: "CONFLICT", message: "\u062A\u0645 \u0625\u0634\u063A\u0627\u0644 \u0627\u0644\u0637\u0627\u0648\u0644\u0629 \u0644\u0644\u062A\u0648 \u0628\u0637\u0644\u0628 \u0622\u062E\u0631\u060C \u0627\u062E\u062A\u0631 \u0637\u0627\u0648\u0644\u0629 \u0645\u062A\u0627\u062D\u0629" });
         }
         const splitBillGroupId = input.splitBillMode === "friends" ? `sb_${nanoid4(24)}` : null;
         const [orderResult] = await tx.insert(orders).values({ restaurantId: restaurant.id, customerId, branchId: branch.id, tableName: input.tableName || null, partySize: input.partySize ?? null, childrenCount: input.childrenCount, seatingSectionId: input.seatingSectionId ?? null, policyAcceptedAt: input.policyAccepted ? /* @__PURE__ */ new Date() : null, pickupPoint: input.pickupPoint || null, deliveryAddress: input.deliveryAddress || null, deliveryLatitude: input.deliveryLatitude?.toFixed(7) ?? null, deliveryLongitude: input.deliveryLongitude?.toFixed(7) ?? null, deliveryFee: deliveryFee.toFixed(2), reservationDate: input.reservationDate ?? null, reservationEventType: input.reservationEventType?.trim() || null, hotelId: syncedHotelRoom?.hotelId ?? null, hotelRoomId: syncedHotelRoom?.roomId ?? null, hotelName: syncedHotelRoom?.hotelName ?? null, hotelRoom: syncedHotelRoom?.roomNumber ?? null, hotelFloor: syncedHotelRoom?.floor ?? null, driverId, deliveryStatus, notes: input.notes?.trim() || null, channel: input.channel, splitBillMode: input.splitBillMode, splitBillGroupId, paymentMethod: input.paymentMethod, paymentStatus: "unpaid", receiptPrintStatus: "queued", guestName: input.guestName, guestPhone: input.guestPhone, total: total.toFixed(2), status: "new" });
         const orderId = Number(orderResult.insertId);
         if (input.referralCode) {
-          const referral = (await tx.select({ id: referralRecords.id, referrerCustomerId: referralRecords.referrerCustomerId }).from(referralRecords).where(and7(eq7(referralRecords.restaurantId, restaurant.id), eq7(referralRecords.code, input.referralCode.toUpperCase()), eq7(referralRecords.status, "pending"), isNull4(referralRecords.referredCustomerId))).limit(1))[0];
-          if (referral && referral.referrerCustomerId !== customerId) await tx.update(referralRecords).set({ referredCustomerId: customerId }).where(and7(eq7(referralRecords.id, referral.id), eq7(referralRecords.status, "pending"), isNull4(referralRecords.referredCustomerId)));
+          const referral = (await tx.select({ id: referralRecords.id, referrerCustomerId: referralRecords.referrerCustomerId }).from(referralRecords).where(and8(eq8(referralRecords.restaurantId, restaurant.id), eq8(referralRecords.code, input.referralCode.toUpperCase()), eq8(referralRecords.status, "pending"), isNull4(referralRecords.referredCustomerId))).limit(1))[0];
+          if (referral && referral.referrerCustomerId !== customerId) await tx.update(referralRecords).set({ referredCustomerId: customerId }).where(and8(eq8(referralRecords.id, referral.id), eq8(referralRecords.status, "pending"), isNull4(referralRecords.referredCustomerId)));
         }
         await tx.insert(orderItems).values(authoritativeItems.map((item) => ({ orderId, menuItemId: item.menuItemId, itemNameSnapshot: item.itemNameSnapshot, quantity: item.quantity, unitPrice: item.unitPrice, selectedAddonsJson: item.selectedAddonsJson })));
         const orderQrToken = `ord_${nanoid4(32)}`;
@@ -11319,17 +11398,17 @@ var appRouter = router({
     myOrderStatus: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const order = (await db.select({ id: orders.id, status: orders.status, paymentStatus: orders.paymentStatus, total: orders.total, channel: orders.channel, createdAt: orders.createdAt, acceptedAt: orders.acceptedAt }).from(orders).where(and7(eq7(orders.id, input.orderId), eq7(orders.customerId, ctx.user.id))).limit(1))[0];
+      const order = (await db.select({ id: orders.id, status: orders.status, paymentStatus: orders.paymentStatus, total: orders.total, channel: orders.channel, createdAt: orders.createdAt, acceptedAt: orders.acceptedAt }).from(orders).where(and8(eq8(orders.id, input.orderId), eq8(orders.customerId, ctx.user.id))).limit(1))[0];
       if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0641\u064A \u062D\u0633\u0627\u0628\u0643" });
       return order;
     }),
     deliveryTracking: protectedProcedure.input(z3.object({ orderId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, status: orders.status, channel: orders.channel, deliveryStatus: orders.deliveryStatus, deliveryEtaMinutes: orders.deliveryEtaMinutes, deliveryAddress: orders.deliveryAddress, deliveryLatitude: orders.deliveryLatitude, deliveryLongitude: orders.deliveryLongitude, deliveryFailureReason: orders.deliveryFailureReason, deliveryNote: orders.deliveryNote, driverId: orders.driverId, updatedAt: orders.updatedAt }).from(orders).where(and7(eq7(orders.id, input.orderId), eq7(orders.customerId, ctx.user.id))).limit(1))[0];
+      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, status: orders.status, channel: orders.channel, deliveryStatus: orders.deliveryStatus, deliveryEtaMinutes: orders.deliveryEtaMinutes, deliveryAddress: orders.deliveryAddress, deliveryLatitude: orders.deliveryLatitude, deliveryLongitude: orders.deliveryLongitude, deliveryFailureReason: orders.deliveryFailureReason, deliveryNote: orders.deliveryNote, driverId: orders.driverId, updatedAt: orders.updatedAt }).from(orders).where(and8(eq8(orders.id, input.orderId), eq8(orders.customerId, ctx.user.id))).limit(1))[0];
       if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0641\u064A \u062D\u0633\u0627\u0628\u0643" });
       if (order.channel !== "delivery") return { ...order, driver: null };
-      const driver = order.driverId ? (await db.select({ userId: remoteWorkers.userId, name: users.name, phone: driverApplications.phone, vehicleType: remoteWorkers.vehicleType, latitude: remoteWorkers.latitude, longitude: remoteWorkers.longitude, lastLocationAt: remoteWorkers.lastLocationAt, isAvailable: remoteWorkers.isAvailable, isActive: remoteWorkers.isActive }).from(remoteWorkers).innerJoin(users, eq7(remoteWorkers.userId, users.id)).leftJoin(driverApplications, and7(eq7(driverApplications.applicantUserId, remoteWorkers.userId), eq7(driverApplications.status, "approved"))).where(and7(eq7(remoteWorkers.restaurantId, order.restaurantId), eq7(remoteWorkers.userId, order.driverId), eq7(remoteWorkers.role, "driver"))).limit(1))[0] ?? null : null;
+      const driver = order.driverId ? (await db.select({ userId: remoteWorkers.userId, name: users.name, phone: driverApplications.phone, vehicleType: remoteWorkers.vehicleType, latitude: remoteWorkers.latitude, longitude: remoteWorkers.longitude, lastLocationAt: remoteWorkers.lastLocationAt, isAvailable: remoteWorkers.isAvailable, isActive: remoteWorkers.isActive }).from(remoteWorkers).innerJoin(users, eq8(remoteWorkers.userId, users.id)).leftJoin(driverApplications, and8(eq8(driverApplications.applicantUserId, remoteWorkers.userId), eq8(driverApplications.status, "approved"))).where(and8(eq8(remoteWorkers.restaurantId, order.restaurantId), eq8(remoteWorkers.userId, order.driverId), eq8(remoteWorkers.role, "driver"))).limit(1))[0] ?? null : null;
       return { ...order, driver };
     }),
     updateDriverLocation: testRoleProcedure("driver").input(z3.object({ restaurantId: z3.number().int().positive(), latitude: z3.number().min(-90).max(90), longitude: z3.number().min(-180).max(180) })).mutation(async ({ ctx, input }) => {
@@ -11338,9 +11417,9 @@ var appRouter = router({
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const driverUserId = ctx.user?.id;
       if (!driverUserId) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u062C\u0644\u0633\u0629 \u0627\u0644\u0633\u0627\u0626\u0642 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629" });
-      const worker = (await db.select({ id: remoteWorkers.id }).from(remoteWorkers).where(and7(eq7(remoteWorkers.restaurantId, input.restaurantId), eq7(remoteWorkers.userId, driverUserId), eq7(remoteWorkers.role, "driver"))).limit(1))[0];
+      const worker = (await db.select({ id: remoteWorkers.id }).from(remoteWorkers).where(and8(eq8(remoteWorkers.restaurantId, input.restaurantId), eq8(remoteWorkers.userId, driverUserId), eq8(remoteWorkers.role, "driver"))).limit(1))[0];
       if (!worker) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0633\u0627\u0626\u0642 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645" });
-      await db.update(remoteWorkers).set({ latitude: input.latitude.toFixed(7), longitude: input.longitude.toFixed(7), lastLocationAt: /* @__PURE__ */ new Date(), isActive: true }).where(eq7(remoteWorkers.id, worker.id));
+      await db.update(remoteWorkers).set({ latitude: input.latitude.toFixed(7), longitude: input.longitude.toFixed(7), lastLocationAt: /* @__PURE__ */ new Date(), isActive: true }).where(eq8(remoteWorkers.id, worker.id));
       return { success: true, latitude: input.latitude, longitude: input.longitude, updatedAt: /* @__PURE__ */ new Date() };
     }),
     activeDriverLocations: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().optional() })).query(async ({ ctx, input }) => {
@@ -11353,14 +11432,14 @@ var appRouter = router({
     reorderGuestOrder: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), orderId: z3.number().int().positive(), guestPhone: z3.string().trim().min(7).max(32) })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), eq7(restaurants.status, "active"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), eq8(restaurants.status, "active"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
-      const source = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, channel: orders.channel, guestName: orders.guestName, guestPhone: orders.guestPhone }).from(orders).where(and7(eq7(orders.id, input.orderId), eq7(orders.restaurantId, restaurant.id), eq7(orders.guestPhone, input.guestPhone))).limit(1))[0];
+      const source = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, channel: orders.channel, guestName: orders.guestName, guestPhone: orders.guestPhone }).from(orders).where(and8(eq8(orders.id, input.orderId), eq8(orders.restaurantId, restaurant.id), eq8(orders.guestPhone, input.guestPhone))).limit(1))[0];
       if (!source) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0644\u0645 \u064A\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628" });
-      const sourceItems = (await db.select({ menuItemId: orderItems.menuItemId, itemNameSnapshot: orderItems.itemNameSnapshot, quantity: orderItems.quantity }).from(orderItems).where(eq7(orderItems.orderId, source.id))).filter((item) => item.menuItemId !== null);
+      const sourceItems = (await db.select({ menuItemId: orderItems.menuItemId, itemNameSnapshot: orderItems.itemNameSnapshot, quantity: orderItems.quantity }).from(orderItems).where(eq8(orderItems.orderId, source.id))).filter((item) => item.menuItemId !== null);
       if (!sourceItems.length) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0633\u0627\u0628\u0642 \u0644\u0627 \u064A\u062D\u062A\u0648\u064A \u0623\u0635\u0646\u0627\u0641\u064B\u0627 \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u0625\u0639\u0627\u062F\u0629" });
       const menuIds = sourceItems.map((item) => item.menuItemId);
-      const currentItems = await db.select({ id: menuItems.id, name: menuItems.name, price: menuItems.price, isAvailable: menuItems.isAvailable }).from(menuItems).where(and7(eq7(menuItems.restaurantId, restaurant.id), inArray4(menuItems.id, menuIds)));
+      const currentItems = await db.select({ id: menuItems.id, name: menuItems.name, price: menuItems.price, isAvailable: menuItems.isAvailable }).from(menuItems).where(and8(eq8(menuItems.restaurantId, restaurant.id), inArray5(menuItems.id, menuIds)));
       const byId = new Map(currentItems.map((item) => [item.id, item]));
       if (currentItems.length !== menuIds.length || sourceItems.some((item) => !byId.get(item.menuItemId)?.isAvailable)) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0628\u0639\u0636 \u0623\u0635\u0646\u0627\u0641 \u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0633\u0627\u0628\u0642 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u064B\u0627" });
       const total = sourceItems.reduce((sum, item) => sum + Number(byId.get(item.menuItemId).price) * item.quantity, 0);
@@ -11377,12 +11456,13 @@ var appRouter = router({
     createPublicReservation: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), branchId: z3.number().int().positive(), kind: z3.enum(["reservation", "waitlist"]).default("reservation"), slotId: z3.number().int().optional(), seatingSectionId: z3.number().int().positive().optional(), childrenCount: z3.number().int().min(0).max(50).default(0), policyAccepted: z3.boolean().default(false), customerName: z3.string().trim().min(2).max(160), email: z3.string().email().max(320).optional(), phone: z3.string().trim().min(7).max(40).optional(), partySize: z3.number().int().min(1).max(50), reservedFor: z3.coerce.date(), durationMinutes: z3.number().int().min(15).max(360).default(60), notes: z3.string().trim().max(1e3).optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id, reservationEnabled: restaurants.reservationEnabled, reservationMaxPerDay: restaurants.reservationMaxPerDay, reservationDepositEnabled: restaurants.reservationDepositEnabled, reservationDepositAmount: restaurants.reservationDepositAmount }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id, reservationEnabled: restaurants.reservationEnabled, reservationMaxPerDay: restaurants.reservationMaxPerDay, reservationDepositEnabled: restaurants.reservationDepositEnabled, reservationDepositAmount: restaurants.reservationDepositAmount, waitlistExpiryMinutes: restaurants.waitlistExpiryMinutes }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       if (!input.policyAccepted) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u064A\u062C\u0628 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0639\u0644\u0649 \u0633\u064A\u0627\u0633\u0629 \u0627\u0644\u0645\u0637\u0639\u0645 \u0642\u0628\u0644 \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062D\u062C\u0632" });
       if (!restaurant.reservationEnabled) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u062D\u062C\u0648\u0632\u0627\u062A \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u064B\u0627" });
+      await db.update(reservations).set({ status: "cancelled", updatedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(reservations.restaurantId, restaurant.id), eq8(reservations.kind, "waitlist"), eq8(reservations.status, "pending"), sql3`TIMESTAMPADD(MINUTE, ${restaurant.waitlistExpiryMinutes}, ${reservations.createdAt}) <= NOW()`));
       if (input.phone?.trim()) {
-        const active = (await db.select({ id: reservations.id, kind: reservations.kind }).from(reservations).where(and7(eq7(reservations.restaurantId, restaurant.id), eq7(reservations.phone, input.phone.trim()), inArray4(reservations.status, ["pending", "confirmed"]))).limit(1))[0];
+        const active = (await db.select({ id: reservations.id, kind: reservations.kind }).from(reservations).where(and8(eq8(reservations.restaurantId, restaurant.id), eq8(reservations.phone, input.phone.trim()), inArray5(reservations.status, ["pending", "confirmed"]))).limit(1))[0];
         if (active) throw new TRPCError7({ code: "CONFLICT", message: active.kind === "waitlist" ? "\u0644\u062F\u064A\u0643 \u0627\u0646\u062A\u0638\u0627\u0631 \u0646\u0634\u0637 \u062D\u0627\u0644\u064A\u064B\u0627. \u0623\u0644\u063A\u0650 \u0627\u0644\u0627\u0646\u062A\u0638\u0627\u0631 \u0623\u0648\u0644\u064B\u0627 \u0642\u0628\u0644 \u0625\u0646\u0634\u0627\u0621 \u062D\u062C\u0632 \u062C\u062F\u064A\u062F." : "\u0644\u062F\u064A\u0643 \u062D\u062C\u0632 \u0646\u0634\u0637 \u062D\u0627\u0644\u064A\u064B\u0627. \u0644\u0627 \u064A\u0645\u0643\u0646 \u0627\u0644\u0627\u0646\u0636\u0645\u0627\u0645 \u0644\u0644\u0627\u0646\u062A\u0638\u0627\u0631 \u0623\u0648 \u0625\u0646\u0634\u0627\u0621 \u062D\u062C\u0632 \u0622\u062E\u0631 \u062D\u062A\u0649 \u0627\u0646\u062A\u0647\u0627\u0621 \u0627\u0644\u062D\u062C\u0632 \u0623\u0648 \u0625\u0644\u063A\u0627\u0626\u0647." });
       }
       if (input.kind === "waitlist") {
@@ -11394,13 +11474,13 @@ var appRouter = router({
       const depositAmount = restaurant.reservationDepositEnabled ? Number(restaurant.reservationDepositAmount ?? 0) : 0;
       if (depositAmount > 0 && !ctx.user) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u064A\u062A\u0637\u0644\u0628 \u0647\u0630\u0627 \u0627\u0644\u062D\u062C\u0632 \u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628 \u0623\u0648 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0642\u0628\u0644 \u0627\u0644\u0625\u0631\u0633\u0627\u0644 \u0628\u0633\u0628\u0628 \u0631\u0633\u0648\u0645 \u0627\u0644\u062D\u062C\u0632" });
       if (restaurant.reservationMaxPerDay !== null && restaurant.reservationMaxPerDay !== void 0) {
-        const daily = await db.select({ total: sql3`count(*)` }).from(reservations).where(and7(eq7(reservations.restaurantId, restaurant.id), inArray4(reservations.status, ["pending", "confirmed", "seated"]), sql3`DATE(${reservations.reservedFor}) = DATE(${input.reservedFor})`));
+        const daily = await db.select({ total: sql3`count(*)` }).from(reservations).where(and8(eq8(reservations.restaurantId, restaurant.id), inArray5(reservations.status, ["pending", "confirmed", "seated"]), sql3`DATE(${reservations.reservedFor}) = DATE(${input.reservedFor})`));
         if (Number(daily[0]?.total ?? 0) >= restaurant.reservationMaxPerDay) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0643\u062A\u0645\u0644 \u0627\u0644\u062D\u062F \u0627\u0644\u064A\u0648\u0645\u064A \u0644\u0644\u062D\u062C\u0648\u0632\u0627\u062A \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645" });
       }
-      const branch = (await db.select({ restaurantId: branches.restaurantId, status: branches.status }).from(branches).where(eq7(branches.id, input.branchId)).limit(1))[0];
+      const branch = (await db.select({ restaurantId: branches.restaurantId, status: branches.status }).from(branches).where(eq8(branches.id, input.branchId)).limit(1))[0];
       if (!branch || branch.restaurantId !== restaurant.id || branch.status !== "open") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0641\u0631\u0639 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0644\u0644\u062D\u062C\u0632" });
       if (input.slotId && input.slotId > 0) {
-        const slot = (await db.select({ id: reservationSlots.id, restaurantId: reservationSlots.restaurantId, branchId: reservationSlots.branchId }).from(reservationSlots).where(and7(eq7(reservationSlots.id, input.slotId), eq7(reservationSlots.restaurantId, restaurant.id), eq7(reservationSlots.branchId, input.branchId), eq7(reservationSlots.isActive, true))).limit(1))[0];
+        const slot = (await db.select({ id: reservationSlots.id, restaurantId: reservationSlots.restaurantId, branchId: reservationSlots.branchId }).from(reservationSlots).where(and8(eq8(reservationSlots.id, input.slotId), eq8(reservationSlots.restaurantId, restaurant.id), eq8(reservationSlots.branchId, input.branchId), eq8(reservationSlots.isActive, true))).limit(1))[0];
         if (!slot) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0641\u062A\u0631\u0629 \u0627\u0644\u062D\u062C\u0632 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0641\u0631\u0639" });
       }
       try {
@@ -11414,11 +11494,12 @@ var appRouter = router({
     publicWaitlistStatus: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), reservationId: z3.number().int().positive(), phone: z3.string().trim().min(7).max(40) })).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id, waitlistExpiryMinutes: restaurants.waitlistExpiryMinutes }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
-      const current = (await db.select({ id: reservations.id, branchId: reservations.branchId, seatingSectionId: reservations.seatingSectionId, partySize: reservations.partySize, status: reservations.status, createdAt: reservations.createdAt, assignedTableId: reservations.assignedTableId }).from(reservations).where(and7(eq7(reservations.id, input.reservationId), eq7(reservations.restaurantId, restaurant.id), eq7(reservations.kind, "waitlist"), eq7(reservations.phone, input.phone))).limit(1))[0];
+      await db.update(reservations).set({ status: "cancelled", updatedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(reservations.restaurantId, restaurant.id), eq8(reservations.kind, "waitlist"), eq8(reservations.status, "pending"), sql3`TIMESTAMPADD(MINUTE, ${restaurant.waitlistExpiryMinutes}, ${reservations.createdAt}) <= NOW()`));
+      const current = (await db.select({ id: reservations.id, branchId: reservations.branchId, seatingSectionId: reservations.seatingSectionId, partySize: reservations.partySize, status: reservations.status, createdAt: reservations.createdAt, assignedTableId: reservations.assignedTableId }).from(reservations).where(and8(eq8(reservations.id, input.reservationId), eq8(reservations.restaurantId, restaurant.id), eq8(reservations.kind, "waitlist"), eq8(reservations.phone, input.phone))).limit(1))[0];
       if (!current) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0631\u0642\u0645 \u0627\u0644\u0627\u0646\u062A\u0638\u0627\u0631 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      const aheadRows = current.status === "pending" ? await db.select({ total: sql3`count(*)` }).from(reservations).where(and7(eq7(reservations.restaurantId, restaurant.id), eq7(reservations.branchId, current.branchId), eq7(reservations.kind, "waitlist"), eq7(reservations.status, "pending"), lte3(reservations.createdAt, current.createdAt), ne2(reservations.id, current.id))) : [{ total: 0 }];
+      const aheadRows = current.status === "pending" ? await db.select({ total: sql3`count(*)` }).from(reservations).where(and8(eq8(reservations.restaurantId, restaurant.id), eq8(reservations.branchId, current.branchId), eq8(reservations.kind, "waitlist"), eq8(reservations.status, "pending"), lte3(reservations.createdAt, current.createdAt), ne2(reservations.id, current.id))) : [{ total: 0 }];
       const ahead = Number(aheadRows[0]?.total ?? 0);
       const queueNumber = String((current.id * 7919 + restaurant.id * 101) % 1e6).padStart(6, "0");
       return { id: current.id, queueNumber, status: current.status, ahead, estimatedMinutes: Math.max(0, ahead * 5), tableId: current.assignedTableId };
@@ -11426,27 +11507,27 @@ var appRouter = router({
     cancelPublicWaitlist: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), reservationId: z3.number().int().positive(), phone: z3.string().trim().min(7).max(40) })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
-      const current = (await db.select({ id: reservations.id, status: reservations.status }).from(reservations).where(and7(eq7(reservations.id, input.reservationId), eq7(reservations.restaurantId, restaurant.id), eq7(reservations.kind, "waitlist"), eq7(reservations.phone, input.phone))).limit(1))[0];
+      const current = (await db.select({ id: reservations.id, status: reservations.status }).from(reservations).where(and8(eq8(reservations.id, input.reservationId), eq8(reservations.restaurantId, restaurant.id), eq8(reservations.kind, "waitlist"), eq8(reservations.phone, input.phone))).limit(1))[0];
       if (!current) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0631\u0642\u0645 \u0627\u0644\u0627\u0646\u062A\u0638\u0627\u0631 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0623\u0648 \u0631\u0642\u0645 \u0627\u0644\u062C\u0648\u0627\u0644 \u063A\u064A\u0631 \u0645\u0637\u0627\u0628\u0642" });
       if (!["pending", "confirmed"].includes(current.status)) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u0627\u0646\u062A\u0638\u0627\u0631 \u0628\u0639\u062F \u0627\u0646\u062A\u0647\u0627\u0621 \u0627\u0644\u062D\u0627\u0644\u0629" });
-      await db.update(reservations).set({ status: "cancelled" }).where(and7(eq7(reservations.id, current.id), inArray4(reservations.status, ["pending", "confirmed"])));
+      await db.update(reservations).set({ status: "cancelled" }).where(and8(eq8(reservations.id, current.id), inArray5(reservations.status, ["pending", "confirmed"])));
       return { success: true, id: current.id, status: "cancelled" };
     }),
     cancelGuestOrder: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), orderId: z3.number().int().positive(), guestPhone: z3.string().trim().min(7).max(40), reason: z3.string().trim().max(500).optional() })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id, cancellationEnabled: restaurants.cancellationEnabled, cancellationWindowMinutes: restaurants.cancellationWindowMinutes }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id, cancellationEnabled: restaurants.cancellationEnabled, cancellationWindowMinutes: restaurants.cancellationWindowMinutes }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
-      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, guestPhone: orders.guestPhone, customerId: orders.customerId, status: orders.status, acceptedAt: orders.acceptedAt, createdAt: orders.createdAt }).from(orders).where(and7(eq7(orders.id, input.orderId), eq7(orders.restaurantId, restaurant.id), eq7(orders.guestPhone, input.guestPhone))).limit(1))[0];
+      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, guestPhone: orders.guestPhone, customerId: orders.customerId, status: orders.status, acceptedAt: orders.acceptedAt, createdAt: orders.createdAt }).from(orders).where(and8(eq8(orders.id, input.orderId), eq8(orders.restaurantId, restaurant.id), eq8(orders.guestPhone, input.guestPhone))).limit(1))[0];
       if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0623\u0648 \u0631\u0642\u0645 \u0627\u0644\u062C\u0648\u0627\u0644 \u063A\u064A\u0631 \u0645\u0637\u0627\u0628\u0642" });
       const decision = getCustomerCancellationDecision({ enabled: restaurant.cancellationEnabled, windowMinutes: restaurant.cancellationWindowMinutes, status: order.status, acceptedAt: order.acceptedAt, createdAt: order.createdAt });
       if (!decision.allowed) {
         const message = decision.reason === "disabled" ? "\u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u0637\u0644\u0628\u0627\u062A \u063A\u064A\u0631 \u0645\u0641\u0639\u0651\u0644 \u0645\u0646 \u0627\u0644\u0645\u0637\u0639\u0645" : decision.reason === "status" ? "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u0637\u0644\u0628 \u0628\u0639\u062F \u0628\u062F\u0621 \u062A\u062C\u0647\u064A\u0632\u0647 \u0623\u0648 \u0627\u0643\u062A\u0645\u0627\u0644\u0647" : `\u0627\u0646\u062A\u0647\u062A \u0645\u0647\u0644\u0629 \u0627\u0644\u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u0645\u062D\u062F\u062F\u0629 \u0645\u0646 \u0627\u0644\u0645\u0637\u0639\u0645 (${restaurant.cancellationWindowMinutes} \u062F\u0642\u064A\u0642\u0629)`;
         throw new TRPCError7({ code: decision.reason === "status" ? "BAD_REQUEST" : "FORBIDDEN", message });
       }
-      await db.update(orders).set({ status: "cancelled", cancelledAt: /* @__PURE__ */ new Date(), cancellationReason: input.reason?.trim() || "\u0625\u0644\u063A\u0627\u0621 \u0645\u0646 \u0627\u0644\u0639\u0645\u064A\u0644" }).where(and7(eq7(orders.id, order.id), inArray4(orders.status, ["new", "preparing"])));
+      await db.update(orders).set({ status: "cancelled", cancelledAt: /* @__PURE__ */ new Date(), cancellationReason: input.reason?.trim() || "\u0625\u0644\u063A\u0627\u0621 \u0645\u0646 \u0627\u0644\u0639\u0645\u064A\u0644" }).where(and8(eq8(orders.id, order.id), inArray5(orders.status, ["new", "preparing"])));
       return { success: true, orderId: order.id, status: "cancelled" };
     }),
     restaurants: protectedProcedure.query(async ({ ctx }) => {
@@ -11457,7 +11538,7 @@ var appRouter = router({
       if (merchantRestaurantId) return listRestaurants(merchantRestaurantId);
       const db = await getDb();
       if (!db) return [];
-      const entityRestaurant = (await db.select({ restaurantId: platformEntities.restaurantId }).from(platformEntities).where(and7(eq7(platformEntities.email, ctx.user.email ?? ""), eq7(platformEntities.status, true))).limit(1))[0]?.restaurantId;
+      const entityRestaurant = (await db.select({ restaurantId: platformEntities.restaurantId }).from(platformEntities).where(and8(eq8(platformEntities.email, ctx.user.email ?? ""), eq8(platformEntities.status, true))).limit(1))[0]?.restaurantId;
       return entityRestaurant ? listRestaurants(entityRestaurant) : [];
     }),
     restaurantById: protectedProcedure.input(z3.object({ id: z3.number().int().positive() })).query(async ({ ctx, input }) => {
@@ -11477,11 +11558,11 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq7(branches.id, input.branchId)).limit(1))[0];
+      const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq8(branches.id, input.branchId)).limit(1))[0];
       if (!branch || branch.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Branch belongs to another restaurant" });
       const fixedFee = input.defaultTableFee.toFixed(2);
-      await db.update(branches).set({ defaultTableFee: fixedFee }).where(eq7(branches.id, input.branchId));
-      await db.update(restaurantTables).set({ tableFee: fixedFee }).where(eq7(restaurantTables.branchId, input.branchId));
+      await db.update(branches).set({ defaultTableFee: fixedFee }).where(eq8(branches.id, input.branchId));
+      await db.update(restaurantTables).set({ tableFee: fixedFee }).where(eq8(restaurantTables.branchId, input.branchId));
       return { success: true, branchId: input.branchId, defaultTableFee: fixedFee };
     }),
     branding: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
@@ -11519,7 +11600,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      await db.update(restaurants).set({ cancellationEnabled: input.cancellationEnabled, cancellationWindowMinutes: input.cancellationWindowMinutes }).where(eq7(restaurants.id, input.restaurantId));
+      await db.update(restaurants).set({ cancellationEnabled: input.cancellationEnabled, cancellationWindowMinutes: input.cancellationWindowMinutes }).where(eq8(restaurants.id, input.restaurantId));
       return { success: true, ...input };
     }),
     updateCustomDomain: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), customDomain: z3.string().trim().max(255).regex(/^[a-z0-9.-]+$/i).or(z3.literal("")) })).mutation(async ({ ctx, input }) => {
@@ -11528,7 +11609,7 @@ var appRouter = router({
       if (!access.enabled) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0645\u064A\u0632\u0629 \u0627\u0644\u0646\u0637\u0627\u0642 \u0627\u0644\u0645\u062E\u0635\u0635 \u063A\u064A\u0631 \u0645\u0641\u0639\u0651\u0644\u0629 \u0636\u0645\u0646 \u0628\u0627\u0642\u0629 \u0627\u0644\u0645\u0637\u0639\u0645" });
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      await db.update(restaurants).set({ customDomain: input.customDomain.trim().toLowerCase() || null }).where(eq7(restaurants.id, input.restaurantId));
+      await db.update(restaurants).set({ customDomain: input.customDomain.trim().toLowerCase() || null }).where(eq8(restaurants.id, input.restaurantId));
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, action: "restaurant.custom_domain.updated", entityType: "restaurant", entityId: String(input.restaurantId), metadata: JSON.stringify({ customDomain: input.customDomain.trim().toLowerCase() || null }) });
       return { success: true, customDomain: input.customDomain.trim().toLowerCase() };
     }),
@@ -11536,15 +11617,15 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      await db.update(restaurants).set({ mediaShowcaseEnabled: input.enabled }).where(eq7(restaurants.id, input.restaurantId));
+      await db.update(restaurants).set({ mediaShowcaseEnabled: input.enabled }).where(eq8(restaurants.id, input.restaurantId));
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, action: "restaurant.media_showcase.updated", entityType: "restaurant", entityId: String(input.restaurantId), metadata: JSON.stringify({ enabled: input.enabled }) });
       return { success: true, enabled: input.enabled };
     }),
-    updateBranding: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), brandName: z3.string().min(2).max(160), brandColor: z3.string().regex(/^#[0-9A-Fa-f]{6}$/), brandAccentColor: z3.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(), brandTextColor: z3.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(), brandFontFamily: z3.string().trim().min(1).max(64).refine((value) => ["IBM Plex Sans Arabic", "Cairo", "Tajawal", "Noto Sans Arabic", "Almarai"].includes(value), { message: "\u062E\u0637 \u0627\u0644\u0647\u0648\u064A\u0629 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645" }).optional(), brandHeadingFontFamily: z3.string().trim().min(1).max(64).refine((value) => ["IBM Plex Sans Arabic", "Cairo", "Tajawal", "Noto Sans Arabic", "Almarai"].includes(value), { message: "\u062E\u0637 \u0627\u0644\u0639\u0646\u0627\u0648\u064A\u0646 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645" }).optional(), themeMode: z3.enum(["light", "dark", "system"]).default("light"), themePreset: z3.string().trim().min(1).max(40).default("nfood-sunset"), menuTemplate: z3.enum(["editorial", "bistro", "glass", "customer", "market", "signature"]).default("editorial"), menuTemplateScheduleJson: z3.string().max(12e3).nullable().optional(), menuTemplateScheduleTimezone: z3.string().trim().max(64).optional(), glassGlowColor: z3.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(), glassCardOpacity: z3.coerce.number().min(0.05).max(0.35).optional(), brandLogoUrl: z3.preprocess(normalizeOptionalUrl, z3.string().max(500)), pwaInstallMessage: z3.string().trim().min(4).max(180).default("\u062B\u0628\u0651\u062A \u0645\u0646\u064A\u0648 \u0645\u0637\u0639\u0645\u0646\u0627 \u0644\u0644\u0648\u0635\u0648\u0644 \u0627\u0644\u0623\u0633\u0631\u0639"), pwaInstallIconUrl: z3.preprocess(normalizeOptionalUrl, z3.string().max(500)).default(""), brandDescription: z3.string().max(1e3), homepageContent: z3.string().max(12e3).optional(), customPagesJson: z3.string().max(2e5).optional(), termsOfService: z3.string().max(12e3).optional(), privacyPolicy: z3.string().max(12e3).optional(), refundPolicy: z3.string().max(12e3).optional(), phone: z3.string().max(40).optional(), whatsapp: z3.string().max(40).optional(), instagramUrl: z3.string().url().max(500).or(z3.literal("")).optional(), facebookUrl: z3.string().url().max(500).or(z3.literal("")).optional(), tiktokUrl: z3.string().url().max(500).or(z3.literal("")).optional(), websiteUrl: z3.string().url().max(500).or(z3.literal("")).optional(), address: z3.string().max(500).optional(), city: z3.string().max(160).optional(), countryCode: z3.string().trim().length(2).optional(), currencyCode: z3.enum(AFRICAN_CURRENCY_CODES).default("SAR"), currencyDecimals: z3.number().int().min(0).max(3).default(2), taxNumber: z3.string().trim().max(80).optional(), latitude: z3.coerce.number().min(-90).max(90).nullable().optional(), longitude: z3.coerce.number().min(-180).max(180).nullable().optional(), locationUrl: z3.string().url().max(1e3).or(z3.literal("")).optional(), seoTitle: z3.string().trim().max(180).optional(), seoDescription: z3.string().trim().max(320).optional(), seoKeywords: z3.string().max(4e3).optional(), seoHashtags: z3.string().max(2e3).optional(), seoImageUrl: z3.string().url().max(500).or(z3.literal("")).optional(), seoCanonicalUrl: z3.string().url().max(500).or(z3.literal("")).optional(), seoRobots: z3.string().trim().max(120).optional(), googleSearchConsoleVerification: z3.string().trim().max(500).optional(), googleAnalyticsMeasurementId: z3.string().trim().max(80).optional(), googleTagManagerId: z3.string().trim().max(80).optional(), structuredDataJson: z3.string().max(15e3).optional(), languagesJson: z3.string().max(500).optional(), reservationEnabled: z3.boolean().default(true), cancellationEnabled: z3.boolean().default(true), cancellationWindowMinutes: z3.number().int().min(0).max(1440).default(15), reservationNoShowGraceMinutes: z3.number().int().min(1).max(120).default(10), reservationMaxPerDay: z3.number().int().min(1).nullable().optional(), reservationDepositEnabled: z3.boolean().default(false), reservationDepositAmount: z3.coerce.number().min(0).max(1e5).default(0), waiterCallEnabled: z3.boolean().default(true), waiterCallCooldownMinutes: z3.number().int().min(1).max(120).default(10), waiterCallAlertMode: z3.enum(["none", "sound", "vibrate", "both"]).default("sound"), waiterCallInAppEnabled: z3.boolean().default(true), waiterCallEmailEnabled: z3.boolean().default(false), reservationHelpText: z3.string().trim().max(1e3).optional(), tipsEnabled: z3.boolean().default(false), tipPercent: z3.coerce.number().min(0).max(100).default(0), serviceFeeEnabled: z3.boolean().default(false), serviceFeePercent: z3.coerce.number().min(0).max(100).default(0), showBranchesOnMenu: z3.boolean().default(false), mediaShowcaseEnabled: z3.boolean().default(true), motionEffectsEnabled: z3.boolean().default(true), menuDisplaySettingsJson: z3.string().max(5e3).optional(), orderModesJson: z3.string().max(255).default('["dineIn","takeaway","delivery","reservation","hotel"]'), reservationEventTypesJson: z3.string().max(1e3).default('["\u062D\u0641\u0644 \u0639\u064A\u062F \u0645\u064A\u0644\u0627\u062F","\u0641\u0639\u0627\u0644\u064A\u0629","\u0627\u062C\u062A\u0645\u0627\u0639","\u0639\u0634\u0627\u0621 \u062E\u0627\u0635"]'), manualPaymentMethodsJson: z3.string().max(500).optional(), manualPaymentInstructions: z3.string().max(1e3).optional() })).mutation(async ({ ctx, input }) => {
+    updateBranding: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), brandName: z3.string().min(2).max(160), brandColor: z3.string().regex(/^#[0-9A-Fa-f]{6}$/), brandAccentColor: z3.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(), brandTextColor: z3.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(), brandFontFamily: z3.string().trim().min(1).max(64).refine((value) => ["IBM Plex Sans Arabic", "Cairo", "Tajawal", "Noto Sans Arabic", "Almarai"].includes(value), { message: "\u062E\u0637 \u0627\u0644\u0647\u0648\u064A\u0629 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645" }).optional(), brandHeadingFontFamily: z3.string().trim().min(1).max(64).refine((value) => ["IBM Plex Sans Arabic", "Cairo", "Tajawal", "Noto Sans Arabic", "Almarai"].includes(value), { message: "\u062E\u0637 \u0627\u0644\u0639\u0646\u0627\u0648\u064A\u0646 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645" }).optional(), themeMode: z3.enum(["light", "dark", "system"]).default("light"), themePreset: z3.string().trim().min(1).max(40).default("nfood-sunset"), menuTemplate: z3.enum(["editorial", "bistro", "glass", "customer", "market", "signature"]).default("editorial"), menuTemplateScheduleJson: z3.string().max(12e3).nullable().optional(), menuTemplateScheduleTimezone: z3.string().trim().max(64).optional(), glassGlowColor: z3.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(), glassCardOpacity: z3.coerce.number().min(0.05).max(0.35).optional(), brandLogoUrl: z3.preprocess(normalizeOptionalUrl, z3.string().max(500)), pwaInstallMessage: z3.string().trim().min(4).max(180).default("\u062B\u0628\u0651\u062A \u0645\u0646\u064A\u0648 \u0645\u0637\u0639\u0645\u0646\u0627 \u0644\u0644\u0648\u0635\u0648\u0644 \u0627\u0644\u0623\u0633\u0631\u0639"), pwaInstallIconUrl: z3.preprocess(normalizeOptionalUrl, z3.string().max(500)).default(""), brandDescription: z3.string().max(1e3), homepageContent: z3.string().max(12e3).optional(), customPagesJson: z3.string().max(2e5).optional(), termsOfService: z3.string().max(12e3).optional(), privacyPolicy: z3.string().max(12e3).optional(), refundPolicy: z3.string().max(12e3).optional(), phone: z3.string().max(40).optional(), whatsapp: z3.string().max(40).optional(), instagramUrl: z3.string().url().max(500).or(z3.literal("")).optional(), facebookUrl: z3.string().url().max(500).or(z3.literal("")).optional(), tiktokUrl: z3.string().url().max(500).or(z3.literal("")).optional(), websiteUrl: z3.string().url().max(500).or(z3.literal("")).optional(), address: z3.string().max(500).optional(), city: z3.string().max(160).optional(), countryCode: z3.string().trim().length(2).optional(), currencyCode: z3.enum(AFRICAN_CURRENCY_CODES).default("SAR"), currencyDecimals: z3.number().int().min(0).max(3).default(2), taxNumber: z3.string().trim().max(80).optional(), latitude: z3.coerce.number().min(-90).max(90).nullable().optional(), longitude: z3.coerce.number().min(-180).max(180).nullable().optional(), locationUrl: z3.string().url().max(1e3).or(z3.literal("")).optional(), seoTitle: z3.string().trim().max(180).optional(), seoDescription: z3.string().trim().max(320).optional(), seoKeywords: z3.string().max(4e3).optional(), seoHashtags: z3.string().max(2e3).optional(), seoImageUrl: z3.string().url().max(500).or(z3.literal("")).optional(), seoCanonicalUrl: z3.string().url().max(500).or(z3.literal("")).optional(), seoRobots: z3.string().trim().max(120).optional(), googleSearchConsoleVerification: z3.string().trim().max(500).optional(), googleAnalyticsMeasurementId: z3.string().trim().max(80).optional(), googleTagManagerId: z3.string().trim().max(80).optional(), structuredDataJson: z3.string().max(15e3).optional(), languagesJson: z3.string().max(500).optional(), reservationEnabled: z3.boolean().default(true), cancellationEnabled: z3.boolean().default(true), cancellationWindowMinutes: z3.number().int().min(0).max(1440).default(15), reservationNoShowGraceMinutes: z3.number().int().min(1).max(120).default(10), waitlistExpiryMinutes: z3.number().int().min(15).max(1440).default(120), reservationMaxPerDay: z3.number().int().min(1).nullable().optional(), reservationDepositEnabled: z3.boolean().default(false), reservationDepositAmount: z3.coerce.number().min(0).max(1e5).default(0), waiterCallEnabled: z3.boolean().default(true), waiterCallCooldownMinutes: z3.number().int().min(1).max(120).default(10), waiterCallAlertMode: z3.enum(["none", "sound", "vibrate", "both"]).default("sound"), waiterCallInAppEnabled: z3.boolean().default(true), waiterCallEmailEnabled: z3.boolean().default(false), reservationHelpText: z3.string().trim().max(1e3).optional(), tipsEnabled: z3.boolean().default(false), tipPercent: z3.coerce.number().min(0).max(100).default(0), serviceFeeEnabled: z3.boolean().default(false), serviceFeePercent: z3.coerce.number().min(0).max(100).default(0), showBranchesOnMenu: z3.boolean().default(false), mediaShowcaseEnabled: z3.boolean().default(true), motionEffectsEnabled: z3.boolean().default(true), menuDisplaySettingsJson: z3.string().max(5e3).optional(), orderModesJson: z3.string().max(255).default('["dineIn","takeaway","delivery","reservation","hotel"]'), reservationEventTypesJson: z3.string().max(1e3).default('["\u062D\u0641\u0644 \u0639\u064A\u062F \u0645\u064A\u0644\u0627\u062F","\u0641\u0639\u0627\u0644\u064A\u0629","\u0627\u062C\u062A\u0645\u0627\u0639","\u0639\u0634\u0627\u0621 \u062E\u0627\u0635"]'), manualPaymentMethodsJson: z3.string().max(500).optional(), manualPaymentInstructions: z3.string().max(1e3).optional() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      await db.update(restaurants).set({ brandName: input.brandName.trim(), brandColor: input.brandColor, ...input.brandAccentColor !== void 0 ? { brandAccentColor: input.brandAccentColor } : {}, ...input.brandTextColor !== void 0 ? { brandTextColor: input.brandTextColor } : {}, ...input.brandFontFamily !== void 0 ? { brandFontFamily: input.brandFontFamily.trim() } : {}, ...input.brandHeadingFontFamily !== void 0 ? { brandHeadingFontFamily: input.brandHeadingFontFamily.trim() } : {}, themeMode: input.themeMode, themePreset: input.themePreset, menuTemplate: input.menuTemplate, ...input.menuTemplateScheduleJson !== void 0 ? { menuTemplateScheduleJson: input.menuTemplateScheduleJson?.trim() || null } : {}, ...input.menuTemplateScheduleTimezone !== void 0 ? { menuTemplateScheduleTimezone: input.menuTemplateScheduleTimezone.trim() || "Asia/Riyadh" } : {}, ...input.glassGlowColor !== void 0 ? { glassGlowColor: input.glassGlowColor } : {}, ...input.glassCardOpacity !== void 0 ? { glassCardOpacity: input.glassCardOpacity.toFixed(2) } : {}, brandLogoUrl: input.brandLogoUrl || null, pwaInstallMessage: input.pwaInstallMessage.trim() || "\u062B\u0628\u0651\u062A \u0645\u0646\u064A\u0648 \u0645\u0637\u0639\u0645\u0646\u0627 \u0644\u0644\u0648\u0635\u0648\u0644 \u0627\u0644\u0623\u0633\u0631\u0639", pwaInstallIconUrl: input.pwaInstallIconUrl || null, brandDescription: input.brandDescription.trim() || null, homepageContent: input.homepageContent?.trim() || null, customPagesJson: input.customPagesJson?.trim() || null, termsOfService: input.termsOfService?.trim() || null, privacyPolicy: input.privacyPolicy?.trim() || null, refundPolicy: input.refundPolicy?.trim() || null, phone: input.phone?.trim() || null, whatsapp: input.whatsapp?.trim() || null, instagramUrl: input.instagramUrl || null, facebookUrl: input.facebookUrl || null, tiktokUrl: input.tiktokUrl || null, websiteUrl: input.websiteUrl || null, address: input.address?.trim() || null, city: input.city?.trim() || null, ...input.countryCode !== void 0 ? { countryCode: input.countryCode.trim().toUpperCase() } : {}, currencyCode: input.currencyCode, currencyDecimals: input.currencyDecimals, taxNumber: input.taxNumber?.trim() || null, ...input.latitude !== void 0 ? { latitude: input.latitude === null ? null : input.latitude.toFixed(7) } : {}, ...input.longitude !== void 0 ? { longitude: input.longitude === null ? null : input.longitude.toFixed(7) } : {}, ...input.locationUrl !== void 0 ? { locationUrl: input.locationUrl.trim() || null } : {}, seoTitle: input.seoTitle?.trim() || null, seoDescription: input.seoDescription?.trim() || null, seoKeywords: input.seoKeywords?.trim() || null, seoHashtags: input.seoHashtags?.trim() || null, seoImageUrl: input.seoImageUrl || null, seoCanonicalUrl: input.seoCanonicalUrl || null, seoRobots: input.seoRobots?.trim() || "index,follow", googleSearchConsoleVerification: input.googleSearchConsoleVerification?.trim() || null, googleAnalyticsMeasurementId: input.googleAnalyticsMeasurementId?.trim() || null, googleTagManagerId: input.googleTagManagerId?.trim() || null, structuredDataJson: input.structuredDataJson?.trim() || null, languagesJson: input.languagesJson?.trim() || '["ar","en","fr"]', reservationEnabled: input.reservationEnabled, cancellationEnabled: input.cancellationEnabled, cancellationWindowMinutes: input.cancellationWindowMinutes, reservationNoShowGraceMinutes: input.reservationNoShowGraceMinutes, reservationMaxPerDay: input.reservationMaxPerDay ?? null, reservationDepositEnabled: input.reservationDepositEnabled, reservationDepositAmount: input.reservationDepositAmount.toFixed(2), tipsEnabled: input.tipsEnabled, tipPercent: input.tipPercent.toFixed(2), serviceFeeEnabled: input.serviceFeeEnabled, serviceFeePercent: input.serviceFeePercent.toFixed(2), showBranchesOnMenu: input.showBranchesOnMenu, mediaShowcaseEnabled: input.mediaShowcaseEnabled, motionEffectsEnabled: input.motionEffectsEnabled, menuDisplaySettingsJson: input.menuDisplaySettingsJson?.trim() || null, orderModesJson: input.orderModesJson, reservationEventTypesJson: input.reservationEventTypesJson, waiterCallEnabled: input.waiterCallEnabled, waiterCallCooldownMinutes: input.waiterCallCooldownMinutes, waiterCallAlertMode: input.waiterCallAlertMode, waiterCallInAppEnabled: input.waiterCallInAppEnabled, waiterCallEmailEnabled: input.waiterCallEmailEnabled, reservationHelpText: input.reservationHelpText?.trim() || null, manualPaymentMethodsJson: input.manualPaymentMethodsJson?.trim() || '["cash","bank_transfer"]', manualPaymentInstructions: input.manualPaymentInstructions?.trim() || null }).where(eq7(restaurants.id, input.restaurantId));
+      await db.update(restaurants).set({ brandName: input.brandName.trim(), brandColor: input.brandColor, ...input.brandAccentColor !== void 0 ? { brandAccentColor: input.brandAccentColor } : {}, ...input.brandTextColor !== void 0 ? { brandTextColor: input.brandTextColor } : {}, ...input.brandFontFamily !== void 0 ? { brandFontFamily: input.brandFontFamily.trim() } : {}, ...input.brandHeadingFontFamily !== void 0 ? { brandHeadingFontFamily: input.brandHeadingFontFamily.trim() } : {}, themeMode: input.themeMode, themePreset: input.themePreset, menuTemplate: input.menuTemplate, ...input.menuTemplateScheduleJson !== void 0 ? { menuTemplateScheduleJson: input.menuTemplateScheduleJson?.trim() || null } : {}, ...input.menuTemplateScheduleTimezone !== void 0 ? { menuTemplateScheduleTimezone: input.menuTemplateScheduleTimezone.trim() || "Asia/Riyadh" } : {}, ...input.glassGlowColor !== void 0 ? { glassGlowColor: input.glassGlowColor } : {}, ...input.glassCardOpacity !== void 0 ? { glassCardOpacity: input.glassCardOpacity.toFixed(2) } : {}, brandLogoUrl: input.brandLogoUrl || null, pwaInstallMessage: input.pwaInstallMessage.trim() || "\u062B\u0628\u0651\u062A \u0645\u0646\u064A\u0648 \u0645\u0637\u0639\u0645\u0646\u0627 \u0644\u0644\u0648\u0635\u0648\u0644 \u0627\u0644\u0623\u0633\u0631\u0639", pwaInstallIconUrl: input.pwaInstallIconUrl || null, brandDescription: input.brandDescription.trim() || null, homepageContent: input.homepageContent?.trim() || null, customPagesJson: input.customPagesJson?.trim() || null, termsOfService: input.termsOfService?.trim() || null, privacyPolicy: input.privacyPolicy?.trim() || null, refundPolicy: input.refundPolicy?.trim() || null, phone: input.phone?.trim() || null, whatsapp: input.whatsapp?.trim() || null, instagramUrl: input.instagramUrl || null, facebookUrl: input.facebookUrl || null, tiktokUrl: input.tiktokUrl || null, websiteUrl: input.websiteUrl || null, address: input.address?.trim() || null, city: input.city?.trim() || null, ...input.countryCode !== void 0 ? { countryCode: input.countryCode.trim().toUpperCase() } : {}, currencyCode: input.currencyCode, currencyDecimals: input.currencyDecimals, taxNumber: input.taxNumber?.trim() || null, ...input.latitude !== void 0 ? { latitude: input.latitude === null ? null : input.latitude.toFixed(7) } : {}, ...input.longitude !== void 0 ? { longitude: input.longitude === null ? null : input.longitude.toFixed(7) } : {}, ...input.locationUrl !== void 0 ? { locationUrl: input.locationUrl.trim() || null } : {}, seoTitle: input.seoTitle?.trim() || null, seoDescription: input.seoDescription?.trim() || null, seoKeywords: input.seoKeywords?.trim() || null, seoHashtags: input.seoHashtags?.trim() || null, seoImageUrl: input.seoImageUrl || null, seoCanonicalUrl: input.seoCanonicalUrl || null, seoRobots: input.seoRobots?.trim() || "index,follow", googleSearchConsoleVerification: input.googleSearchConsoleVerification?.trim() || null, googleAnalyticsMeasurementId: input.googleAnalyticsMeasurementId?.trim() || null, googleTagManagerId: input.googleTagManagerId?.trim() || null, structuredDataJson: input.structuredDataJson?.trim() || null, languagesJson: input.languagesJson?.trim() || '["ar","en","fr"]', reservationEnabled: input.reservationEnabled, cancellationEnabled: input.cancellationEnabled, cancellationWindowMinutes: input.cancellationWindowMinutes, reservationNoShowGraceMinutes: input.reservationNoShowGraceMinutes, waitlistExpiryMinutes: input.waitlistExpiryMinutes, reservationMaxPerDay: input.reservationMaxPerDay ?? null, reservationDepositEnabled: input.reservationDepositEnabled, reservationDepositAmount: input.reservationDepositAmount.toFixed(2), tipsEnabled: input.tipsEnabled, tipPercent: input.tipPercent.toFixed(2), serviceFeeEnabled: input.serviceFeeEnabled, serviceFeePercent: input.serviceFeePercent.toFixed(2), showBranchesOnMenu: input.showBranchesOnMenu, mediaShowcaseEnabled: input.mediaShowcaseEnabled, motionEffectsEnabled: input.motionEffectsEnabled, menuDisplaySettingsJson: input.menuDisplaySettingsJson?.trim() || null, orderModesJson: input.orderModesJson, reservationEventTypesJson: input.reservationEventTypesJson, waiterCallEnabled: input.waiterCallEnabled, waiterCallCooldownMinutes: input.waiterCallCooldownMinutes, waiterCallAlertMode: input.waiterCallAlertMode, waiterCallInAppEnabled: input.waiterCallInAppEnabled, waiterCallEmailEnabled: input.waiterCallEmailEnabled, reservationHelpText: input.reservationHelpText?.trim() || null, manualPaymentMethodsJson: input.manualPaymentMethodsJson?.trim() || '["cash","bank_transfer"]', manualPaymentInstructions: input.manualPaymentInstructions?.trim() || null }).where(eq8(restaurants.id, input.restaurantId));
       return { success: true, restaurantId: input.restaurantId };
     }),
     updateMenuTemplateSchedule: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), enabled: z3.boolean(), timezone: z3.string().trim().max(64).default("Asia/Riyadh"), fallbackTemplate: z3.enum(["editorial", "bistro", "glass", "customer"]).default("editorial"), rules: z3.array(z3.object({ days: z3.array(z3.number().int().min(0).max(6)).min(1).max(7), start: z3.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/), end: z3.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/), template: z3.enum(["editorial", "bistro", "glass", "customer"]) })).max(12).default([]) })).mutation(async ({ ctx, input }) => {
@@ -11552,7 +11633,7 @@ var appRouter = router({
       await requireRestaurantFeature(input.restaurantId, "menu_templates");
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: restaurants.id, name: restaurants.name, menuTemplateScheduleCronTaskUid: restaurants.menuTemplateScheduleCronTaskUid }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1))[0];
+      const existing = (await db.select({ id: restaurants.id, name: restaurants.name, menuTemplateScheduleCronTaskUid: restaurants.menuTemplateScheduleCronTaskUid }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const schedule = normalizeMenuTemplateSchedule({ enabled: input.enabled, timezone: input.timezone, fallbackTemplate: input.fallbackTemplate, rules: input.rules });
       const sessionToken = parseCookie(ctx.req.headers.cookie ?? "")[COOKIE_NAME] ?? "";
@@ -11568,7 +11649,7 @@ var appRouter = router({
         if (!sessionToken) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u062C\u0644\u0633\u0629 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0644\u0625\u064A\u0642\u0627\u0641 \u0627\u0644\u062C\u062F\u0648\u0644\u0629" });
         await updateHeartbeatJob(taskUid, { enable: false }, sessionToken);
       }
-      await db.update(restaurants).set({ menuTemplate: schedule.fallbackTemplate, menuTemplateScheduleJson: JSON.stringify(schedule), menuTemplateScheduleTimezone: schedule.timezone, menuTemplateScheduleCronTaskUid: taskUid }).where(eq7(restaurants.id, input.restaurantId));
+      await db.update(restaurants).set({ menuTemplate: schedule.fallbackTemplate, menuTemplateScheduleJson: JSON.stringify(schedule), menuTemplateScheduleTimezone: schedule.timezone, menuTemplateScheduleCronTaskUid: taskUid }).where(eq8(restaurants.id, input.restaurantId));
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "restaurant.menu_template_schedule.updated", entityType: "restaurant_menu_template_schedule", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ enabled: schedule.enabled, timezone: schedule.timezone, rules: schedule.rules, taskUid }) });
       return { success: true, restaurantId: input.restaurantId, taskUid, schedule };
     }),
@@ -11592,7 +11673,7 @@ var appRouter = router({
       await requireRestaurantFeature(input.restaurantId, "loyalty");
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const customer = (await db.select({ id: users.id }).from(users).where(eq7(users.id, input.customerId)).limit(1))[0];
+      const customer = (await db.select({ id: users.id }).from(users).where(eq8(users.id, input.customerId)).limit(1))[0];
       if (!customer) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0639\u0645\u064A\u0644 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       return getLoyaltySummary(input.restaurantId, input.customerId);
     }),
@@ -11602,7 +11683,7 @@ var appRouter = router({
       if (input.points === 0) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u064A\u062C\u0628 \u0623\u0646 \u062A\u0643\u0648\u0646 \u0627\u0644\u0646\u0642\u0627\u0637 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0635\u0641\u0631 \u0623\u0648 \u0623\u0642\u0644 \u0645\u0646\u0647" });
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const customer = (await db.select({ id: users.id }).from(users).where(eq7(users.id, input.customerId)).limit(1))[0];
+      const customer = (await db.select({ id: users.id }).from(users).where(eq8(users.id, input.customerId)).limit(1))[0];
       if (!customer) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0639\u0645\u064A\u0644 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const result = await addLoyaltyPoints(input.restaurantId, input.customerId, input.points, input.type, input.note, input.orderId);
       const actorUserId = ctx.user?.id ?? 0;
@@ -11614,16 +11695,16 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      return db.select().from(referralRecords).where(and7(eq7(referralRecords.restaurantId, input.restaurantId), ...input.customerId ? [eq7(referralRecords.referrerCustomerId, input.customerId)] : [])).orderBy(desc3(referralRecords.createdAt));
+      return db.select().from(referralRecords).where(and8(eq8(referralRecords.restaurantId, input.restaurantId), ...input.customerId ? [eq8(referralRecords.referrerCustomerId, input.customerId)] : [])).orderBy(desc3(referralRecords.createdAt));
     }),
     createReferral: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), referrerCustomerId: z3.number().int().positive(), referredCustomerId: z3.number().int().positive().optional(), code: z3.string().trim().min(3).max(80) })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const referrer = (await db.select({ id: users.id }).from(users).where(eq7(users.id, input.referrerCustomerId)).limit(1))[0];
+      const referrer = (await db.select({ id: users.id }).from(users).where(eq8(users.id, input.referrerCustomerId)).limit(1))[0];
       if (!referrer) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0639\u0645\u064A\u0644 \u0627\u0644\u0645\u064F\u062D\u064A\u0644 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       if (input.referredCustomerId === input.referrerCustomerId) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0644\u0644\u0639\u0645\u064A\u0644 \u0625\u062D\u0627\u0644\u0629 \u0646\u0641\u0633\u0647" });
-      const duplicate = (await db.select({ id: referralRecords.id }).from(referralRecords).where(and7(eq7(referralRecords.restaurantId, input.restaurantId), eq7(referralRecords.code, input.code))).limit(1))[0];
+      const duplicate = (await db.select({ id: referralRecords.id }).from(referralRecords).where(and8(eq8(referralRecords.restaurantId, input.restaurantId), eq8(referralRecords.code, input.code))).limit(1))[0];
       if (duplicate) throw new TRPCError7({ code: "CONFLICT", message: "\u0631\u0645\u0632 \u0627\u0644\u0625\u062D\u0627\u0644\u0629 \u0645\u0633\u062A\u062E\u062F\u0645 \u0633\u0627\u0628\u0642\u064B\u0627" });
       const result = await db.insert(referralRecords).values({ restaurantId: input.restaurantId, referrerCustomerId: input.referrerCustomerId, referredCustomerId: input.referredCustomerId ?? null, code: input.code.toUpperCase(), status: "pending" });
       const actorUserId = ctx.user?.id ?? 0;
@@ -11634,14 +11715,14 @@ var appRouter = router({
     myReferrals: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) return [];
-      return db.select({ id: referralRecords.id, restaurantId: referralRecords.restaurantId, restaurantName: restaurants.name, code: referralRecords.code, status: referralRecords.status, createdAt: referralRecords.createdAt, qualifiedAt: referralRecords.qualifiedAt }).from(referralRecords).innerJoin(restaurants, eq7(referralRecords.restaurantId, restaurants.id)).where(eq7(referralRecords.referrerCustomerId, ctx.user.id)).orderBy(desc3(referralRecords.createdAt)).limit(100);
+      return db.select({ id: referralRecords.id, restaurantId: referralRecords.restaurantId, restaurantName: restaurants.name, code: referralRecords.code, status: referralRecords.status, createdAt: referralRecords.createdAt, qualifiedAt: referralRecords.qualifiedAt }).from(referralRecords).innerJoin(restaurants, eq8(referralRecords.restaurantId, restaurants.id)).where(eq8(referralRecords.referrerCustomerId, ctx.user.id)).orderBy(desc3(referralRecords.createdAt)).limit(100);
     }),
     createMyReferralLink: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug, status: restaurants.status }).from(restaurants).where(and7(eq7(restaurants.id, input.restaurantId), eq7(restaurants.status, "active"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id, slug: restaurants.slug, status: restaurants.status }).from(restaurants).where(and8(eq8(restaurants.id, input.restaurantId), eq8(restaurants.status, "active"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
-      const pending = (await db.select({ code: referralRecords.code }).from(referralRecords).where(and7(eq7(referralRecords.restaurantId, input.restaurantId), eq7(referralRecords.referrerCustomerId, ctx.user.id), eq7(referralRecords.status, "pending"))).orderBy(desc3(referralRecords.createdAt)).limit(1))[0];
+      const pending = (await db.select({ code: referralRecords.code }).from(referralRecords).where(and8(eq8(referralRecords.restaurantId, input.restaurantId), eq8(referralRecords.referrerCustomerId, ctx.user.id), eq8(referralRecords.status, "pending"))).orderBy(desc3(referralRecords.createdAt)).limit(1))[0];
       const code = pending?.code ?? `NF${ctx.user.id}${nanoid4(8)}`;
       if (!pending) await db.insert(referralRecords).values({ restaurantId: input.restaurantId, referrerCustomerId: ctx.user.id, code, status: "pending" });
       return { code, link: `/restaurant/${restaurant.slug}?ref=${encodeURIComponent(code)}` };
@@ -11650,21 +11731,21 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      return db.select().from(reviews).where(and7(eq7(reviews.restaurantId, input.restaurantId), ...input.targetType ? [eq7(reviews.targetType, input.targetType)] : [], ...input.targetId ? [eq7(reviews.targetId, input.targetId)] : [])).orderBy(desc3(reviews.createdAt));
+      return db.select().from(reviews).where(and8(eq8(reviews.restaurantId, input.restaurantId), ...input.targetType ? [eq8(reviews.targetType, input.targetType)] : [], ...input.targetId ? [eq8(reviews.targetId, input.targetId)] : [])).orderBy(desc3(reviews.createdAt));
     }),
     submitReview: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive(), targetType: z3.enum(["restaurant", "driver", "product"]), targetId: z3.number().int().positive().optional(), rating: z3.number().int().min(1).max(5), comment: z3.string().trim().max(1e3).optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, customerId: orders.customerId, driverId: orders.driverId, status: orders.status }).from(orders).where(eq7(orders.id, input.orderId)).limit(1))[0];
+      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, customerId: orders.customerId, driverId: orders.driverId, status: orders.status }).from(orders).where(eq8(orders.id, input.orderId)).limit(1))[0];
       if (!order || order.restaurantId !== input.restaurantId || order.customerId !== ctx.user.id) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u062A\u0642\u064A\u064A\u0645 \u0647\u0630\u0627 \u0627\u0644\u0637\u0644\u0628" });
       if (order.status !== "completed") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u064A\u062A\u0627\u062D \u0627\u0644\u062A\u0642\u064A\u064A\u0645 \u0628\u0639\u062F \u0627\u0643\u062A\u0645\u0627\u0644 \u0627\u0644\u0637\u0644\u0628" });
       if (input.targetType === "driver" && (!input.targetId || order.driverId !== input.targetId)) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0633\u0627\u0626\u0642 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0647\u0630\u0627 \u0627\u0644\u0637\u0644\u0628" });
       if (input.targetType === "product") {
         if (!input.targetId) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u064A\u062C\u0628 \u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0645\u0646\u062A\u062C" });
-        const owned = (await db.select({ id: orderItems.id }).from(orderItems).innerJoin(menuItems, eq7(orderItems.menuItemId, menuItems.id)).where(and7(eq7(orderItems.orderId, input.orderId), eq7(orderItems.menuItemId, input.targetId), eq7(menuItems.restaurantId, input.restaurantId))).limit(1))[0];
+        const owned = (await db.select({ id: orderItems.id }).from(orderItems).innerJoin(menuItems, eq8(orderItems.menuItemId, menuItems.id)).where(and8(eq8(orderItems.orderId, input.orderId), eq8(orderItems.menuItemId, input.targetId), eq8(menuItems.restaurantId, input.restaurantId))).limit(1))[0];
         if (!owned) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0645\u0646\u062A\u062C \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0641\u064A \u0627\u0644\u0637\u0644\u0628" });
       }
-      const duplicate = (await db.select({ id: reviews.id }).from(reviews).where(and7(eq7(reviews.orderId, input.orderId), eq7(reviews.customerId, ctx.user.id), eq7(reviews.targetType, input.targetType), ...input.targetId ? [eq7(reviews.targetId, input.targetId)] : [])).limit(1))[0];
+      const duplicate = (await db.select({ id: reviews.id }).from(reviews).where(and8(eq8(reviews.orderId, input.orderId), eq8(reviews.customerId, ctx.user.id), eq8(reviews.targetType, input.targetType), ...input.targetId ? [eq8(reviews.targetId, input.targetId)] : [])).limit(1))[0];
       if (duplicate) throw new TRPCError7({ code: "CONFLICT", message: "\u062A\u0645 \u0625\u0631\u0633\u0627\u0644 \u0647\u0630\u0627 \u0627\u0644\u062A\u0642\u064A\u064A\u0645 \u0645\u0633\u0628\u0642\u064B\u0627" });
       const result = await db.insert(reviews).values({ restaurantId: input.restaurantId, orderId: input.orderId, customerId: ctx.user.id, targetType: input.targetType, targetId: input.targetId ?? null, rating: input.rating, comment: input.comment?.trim() || null });
       return { success: true, id: Number(result[0].insertId) };
@@ -11721,41 +11802,41 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: roles.restaurantId }).from(roles).where(eq7(roles.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: roles.restaurantId }).from(roles).where(eq8(roles.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Role belongs to another restaurant" });
-      await db.update(roles).set({ name: input.name.trim() }).where(eq7(roles.id, input.id));
+      await db.update(roles).set({ name: input.name.trim() }).where(eq8(roles.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteRestaurantRole: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: roles.restaurantId }).from(roles).where(eq7(roles.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: roles.restaurantId }).from(roles).where(eq8(roles.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Role belongs to another restaurant" });
-      await db.delete(rolePermissions).where(eq7(rolePermissions.roleId, input.id));
-      await db.delete(roles).where(eq7(roles.id, input.id));
+      await db.delete(rolePermissions).where(eq8(rolePermissions.roleId, input.id));
+      await db.delete(roles).where(eq8(roles.id, input.id));
       return { success: true, id: input.id };
     }),
     restaurantRolePermissions: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), roleId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const role = await db.select({ restaurantId: roles.restaurantId }).from(roles).where(eq7(roles.id, input.roleId)).limit(1);
+      const role = await db.select({ restaurantId: roles.restaurantId }).from(roles).where(eq8(roles.id, input.roleId)).limit(1);
       if (!role[0] || role[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Role belongs to another restaurant" });
-      return db.select({ permissionId: permissions.id, key: permissions.key, label: permissions.label }).from(rolePermissions).innerJoin(permissions, eq7(rolePermissions.permissionId, permissions.id)).where(eq7(rolePermissions.roleId, input.roleId));
+      return db.select({ permissionId: permissions.id, key: permissions.key, label: permissions.label }).from(rolePermissions).innerJoin(permissions, eq8(rolePermissions.permissionId, permissions.id)).where(eq8(rolePermissions.roleId, input.roleId));
     }),
     setRestaurantRolePermissions: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), roleId: z3.number().int().positive(), permissionIds: z3.array(z3.number().int().positive()).max(500) })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const role = await db.select({ restaurantId: roles.restaurantId }).from(roles).where(eq7(roles.id, input.roleId)).limit(1);
+      const role = await db.select({ restaurantId: roles.restaurantId }).from(roles).where(eq8(roles.id, input.roleId)).limit(1);
       if (!role[0] || role[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Role belongs to another restaurant" });
       const uniquePermissionIds = Array.from(new Set(input.permissionIds));
       if (uniquePermissionIds.length) {
-        const existingPermissions = await db.select({ id: permissions.id }).from(permissions).where(inArray4(permissions.id, uniquePermissionIds));
+        const existingPermissions = await db.select({ id: permissions.id }).from(permissions).where(inArray5(permissions.id, uniquePermissionIds));
         if (existingPermissions.length !== uniquePermissionIds.length) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u064A\u0648\u062C\u062F \u0645\u0639\u0631\u0641 \u0635\u0644\u0627\u062D\u064A\u0629 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D" });
       }
-      await db.delete(rolePermissions).where(eq7(rolePermissions.roleId, input.roleId));
+      await db.delete(rolePermissions).where(eq8(rolePermissions.roleId, input.roleId));
       if (uniquePermissionIds.length) await db.insert(rolePermissions).values(uniquePermissionIds.map((permissionId) => ({ roleId: input.roleId, permissionId })));
       return { success: true, roleId: input.roleId, permissionIds: uniquePermissionIds };
     }),
@@ -11763,7 +11844,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) return [];
-      return db.select({ id: restaurantTables.id, branchId: restaurantTables.branchId, name: restaurantTables.name, seats: restaurantTables.seats, status: restaurantTables.status, tableType: restaurantTables.tableType, seatingSectionId: restaurantTables.seatingSectionId, minimumCharge: restaurantTables.minimumCharge, tableFee: restaurantTables.tableFee, waiterUserId: sql3`(SELECT wta.waiterUserId FROM waiterTableAssignments wta WHERE wta.tableId = ${restaurantTables.id} AND wta.restaurantId = ${input.restaurantId} ORDER BY wta.createdAt DESC LIMIT 1)`, waiterName: sql3`(SELECT u.name FROM waiterTableAssignments wta INNER JOIN users u ON u.id = wta.waiterUserId WHERE wta.tableId = ${restaurantTables.id} AND wta.restaurantId = ${input.restaurantId} ORDER BY wta.createdAt DESC LIMIT 1)` }).from(restaurantTables).innerJoin(branches, eq7(restaurantTables.branchId, branches.id)).where(eq7(branches.restaurantId, input.restaurantId));
+      return db.select({ id: restaurantTables.id, branchId: restaurantTables.branchId, name: restaurantTables.name, seats: restaurantTables.seats, status: restaurantTables.status, tableType: restaurantTables.tableType, seatingSectionId: restaurantTables.seatingSectionId, minimumCharge: restaurantTables.minimumCharge, tableFee: restaurantTables.tableFee, waiterUserId: sql3`(SELECT wta.waiterUserId FROM waiterTableAssignments wta WHERE wta.tableId = ${restaurantTables.id} AND wta.restaurantId = ${input.restaurantId} ORDER BY wta.createdAt DESC LIMIT 1)`, waiterName: sql3`(SELECT u.name FROM waiterTableAssignments wta INNER JOIN users u ON u.id = wta.waiterUserId WHERE wta.tableId = ${restaurantTables.id} AND wta.restaurantId = ${input.restaurantId} ORDER BY wta.createdAt DESC LIMIT 1)` }).from(restaurantTables).innerJoin(branches, eq8(restaurantTables.branchId, branches.id)).where(eq8(branches.restaurantId, input.restaurantId));
     }),
     importMenuDraft: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), fileName: z3.string().trim().min(1).max(160), mimeType: z3.enum(["application/pdf", "image/png", "image/jpeg", "image/webp"]), fileBase64: z3.string().min(100).max(8e6) })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
@@ -11872,7 +11953,7 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
       const table = input.entityType === "category" ? menuCategories : input.entityType === "item" ? menuItems : menuItemAddons;
-      const existing = await db.select({ restaurantId: table.restaurantId, translationsJson: table.translationsJson }).from(table).where(and7(eq7(table.id, input.entityId), eq7(table.restaurantId, input.restaurantId))).limit(1);
+      const existing = await db.select({ restaurantId: table.restaurantId, translationsJson: table.translationsJson }).from(table).where(and8(eq8(table.id, input.entityId), eq8(table.restaurantId, input.restaurantId))).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0639\u0646\u0635\u0631 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       const targetLanguages = input.targetLanguage ? [input.targetLanguage] : getTranslationTargetLanguages(input.sourceLanguage, input.languages);
       const glossaryEntries = await listTranslationGlossary(input.restaurantId);
@@ -11909,7 +11990,7 @@ var appRouter = router({
         }
         finalTranslations = [...previous.filter((entry) => entry.language !== input.targetLanguage), ...drafts];
       }
-      await db.update(table).set({ translationsJson: JSON.stringify(finalTranslations) }).where(and7(eq7(table.id, input.entityId), eq7(table.restaurantId, input.restaurantId)));
+      await db.update(table).set({ translationsJson: JSON.stringify(finalTranslations) }).where(and8(eq8(table.id, input.entityId), eq8(table.restaurantId, input.restaurantId)));
       return { translations: finalTranslations };
     }),
     approveMenuTranslation: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), entityType: z3.enum(["category", "item", "addon"]), entityId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
@@ -11917,7 +11998,7 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const table = input.entityType === "category" ? menuCategories : input.entityType === "item" ? menuItems : menuItemAddons;
-      const existing = await db.select({ restaurantId: table.restaurantId, translationsJson: table.translationsJson }).from(table).where(and7(eq7(table.id, input.entityId), eq7(table.restaurantId, input.restaurantId))).limit(1);
+      const existing = await db.select({ restaurantId: table.restaurantId, translationsJson: table.translationsJson }).from(table).where(and8(eq8(table.id, input.entityId), eq8(table.restaurantId, input.restaurantId))).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0639\u0646\u0635\u0631 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       let translations = [];
       try {
@@ -11929,7 +12010,7 @@ var appRouter = router({
       if (!translations.length) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u062A\u0648\u062C\u062F \u062A\u0631\u062C\u0645\u0629 \u0644\u0645\u0631\u0627\u062C\u0639\u062A\u0647\u0627" });
       const approvedAt = (/* @__PURE__ */ new Date()).toISOString();
       const approved = translations.map((entry) => ({ ...entry, status: "approved", approvedAt }));
-      await db.update(table).set({ translationsJson: JSON.stringify(approved) }).where(and7(eq7(table.id, input.entityId), eq7(table.restaurantId, input.restaurantId)));
+      await db.update(table).set({ translationsJson: JSON.stringify(approved) }).where(and8(eq8(table.id, input.entityId), eq8(table.restaurantId, input.restaurantId)));
       return { success: true, approvedCount: approved.length };
     }),
     previewMenuImport: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), sourceUrl: z3.string().url().max(1e3) })).mutation(async ({ ctx, input }) => {
@@ -11940,7 +12021,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existingCategories = await db.select({ id: menuCategories.id, name: menuCategories.name }).from(menuCategories).where(eq7(menuCategories.restaurantId, input.restaurantId));
+      const existingCategories = await db.select({ id: menuCategories.id, name: menuCategories.name }).from(menuCategories).where(eq8(menuCategories.restaurantId, input.restaurantId));
       const categoryMap = new Map(existingCategories.map((category) => [category.name.trim().toLowerCase(), category.id]));
       let categoriesCreated = 0;
       let itemsCreated = 0;
@@ -11954,7 +12035,7 @@ var appRouter = router({
           categoryMap.set(key, categoryId);
           categoriesCreated += 1;
         }
-        const existingItem = (await db.select({ id: menuItems.id }).from(menuItems).where(and7(eq7(menuItems.restaurantId, input.restaurantId), eq7(menuItems.categoryId, categoryId), eq7(menuItems.name, imported.name.trim()))).limit(1))[0];
+        const existingItem = (await db.select({ id: menuItems.id }).from(menuItems).where(and8(eq8(menuItems.restaurantId, input.restaurantId), eq8(menuItems.categoryId, categoryId), eq8(menuItems.name, imported.name.trim()))).limit(1))[0];
         if (existingItem) {
           duplicates += 1;
           continue;
@@ -11970,10 +12051,10 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
       if (input.kitchenSectionId) {
-        const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq7(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
+        const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq8(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
         if (!section || section.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0642\u0633\u0645 \u0627\u0644\u0645\u0637\u0628\u062E \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       }
-      const nextSort = Number((await db.select({ value: sql3`COALESCE(MAX(${menuCategories.sortOrder}), 0) + 1` }).from(menuCategories).where(eq7(menuCategories.restaurantId, input.restaurantId)).limit(1))[0]?.value ?? 1);
+      const nextSort = Number((await db.select({ value: sql3`COALESCE(MAX(${menuCategories.sortOrder}), 0) + 1` }).from(menuCategories).where(eq8(menuCategories.restaurantId, input.restaurantId)).limit(1))[0]?.value ?? 1);
       const { sortOrder: _ignoredSortOrder, ...categoryInput } = input;
       const translationsJson = await ensureAutomaticMenuTranslations({ name: input.name, description: input.description, translationsJson: input.translationsJson });
       const result = await db.insert(menuCategories).values({ ...categoryInput, translationsJson, sortOrder: nextSort, kitchenSectionId: input.kitchenSectionId ?? null });
@@ -11983,28 +12064,28 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: menuCategories.restaurantId, name: menuCategories.name, translationsJson: menuCategories.translationsJson }).from(menuCategories).where(eq7(menuCategories.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: menuCategories.restaurantId, name: menuCategories.name, translationsJson: menuCategories.translationsJson }).from(menuCategories).where(eq8(menuCategories.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Category belongs to another restaurant" });
       if (input.kitchenSectionId) {
-        const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq7(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
+        const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq8(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
         if (!section || section.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0642\u0633\u0645 \u0627\u0644\u0645\u0637\u0628\u062E \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       }
       const translationsJson = await ensureAutomaticMenuTranslations({ name: input.name ?? existing[0].name, description: void 0, translationsJson: input.translationsJson ?? existing[0].translationsJson });
       const { id: _id, restaurantId: _restaurantId, translationsJson: _providedTranslations, ...changes } = input;
-      await db.update(menuCategories).set({ ...changes, translationsJson }).where(eq7(menuCategories.id, input.id));
+      await db.update(menuCategories).set({ ...changes, translationsJson }).where(eq8(menuCategories.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteMenuCategory: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: menuCategories.restaurantId }).from(menuCategories).where(eq7(menuCategories.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: menuCategories.restaurantId }).from(menuCategories).where(eq8(menuCategories.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Category belongs to another restaurant" });
-      await db.delete(menuCategories).where(eq7(menuCategories.id, input.id));
-      const remaining = await db.select({ id: menuCategories.id }).from(menuCategories).where(eq7(menuCategories.restaurantId, input.restaurantId)).orderBy(menuCategories.sortOrder, menuCategories.id);
+      await db.delete(menuCategories).where(eq8(menuCategories.id, input.id));
+      const remaining = await db.select({ id: menuCategories.id }).from(menuCategories).where(eq8(menuCategories.restaurantId, input.restaurantId)).orderBy(menuCategories.sortOrder, menuCategories.id);
       for (let index2 = 0; index2 < remaining.length; index2 += 1) {
         const category = remaining[index2];
-        await db.update(menuCategories).set({ sortOrder: index2 + 1 }).where(eq7(menuCategories.id, category.id));
+        await db.update(menuCategories).set({ sortOrder: index2 + 1 }).where(eq8(menuCategories.id, category.id));
       }
       return { success: true, id: input.id };
     }),
@@ -12029,10 +12110,7 @@ var appRouter = router({
     }),
     ordersByRestaurant: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().optional(), limit: z3.number().int().min(25).max(500).default(200) })).query(async ({ ctx, input }) => {
       assertNotDriver(ctx);
-      const merchantRestaurantId = ctx.user ? await getMerchantRestaurantId(ctx.user.id) : null;
-      const scopedRestaurantId = ctx.user?.restaurantId ?? null;
-      const isRestaurantMember = merchantRestaurantId === input.restaurantId || scopedRestaurantId === input.restaurantId;
-      if (!isAdminContext(ctx) && !isRestaurantMember) assertRestaurantAccess(ctx, input.restaurantId);
+      await assertResolvedRestaurantAccess(ctx, input.restaurantId);
       if (ctx.user?.testRole === "waiter") {
         const branchId = input.branchId ?? (await listBranches(input.restaurantId))[0]?.id;
         if (!branchId) return [];
@@ -12066,10 +12144,10 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      let rows = await db.select().from(seatingSections).where(and7(eq7(seatingSections.restaurantId, input.restaurantId), eq7(seatingSections.branchId, input.branchId))).orderBy(seatingSections.name);
+      let rows = await db.select().from(seatingSections).where(and8(eq8(seatingSections.restaurantId, input.restaurantId), eq8(seatingSections.branchId, input.branchId))).orderBy(seatingSections.name);
       if (rows.length === 0) {
         await db.insert(seatingSections).values([{ restaurantId: input.restaurantId, branchId: input.branchId, name: "\u062E\u0627\u0631\u062C\u064A \u0645\u062F\u062E\u0646\u064A\u0646", seatingType: "outdoor", smokingAllowed: true }, { restaurantId: input.restaurantId, branchId: input.branchId, name: "\u062E\u0627\u0631\u062C\u064A \u063A\u064A\u0631 \u0645\u062F\u062E\u0646\u064A\u0646", seatingType: "outdoor", smokingAllowed: false }, { restaurantId: input.restaurantId, branchId: input.branchId, name: "\u062F\u0627\u062E\u0644\u064A \u0645\u062F\u062E\u0646\u064A\u0646", seatingType: "indoor", smokingAllowed: true }, { restaurantId: input.restaurantId, branchId: input.branchId, name: "\u062F\u0627\u062E\u0644\u064A \u063A\u064A\u0631 \u0645\u062F\u062E\u0646\u064A\u0646", seatingType: "indoor", smokingAllowed: false }]);
-        rows = await db.select().from(seatingSections).where(and7(eq7(seatingSections.restaurantId, input.restaurantId), eq7(seatingSections.branchId, input.branchId))).orderBy(seatingSections.name);
+        rows = await db.select().from(seatingSections).where(and8(eq8(seatingSections.restaurantId, input.restaurantId), eq8(seatingSections.branchId, input.branchId))).orderBy(seatingSections.name);
       }
       return rows;
     }),
@@ -12077,7 +12155,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq7(branches.id, input.branchId)).limit(1))[0];
+      const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq8(branches.id, input.branchId)).limit(1))[0];
       if (!branch || branch.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Branch belongs to another restaurant" });
       const result = await db.insert(seatingSections).values({ restaurantId: input.restaurantId, branchId: input.branchId, name: input.name.trim(), seatingType: input.seatingType, smokingAllowed: input.smokingAllowed });
       return { success: true, id: Number(result[0].insertId) };
@@ -12086,18 +12164,18 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ restaurantId: seatingSections.restaurantId }).from(seatingSections).where(eq7(seatingSections.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ restaurantId: seatingSections.restaurantId }).from(seatingSections).where(eq8(seatingSections.id, input.id)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Section belongs to another restaurant" });
-      await db.update(seatingSections).set({ name: input.name.trim(), seatingType: input.seatingType, smokingAllowed: input.smokingAllowed, isActive: input.isActive }).where(eq7(seatingSections.id, input.id));
+      await db.update(seatingSections).set({ name: input.name.trim(), seatingType: input.seatingType, smokingAllowed: input.smokingAllowed, isActive: input.isActive }).where(eq8(seatingSections.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteSeatingSection: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ restaurantId: seatingSections.restaurantId }).from(seatingSections).where(eq7(seatingSections.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ restaurantId: seatingSections.restaurantId }).from(seatingSections).where(eq8(seatingSections.id, input.id)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Section belongs to another restaurant" });
-      await db.update(seatingSections).set({ isActive: false }).where(eq7(seatingSections.id, input.id));
+      await db.update(seatingSections).set({ isActive: false }).where(eq8(seatingSections.id, input.id));
       return { success: true, id: input.id };
     }),
     purchases: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
@@ -12115,7 +12193,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const rows = await db.select({ id: attendance.id, employeeId: attendance.employeeId, workDate: attendance.workDate, status: attendance.status, employeeName: employees.name }).from(attendance).innerJoin(employees, eq7(attendance.employeeId, employees.id)).where(input.workDate ? and7(eq7(employees.restaurantId, input.restaurantId), eq7(attendance.workDate, input.workDate)) : eq7(employees.restaurantId, input.restaurantId));
+      const rows = await db.select({ id: attendance.id, employeeId: attendance.employeeId, workDate: attendance.workDate, status: attendance.status, employeeName: employees.name }).from(attendance).innerJoin(employees, eq8(attendance.employeeId, employees.id)).where(input.workDate ? and8(eq8(employees.restaurantId, input.restaurantId), eq8(attendance.workDate, input.workDate)) : eq8(employees.restaurantId, input.restaurantId));
       return rows;
     }),
     reservationSlotsForRestaurant: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive() })).query(({ ctx, input }) => {
@@ -12126,11 +12204,11 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const filters = [eq7(reservations.restaurantId, input.restaurantId)];
-      if (input.kind) filters.push(eq7(reservations.kind, input.kind));
-      if (input.status) filters.push(eq7(reservations.status, input.status));
-      if (input.isTest !== void 0) filters.push(eq7(reservations.isTest, input.isTest));
-      return db.select().from(reservations).where(and7(...filters)).orderBy(desc3(reservations.createdAt), desc3(reservations.id));
+      const filters = [eq8(reservations.restaurantId, input.restaurantId)];
+      if (input.kind) filters.push(eq8(reservations.kind, input.kind));
+      if (input.status) filters.push(eq8(reservations.status, input.status));
+      if (input.isTest !== void 0) filters.push(eq8(reservations.isTest, input.isTest));
+      return db.select().from(reservations).where(and8(...filters)).orderBy(desc3(reservations.createdAt), desc3(reservations.id));
     }),
     createReservation: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().nullable().optional(), slotId: z3.number().int().nullable().optional(), seatingSectionId: z3.number().int().positive().nullable().optional(), kind: z3.enum(["reservation", "waitlist"]).default("reservation"), isTest: z3.boolean().default(false), customerName: z3.string().trim().min(2).max(160), email: z3.string().trim().email().optional(), phone: z3.string().trim().max(40).optional(), partySize: z3.number().int().min(1).max(50), durationMinutes: z3.number().int().min(15).max(360).default(60), reservedFor: z3.coerce.date(), assignedTableId: z3.number().int().positive().optional(), notes: z3.string().trim().max(1e3).optional() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
@@ -12139,7 +12217,7 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       if (input.branchId) {
-        const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq7(branches.id, input.branchId)).limit(1))[0];
+        const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq8(branches.id, input.branchId)).limit(1))[0];
         if (!branch || branch.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Branch belongs to another restaurant" });
       }
       if (input.kind === "waitlist") {
@@ -12148,7 +12226,7 @@ var appRouter = router({
       }
       if (!input.branchId) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u062E\u062A\u0631 \u0641\u0631\u0639\u064B\u0627 \u0644\u0644\u062D\u062C\u0632" });
       if (input.slotId && input.slotId > 0) {
-        const slot = (await db.select({ id: reservationSlots.id }).from(reservationSlots).where(and7(eq7(reservationSlots.id, input.slotId), eq7(reservationSlots.restaurantId, input.restaurantId), eq7(reservationSlots.branchId, input.branchId))).limit(1))[0];
+        const slot = (await db.select({ id: reservationSlots.id }).from(reservationSlots).where(and8(eq8(reservationSlots.id, input.slotId), eq8(reservationSlots.restaurantId, input.restaurantId), eq8(reservationSlots.branchId, input.branchId))).limit(1))[0];
         if (!slot) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0632\u0645\u0646\u064A\u0629 \u0644\u0627 \u062A\u062A\u0628\u0639 \u0647\u0630\u0627 \u0627\u0644\u0641\u0631\u0639" });
       }
       try {
@@ -12167,10 +12245,10 @@ var appRouter = router({
       if (!isAdminContext(ctx) && String(ctx.user?.role) !== "restaurant_admin" && !["restaurant_admin", "manager", "owner", "waiter"].includes(ctx.user?.testRole ?? "")) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u062A\u0645\u0644\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u062D\u062C\u0632" });
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select().from(reservations).where(and7(eq7(reservations.id, input.id), eq7(reservations.restaurantId, input.restaurantId))).limit(1))[0];
+      const existing = (await db.select().from(reservations).where(and8(eq8(reservations.id, input.id), eq8(reservations.restaurantId, input.restaurantId))).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u062D\u062C\u0632 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       if (input.status === "rejected" && !input.rejectionReason?.trim()) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0643\u062A\u0628 \u0633\u0628\u0628 \u0631\u0641\u0636 \u0627\u0644\u062D\u062C\u0632" });
-      await db.update(reservations).set({ status: input.status, rejectionReason: input.status === "rejected" ? input.rejectionReason.trim() : input.rejectionReason?.trim() || null, updatedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(reservations.id, input.id), eq7(reservations.restaurantId, input.restaurantId)));
+      await db.update(reservations).set({ status: input.status, rejectionReason: input.status === "rejected" ? input.rejectionReason.trim() : input.rejectionReason?.trim() || null, updatedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(reservations.id, input.id), eq8(reservations.restaurantId, input.restaurantId)));
       const restaurantDetails = await getRestaurantById(input.restaurantId);
       const restaurantName = restaurantDetails?.brandName ?? restaurantDetails?.name ?? "\u0627\u0644\u0645\u0637\u0639\u0645";
       const notificationInput = { restaurantId: input.restaurantId, to: existing.email, customerName: existing.customerName, restaurantName, reservedFor: existing.reservedFor, partySize: existing.partySize, tableName: existing.assignedTableId ? `#${existing.assignedTableId}` : null, reason: input.rejectionReason?.trim() || (input.status === "cancelled" ? "\u062A\u0645 \u0627\u0644\u0625\u0644\u063A\u0627\u0621 \u0645\u0646 \u0627\u0644\u0645\u0637\u0639\u0645" : null) };
@@ -12188,10 +12266,10 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select().from(reservations).where(and7(eq7(reservations.id, input.id), eq7(reservations.restaurantId, input.restaurantId))).limit(1))[0];
+      const existing = (await db.select().from(reservations).where(and8(eq8(reservations.id, input.id), eq8(reservations.restaurantId, input.restaurantId))).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u062D\u062C\u0632 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const { id: _id, restaurantId: _restaurantId, ...changes } = input;
-      await db.update(reservations).set({ ...changes, updatedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(reservations.id, input.id), eq7(reservations.restaurantId, input.restaurantId)));
+      await db.update(reservations).set({ ...changes, updatedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(reservations.id, input.id), eq8(reservations.restaurantId, input.restaurantId)));
       const restaurantDetails = await getRestaurantById(input.restaurantId);
       const restaurantName = restaurantDetails?.brandName ?? restaurantDetails?.name ?? "\u0627\u0644\u0645\u0637\u0639\u0645";
       const reservedFor = input.reservedFor ?? existing.reservedFor;
@@ -12204,10 +12282,10 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: reservations.id, isTest: reservations.isTest }).from(reservations).where(and7(eq7(reservations.id, input.id), eq7(reservations.restaurantId, input.restaurantId))).limit(1))[0];
+      const existing = (await db.select({ id: reservations.id, isTest: reservations.isTest }).from(reservations).where(and8(eq8(reservations.id, input.id), eq8(reservations.restaurantId, input.restaurantId))).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u062D\u062C\u0632 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       if (!existing.isTest) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u062D\u0630\u0641 \u062D\u062C\u0632 \u062D\u0642\u064A\u0642\u064A \u0645\u0646 \u0647\u0630\u0627 \u0627\u0644\u0645\u0633\u0627\u0631\u061B \u0627\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0625\u0644\u063A\u0627\u0621 \u0641\u0642\u0637" });
-      await db.delete(reservations).where(and7(eq7(reservations.id, input.id), eq7(reservations.restaurantId, input.restaurantId), eq7(reservations.isTest, true)));
+      await db.delete(reservations).where(and8(eq8(reservations.id, input.id), eq8(reservations.restaurantId, input.restaurantId), eq8(reservations.isTest, true)));
       return { success: true, id: input.id };
     }),
     campaigns: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive() })).query(({ ctx, input }) => {
@@ -12218,7 +12296,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const rows = await db.select({ customerId: orders.customerId, birthDate: users.birthDate, lastOrderAt: orders.createdAt }).from(orders).leftJoin(users, eq7(orders.customerId, users.id)).where(and7(eq7(orders.restaurantId, input.restaurantId), eq7(orders.paymentStatus, "paid"), eq7(orders.status, "completed")));
+      const rows = await db.select({ customerId: orders.customerId, birthDate: users.birthDate, lastOrderAt: orders.createdAt }).from(orders).leftJoin(users, eq8(orders.customerId, users.id)).where(and8(eq8(orders.restaurantId, input.restaurantId), eq8(orders.paymentStatus, "paid"), eq8(orders.status, "completed")));
       const latest = /* @__PURE__ */ new Map();
       for (const row of rows) {
         if (!row.customerId || !row.lastOrderAt) continue;
@@ -12244,7 +12322,7 @@ var appRouter = router({
       await requireRestaurantFeature(input.restaurantId, "coupons");
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const campaign = (await db.select({ restaurantId: campaigns.restaurantId }).from(campaigns).where(eq7(campaigns.id, input.campaignId)).limit(1))[0];
+      const campaign = (await db.select({ restaurantId: campaigns.restaurantId }).from(campaigns).where(eq8(campaigns.id, input.campaignId)).limit(1))[0];
       if (!campaign || campaign.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Campaign belongs to another restaurant" });
       const result = await db.insert(coupons).values({ campaignId: input.campaignId, code: input.code.trim().toUpperCase(), discountPercent: input.discountPercent, usageLimit: input.usageLimit ?? null });
       return { success: true, id: Number(result[0].insertId) };
@@ -12253,19 +12331,19 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ campaignRestaurantId: campaigns.restaurantId }).from(coupons).innerJoin(campaigns, eq7(coupons.campaignId, campaigns.id)).where(eq7(coupons.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ campaignRestaurantId: campaigns.restaurantId }).from(coupons).innerJoin(campaigns, eq8(coupons.campaignId, campaigns.id)).where(eq8(coupons.id, input.id)).limit(1))[0];
       if (!existing || existing.campaignRestaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Coupon belongs to another restaurant" });
       const changes = { ...input.code !== void 0 ? { code: input.code.trim().toUpperCase() } : {}, ...input.discountPercent !== void 0 ? { discountPercent: input.discountPercent } : {}, ...input.usageLimit !== void 0 ? { usageLimit: input.usageLimit } : {} };
-      await db.update(coupons).set(changes).where(eq7(coupons.id, input.id));
+      await db.update(coupons).set(changes).where(eq8(coupons.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteCoupon: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ campaignRestaurantId: campaigns.restaurantId }).from(coupons).innerJoin(campaigns, eq7(coupons.campaignId, campaigns.id)).where(eq7(coupons.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ campaignRestaurantId: campaigns.restaurantId }).from(coupons).innerJoin(campaigns, eq8(coupons.campaignId, campaigns.id)).where(eq8(coupons.id, input.id)).limit(1))[0];
       if (!existing || existing.campaignRestaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Coupon belongs to another restaurant" });
-      await db.delete(coupons).where(eq7(coupons.id, input.id));
+      await db.delete(coupons).where(eq8(coupons.id, input.id));
       return { success: true, id: input.id };
     }),
     auditLogs: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive().optional(), actorUserId: z3.number().int().positive().optional(), actorRole: z3.string().trim().max(80).optional(), action: z3.string().trim().max(160).optional(), severity: z3.enum(["critical", "warning", "info"]).optional(), from: z3.coerce.date().optional(), to: z3.coerce.date().optional(), limit: z3.number().int().positive().max(250).default(100) }).optional()).query(({ ctx, input }) => {
@@ -12376,38 +12454,38 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq7(branches.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq8(branches.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Branch belongs to another restaurant" });
       const { id: _id, restaurantId: _restaurantId, ...changes } = input;
       const branchCountry = changes.countryCode ? COUNTRIES.find((country) => country.code === changes.countryCode) : void 0;
       const branchCurrency = changes.currencyCode ? CURRENCIES.find((currency) => currency.code === changes.currencyCode) : void 0;
       if (changes.countryCode && !branchCountry) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0631\u0645\u0632 \u0627\u0644\u062F\u0648\u0644\u0629 \u0644\u0644\u0641\u0631\u0639 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645" });
       if (changes.currencyCode && !branchCurrency) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0631\u0645\u0632 \u0627\u0644\u0639\u0645\u0644\u0629 \u0644\u0644\u0641\u0631\u0639 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645" });
-      await db.update(branches).set({ ...changes, currencyDecimals: branchCurrency ? branchCurrency.decimals : changes.currencyDecimals }).where(eq7(branches.id, input.id));
+      await db.update(branches).set({ ...changes, currencyDecimals: branchCurrency ? branchCurrency.decimals : changes.currencyDecimals }).where(eq8(branches.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteBranch: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq7(branches.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq8(branches.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Branch belongs to another restaurant" });
-      await db.delete(branches).where(eq7(branches.id, input.id));
+      await db.delete(branches).where(eq8(branches.id, input.id));
       return { success: true, id: input.id };
     }),
     menuItemAddons: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), menuItemId: z3.number().int().positive().optional() })).query(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const filters = [eq7(menuItemAddons.restaurantId, input.restaurantId)];
-      if (input.menuItemId) filters.push(eq7(menuItemAddons.menuItemId, input.menuItemId));
-      return db.select().from(menuItemAddons).where(and7(...filters)).orderBy(desc3(menuItemAddons.createdAt));
+      const filters = [eq8(menuItemAddons.restaurantId, input.restaurantId)];
+      if (input.menuItemId) filters.push(eq8(menuItemAddons.menuItemId, input.menuItemId));
+      return db.select().from(menuItemAddons).where(and8(...filters)).orderBy(desc3(menuItemAddons.createdAt));
     }),
     createMenuItemAddon: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), menuItemId: z3.number().int().positive(), name: z3.string().min(2).max(160), groupName: z3.string().trim().min(2).max(120).default("\u0627\u0644\u0625\u0636\u0627\u0641\u0627\u062A \u0627\u0644\u0627\u062E\u062A\u064A\u0627\u0631\u064A\u0629"), price: z3.string().regex(/^\\d+(\\.\\d{1,2})?$/), stockQuantity: z3.number().int().min(0).default(0), isRequired: z3.boolean().default(false), minSelections: z3.number().int().min(0).max(50).default(0), maxSelections: z3.number().int().min(1).max(50).default(1), sortOrder: z3.number().int().min(0).max(9999).default(0), imageUrl: z3.string().url().optional(), translationsJson: z3.string().max(2e4).optional() }).refine((value) => value.minSelections <= value.maxSelections, { message: "\u0627\u0644\u062D\u062F \u0627\u0644\u0623\u062F\u0646\u0649 \u0644\u0644\u0627\u062E\u062A\u064A\u0627\u0631\u0627\u062A \u064A\u062C\u0628 \u0623\u0644\u0627 \u064A\u062A\u062C\u0627\u0648\u0632 \u0627\u0644\u062D\u062F \u0627\u0644\u0623\u0642\u0635\u0649", path: ["minSelections"] })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const item = (await db.select({ restaurantId: menuItems.restaurantId }).from(menuItems).where(eq7(menuItems.id, input.menuItemId)).limit(1))[0];
+      const item = (await db.select({ restaurantId: menuItems.restaurantId }).from(menuItems).where(eq8(menuItems.id, input.menuItemId)).limit(1))[0];
       if (!item || item.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0635\u0646\u0641 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       const translationsJson = await ensureAutomaticMenuTranslations({ name: input.name, translationsJson: input.translationsJson });
       const result = await db.insert(menuItemAddons).values({ ...input, minSelections: input.isRequired ? Math.max(1, input.minSelections) : input.minSelections, translationsJson, imageUrl: input.imageUrl ?? null });
@@ -12417,23 +12495,23 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = (await db.select({ restaurantId: menuItemAddons.restaurantId, name: menuItemAddons.name, translationsJson: menuItemAddons.translationsJson, minSelections: menuItemAddons.minSelections, maxSelections: menuItemAddons.maxSelections, isRequired: menuItemAddons.isRequired }).from(menuItemAddons).where(eq7(menuItemAddons.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ restaurantId: menuItemAddons.restaurantId, name: menuItemAddons.name, translationsJson: menuItemAddons.translationsJson, minSelections: menuItemAddons.minSelections, maxSelections: menuItemAddons.maxSelections, isRequired: menuItemAddons.isRequired }).from(menuItemAddons).where(eq8(menuItemAddons.id, input.id)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0625\u0636\u0627\u0641\u0629 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       const nextMin = input.minSelections ?? existing.minSelections;
       const nextMax = input.maxSelections ?? existing.maxSelections;
       if (nextMin > nextMax) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u062D\u062F \u0627\u0644\u0623\u062F\u0646\u0649 \u0644\u0644\u0627\u062E\u062A\u064A\u0627\u0631\u0627\u062A \u064A\u062C\u0628 \u0623\u0644\u0627 \u064A\u062A\u062C\u0627\u0648\u0632 \u0627\u0644\u062D\u062F \u0627\u0644\u0623\u0642\u0635\u0649" });
       const translationsJson = await ensureAutomaticMenuTranslations({ name: input.name ?? existing.name, translationsJson: input.translationsJson ?? existing.translationsJson });
       const { id: _id, restaurantId: _restaurantId, translationsJson: _providedTranslations, ...changes } = input;
-      await db.update(menuItemAddons).set({ ...changes, minSelections: input.isRequired === true ? Math.max(1, nextMin) : nextMin, translationsJson }).where(eq7(menuItemAddons.id, input.id));
+      await db.update(menuItemAddons).set({ ...changes, minSelections: input.isRequired === true ? Math.max(1, nextMin) : nextMin, translationsJson }).where(eq8(menuItemAddons.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteMenuItemAddon: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = (await db.select({ restaurantId: menuItemAddons.restaurantId }).from(menuItemAddons).where(eq7(menuItemAddons.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ restaurantId: menuItemAddons.restaurantId }).from(menuItemAddons).where(eq8(menuItemAddons.id, input.id)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0625\u0636\u0627\u0641\u0629 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
-      await db.delete(menuItemAddons).where(eq7(menuItemAddons.id, input.id));
+      await db.delete(menuItemAddons).where(eq8(menuItemAddons.id, input.id));
       return { success: true, id: input.id };
     }),
     createMenuItem: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), categoryId: z3.number().int().positive(), kitchenSectionId: z3.number().int().positive().nullable().optional(), name: z3.string().min(2), price: z3.string().regex(/^\d+(\.\d{1,2})?$/), compareAtPrice: z3.string().regex(/^\d+(\.\d{1,2})?$/).nullable().optional(), description: z3.string().optional(), calories: z3.number().int().nonnegative().max(1e5).optional(), translationsJson: z3.string().max(2e4).optional(), tagsJson: z3.string().max(2e3).optional(), imageUrl: z3.string().trim().min(1).max(1200).optional() })).mutation(async ({ ctx, input }) => {
@@ -12444,10 +12522,10 @@ var appRouter = router({
       const currentPrice = Number(input.price);
       const compareAtPrice = input.compareAtPrice == null ? null : input.compareAtPrice;
       if (compareAtPrice !== null && Number(compareAtPrice) <= currentPrice) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0633\u0639\u0631 \u0642\u0628\u0644 \u0627\u0644\u062E\u0635\u0645 \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0623\u0639\u0644\u0649 \u0645\u0646 \u0627\u0644\u0633\u0639\u0631 \u0627\u0644\u062D\u0627\u0644\u064A" });
-      const category = await db.select({ id: menuCategories.id }).from(menuCategories).where(and7(eq7(menuCategories.id, input.categoryId), eq7(menuCategories.restaurantId, input.restaurantId))).limit(1);
+      const category = await db.select({ id: menuCategories.id }).from(menuCategories).where(and8(eq8(menuCategories.id, input.categoryId), eq8(menuCategories.restaurantId, input.restaurantId))).limit(1);
       if (!category[0]) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u062A\u0635\u0646\u064A\u0641 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       if (input.kitchenSectionId) {
-        const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq7(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
+        const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq8(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
         if (!section || section.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0642\u0633\u0645 \u0627\u0644\u0645\u0637\u0628\u062E \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       }
       const translationsJson = await ensureAutomaticMenuTranslations({ name: input.name, description: input.description, translationsJson: input.translationsJson });
@@ -12458,27 +12536,27 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: menuItems.restaurantId, price: menuItems.price, compareAtPrice: menuItems.compareAtPrice, name: menuItems.name, description: menuItems.description, translationsJson: menuItems.translationsJson }).from(menuItems).where(eq7(menuItems.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: menuItems.restaurantId, price: menuItems.price, compareAtPrice: menuItems.compareAtPrice, name: menuItems.name, description: menuItems.description, translationsJson: menuItems.translationsJson }).from(menuItems).where(eq8(menuItems.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Menu item belongs to another restaurant" });
       const nextPrice = input.price === void 0 ? Number(existing[0].price) : Number(input.price);
       const nextCompareAt = input.compareAtPrice === void 0 ? existing[0].compareAtPrice == null ? null : Number(existing[0].compareAtPrice) : input.compareAtPrice === null ? null : Number(input.compareAtPrice);
       if (nextCompareAt !== null && nextCompareAt <= nextPrice) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0633\u0639\u0631 \u0642\u0628\u0644 \u0627\u0644\u062E\u0635\u0645 \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0623\u0639\u0644\u0649 \u0645\u0646 \u0627\u0644\u0633\u0639\u0631 \u0627\u0644\u062D\u0627\u0644\u064A" });
       if (input.kitchenSectionId) {
-        const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq7(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
+        const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq8(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
         if (!section || section.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0642\u0633\u0645 \u0627\u0644\u0645\u0637\u0628\u062E \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       }
       const translationsJson = await ensureAutomaticMenuTranslations({ name: input.name ?? existing[0].name, description: input.description ?? existing[0].description, translationsJson: input.translationsJson ?? existing[0].translationsJson });
       const { id: _id, restaurantId: _restaurantId, tagsJson: rawTagsJson, translationsJson: _providedTranslations, ...changes } = input;
-      await db.update(menuItems).set({ ...changes, translationsJson, ...rawTagsJson !== void 0 ? { tagsJson: normalizeMenuTagsJson(rawTagsJson) } : {} }).where(eq7(menuItems.id, input.id));
+      await db.update(menuItems).set({ ...changes, translationsJson, ...rawTagsJson !== void 0 ? { tagsJson: normalizeMenuTagsJson(rawTagsJson) } : {} }).where(eq8(menuItems.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteMenuItem: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: menuItems.restaurantId }).from(menuItems).where(eq7(menuItems.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: menuItems.restaurantId }).from(menuItems).where(eq8(menuItems.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Menu item belongs to another restaurant" });
-      await db.delete(menuItems).where(eq7(menuItems.id, input.id));
+      await db.delete(menuItems).where(eq8(menuItems.id, input.id));
       return { success: true, id: input.id };
     }),
     createInventoryItem: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), name: z3.string().min(2).max(160), unit: z3.string().min(1).max(32), quantity: z3.string().regex(/^\d+(\.\d{1,2})?$/).default("0"), minimumQuantity: z3.string().regex(/^\d+(\.\d{1,2})?$/).default("0") })).mutation(async ({ ctx, input }) => {
@@ -12496,10 +12574,10 @@ var appRouter = router({
       await requireRestaurantFeature(input.restaurantId, "inventory");
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: inventoryItems.restaurantId }).from(inventoryItems).where(eq7(inventoryItems.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: inventoryItems.restaurantId }).from(inventoryItems).where(eq8(inventoryItems.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Inventory item belongs to another restaurant" });
       const { id: _id, restaurantId: _restaurantId, ...changes } = input;
-      await db.update(inventoryItems).set(changes).where(eq7(inventoryItems.id, input.id));
+      await db.update(inventoryItems).set(changes).where(eq8(inventoryItems.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteInventoryItem: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
@@ -12508,9 +12586,9 @@ var appRouter = router({
       await requireRestaurantFeature(input.restaurantId, "inventory");
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: inventoryItems.restaurantId }).from(inventoryItems).where(eq7(inventoryItems.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: inventoryItems.restaurantId }).from(inventoryItems).where(eq8(inventoryItems.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Inventory item belongs to another restaurant" });
-      await db.delete(inventoryItems).where(eq7(inventoryItems.id, input.id));
+      await db.delete(inventoryItems).where(eq8(inventoryItems.id, input.id));
       return { success: true, id: input.id };
     }),
     createPurchase: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), supplier: z3.string().min(2), total: z3.string().regex(/^\d+(\.\d{1,2})?$/), status: z3.enum(["draft", "received", "cancelled"]).default("received") })).mutation(async ({ ctx, input }) => {
@@ -12530,10 +12608,10 @@ var appRouter = router({
       await assertSensitivePermission(ctx, "purchase.approve", input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: purchases.restaurantId }).from(purchases).where(eq7(purchases.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: purchases.restaurantId }).from(purchases).where(eq8(purchases.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Purchase belongs to another restaurant" });
       const { id: _id, restaurantId: _restaurantId, ...changes } = input;
-      await db.update(purchases).set(changes).where(eq7(purchases.id, input.id));
+      await db.update(purchases).set(changes).where(eq8(purchases.id, input.id));
       return { success: true, id: input.id };
     }),
     deletePurchase: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
@@ -12542,9 +12620,9 @@ var appRouter = router({
       await requireRestaurantFeature(input.restaurantId, "purchases");
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: purchases.restaurantId }).from(purchases).where(eq7(purchases.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: purchases.restaurantId }).from(purchases).where(eq8(purchases.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Purchase belongs to another restaurant" });
-      await db.delete(purchases).where(eq7(purchases.id, input.id));
+      await db.delete(purchases).where(eq8(purchases.id, input.id));
       return { success: true, id: input.id };
     }),
     createEmployee: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive().nullable().optional(), name: z3.string().min(2).max(160), role: z3.enum(["waiter", "kitchen", "cashier", "driver", "manager", "host"]).default("waiter"), status: z3.enum(["active", "inactive"]).default("active") })).mutation(async ({ ctx, input }) => {
@@ -12553,7 +12631,7 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
       if (input.branchId) {
-        const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq7(branches.id, input.branchId)).limit(1))[0];
+        const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq8(branches.id, input.branchId)).limit(1))[0];
         if (!branch || branch.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Branch belongs to another restaurant" });
       }
       const allowance = await getEmployeeAllowance(input.restaurantId);
@@ -12565,30 +12643,30 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: employees.restaurantId }).from(employees).where(eq7(employees.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: employees.restaurantId }).from(employees).where(eq8(employees.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Employee belongs to another restaurant" });
       if (input.branchId) {
-        const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq7(branches.id, input.branchId)).limit(1))[0];
+        const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq8(branches.id, input.branchId)).limit(1))[0];
         if (!branch || branch.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Branch belongs to another restaurant" });
       }
       const { id: _id, restaurantId: _restaurantId, ...changes } = input;
-      await db.update(employees).set(changes).where(eq7(employees.id, input.id));
+      await db.update(employees).set(changes).where(eq8(employees.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteEmployee: testRoleProcedure("restaurant_admin", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: employees.restaurantId }).from(employees).where(eq7(employees.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: employees.restaurantId }).from(employees).where(eq8(employees.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Employee belongs to another restaurant" });
-      await db.delete(employees).where(eq7(employees.id, input.id));
+      await db.delete(employees).where(eq8(employees.id, input.id));
       return { success: true, id: input.id };
     }),
     recordAttendance: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), employeeId: z3.number().int().positive(), workDate: z3.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/), status: z3.enum(["present", "absent", "late"]) })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const employee = (await db.select({ restaurantId: employees.restaurantId }).from(employees).where(eq7(employees.id, input.employeeId)).limit(1))[0];
+      const employee = (await db.select({ restaurantId: employees.restaurantId }).from(employees).where(eq8(employees.id, input.employeeId)).limit(1))[0];
       if (!employee || employee.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Employee belongs to another restaurant" });
       const result = await db.insert(attendance).values({ employeeId: input.employeeId, workDate: input.workDate, status: input.status });
       return { success: true, id: Number(result[0].insertId) };
@@ -12598,13 +12676,13 @@ var appRouter = router({
       await requireRestaurantFeature(input.restaurantId, "tables");
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq7(branches.id, input.branchId)).limit(1))[0];
+      const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq8(branches.id, input.branchId)).limit(1))[0];
       if (!branch || branch.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Branch belongs to another restaurant" });
       if (input.seatingSectionId) {
-        const section = (await db.select({ restaurantId: seatingSections.restaurantId, branchId: seatingSections.branchId, isActive: seatingSections.isActive }).from(seatingSections).where(eq7(seatingSections.id, input.seatingSectionId)).limit(1))[0];
+        const section = (await db.select({ restaurantId: seatingSections.restaurantId, branchId: seatingSections.branchId, isActive: seatingSections.isActive }).from(seatingSections).where(eq8(seatingSections.id, input.seatingSectionId)).limit(1))[0];
         if (!section || section.restaurantId !== input.restaurantId || section.branchId !== input.branchId || !section.isActive) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0642\u0633\u0645 \u0627\u0644\u062C\u0644\u0648\u0633 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D \u0644\u0647\u0630\u0627 \u0627\u0644\u0641\u0631\u0639" });
       }
-      const existingTables = await db.select({ name: restaurantTables.name, seatingSectionId: restaurantTables.seatingSectionId }).from(restaurantTables).where(eq7(restaurantTables.branchId, input.branchId));
+      const existingTables = await db.select({ name: restaurantTables.name, seatingSectionId: restaurantTables.seatingSectionId }).from(restaurantTables).where(eq8(restaurantTables.branchId, input.branchId));
       if (input.name?.trim() && existingTables.some((table) => table.name.trim() === input.name.trim() && (table.seatingSectionId ?? null) === (input.seatingSectionId ?? null))) throw new TRPCError7({ code: "CONFLICT", message: "\u0631\u0642\u0645/\u0627\u0633\u0645 \u0627\u0644\u0637\u0627\u0648\u0644\u0629 \u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0627\u0644\u0641\u0639\u0644 \u062F\u0627\u062E\u0644 \u0647\u0630\u0627 \u0627\u0644\u0642\u0633\u0645" });
       const usedNumbers = existingTables.filter((table) => (table.seatingSectionId ?? null) === (input.seatingSectionId ?? null)).map((table) => /^\d+$/.test(table.name.trim()) ? Number(table.name.trim()) : 0).filter((value) => value > 0);
       let nextNumber = 1;
@@ -12613,9 +12691,9 @@ var appRouter = router({
       const result = await db.insert(restaurantTables).values({ branchId: input.branchId, name: nextTableName, seats: input.seats, status: input.status, tableType: input.tableType, seatingSectionId: input.seatingSectionId ?? null, minimumCharge: input.minimumCharge.toFixed(2), tableFee: input.tableFee.toFixed(2) });
       const tableId = Number(result[0].insertId);
       if (input.waiterUserId) {
-        const linked = (await db.select({ id: users.id, openId: users.openId }).from(users).where(eq7(users.id, input.waiterUserId)).limit(1))[0];
+        const linked = (await db.select({ id: users.id, openId: users.openId }).from(users).where(eq8(users.id, input.waiterUserId)).limit(1))[0];
         const accountId = linked?.openId?.startsWith("test_") ? Number(linked.openId.slice(5)) : 0;
-        const waiter = accountId ? (await db.select({ restaurantId: testAccounts.restaurantId, role: testAccounts.role, isActive: testAccounts.isActive }).from(testAccounts).where(eq7(testAccounts.id, accountId)).limit(1))[0] : null;
+        const waiter = accountId ? (await db.select({ restaurantId: testAccounts.restaurantId, role: testAccounts.role, isActive: testAccounts.isActive }).from(testAccounts).where(eq8(testAccounts.id, accountId)).limit(1))[0] : null;
         if (!waiter || waiter.restaurantId !== input.restaurantId || waiter.role !== "waiter" || !waiter.isActive) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0646\u0627\u062F\u0644 \u0627\u0644\u0645\u062D\u062F\u062F \u063A\u064A\u0631 \u0635\u0627\u0644\u062D \u0623\u0648 \u063A\u064A\u0631 \u0646\u0634\u0637" });
         await db.insert(waiterTableAssignments).values({ restaurantId: input.restaurantId, branchId: input.branchId, waiterUserId: input.waiterUserId, tableId, assignedByUserId: ctx.user?.id ?? null });
       }
@@ -12627,21 +12705,21 @@ var appRouter = router({
       await requireRestaurantFeature(input.restaurantId, "tables");
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq7(branches.id, input.branchId)).limit(1))[0];
+      const branch = (await db.select({ restaurantId: branches.restaurantId }).from(branches).where(eq8(branches.id, input.branchId)).limit(1))[0];
       if (!branch || branch.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Branch belongs to another restaurant" });
       if (input.seatingSectionId) {
-        const section = (await db.select({ restaurantId: seatingSections.restaurantId, branchId: seatingSections.branchId, isActive: seatingSections.isActive }).from(seatingSections).where(eq7(seatingSections.id, input.seatingSectionId)).limit(1))[0];
+        const section = (await db.select({ restaurantId: seatingSections.restaurantId, branchId: seatingSections.branchId, isActive: seatingSections.isActive }).from(seatingSections).where(eq8(seatingSections.id, input.seatingSectionId)).limit(1))[0];
         if (!section || section.restaurantId !== input.restaurantId || section.branchId !== input.branchId || !section.isActive) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0642\u0633\u0645 \u0627\u0644\u062C\u0644\u0648\u0633 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D \u0644\u0647\u0630\u0627 \u0627\u0644\u0641\u0631\u0639" });
       }
       if (input.waiterUserId) {
-        const linked = (await db.select({ openId: users.openId }).from(users).where(eq7(users.id, input.waiterUserId)).limit(1))[0];
+        const linked = (await db.select({ openId: users.openId }).from(users).where(eq8(users.id, input.waiterUserId)).limit(1))[0];
         const accountId = linked?.openId?.startsWith("test_") ? Number(linked.openId.slice(5)) : 0;
-        const waiter = accountId ? (await db.select({ restaurantId: testAccounts.restaurantId, role: testAccounts.role, isActive: testAccounts.isActive }).from(testAccounts).where(eq7(testAccounts.id, accountId)).limit(1))[0] : null;
+        const waiter = accountId ? (await db.select({ restaurantId: testAccounts.restaurantId, role: testAccounts.role, isActive: testAccounts.isActive }).from(testAccounts).where(eq8(testAccounts.id, accountId)).limit(1))[0] : null;
         if (!waiter || waiter.restaurantId !== input.restaurantId || waiter.role !== "waiter" || !waiter.isActive) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0646\u0627\u062F\u0644 \u0627\u0644\u0645\u062D\u062F\u062F \u063A\u064A\u0631 \u0635\u0627\u0644\u062D \u0623\u0648 \u063A\u064A\u0631 \u0646\u0634\u0637" });
       }
       return db.transaction(async (tx) => {
         await tx.execute(sql3`SELECT id FROM restaurantTables WHERE branchId = ${input.branchId} FOR UPDATE`);
-        const existing = await tx.select({ name: restaurantTables.name, seatingSectionId: restaurantTables.seatingSectionId }).from(restaurantTables).where(eq7(restaurantTables.branchId, input.branchId));
+        const existing = await tx.select({ name: restaurantTables.name, seatingSectionId: restaurantTables.seatingSectionId }).from(restaurantTables).where(eq8(restaurantTables.branchId, input.branchId));
         const used = new Set(existing.filter((table) => (table.seatingSectionId ?? null) === (input.seatingSectionId ?? null)).map((table) => /^\d+$/.test(table.name.trim()) ? Number(table.name.trim()) : 0).filter((value) => value > 0));
         const names = [];
         let candidate = input.startNumber;
@@ -12667,15 +12745,15 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = (await db.select({ tableId: restaurantTables.id, branchId: restaurantTables.branchId, restaurantId: branches.restaurantId }).from(restaurantTables).innerJoin(branches, eq7(restaurantTables.branchId, branches.id)).where(eq7(restaurantTables.id, input.tableId)).limit(1))[0];
+      const existing = (await db.select({ tableId: restaurantTables.id, branchId: restaurantTables.branchId, restaurantId: branches.restaurantId }).from(restaurantTables).innerJoin(branches, eq8(restaurantTables.branchId, branches.id)).where(eq8(restaurantTables.id, input.tableId)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Table belongs to another restaurant" });
       if (ctx.user?.testRole === "waiter" && !await isWaiterAssignedToTable({ restaurantId: input.restaurantId, branchId: existing.branchId, waiterUserId: ctx.user.id, tableId: input.tableId })) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0647\u0630\u0647 \u0627\u0644\u0637\u0627\u0648\u0644\u0629 \u063A\u064A\u0631 \u0645\u0633\u0646\u062F\u0629 \u0625\u0644\u064A\u0643" });
       if (input.status === "available") {
-        const tableRow = (await db.select({ name: restaurantTables.name, seatingSectionId: restaurantTables.seatingSectionId }).from(restaurantTables).where(eq7(restaurantTables.id, input.tableId)).limit(1))[0];
-        const activeOrder = tableRow ? (await db.select({ id: orders.id }).from(orders).where(and7(eq7(orders.restaurantId, input.restaurantId), eq7(orders.branchId, existing.branchId), eq7(orders.channel, "dine_in"), eq7(orders.tableName, tableRow.name), inArray4(orders.status, ["new", "preparing", "ready"]), tableRow.seatingSectionId ? eq7(orders.seatingSectionId, tableRow.seatingSectionId) : isNull4(orders.seatingSectionId))).limit(1))[0] : null;
+        const tableRow = (await db.select({ name: restaurantTables.name, seatingSectionId: restaurantTables.seatingSectionId }).from(restaurantTables).where(eq8(restaurantTables.id, input.tableId)).limit(1))[0];
+        const activeOrder = tableRow ? (await db.select({ id: orders.id }).from(orders).where(and8(eq8(orders.restaurantId, input.restaurantId), eq8(orders.branchId, existing.branchId), eq8(orders.channel, "dine_in"), eq8(orders.tableName, tableRow.name), inArray5(orders.status, ["new", "preparing", "ready"]), tableRow.seatingSectionId ? eq8(orders.seatingSectionId, tableRow.seatingSectionId) : isNull4(orders.seatingSectionId))).limit(1))[0] : null;
         if (activeOrder) throw new TRPCError7({ code: "CONFLICT", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0625\u062A\u0627\u062D\u0629 \u0627\u0644\u0637\u0627\u0648\u0644\u0629 \u0642\u0628\u0644 \u0625\u063A\u0644\u0627\u0642 \u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u062F\u0627\u062E\u0644\u064A \u0627\u0644\u0646\u0634\u0637 \u0639\u0644\u064A\u0647\u0627" });
       }
-      await db.update(restaurantTables).set({ status: input.status, ...input.tableType !== void 0 ? { tableType: input.tableType } : {}, ...input.minimumCharge !== void 0 ? { minimumCharge: input.minimumCharge.toFixed(2) } : {}, ...input.tableFee !== void 0 ? { tableFee: input.tableFee.toFixed(2) } : {} }).where(eq7(restaurantTables.id, input.tableId));
+      await db.update(restaurantTables).set({ status: input.status, ...input.tableType !== void 0 ? { tableType: input.tableType } : {}, ...input.minimumCharge !== void 0 ? { minimumCharge: input.minimumCharge.toFixed(2) } : {}, ...input.tableFee !== void 0 ? { tableFee: input.tableFee.toFixed(2) } : {} }).where(eq8(restaurantTables.id, input.tableId));
       if (input.status === "available") await closeActiveWaiterCallsForTable({ restaurantId: input.restaurantId, branchId: existing.branchId, tableId: input.tableId });
       return { success: true, status: input.status };
     }),
@@ -12688,7 +12766,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const waiter = (await db.select({ id: employees.id, role: employees.role, restaurantId: employees.restaurantId }).from(employees).where(eq7(employees.id, input.waiterUserId)).limit(1))[0];
+      const waiter = (await db.select({ id: employees.id, role: employees.role, restaurantId: employees.restaurantId }).from(employees).where(eq8(employees.id, input.waiterUserId)).limit(1))[0];
       if (!waiter || waiter.restaurantId !== input.restaurantId || waiter.role !== "waiter") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0645\u0648\u0638\u0641 \u0627\u0644\u0645\u062D\u062F\u062F \u0644\u064A\u0633 \u0646\u0627\u062F\u0644\u064B\u0627 \u062A\u0627\u0628\u0639\u064B\u0627 \u0644\u0644\u0645\u0637\u0639\u0645" });
       const result = await replaceWaiterTableAssignments({ restaurantId: input.restaurantId, branchId: input.branchId, waiterUserId: input.waiterUserId, tableIds: input.tableIds, assignedByUserId: ctx.user?.id ?? 0 });
       return { success: true, ...result };
@@ -12697,9 +12775,9 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = (await db.select({ restaurantId: branches.restaurantId }).from(restaurantTables).innerJoin(branches, eq7(restaurantTables.branchId, branches.id)).where(eq7(restaurantTables.id, input.tableId)).limit(1))[0];
+      const existing = (await db.select({ restaurantId: branches.restaurantId }).from(restaurantTables).innerJoin(branches, eq8(restaurantTables.branchId, branches.id)).where(eq8(restaurantTables.id, input.tableId)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Table belongs to another restaurant" });
-      await db.delete(restaurantTables).where(eq7(restaurantTables.id, input.tableId));
+      await db.delete(restaurantTables).where(eq8(restaurantTables.id, input.tableId));
       return { success: true, id: input.tableId };
     }),
     createCampaign: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), name: z3.string().min(2), kind: z3.enum(["general", "birthday", "reengagement"]).default("general"), reengagementDays: z3.number().int().min(1).max(365).optional(), status: z3.enum(["draft", "scheduled", "active", "ended"]).default("draft") })).mutation(async ({ ctx, input }) => {
@@ -12714,24 +12792,24 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: campaigns.restaurantId }).from(campaigns).where(eq7(campaigns.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: campaigns.restaurantId }).from(campaigns).where(eq8(campaigns.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Campaign belongs to another restaurant" });
       const { id: _id, restaurantId: _restaurantId, ...changes } = input;
-      await db.update(campaigns).set(changes).where(eq7(campaigns.id, input.id));
+      await db.update(campaigns).set(changes).where(eq8(campaigns.id, input.id));
       return { success: true, id: input.id };
     }),
     scheduleCampaign: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive(), cron: z3.string().regex(/^\d+ \d+ \d+ \S+ \S+ \S+$/) })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const campaign = (await db.select({ id: campaigns.id, restaurantId: campaigns.restaurantId, name: campaigns.name, scheduleCronTaskUid: campaigns.scheduleCronTaskUid }).from(campaigns).where(eq7(campaigns.id, input.id)).limit(1))[0];
+      const campaign = (await db.select({ id: campaigns.id, restaurantId: campaigns.restaurantId, name: campaigns.name, scheduleCronTaskUid: campaigns.scheduleCronTaskUid }).from(campaigns).where(eq8(campaigns.id, input.id)).limit(1))[0];
       if (!campaign || campaign.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Campaign belongs to another restaurant" });
       const sessionToken = parseCookie(ctx.req.headers.cookie ?? "")[COOKIE_NAME] ?? "";
       if (!sessionToken) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u062C\u0644\u0633\u0629 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0644\u0644\u062C\u062F\u0648\u0644\u0629" });
       if (campaign.scheduleCronTaskUid) await updateHeartbeatJob(campaign.scheduleCronTaskUid, { cron: input.cron, enable: true }, sessionToken);
       else {
         const job = await createHeartbeatJob({ name: `marketing-${campaign.id}`, cron: input.cron, path: "/api/scheduled/marketing", description: `Marketing campaign ${campaign.name}` }, sessionToken);
-        await db.update(campaigns).set({ scheduleCronTaskUid: job.taskUid, status: "scheduled" }).where(eq7(campaigns.id, campaign.id));
+        await db.update(campaigns).set({ scheduleCronTaskUid: job.taskUid, status: "scheduled" }).where(eq8(campaigns.id, campaign.id));
         return { success: true, taskUid: job.taskUid };
       }
       return { success: true, taskUid: campaign.scheduleCronTaskUid };
@@ -12740,9 +12818,9 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: campaigns.restaurantId }).from(campaigns).where(eq7(campaigns.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: campaigns.restaurantId }).from(campaigns).where(eq8(campaigns.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "Campaign belongs to another restaurant" });
-      await db.delete(campaigns).where(eq7(campaigns.id, input.id));
+      await db.delete(campaigns).where(eq8(campaigns.id, input.id));
       return { success: true, id: input.id };
     }),
     listKitchenSections: testRoleProcedure("restaurant_admin", "kitchen").input(z3.object({ restaurantId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
@@ -12751,19 +12829,19 @@ var appRouter = router({
       await syncMenuCategoriesToKitchenSections(input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      return db.select().from(kitchenSections).where(eq7(kitchenSections.restaurantId, input.restaurantId)).orderBy(kitchenSections.displayOrder, desc3(kitchenSections.createdAt));
+      return db.select().from(kitchenSections).where(eq8(kitchenSections.restaurantId, input.restaurantId)).orderBy(kitchenSections.displayOrder, desc3(kitchenSections.createdAt));
     }),
     listPrinterLogs: testRoleProcedure("restaurant_admin", "kitchen").input(z3.object({ restaurantId: z3.number().int().positive(), kitchenSectionId: z3.number().int().positive().optional() })).query(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      return db.select().from(printerLogs).where(input.kitchenSectionId ? and7(eq7(printerLogs.restaurantId, input.restaurantId), eq7(printerLogs.kitchenSectionId, input.kitchenSectionId)) : eq7(printerLogs.restaurantId, input.restaurantId)).orderBy(desc3(printerLogs.createdAt)).limit(100);
+      return db.select().from(printerLogs).where(input.kitchenSectionId ? and8(eq8(printerLogs.restaurantId, input.restaurantId), eq8(printerLogs.kitchenSectionId, input.kitchenSectionId)) : eq8(printerLogs.restaurantId, input.restaurantId)).orderBy(desc3(printerLogs.createdAt)).limit(100);
     }),
     orderPrintPayload: testRoleProcedure("restaurant_admin", "cashier", "kitchen", "bar", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive(), target: z3.enum(["receipt", "kitchen"]).default("receipt") })).query(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, total: orders.total, currencyCode: orders.currencyCode, tableName: orders.tableName, channel: orders.channel, paymentStatus: orders.paymentStatus, createdAt: orders.createdAt }).from(orders).where(and7(eq7(orders.id, input.orderId), eq7(orders.restaurantId, input.restaurantId))).limit(1))[0];
+      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, total: orders.total, currencyCode: orders.currencyCode, tableName: orders.tableName, channel: orders.channel, paymentStatus: orders.paymentStatus, createdAt: orders.createdAt }).from(orders).where(and8(eq8(orders.id, input.orderId), eq8(orders.restaurantId, input.restaurantId))).limit(1))[0];
       if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const lines = await db.select({
         id: orderItems.id,
@@ -12779,7 +12857,7 @@ var appRouter = router({
         retailName: marketplaceListings.title,
         sku: marketplaceListingVariants.sku,
         barcode: marketplaceListingVariants.barcode
-      }).from(orderItems).leftJoin(menuItems, eq7(orderItems.menuItemId, menuItems.id)).leftJoin(menuCategories, eq7(menuItems.categoryId, menuCategories.id)).leftJoin(marketplaceListingVariants, eq7(orderItems.marketplaceVariantId, marketplaceListingVariants.id)).leftJoin(marketplaceListings, eq7(marketplaceListingVariants.listingId, marketplaceListings.id)).where(eq7(orderItems.orderId, input.orderId));
+      }).from(orderItems).leftJoin(menuItems, eq8(orderItems.menuItemId, menuItems.id)).leftJoin(menuCategories, eq8(menuItems.categoryId, menuCategories.id)).leftJoin(marketplaceListingVariants, eq8(orderItems.marketplaceVariantId, marketplaceListingVariants.id)).leftJoin(marketplaceListings, eq8(marketplaceListingVariants.listingId, marketplaceListings.id)).where(eq8(orderItems.orderId, input.orderId));
       const normalized = lines.map((line) => ({
         id: line.id,
         sourceType: line.sourceType,
@@ -12798,10 +12876,10 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq7(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
+      const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq8(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
       if (!section || section.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0642\u0633\u0645 \u0627\u0644\u0637\u0627\u0628\u0639\u0629 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       await db.insert(printerLogs).values({ restaurantId: input.restaurantId, kitchenSectionId: input.kitchenSectionId, operation: input.operation, result: input.result, message: input.message ?? null, latencyMs: input.latencyMs ?? null, printDurationMs: input.printDurationMs ?? null });
-      await db.update(kitchenSections).set({ printerStatus: input.status ?? (input.result === "success" ? "connected" : "offline"), printerLastCheckedAt: /* @__PURE__ */ new Date(), printerLastError: input.result === "error" ? input.message ?? "\u0641\u0634\u0644 \u0627\u0644\u0641\u062D\u0635" : null }).where(eq7(kitchenSections.id, input.kitchenSectionId));
+      await db.update(kitchenSections).set({ printerStatus: input.status ?? (input.result === "success" ? "connected" : "offline"), printerLastCheckedAt: /* @__PURE__ */ new Date(), printerLastError: input.result === "error" ? input.message ?? "\u0641\u0634\u0644 \u0627\u0644\u0641\u062D\u0635" : null }).where(eq8(kitchenSections.id, input.kitchenSectionId));
       return { success: true };
     }),
     printerPerformanceReport: testRoleProcedure("restaurant_admin", "kitchen").input(z3.object({ restaurantId: z3.number().int().positive(), kitchenSectionId: z3.number().int().positive().optional(), timeRange: z3.enum(["24h", "7d", "30d"]).default("7d") })).query(async ({ ctx, input }) => {
@@ -12809,7 +12887,7 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
       const since = new Date(Date.now() - (input.timeRange === "24h" ? 24 : input.timeRange === "30d" ? 720 : 168) * 60 * 60 * 1e3);
-      const rows = await db.select({ sectionId: kitchenSections.id, printerName: kitchenSections.printerName, sectionName: kitchenSections.name, printerStatus: kitchenSections.printerStatus, logResult: printerLogs.result, operation: printerLogs.operation, latencyMs: printerLogs.latencyMs, printDurationMs: printerLogs.printDurationMs, createdAt: printerLogs.createdAt }).from(kitchenSections).leftJoin(printerLogs, and7(eq7(printerLogs.kitchenSectionId, kitchenSections.id), gte3(printerLogs.createdAt, since))).where(input.kitchenSectionId ? and7(eq7(kitchenSections.restaurantId, input.restaurantId), eq7(kitchenSections.id, input.kitchenSectionId)) : eq7(kitchenSections.restaurantId, input.restaurantId));
+      const rows = await db.select({ sectionId: kitchenSections.id, printerName: kitchenSections.printerName, sectionName: kitchenSections.name, printerStatus: kitchenSections.printerStatus, logResult: printerLogs.result, operation: printerLogs.operation, latencyMs: printerLogs.latencyMs, printDurationMs: printerLogs.printDurationMs, createdAt: printerLogs.createdAt }).from(kitchenSections).leftJoin(printerLogs, and8(eq8(printerLogs.kitchenSectionId, kitchenSections.id), gte3(printerLogs.createdAt, since))).where(input.kitchenSectionId ? and8(eq8(kitchenSections.restaurantId, input.restaurantId), eq8(kitchenSections.id, input.kitchenSectionId)) : eq8(kitchenSections.restaurantId, input.restaurantId));
       const grouped = /* @__PURE__ */ new Map();
       for (const row of rows) {
         const item = grouped.get(row.sectionId) ?? { sectionId: row.sectionId, printerName: row.printerName || row.sectionName, sectionName: row.sectionName, status: row.printerStatus, checks: 0, successes: 0, failures: 0, testPrints: 0, latencyTotal: 0, durationTotal: 0, measured: 0 };
@@ -12832,23 +12910,23 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const section = (await db.select().from(kitchenSections).where(and7(eq7(kitchenSections.id, input.kitchenSectionId), eq7(kitchenSections.restaurantId, input.restaurantId))).limit(1))[0];
+      const section = (await db.select().from(kitchenSections).where(and8(eq8(kitchenSections.id, input.kitchenSectionId), eq8(kitchenSections.restaurantId, input.restaurantId))).limit(1))[0];
       if (!section) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0637\u0627\u0628\u0639\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
-      const setting = (await db.select({ url: integrationSettings.keyReference }).from(integrationSettings).where(and7(eq7(integrationSettings.scope, "restaurant"), eq7(integrationSettings.restaurantId, input.restaurantId), eq7(integrationSettings.providerKey, "printer_gateway"))).limit(1))[0];
+      const setting = (await db.select({ url: integrationSettings.keyReference }).from(integrationSettings).where(and8(eq8(integrationSettings.scope, "restaurant"), eq8(integrationSettings.restaurantId, input.restaurantId), eq8(integrationSettings.providerKey, "printer_gateway"))).limit(1))[0];
       const token = await getIntegrationSecret("restaurant", "printer_gateway", input.restaurantId);
       if (!setting?.url || !token) throw new TRPCError7({ code: "PRECONDITION_FAILED", message: "\u0623\u0643\u0645\u0644 \u0625\u0639\u062F\u0627\u062F \u0631\u0627\u0628\u0637 Gateway \u0648\u0631\u0645\u0632 \u0627\u0644\u0645\u0635\u0627\u062F\u0642\u0629 \u0623\u0648\u0644\u064B\u0627" });
       const response = await fetch(`${setting.url.replace(/\/+$/, "")}/${input.mode}`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ transport: section.printerType, host: section.printerAddress, port: section.printerPort, printerName: section.printerName, sample: input.mode === "print" ? "NFOOD TEST PRINT" : void 0 }) });
       const payload = await response.json().catch(() => ({}));
       const ok = response.ok && Boolean(payload.ok);
       await db.insert(printerLogs).values({ restaurantId: input.restaurantId, kitchenSectionId: input.kitchenSectionId, operation: "test_print", result: ok ? "success" : "error", message: payload.message ?? (ok ? "\u062A\u0645 \u0627\u0644\u0627\u062E\u062A\u0628\u0627\u0631 \u0639\u0628\u0631 Gateway" : "\u0641\u0634\u0644 \u0627\u062E\u062A\u0628\u0627\u0631 Gateway"), latencyMs: payload.latencyMs ?? null, printDurationMs: payload.printDurationMs ?? null });
-      await db.update(kitchenSections).set({ printerStatus: ok ? "connected" : "offline", printerLastCheckedAt: /* @__PURE__ */ new Date(), printerLastError: ok ? null : payload.message ?? "\u0641\u0634\u0644 \u0627\u062E\u062A\u0628\u0627\u0631 Gateway" }).where(eq7(kitchenSections.id, input.kitchenSectionId));
+      await db.update(kitchenSections).set({ printerStatus: ok ? "connected" : "offline", printerLastCheckedAt: /* @__PURE__ */ new Date(), printerLastError: ok ? null : payload.message ?? "\u0641\u0634\u0644 \u0627\u062E\u062A\u0628\u0627\u0631 Gateway" }).where(eq8(kitchenSections.id, input.kitchenSectionId));
       return { ok, status: ok ? "connected" : "offline", latencyMs: payload.latencyMs ?? null, printDurationMs: payload.printDurationMs ?? null, message: payload.message ?? (ok ? "\u062A\u0645 \u0627\u0644\u0627\u062E\u062A\u0628\u0627\u0631 \u0628\u0646\u062C\u0627\u062D" : "\u0641\u0634\u0644 \u0627\u0644\u0627\u062E\u062A\u0628\u0627\u0631") };
     }),
     discoverPrinterDevices: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), transport: z3.enum(["usb", "bluetooth"]) })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const setting = (await db.select({ url: integrationSettings.keyReference }).from(integrationSettings).where(and7(eq7(integrationSettings.scope, "restaurant"), eq7(integrationSettings.restaurantId, input.restaurantId), eq7(integrationSettings.providerKey, "printer_gateway"))).limit(1))[0];
+      const setting = (await db.select({ url: integrationSettings.keyReference }).from(integrationSettings).where(and8(eq8(integrationSettings.scope, "restaurant"), eq8(integrationSettings.restaurantId, input.restaurantId), eq8(integrationSettings.providerKey, "printer_gateway"))).limit(1))[0];
       const token = await getIntegrationSecret("restaurant", "printer_gateway", input.restaurantId);
       if (!setting?.url || !token) throw new TRPCError7({ code: "PRECONDITION_FAILED", message: "\u0623\u0643\u0645\u0644 \u0625\u0639\u062F\u0627\u062F \u0631\u0627\u0628\u0637 Gateway \u0648\u0631\u0645\u0632 \u0627\u0644\u0645\u0635\u0627\u062F\u0642\u0629 \u0623\u0648\u0644\u064B\u0627" });
       const started = Date.now();
@@ -12861,7 +12939,7 @@ var appRouter = router({
       assertTeamPermission(ctx, "printers.manage");
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const nextDisplayOrder = Number((await db.select({ value: sql3`COALESCE(MAX(${kitchenSections.displayOrder}), 0) + 1` }).from(kitchenSections).where(eq7(kitchenSections.restaurantId, input.restaurantId)).limit(1))[0]?.value ?? 1);
+      const nextDisplayOrder = Number((await db.select({ value: sql3`COALESCE(MAX(${kitchenSections.displayOrder}), 0) + 1` }).from(kitchenSections).where(eq8(kitchenSections.restaurantId, input.restaurantId)).limit(1))[0]?.value ?? 1);
       const result = await db.insert(kitchenSections).values({ restaurantId: input.restaurantId, name: input.name, printerName: input.printerName ?? null, printerType: input.printerType, printerAddress: input.printerAddress ?? null, printerPort: input.printerPort ?? null, printerPurpose: input.printerPurpose, displayOrder: nextDisplayOrder });
       return { success: true, id: Number(result[0].insertId), displayOrder: nextDisplayOrder };
     }),
@@ -12870,10 +12948,10 @@ var appRouter = router({
       assertTeamPermission(ctx, "printers.manage");
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq7(kitchenSections.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq8(kitchenSections.id, input.id)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0642\u0633\u0645 \u0627\u0644\u0645\u0637\u0628\u062E \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       const { id: _id, restaurantId: _restaurantId, ...changes } = input;
-      await db.update(kitchenSections).set(changes).where(eq7(kitchenSections.id, input.id));
+      await db.update(kitchenSections).set(changes).where(eq8(kitchenSections.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteKitchenSection: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
@@ -12881,17 +12959,17 @@ var appRouter = router({
       assertTeamPermission(ctx, "printers.manage");
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq7(kitchenSections.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq8(kitchenSections.id, input.id)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0642\u0633\u0645 \u0627\u0644\u0645\u0637\u0628\u062E \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
-      await db.delete(printerRoutingRules).where(eq7(printerRoutingRules.kitchenSectionId, input.id));
-      await db.delete(kitchenSections).where(eq7(kitchenSections.id, input.id));
+      await db.delete(printerRoutingRules).where(eq8(printerRoutingRules.kitchenSectionId, input.id));
+      await db.delete(kitchenSections).where(eq8(kitchenSections.id, input.id));
       return { success: true, id: input.id };
     }),
     createPrinterRoutingRule: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), kitchenSectionId: z3.number().int().positive(), categoryId: z3.number().int().positive().nullable().optional(), menuItemId: z3.number().int().positive().nullable().optional(), priority: z3.number().int().min(0).max(999).default(0) })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const section = (await db.select({ id: kitchenSections.id, restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq7(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
+      const section = (await db.select({ id: kitchenSections.id, restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq8(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
       if (!section || section.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0642\u0633\u0645 \u0627\u0644\u0645\u0637\u0628\u062E \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       const result = await db.insert(printerRoutingRules).values({ restaurantId: input.restaurantId, kitchenSectionId: input.kitchenSectionId, categoryId: input.categoryId ?? null, menuItemId: input.menuItemId ?? null, priority: input.priority });
       return { success: true, id: Number(result[0].insertId) };
@@ -12900,40 +12978,40 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = (await db.select({ restaurantId: printerRoutingRules.restaurantId }).from(printerRoutingRules).where(eq7(printerRoutingRules.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ restaurantId: printerRoutingRules.restaurantId }).from(printerRoutingRules).where(eq8(printerRoutingRules.id, input.id)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u062A\u0648\u062C\u064A\u0647 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       if (input.kitchenSectionId) {
-        const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq7(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
+        const section = (await db.select({ restaurantId: kitchenSections.restaurantId }).from(kitchenSections).where(eq8(kitchenSections.id, input.kitchenSectionId)).limit(1))[0];
         if (!section || section.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0642\u0633\u0645 \u0627\u0644\u0645\u0637\u0628\u062E \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       }
       const { id: _id, restaurantId: _restaurantId, ...changes } = input;
-      await db.update(printerRoutingRules).set(changes).where(eq7(printerRoutingRules.id, input.id));
+      await db.update(printerRoutingRules).set(changes).where(eq8(printerRoutingRules.id, input.id));
       return { success: true, id: input.id };
     }),
     deletePrinterRoutingRule: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = (await db.select({ restaurantId: printerRoutingRules.restaurantId }).from(printerRoutingRules).where(eq7(printerRoutingRules.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ restaurantId: printerRoutingRules.restaurantId }).from(printerRoutingRules).where(eq8(printerRoutingRules.id, input.id)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u062A\u0648\u062C\u064A\u0647 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
-      await db.delete(printerRoutingRules).where(eq7(printerRoutingRules.id, input.id));
+      await db.delete(printerRoutingRules).where(eq8(printerRoutingRules.id, input.id));
       return { success: true, id: input.id };
     }),
     listPrinterRoutingRules: testRoleProcedure("restaurant_admin", "kitchen").input(z3.object({ restaurantId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      return db.select().from(printerRoutingRules).where(eq7(printerRoutingRules.restaurantId, input.restaurantId)).orderBy(desc3(printerRoutingRules.priority));
+      return db.select().from(printerRoutingRules).where(eq8(printerRoutingRules.restaurantId, input.restaurantId)).orderBy(desc3(printerRoutingRules.priority));
     }),
     kitchenTickets: testRoleProcedure("restaurant_admin", "kitchen", "bar").input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, routingSectionIdsJson: orders.routingSectionIdsJson }).from(orders).where(eq7(orders.id, input.orderId)).limit(1))[0];
+      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, routingSectionIdsJson: orders.routingSectionIdsJson }).from(orders).where(eq8(orders.id, input.orderId)).limit(1))[0];
       if (!order || order.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
-      const rows = await db.select({ orderItemId: orderItems.id, menuItemId: orderItems.menuItemId, itemNameSnapshot: orderItems.itemNameSnapshot, currentItemName: menuItems.name, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice, categoryId: menuItems.categoryId, categorySectionId: menuCategories.kitchenSectionId, itemSectionId: menuItems.kitchenSectionId }).from(orderItems).leftJoin(menuItems, eq7(orderItems.menuItemId, menuItems.id)).leftJoin(menuCategories, eq7(menuItems.categoryId, menuCategories.id)).where(eq7(orderItems.orderId, input.orderId));
-      const rules = await db.select().from(printerRoutingRules).where(and7(eq7(printerRoutingRules.restaurantId, input.restaurantId), eq7(printerRoutingRules.isEnabled, true))).orderBy(desc3(printerRoutingRules.priority));
-      const sections = await db.select({ id: kitchenSections.id, name: kitchenSections.name, printerName: kitchenSections.printerName, printerType: kitchenSections.printerType, printerAddress: kitchenSections.printerAddress }).from(kitchenSections).where(eq7(kitchenSections.restaurantId, input.restaurantId));
+      const rows = await db.select({ orderItemId: orderItems.id, menuItemId: orderItems.menuItemId, itemNameSnapshot: orderItems.itemNameSnapshot, currentItemName: menuItems.name, quantity: orderItems.quantity, unitPrice: orderItems.unitPrice, categoryId: menuItems.categoryId, categorySectionId: menuCategories.kitchenSectionId, itemSectionId: menuItems.kitchenSectionId }).from(orderItems).leftJoin(menuItems, eq8(orderItems.menuItemId, menuItems.id)).leftJoin(menuCategories, eq8(menuItems.categoryId, menuCategories.id)).where(eq8(orderItems.orderId, input.orderId));
+      const rules = await db.select().from(printerRoutingRules).where(and8(eq8(printerRoutingRules.restaurantId, input.restaurantId), eq8(printerRoutingRules.isEnabled, true))).orderBy(desc3(printerRoutingRules.priority));
+      const sections = await db.select({ id: kitchenSections.id, name: kitchenSections.name, printerName: kitchenSections.printerName, printerType: kitchenSections.printerType, printerAddress: kitchenSections.printerAddress }).from(kitchenSections).where(eq8(kitchenSections.restaurantId, input.restaurantId));
       const sectionMap = new Map(sections.map((section) => [section.id, section]));
       let explicitSectionIds = [];
       try {
@@ -12963,45 +13041,45 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      return db.select({ id: orders.id, branchId: orders.branchId, status: orders.status, deliveryStatus: orders.deliveryStatus, deliveryEtaMinutes: orders.deliveryEtaMinutes, deliveryFailureReason: orders.deliveryFailureReason, deliveryNote: orders.deliveryNote, guestName: orders.guestName, guestPhone: orders.guestPhone, deliveryAddress: orders.deliveryAddress, paymentMethod: orders.paymentMethod, total: orders.total, createdAt: orders.createdAt }).from(orders).where(and7(eq7(orders.restaurantId, input.restaurantId), eq7(orders.driverId, ctx.user?.id ?? -1), eq7(orders.channel, "delivery"))).orderBy(desc3(orders.createdAt));
+      return db.select({ id: orders.id, branchId: orders.branchId, status: orders.status, deliveryStatus: orders.deliveryStatus, deliveryEtaMinutes: orders.deliveryEtaMinutes, deliveryFailureReason: orders.deliveryFailureReason, deliveryNote: orders.deliveryNote, guestName: orders.guestName, guestPhone: orders.guestPhone, deliveryAddress: orders.deliveryAddress, paymentMethod: orders.paymentMethod, total: orders.total, createdAt: orders.createdAt }).from(orders).where(and8(eq8(orders.restaurantId, input.restaurantId), eq8(orders.driverId, ctx.user?.id ?? -1), eq8(orders.channel, "delivery"))).orderBy(desc3(orders.createdAt));
     }),
     createOrder: testRoleProcedure("restaurant_admin", "waiter", "cashier", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), branchId: z3.number().int().positive(), clientRequestId: z3.string().trim().min(16).max(64).optional(), tableName: z3.string().max(80).optional(), notes: z3.string().trim().max(2e3).optional(), cashierNotes: z3.string().trim().max(2e3).optional(), channel: z3.enum(["dine_in", "takeaway", "delivery", "reservation", "hotel"]), paymentMethod: z3.enum(["cash", "card", "bank_transfer", "online", "other"]).default("cash"), paymentSplits: z3.array(z3.object({ method: z3.enum(["cash", "card", "bank_transfer", "online", "other"]), amount: z3.string().regex(/^\d+(\.\d{1,2})?$/) })).max(5).optional(), couponCode: z3.string().trim().min(3).max(64).optional(), routingSectionIds: z3.array(z3.number().int().positive()).max(20).optional(), items: z3.array(z3.union([z3.object({ sourceType: z3.literal("menu_item").optional(), menuItemId: z3.number().int().positive(), marketplaceVariantId: z3.never().optional(), quantity: z3.number().int().positive(), unitPrice: z3.string().regex(/^\d+(\.\d{1,2})?$/) }), z3.object({ sourceType: z3.literal("marketplace_variant"), marketplaceVariantId: z3.number().int().positive(), menuItemId: z3.never().optional(), quantity: z3.number().int().positive(), unitPrice: z3.string().regex(/^\d+(\.\d{1,2})?$/) })])).min(1), total: z3.string().regex(/^\d+(\.\d{1,2})?$/) })).mutation(async ({ ctx, input }) => {
-      assertRestaurantAccess(ctx, input.restaurantId);
+      await assertResolvedRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const branch = await db.select({ id: branches.id, status: branches.status, openingTime: branches.openingTime, closingTime: branches.closingTime, operatingWindowsJson: branches.operatingWindowsJson }).from(branches).where(and7(eq7(branches.id, input.branchId), eq7(branches.restaurantId, input.restaurantId))).limit(1);
+      const branch = await db.select({ id: branches.id, status: branches.status, openingTime: branches.openingTime, closingTime: branches.closingTime, operatingWindowsJson: branches.operatingWindowsJson }).from(branches).where(and8(eq8(branches.id, input.branchId), eq8(branches.restaurantId, input.restaurantId))).limit(1);
       if (!branch[0]) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0641\u0631\u0639 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       if (ctx.user?.testRole === "waiter") {
         const assignedTables = await listTablesForWaiter({ restaurantId: input.restaurantId, branchId: input.branchId, waiterUserId: ctx.user.id });
         if (!input.tableName || !assignedTables.some((table) => table.name === input.tableName)) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u064A\u0645\u0643\u0646\u0643 \u0625\u0646\u0634\u0627\u0621 \u0637\u0644\u0628 \u0625\u0644\u0627 \u0644\u0644\u0637\u0627\u0648\u0644\u0627\u062A \u0627\u0644\u0645\u0639\u064A\u0651\u0646\u0629 \u0644\u0643" });
       }
       if (!isBranchAcceptingOrders(branch[0], input.channel)) throw new TRPCError7({ code: "BAD_REQUEST", message: `\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0627\u0644\u0622\u0646 \u0644\u0647\u0630\u0647 \u0627\u0644\u0642\u0646\u0627\u0629. ${getNextBranchOpeningLabel(branch[0], input.channel) ? `\u0627\u0644\u0641\u062A\u062D\u0629 \u0627\u0644\u0642\u0627\u062F\u0645\u0629: ${getNextBranchOpeningLabel(branch[0], input.channel)}` : "\u062A\u062D\u0642\u0642 \u0645\u0646 \u0633\u0627\u0639\u0627\u062A \u062A\u0634\u063A\u064A\u0644 \u0627\u0644\u0641\u0631\u0639."}` });
-      const restaurant = await db.select({ defaultDiscountPercent: restaurants.defaultDiscountPercent, taxPercent: restaurants.taxPercent, countryCode: restaurants.countryCode, currencyCode: restaurants.currencyCode, currencyDecimals: restaurants.currencyDecimals, integrationMode: restaurants.integrationMode, tipsEnabled: restaurants.tipsEnabled, tipPercent: restaurants.tipPercent, serviceFeeEnabled: restaurants.serviceFeeEnabled, serviceFeePercent: restaurants.serviceFeePercent }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1);
+      const restaurant = await db.select({ defaultDiscountPercent: restaurants.defaultDiscountPercent, taxPercent: restaurants.taxPercent, countryCode: restaurants.countryCode, currencyCode: restaurants.currencyCode, currencyDecimals: restaurants.currencyDecimals, integrationMode: restaurants.integrationMode, tipsEnabled: restaurants.tipsEnabled, tipPercent: restaurants.tipPercent, serviceFeeEnabled: restaurants.serviceFeeEnabled, serviceFeePercent: restaurants.serviceFeePercent }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1);
       if (!restaurant[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const routingSectionIds = Array.from(new Set(input.routingSectionIds ?? []));
       if (routingSectionIds.length) {
-        const selectedSections = await db.select({ id: kitchenSections.id }).from(kitchenSections).where(and7(eq7(kitchenSections.restaurantId, input.restaurantId), eq7(kitchenSections.isEnabled, true), inArray4(kitchenSections.id, routingSectionIds)));
+        const selectedSections = await db.select({ id: kitchenSections.id }).from(kitchenSections).where(and8(eq8(kitchenSections.restaurantId, input.restaurantId), eq8(kitchenSections.isEnabled, true), inArray5(kitchenSections.id, routingSectionIds)));
         if (selectedSections.length !== routingSectionIds.length) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u064A\u0648\u062C\u062F \u0642\u0633\u0645 \u0625\u0631\u0633\u0627\u0644 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0623\u0648 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       }
       if (input.clientRequestId) {
-        const prior = await db.select({ id: orders.id, status: orders.status, paymentStatus: orders.paymentStatus, countryCode: orders.countryCode, currencyCode: orders.currencyCode, currencyDecimals: orders.currencyDecimals, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, serviceFeeAmount: orders.serviceFeeAmount, tipAmount: orders.tipAmount, total: orders.total }).from(orders).where(and7(eq7(orders.restaurantId, input.restaurantId), eq7(orders.clientRequestId, input.clientRequestId))).limit(1);
+        const prior = await db.select({ id: orders.id, status: orders.status, paymentStatus: orders.paymentStatus, countryCode: orders.countryCode, currencyCode: orders.currencyCode, currencyDecimals: orders.currencyDecimals, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, serviceFeeAmount: orders.serviceFeeAmount, tipAmount: orders.tipAmount, total: orders.total }).from(orders).where(and8(eq8(orders.restaurantId, input.restaurantId), eq8(orders.clientRequestId, input.clientRequestId))).limit(1);
         if (prior[0]) return { success: true, idempotentReplay: true, orderId: prior[0].id, status: prior[0].status, paymentStatus: prior[0].paymentStatus, currency: { countryCode: prior[0].countryCode, currencyCode: prior[0].currencyCode, decimals: prior[0].currencyDecimals }, pricing: { subtotal: prior[0].subtotal, discountAmount: prior[0].discountAmount, taxAmount: prior[0].taxAmount, serviceFeeAmount: prior[0].serviceFeeAmount, tipAmount: prior[0].tipAmount, total: prior[0].total } };
       }
-      const coupon = input.couponCode ? (await db.select({ id: coupons.id, code: coupons.code, discountPercent: coupons.discountPercent, usedCount: coupons.usedCount, usageLimit: coupons.usageLimit, campaignStatus: campaigns.status, startsAt: campaigns.startsAt, endsAt: campaigns.endsAt }).from(coupons).innerJoin(campaigns, eq7(coupons.campaignId, campaigns.id)).where(and7(eq7(coupons.code, input.couponCode.toUpperCase()), eq7(campaigns.restaurantId, input.restaurantId))).limit(1))[0] : null;
+      const coupon = input.couponCode ? (await db.select({ id: coupons.id, code: coupons.code, discountPercent: coupons.discountPercent, usedCount: coupons.usedCount, usageLimit: coupons.usageLimit, campaignStatus: campaigns.status, startsAt: campaigns.startsAt, endsAt: campaigns.endsAt }).from(coupons).innerJoin(campaigns, eq8(coupons.campaignId, campaigns.id)).where(and8(eq8(coupons.code, input.couponCode.toUpperCase()), eq8(campaigns.restaurantId, input.restaurantId))).limit(1))[0] : null;
       if (input.couponCode && (!coupon || coupon.campaignStatus !== "active" || coupon.startsAt && coupon.startsAt.getTime() > Date.now() || coupon.endsAt && coupon.endsAt.getTime() < Date.now() || coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit)) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0643\u0648\u0628\u0648\u0646 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D \u0623\u0648 \u0645\u0646\u062A\u0647\u064A \u0623\u0648 \u062A\u062C\u0627\u0648\u0632 \u062D\u062F \u0627\u0644\u0627\u0633\u062A\u062E\u062F\u0627\u0645" });
       const menuInputItems = input.items.filter((item) => "menuItemId" in item && typeof item.menuItemId === "number");
       const retailInputItems = input.items.filter((item) => item.sourceType === "marketplace_variant");
       const menuIds = Array.from(new Set(menuInputItems.map((item) => item.menuItemId)));
-      const ownedItems = menuIds.length ? await db.select({ id: menuItems.id, name: menuItems.name, categoryId: menuItems.categoryId, kitchenSectionId: menuItems.kitchenSectionId, price: menuItems.price, isAvailable: menuItems.isAvailable }).from(menuItems).where(and7(eq7(menuItems.restaurantId, input.restaurantId), inArray4(menuItems.id, menuIds))) : [];
+      const ownedItems = menuIds.length ? await db.select({ id: menuItems.id, name: menuItems.name, categoryId: menuItems.categoryId, kitchenSectionId: menuItems.kitchenSectionId, price: menuItems.price, isAvailable: menuItems.isAvailable }).from(menuItems).where(and8(eq8(menuItems.restaurantId, input.restaurantId), inArray5(menuItems.id, menuIds))) : [];
       if (ownedItems.length !== menuIds.length) throw new TRPCError7({ code: "FORBIDDEN", message: "\u064A\u0648\u062C\u062F \u0635\u0646\u0641 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       const categoryIds = Array.from(new Set(ownedItems.map((item) => item.categoryId)));
-      const categoryRows = categoryIds.length ? await db.select({ id: menuCategories.id, kitchenSectionId: menuCategories.kitchenSectionId }).from(menuCategories).where(and7(eq7(menuCategories.restaurantId, input.restaurantId), inArray4(menuCategories.id, categoryIds))) : [];
+      const categoryRows = categoryIds.length ? await db.select({ id: menuCategories.id, kitchenSectionId: menuCategories.kitchenSectionId }).from(menuCategories).where(and8(eq8(menuCategories.restaurantId, input.restaurantId), inArray5(menuCategories.id, categoryIds))) : [];
       const categorySectionById = new Map(categoryRows.map((category) => [category.id, category.kitchenSectionId]));
       const priceById = new Map(ownedItems.map((item) => [item.id, { name: item.name, price: Number(item.price), isAvailable: item.isAvailable, kitchenSectionId: item.kitchenSectionId ?? categorySectionById.get(item.categoryId) ?? null }]));
       const retailVariantIds = Array.from(new Set(retailInputItems.map((item) => item.marketplaceVariantId)));
-      const platformEntity = retailVariantIds.length ? (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq7(platformEntities.restaurantId, input.restaurantId)).limit(1))[0] : null;
+      const platformEntity = retailVariantIds.length ? (await db.select({ id: platformEntities.id }).from(platformEntities).where(eq8(platformEntities.restaurantId, input.restaurantId)).limit(1))[0] : null;
       if (retailVariantIds.length && !platformEntity) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0645\u0646\u0634\u0623\u0629 NFOOD\u061B \u062A\u0639\u0630\u0631 \u0627\u0644\u062A\u062D\u0642\u0642 \u0645\u0646 \u0645\u0646\u062A\u062C\u0627\u062A \u0627\u0644\u062A\u062C\u0632\u0626\u0629" });
-      const retailRows = retailVariantIds.length ? await db.select({ variantId: marketplaceListingVariants.id, listingName: marketplaceListings.title, price: marketplaceListingVariants.price, stockQuantity: marketplaceListingVariants.stockQuantity, listingPrice: marketplaceListings.price, entityId: marketplaceListings.entityId, restaurantId: marketplaceListings.restaurantId, status: marketplaceListings.status, isActive: marketplaceListingVariants.isActive }).from(marketplaceListingVariants).innerJoin(marketplaceListings, eq7(marketplaceListingVariants.listingId, marketplaceListings.id)).where(and7(eq7(marketplaceListings.entityId, platformEntity.id), inArray4(marketplaceListingVariants.id, retailVariantIds))) : [];
+      const retailRows = retailVariantIds.length ? await db.select({ variantId: marketplaceListingVariants.id, listingName: marketplaceListings.title, price: marketplaceListingVariants.price, stockQuantity: marketplaceListingVariants.stockQuantity, listingPrice: marketplaceListings.price, entityId: marketplaceListings.entityId, restaurantId: marketplaceListings.restaurantId, status: marketplaceListings.status, isActive: marketplaceListingVariants.isActive }).from(marketplaceListingVariants).innerJoin(marketplaceListings, eq8(marketplaceListingVariants.listingId, marketplaceListings.id)).where(and8(eq8(marketplaceListings.entityId, platformEntity.id), inArray5(marketplaceListingVariants.id, retailVariantIds))) : [];
       if (retailRows.length !== retailVariantIds.length) throw new TRPCError7({ code: "FORBIDDEN", message: "\u064A\u0648\u062C\u062F \u0645\u0646\u062A\u062C \u062A\u062C\u0632\u0626\u0629 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u062A\u062C\u0631" });
       const retailById = new Map(retailRows.map((row) => [row.variantId, row]));
       const authoritativeItems = input.items.map((item) => {
@@ -13042,18 +13120,18 @@ var appRouter = router({
         return await db.transaction(async (tx) => {
           if (input.channel === "dine_in") {
             if (!input.tableName?.trim()) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u062E\u062A\u0631 \u0637\u0627\u0648\u0644\u0629 \u0644\u0644\u0637\u0644\u0628 \u0627\u0644\u062F\u0627\u062E\u0644\u064A" });
-            const table = (await tx.select({ id: restaurantTables.id }).from(restaurantTables).where(and7(eq7(restaurantTables.branchId, input.branchId), eq7(restaurantTables.name, input.tableName.trim()), eq7(restaurantTables.status, "available"))).limit(1))[0];
+            const table = (await tx.select({ id: restaurantTables.id }).from(restaurantTables).where(and8(eq8(restaurantTables.branchId, input.branchId), eq8(restaurantTables.name, input.tableName.trim()), eq8(restaurantTables.status, "available"))).limit(1))[0];
             if (!table) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0644\u0637\u0627\u0648\u0644\u0629 \u0645\u0634\u063A\u0648\u0644\u0629 \u0623\u0648 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629" });
-            const claimed = await tx.update(restaurantTables).set({ status: "occupied" }).where(and7(eq7(restaurantTables.id, table.id), eq7(restaurantTables.status, "available")));
+            const claimed = await tx.update(restaurantTables).set({ status: "occupied" }).where(and8(eq8(restaurantTables.id, table.id), eq8(restaurantTables.status, "available")));
             if (Number(claimed[0].affectedRows ?? 0) !== 1) throw new TRPCError7({ code: "CONFLICT", message: "\u062A\u0645 \u0625\u0634\u063A\u0627\u0644 \u0627\u0644\u0637\u0627\u0648\u0644\u0629 \u0644\u0644\u062A\u0648 \u0628\u0637\u0644\u0628 \u0622\u062E\u0631" });
           }
           for (const item of normalizedItems) {
             if (item.sourceType !== "marketplace_variant" || !item.marketplaceVariantId) continue;
-            const stockClaim = await tx.update(marketplaceListingVariants).set({ stockQuantity: sql3`${marketplaceListingVariants.stockQuantity} - ${item.quantity}` }).where(and7(eq7(marketplaceListingVariants.id, item.marketplaceVariantId), eq7(marketplaceListingVariants.isActive, true), gte3(marketplaceListingVariants.stockQuantity, item.quantity)));
+            const stockClaim = await tx.update(marketplaceListingVariants).set({ stockQuantity: sql3`${marketplaceListingVariants.stockQuantity} - ${item.quantity}` }).where(and8(eq8(marketplaceListingVariants.id, item.marketplaceVariantId), eq8(marketplaceListingVariants.isActive, true), gte3(marketplaceListingVariants.stockQuantity, item.quantity)));
             if (Number(stockClaim[0].affectedRows ?? 0) !== 1) throw new TRPCError7({ code: "CONFLICT", message: "\u062A\u063A\u064A\u0631 \u0627\u0644\u0645\u062E\u0632\u0648\u0646 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u0628\u064A\u0639. \u0631\u0627\u062C\u0639 \u0627\u0644\u0643\u0645\u064A\u0629 \u0648\u0623\u0639\u062F \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629." });
           }
           if (coupon) {
-            const couponClaim = await tx.update(coupons).set({ usedCount: sql3`${coupons.usedCount} + 1` }).where(and7(eq7(coupons.id, coupon.id), sql3`${coupons.usageLimit} IS NULL OR ${coupons.usedCount} < ${coupons.usageLimit}`));
+            const couponClaim = await tx.update(coupons).set({ usedCount: sql3`${coupons.usedCount} + 1` }).where(and8(eq8(coupons.id, coupon.id), sql3`${coupons.usageLimit} IS NULL OR ${coupons.usedCount} < ${coupons.usageLimit}`));
             if (Number(couponClaim[0].affectedRows ?? 0) !== 1) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0646\u062A\u0647\u0649 \u062D\u062F \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u0643\u0648\u0628\u0648\u0646 \u0628\u0633\u0628\u0628 \u0637\u0644\u0628 \u0645\u062A\u0632\u0627\u0645\u0646\u061B \u0623\u0639\u062F \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629 \u062F\u0648\u0646 \u0627\u0644\u0643\u0648\u0628\u0648\u0646" });
           }
           const [orderResult] = await tx.insert(orders).values({ restaurantId: input.restaurantId, branchId: input.branchId, kitchenSectionId: normalizedItems.find((item) => item.kitchenSectionId)?.kitchenSectionId ?? null, routingSectionIdsJson: routingSectionIds.length ? JSON.stringify(routingSectionIds) : null, clientRequestId: input.clientRequestId ?? null, tableName: input.tableName ?? null, notes: input.notes ?? null, cashierNotes: input.cashierNotes ?? null, channel: input.channel, paymentMethod: input.paymentMethod, paymentStatus: "unpaid", receiptPrintStatus: "queued", paymentSplitsJson: paymentSplits.length ? JSON.stringify(paymentSplits) : null, countryCode: restaurant[0].countryCode, currencyCode: restaurant[0].currencyCode, currencyDecimals: restaurant[0].currencyDecimals, subtotal: centsToMoney(pricing.subtotalCents), discountAmount: centsToMoney(pricing.discountCents), taxAmount: centsToMoney(pricing.taxCents), serviceFeeAmount: centsToMoney(pricing.serviceFeeCents), tipAmount: centsToMoney(pricing.tipCents), total: authoritativeTotal, status: "new" });
@@ -13065,7 +13143,7 @@ var appRouter = router({
         });
       } catch (error) {
         if (input.clientRequestId && isMysqlDuplicateKeyError(error)) {
-          const prior = (await db.select({ id: orders.id, status: orders.status, paymentStatus: orders.paymentStatus, countryCode: orders.countryCode, currencyCode: orders.currencyCode, currencyDecimals: orders.currencyDecimals, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, serviceFeeAmount: orders.serviceFeeAmount, tipAmount: orders.tipAmount, total: orders.total }).from(orders).where(and7(eq7(orders.restaurantId, input.restaurantId), eq7(orders.clientRequestId, input.clientRequestId))).limit(1))[0];
+          const prior = (await db.select({ id: orders.id, status: orders.status, paymentStatus: orders.paymentStatus, countryCode: orders.countryCode, currencyCode: orders.currencyCode, currencyDecimals: orders.currencyDecimals, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, serviceFeeAmount: orders.serviceFeeAmount, tipAmount: orders.tipAmount, total: orders.total }).from(orders).where(and8(eq8(orders.restaurantId, input.restaurantId), eq8(orders.clientRequestId, input.clientRequestId))).limit(1))[0];
           if (prior) return { success: true, idempotentReplay: true, orderId: prior.id, status: prior.status, paymentStatus: prior.paymentStatus, currency: { countryCode: prior.countryCode, currencyCode: prior.currencyCode, decimals: prior.currencyDecimals }, pricing: { subtotal: prior.subtotal, discountAmount: prior.discountAmount, taxAmount: prior.taxAmount, serviceFeeAmount: prior.serviceFeeAmount, tipAmount: prior.tipAmount, total: prior.total } };
         }
         throw error;
@@ -13076,10 +13154,10 @@ var appRouter = router({
       await assertTeamPermission(ctx, "finance.read", input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, customerId: orders.customerId, status: orders.status, paymentStatus: orders.paymentStatus, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, total: orders.total, currencyCode: orders.currencyCode }).from(orders).where(eq7(orders.id, input.orderId)).limit(1))[0];
+      const existing = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, customerId: orders.customerId, status: orders.status, paymentStatus: orders.paymentStatus, subtotal: orders.subtotal, discountAmount: orders.discountAmount, taxAmount: orders.taxAmount, total: orders.total, currencyCode: orders.currencyCode }).from(orders).where(eq8(orders.id, input.orderId)).limit(1))[0];
       if (!existing || existing.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       if (existing.status === "cancelled") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u062A\u0623\u0643\u064A\u062F \u062F\u0641\u0639 \u0637\u0644\u0628 \u0645\u0644\u063A\u0649" });
-      await db.update(orders).set({ paymentStatus: "paid" }).where(eq7(orders.id, input.orderId));
+      await db.update(orders).set({ paymentStatus: "paid" }).where(eq8(orders.id, input.orderId));
       await createFinancialLedgerEntry({ restaurantId: existing.restaurantId, branchId: existing.branchId, userId: existing.customerId ?? null, createdByUserId: ctx.user?.id ?? null, section: "orders", entryType: "payment", direction: "credit", amount: String(existing.total), currencyCode: existing.currencyCode || "SAR", referenceType: "order", referenceId: input.orderId, idempotencyKey: `order-payment:${input.orderId}`, note: existing.customerId ? `Buyer user #${existing.customerId}; seller scope fixed to order restaurant #${existing.restaurantId}` : "Guest buyer; seller scope fixed to order restaurant" });
       return { success: true, orderId: input.orderId, paymentStatus: "paid", pricing: { subtotal: existing.subtotal, discountAmount: existing.discountAmount, taxAmount: existing.taxAmount, total: existing.total } };
     }),
@@ -13088,16 +13166,16 @@ var appRouter = router({
       await assertTeamPermission(ctx, "finance.read", input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      await db.update(restaurants).set({ posSupervisorPinHash: input.pin ? hashKioskPin(input.pin) : null }).where(eq7(restaurants.id, input.restaurantId));
+      await db.update(restaurants).set({ posSupervisorPinHash: input.pin ? hashKioskPin(input.pin) : null }).where(eq8(restaurants.id, input.restaurantId));
       return { success: true, enabled: Boolean(input.pin) };
     }),
     markOrderReceiptPrinted: testRoleProcedure("restaurant_admin", "cashier", "kitchen", "bar", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, status: orders.status, paymentStatus: orders.paymentStatus }).from(orders).where(eq7(orders.id, input.orderId)).limit(1))[0];
+      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, status: orders.status, paymentStatus: orders.paymentStatus }).from(orders).where(eq8(orders.id, input.orderId)).limit(1))[0];
       if (!order || order.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
-      await db.update(orders).set({ receiptPrintStatus: "printed", receiptPrintedAt: /* @__PURE__ */ new Date(), receiptPrintError: null }).where(eq7(orders.id, input.orderId));
+      await db.update(orders).set({ receiptPrintStatus: "printed", receiptPrintedAt: /* @__PURE__ */ new Date(), receiptPrintError: null }).where(eq8(orders.id, input.orderId));
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? "staff", action: "orders.receipt_printed", entityType: "order", entityId: String(input.orderId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ paymentStatus: order.paymentStatus, orderStatus: order.status, mode: "manual" }) });
       return { success: true, orderId: input.orderId, receiptPrintStatus: "printed" };
     }),
@@ -13115,8 +13193,8 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const [restaurant, order] = await Promise.all([
-        db.select({ posSupervisorPinHash: restaurants.posSupervisorPinHash }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1),
-        db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, customerId: orders.customerId, status: orders.status, paymentStatus: orders.paymentStatus, total: orders.total, currencyCode: orders.currencyCode }).from(orders).where(eq7(orders.id, input.orderId)).limit(1)
+        db.select({ posSupervisorPinHash: restaurants.posSupervisorPinHash }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1),
+        db.select({ id: orders.id, restaurantId: orders.restaurantId, branchId: orders.branchId, customerId: orders.customerId, status: orders.status, paymentStatus: orders.paymentStatus, total: orders.total, currencyCode: orders.currencyCode }).from(orders).where(eq8(orders.id, input.orderId)).limit(1)
       ]);
       if (!restaurant[0] || !order[0] || order[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       if (!restaurant[0].posSupervisorPinHash) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0645 \u064A\u062A\u0645 \u0625\u0639\u062F\u0627\u062F PIN \u0645\u0634\u0631\u0641 POS \u0628\u0639\u062F" });
@@ -13125,13 +13203,13 @@ var appRouter = router({
       const retailLines = await db.select({
         variantId: orderItems.marketplaceVariantId,
         quantity: orderItems.quantity
-      }).from(orderItems).where(and7(
-        eq7(orderItems.orderId, input.orderId),
-        eq7(orderItems.sourceType, "marketplace_variant"),
+      }).from(orderItems).where(and8(
+        eq8(orderItems.orderId, input.orderId),
+        eq8(orderItems.sourceType, "marketplace_variant"),
         isNotNull2(orderItems.marketplaceVariantId)
       ));
       await db.transaction(async (tx) => {
-        const changed = await tx.update(orders).set({ paymentStatus: "refunded" }).where(and7(eq7(orders.id, input.orderId), eq7(orders.restaurantId, input.restaurantId), eq7(orders.paymentStatus, "paid")));
+        const changed = await tx.update(orders).set({ paymentStatus: "refunded" }).where(and8(eq8(orders.id, input.orderId), eq8(orders.restaurantId, input.restaurantId), eq8(orders.paymentStatus, "paid")));
         if (Number(changed[0].affectedRows) !== 1) throw new TRPCError7({ code: "CONFLICT", message: "\u062A\u0645 \u0625\u0631\u062C\u0627\u0639 \u0627\u0644\u0637\u0644\u0628 \u0645\u0633\u0628\u0642\u064B\u0627 \u0623\u0648 \u062A\u063A\u064A\u0631\u062A \u062D\u0627\u0644\u0629 \u0627\u0644\u062F\u0641\u0639" });
         const quantitiesByVariant = /* @__PURE__ */ new Map();
         for (const line of retailLines) {
@@ -13139,7 +13217,7 @@ var appRouter = router({
           quantitiesByVariant.set(line.variantId, (quantitiesByVariant.get(line.variantId) ?? 0) + line.quantity);
         }
         for (const [variantId, quantity] of Array.from(quantitiesByVariant.entries())) {
-          await tx.update(marketplaceListingVariants).set({ stockQuantity: sql3`${marketplaceListingVariants.stockQuantity} + ${quantity}` }).where(eq7(marketplaceListingVariants.id, variantId));
+          await tx.update(marketplaceListingVariants).set({ stockQuantity: sql3`${marketplaceListingVariants.stockQuantity} + ${quantity}` }).where(eq8(marketplaceListingVariants.id, variantId));
         }
       });
       try {
@@ -13155,17 +13233,17 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const [order, restaurant] = await Promise.all([db.select({ id: orders.id, restaurantId: orders.restaurantId, channel: orders.channel, deliveryAddress: orders.deliveryAddress }).from(orders).where(eq7(orders.id, input.orderId)).limit(1), db.select({ allowMultipleDriverOrders: restaurants.allowMultipleDriverOrders, name: restaurants.name, brandName: restaurants.brandName }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1)]);
+      const [order, restaurant] = await Promise.all([db.select({ id: orders.id, restaurantId: orders.restaurantId, channel: orders.channel, deliveryAddress: orders.deliveryAddress }).from(orders).where(eq8(orders.id, input.orderId)).limit(1), db.select({ allowMultipleDriverOrders: restaurants.allowMultipleDriverOrders, name: restaurants.name, brandName: restaurants.brandName }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1)]);
       const currentOrder = order[0];
       if (!currentOrder || currentOrder.restaurantId !== input.restaurantId || currentOrder.channel !== "delivery") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0637\u0644\u0628 \u0627\u0644\u062A\u0648\u0635\u064A\u0644 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
-      const driver = (await db.select({ id: users.id, role: users.role }).from(users).where(eq7(users.id, input.driverId)).limit(1))[0];
+      const driver = (await db.select({ id: users.id, role: users.role }).from(users).where(eq8(users.id, input.driverId)).limit(1))[0];
       if (!driver || driver.role !== "user" && driver.role !== "admin") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0633\u0627\u0626\u0642 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D" });
       if (restaurant[0]?.allowMultipleDriverOrders === false) {
-        const active = await db.select({ id: orders.id }).from(orders).where(and7(eq7(orders.restaurantId, input.restaurantId), eq7(orders.driverId, input.driverId), inArray4(orders.deliveryStatus, ["assigned", "picked_up", "out_for_delivery"]))).limit(1);
+        const active = await db.select({ id: orders.id }).from(orders).where(and8(eq8(orders.restaurantId, input.restaurantId), eq8(orders.driverId, input.driverId), inArray5(orders.deliveryStatus, ["assigned", "picked_up", "out_for_delivery"]))).limit(1);
         if (active[0]) throw new TRPCError7({ code: "PRECONDITION_FAILED", message: "\u0627\u0644\u0633\u0627\u0626\u0642 \u0644\u062F\u064A\u0647 \u0637\u0644\u0628 \u0646\u0634\u0637 \u0648\u0627\u0644\u0645\u0637\u0639\u0645 \u0639\u0637\u0651\u0644 \u062A\u0639\u062F\u062F \u0627\u0644\u0637\u0644\u0628\u0627\u062A" });
       }
-      await db.update(orders).set({ driverId: input.driverId, deliveryStatus: "assigned", deliveryEtaMinutes: input.etaMinutes, deliveryFailureReason: null, deliveryNote: null }).where(eq7(orders.id, input.orderId));
-      const driverContact = (await db.select({ email: users.email }).from(users).where(eq7(users.id, input.driverId)).limit(1))[0];
+      await db.update(orders).set({ driverId: input.driverId, deliveryStatus: "assigned", deliveryEtaMinutes: input.etaMinutes, deliveryFailureReason: null, deliveryNote: null }).where(eq8(orders.id, input.orderId));
+      const driverContact = (await db.select({ email: users.email }).from(users).where(eq8(users.id, input.driverId)).limit(1))[0];
       if (driverContact?.email) void sendDriverAssignmentEmail({ to: driverContact.email, restaurantId: input.restaurantId, orderNumber: input.orderId, restaurantName: restaurant[0]?.brandName ?? restaurant[0]?.name ?? "NFOOD", deliveryAddress: currentOrder.deliveryAddress }).catch((error) => console.warn("[Email] driver assignment notification failed", error));
       return { success: true, orderId: input.orderId, driverId: input.driverId, deliveryStatus: "assigned", etaMinutes: input.etaMinutes };
     }),
@@ -13173,14 +13251,14 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, driverId: orders.driverId, customerId: orders.customerId, channel: orders.channel, status: orders.status, paymentMethod: orders.paymentMethod, total: orders.total, deliveryFee: orders.deliveryFee }).from(orders).where(eq7(orders.id, input.orderId)).limit(1))[0];
+      const order = (await db.select({ id: orders.id, restaurantId: orders.restaurantId, driverId: orders.driverId, customerId: orders.customerId, channel: orders.channel, status: orders.status, paymentMethod: orders.paymentMethod, total: orders.total, deliveryFee: orders.deliveryFee }).from(orders).where(eq8(orders.id, input.orderId)).limit(1))[0];
       if (!order || order.restaurantId !== input.restaurantId || order.channel !== "delivery") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0637\u0644\u0628 \u0627\u0644\u062A\u0648\u0635\u064A\u0644 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       if (ctx.user?.testRole === "driver" && order.driverId !== ctx.user.id) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u064A\u0645\u0643\u0646\u0643 \u062A\u062D\u062F\u064A\u062B \u0637\u0644\u0628 \u0633\u0627\u0626\u0642 \u0622\u062E\u0631" });
       if (input.status === "failed" && !input.failureReason) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u062E\u062A\u0631 \u0633\u0628\u0628 \u0631\u0641\u0636 \u0623\u0648 \u0641\u0634\u0644 \u0627\u0644\u062A\u0648\u0635\u064A\u0644" });
       if (input.status === "picked_up" && order.status !== "ready") throw new TRPCError7({ code: "PRECONDITION_FAILED", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0644\u0644\u0633\u0627\u0626\u0642 \u0627\u0633\u062A\u0644\u0627\u0645 \u0627\u0644\u0637\u0644\u0628 \u0642\u0628\u0644 \u0623\u0646 \u064A\u062C\u0647\u0632\u0647 \u0627\u0644\u0645\u0637\u0639\u0645" });
-      const worker = order.driverId ? (await db.select({ compensationType: remoteWorkers.compensationType, commissionRate: remoteWorkers.commissionRate, salaryAmount: remoteWorkers.salaryAmount }).from(remoteWorkers).where(and7(eq7(remoteWorkers.restaurantId, input.restaurantId), eq7(remoteWorkers.userId, order.driverId), eq7(remoteWorkers.role, "driver"))).limit(1))[0] : void 0;
+      const worker = order.driverId ? (await db.select({ compensationType: remoteWorkers.compensationType, commissionRate: remoteWorkers.commissionRate, salaryAmount: remoteWorkers.salaryAmount }).from(remoteWorkers).where(and8(eq8(remoteWorkers.restaurantId, input.restaurantId), eq8(remoteWorkers.userId, order.driverId), eq8(remoteWorkers.role, "driver"))).limit(1))[0] : void 0;
       const accounting = calculateDeliveryAccounting({ paymentMethod: order.paymentMethod, orderTotal: order.total, deliveryFee: order.deliveryFee, worker });
-      await db.update(orders).set({ deliveryStatus: input.status, deliveryEtaMinutes: input.etaMinutes ?? null, deliveryFailureReason: input.status === "failed" ? input.failureReason : null, deliveryNote: input.note ?? null, driverPickedUpAt: input.status === "picked_up" ? /* @__PURE__ */ new Date() : void 0, cashDebtAmount: input.status === "picked_up" ? accounting.cashDebtAmount : void 0, driverEarningAmount: input.status === "picked_up" ? accounting.driverEarningAmount : void 0, driverEarningType: input.status === "picked_up" ? accounting.driverEarningType : void 0, status: input.status === "delivered" ? "completed" : void 0 }).where(eq7(orders.id, input.orderId));
+      await db.update(orders).set({ deliveryStatus: input.status, deliveryEtaMinutes: input.etaMinutes ?? null, deliveryFailureReason: input.status === "failed" ? input.failureReason : null, deliveryNote: input.note ?? null, driverPickedUpAt: input.status === "picked_up" ? /* @__PURE__ */ new Date() : void 0, cashDebtAmount: input.status === "picked_up" ? accounting.cashDebtAmount : void 0, driverEarningAmount: input.status === "picked_up" ? accounting.driverEarningAmount : void 0, driverEarningType: input.status === "picked_up" ? accounting.driverEarningType : void 0, status: input.status === "delivered" ? "completed" : void 0 }).where(eq8(orders.id, input.orderId));
       if ((input.status === "picked_up" || input.status === "out_for_delivery") && order.customerId) {
         const title = input.status === "picked_up" ? "\u0627\u0633\u062A\u0644\u0645 \u0627\u0644\u0633\u0627\u0626\u0642 \u0637\u0644\u0628\u0643" : "\u0627\u0644\u0633\u0627\u0626\u0642 \u0641\u064A \u0627\u0644\u0637\u0631\u064A\u0642 \u0625\u0644\u064A\u0643";
         const body = input.status === "picked_up" ? `\u062A\u0645 \u0627\u0633\u062A\u0644\u0627\u0645 \u0637\u0644\u0628\u0643 #${input.orderId} \u0645\u0646 \u0627\u0644\u0633\u0627\u0626\u0642.` : `\u0627\u0644\u0633\u0627\u0626\u0642 \u0641\u064A \u0627\u0644\u0637\u0631\u064A\u0642 \u0644\u062A\u0648\u0635\u064A\u0644 \u0637\u0644\u0628\u0643 #${input.orderId}.${input.etaMinutes ? ` \u0627\u0644\u0648\u0642\u062A \u0627\u0644\u0645\u062A\u0648\u0642\u0639 \u0644\u0644\u0648\u0635\u0648\u0644: ${input.etaMinutes} \u062F\u0642\u064A\u0642\u0629.` : ""}`;
@@ -13198,31 +13276,31 @@ var appRouter = router({
       return { success: true, orderId: input.orderId, deliveryStatus: input.status, failureReason: input.status === "failed" ? input.failureReason : null };
     }),
     updateOrderStatus: testRoleProcedure("restaurant_admin", "waiter", "kitchen", "cashier", "admin").input(z3.object({ restaurantId: z3.number().int().positive(), orderId: z3.number().int().positive(), status: z3.enum(["new", "preparing", "ready", "completed", "cancelled"]), cancellationReason: z3.string().trim().max(500).optional() })).mutation(async ({ ctx, input }) => {
-      assertRestaurantAccess(ctx, input.restaurantId);
+      await assertResolvedRestaurantAccess(ctx, input.restaurantId);
       assertTeamPermission(ctx, input.status === "cancelled" ? "orders.cancel" : "orders.update");
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ restaurantId: orders.restaurantId, branchId: orders.branchId, tableName: orders.tableName, seatingSectionId: orders.seatingSectionId, customerId: orders.customerId, paymentStatus: orders.paymentStatus, total: orders.total, status: orders.status, channel: orders.channel, driverId: orders.driverId, acceptedAt: orders.acceptedAt }).from(orders).where(eq7(orders.id, input.orderId)).limit(1);
+      const existing = await db.select({ restaurantId: orders.restaurantId, branchId: orders.branchId, tableName: orders.tableName, seatingSectionId: orders.seatingSectionId, customerId: orders.customerId, paymentStatus: orders.paymentStatus, total: orders.total, status: orders.status, channel: orders.channel, driverId: orders.driverId, acceptedAt: orders.acceptedAt }).from(orders).where(eq8(orders.id, input.orderId)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       if (ctx.user?.testRole === "waiter") {
         if (!existing[0].branchId || !existing[0].tableName) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u064A\u0645\u0643\u0646\u0643 \u062A\u062D\u062F\u064A\u062B \u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0637\u0627\u0648\u0644\u0629" });
-        const table = (await db.select({ id: restaurantTables.id }).from(restaurantTables).innerJoin(branches, eq7(restaurantTables.branchId, branches.id)).where(and7(eq7(restaurantTables.branchId, existing[0].branchId), eq7(restaurantTables.name, existing[0].tableName), eq7(branches.restaurantId, input.restaurantId))).limit(1))[0];
+        const table = (await db.select({ id: restaurantTables.id }).from(restaurantTables).innerJoin(branches, eq8(restaurantTables.branchId, branches.id)).where(and8(eq8(restaurantTables.branchId, existing[0].branchId), eq8(restaurantTables.name, existing[0].tableName), eq8(branches.restaurantId, input.restaurantId))).limit(1))[0];
         if (!table || !await isWaiterAssignedToTable({ restaurantId: input.restaurantId, branchId: existing[0].branchId, waiterUserId: ctx.user.id, tableId: table.id })) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u064A\u0645\u0643\u0646\u0643 \u062A\u062D\u062F\u064A\u062B \u0637\u0644\u0628 \u0644\u0637\u0627\u0648\u0644\u0629 \u063A\u064A\u0631 \u0645\u062E\u0635\u0635\u0629 \u0644\u0643" });
       }
       if (input.status === "cancelled" && !isAdminContext(ctx) && ctx.user?.testRole !== "restaurant_admin") throw new TRPCError7({ code: "FORBIDDEN", message: "\u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0625\u062F\u0627\u0631\u064A \u0645\u062A\u0627\u062D \u0644\u0645\u062F\u064A\u0631 \u0627\u0644\u0645\u0637\u0639\u0645 \u0641\u0642\u0637" });
       let assignedDriverId = existing[0].driverId;
       if (existing[0].channel === "delivery" && !assignedDriverId && input.status === "preparing") {
-        const branchLocation = existing[0].branchId ? (await db.select({ latitude: branches.latitude, longitude: branches.longitude }).from(branches).where(eq7(branches.id, existing[0].branchId)).limit(1))[0] : null;
+        const branchLocation = existing[0].branchId ? (await db.select({ latitude: branches.latitude, longitude: branches.longitude }).from(branches).where(eq8(branches.id, existing[0].branchId)).limit(1))[0] : null;
         const availableDrivers = await listAvailableRestaurantDrivers(input.restaurantId);
         const nearest = selectNearestDriver(availableDrivers, { latitude: Number(branchLocation?.latitude ?? 0), longitude: Number(branchLocation?.longitude ?? 0) });
         assignedDriverId = nearest?.driver.userId ?? availableDrivers[0]?.userId ?? null;
         if (!assignedDriverId) throw new TRPCError7({ code: "PRECONDITION_FAILED", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0633\u0627\u0626\u0642 \u0646\u0634\u0637 \u0644\u0627\u0633\u062A\u0644\u0627\u0645 \u0637\u0644\u0628 \u0627\u0644\u062A\u0648\u0635\u064A\u0644 \u062D\u0627\u0644\u064A\u064B\u0627" });
       }
       const now = /* @__PURE__ */ new Date();
-      await db.update(orders).set({ status: input.status, ...assignedDriverId !== existing[0].driverId ? { driverId: assignedDriverId, deliveryStatus: "assigned" } : {}, ...input.status === "preparing" && !existing[0].acceptedAt ? { acceptedAt: now } : {}, ...input.status === "preparing" && existing[0].channel === "delivery" ? { restaurantAcceptedAt: now } : {}, ...input.status === "ready" && existing[0].channel === "delivery" ? { restaurantReadyAt: now } : {}, ...input.status === "cancelled" ? { cancelledAt: now, cancellationReason: input.cancellationReason?.trim() || "\u0625\u0644\u063A\u0627\u0621 \u0625\u062F\u0627\u0631\u064A", cancelledByUserId: ctx.user?.id ?? null } : {} }).where(eq7(orders.id, input.orderId));
+      await db.update(orders).set({ status: input.status, ...assignedDriverId !== existing[0].driverId ? { driverId: assignedDriverId, deliveryStatus: "assigned" } : {}, ...input.status === "preparing" && !existing[0].acceptedAt ? { acceptedAt: now } : {}, ...input.status === "preparing" && existing[0].channel === "delivery" ? { restaurantAcceptedAt: now } : {}, ...input.status === "ready" && existing[0].channel === "delivery" ? { restaurantReadyAt: now } : {}, ...input.status === "cancelled" ? { cancelledAt: now, cancellationReason: input.cancellationReason?.trim() || "\u0625\u0644\u063A\u0627\u0621 \u0625\u062F\u0627\u0631\u064A", cancelledByUserId: ctx.user?.id ?? null } : {} }).where(eq8(orders.id, input.orderId));
       if (existing[0].channel === "dine_in" && existing[0].branchId && existing[0].tableName && (input.status === "completed" || input.status === "cancelled")) {
-        const otherActive = await db.select({ id: orders.id }).from(orders).where(and7(eq7(orders.restaurantId, input.restaurantId), eq7(orders.branchId, existing[0].branchId), eq7(orders.channel, "dine_in"), eq7(orders.tableName, existing[0].tableName), inArray4(orders.status, ["new", "preparing", "ready"]), ne2(orders.id, input.orderId))).limit(1);
-        if (!otherActive[0]) await db.update(restaurantTables).set({ status: "available" }).where(and7(eq7(restaurantTables.branchId, existing[0].branchId), eq7(restaurantTables.name, existing[0].tableName), existing[0].seatingSectionId ? eq7(restaurantTables.seatingSectionId, existing[0].seatingSectionId) : isNull4(restaurantTables.seatingSectionId)));
+        const otherActive = await db.select({ id: orders.id }).from(orders).where(and8(eq8(orders.restaurantId, input.restaurantId), eq8(orders.branchId, existing[0].branchId), eq8(orders.channel, "dine_in"), eq8(orders.tableName, existing[0].tableName), inArray5(orders.status, ["new", "preparing", "ready"]), ne2(orders.id, input.orderId))).limit(1);
+        if (!otherActive[0]) await db.update(restaurantTables).set({ status: "available" }).where(and8(eq8(restaurantTables.branchId, existing[0].branchId), eq8(restaurantTables.name, existing[0].tableName), existing[0].seatingSectionId ? eq8(restaurantTables.seatingSectionId, existing[0].seatingSectionId) : isNull4(restaurantTables.seatingSectionId)));
       }
       if (existing[0].channel === "delivery" && assignedDriverId && (input.status === "preparing" || input.status === "ready")) {
         const title = input.status === "preparing" ? "\u062A\u0645 \u0642\u0628\u0648\u0644 \u0637\u0644\u0628 \u0627\u0644\u062A\u0648\u0635\u064A\u0644" : "\u0627\u0644\u0637\u0644\u0628 \u062C\u0627\u0647\u0632 \u0644\u0644\u0627\u0633\u062A\u0644\u0627\u0645";
@@ -13231,7 +13309,7 @@ var appRouter = router({
         void sendPushToUser(assignedDriverId, { title, body, url: "/" }).catch((error) => console.warn("[Push] delivery status notification failed", error));
       }
       if (existing[0].customerId) {
-        const customer = (await db.select({ email: users.email, name: users.name }).from(users).where(eq7(users.id, existing[0].customerId)).limit(1))[0];
+        const customer = (await db.select({ email: users.email, name: users.name }).from(users).where(eq8(users.id, existing[0].customerId)).limit(1))[0];
         const restaurantDetails = await getRestaurantById(input.restaurantId);
         const restaurantName = restaurantDetails?.brandName ?? restaurantDetails?.name ?? "\u0627\u0644\u0645\u0637\u0639\u0645";
         const statusLabel = input.status === "new" ? "\u0642\u064A\u062F \u0627\u0644\u0627\u0646\u062A\u0638\u0627\u0631" : input.status === "preparing" ? "\u0642\u064A\u062F \u0627\u0644\u062A\u062D\u0636\u064A\u0631" : input.status === "ready" ? "\u062C\u0627\u0647\u0632" : input.status === "completed" ? "\u0645\u0643\u062A\u0645\u0644" : "\u0645\u0644\u063A\u0649";
@@ -13244,10 +13322,10 @@ var appRouter = router({
       }
       let automaticCardIssued = false;
       if (input.status === "completed" && existing[0].customerId) {
-        const profile = (await db.select({ id: customerProfiles.id }).from(customerProfiles).where(eq7(customerProfiles.userId, existing[0].customerId)).limit(1))[0];
-        const existingBinding = (await db.select({ id: vcardCardBindings.id }).from(vcardCardBindings).where(and7(eq7(vcardCardBindings.userId, existing[0].customerId), eq7(vcardCardBindings.targetRole, "customer"))).limit(1))[0];
+        const profile = (await db.select({ id: customerProfiles.id }).from(customerProfiles).where(eq8(customerProfiles.userId, existing[0].customerId)).limit(1))[0];
+        const existingBinding = (await db.select({ id: vcardCardBindings.id }).from(vcardCardBindings).where(and8(eq8(vcardCardBindings.userId, existing[0].customerId), eq8(vcardCardBindings.targetRole, "customer"))).limit(1))[0];
         if (profile && !existingBinding) {
-          let product = (await db.select({ id: vcardCardProducts.id }).from(vcardCardProducts).where(and7(eq7(vcardCardProducts.targetRole, "customer"), eq7(vcardCardProducts.isActive, true))).orderBy(vcardCardProducts.id).limit(1))[0];
+          let product = (await db.select({ id: vcardCardProducts.id }).from(vcardCardProducts).where(and8(eq8(vcardCardProducts.targetRole, "customer"), eq8(vcardCardProducts.isActive, true))).orderBy(vcardCardProducts.id).limit(1))[0];
           if (!product) {
             const productResult = await db.insert(vcardCardProducts).values({ name: "\u0628\u0637\u0627\u0642\u0629 NFOOD \u0627\u0644\u0631\u0642\u0645\u064A\u0629 \u0644\u0644\u0639\u0645\u064A\u0644", description: "\u0625\u0635\u062F\u0627\u0631 \u062A\u0644\u0642\u0627\u0626\u064A \u0628\u0639\u062F \u0623\u0648\u0644 \u0637\u0644\u0628 \u0645\u0643\u062A\u0645\u0644", price: "0.00", currency: "SAR", targetRole: "customer", isActive: true });
             product = { id: Number(productResult[0].insertId) };
@@ -13267,9 +13345,9 @@ var appRouter = router({
       const referrerRewardPoints = Math.max(0, Math.floor(Number(referralSettings.referralReferrerPoints) || 0));
       const referredRewardPoints = Math.max(0, Math.floor(Number(referralSettings.referralReferredPoints) || 0));
       if (input.status === "completed" && existing[0].paymentStatus === "paid" && existing[0].customerId) {
-        const pendingReferral = (await db.select({ id: referralRecords.id, referrerCustomerId: referralRecords.referrerCustomerId, referredCustomerId: referralRecords.referredCustomerId }).from(referralRecords).where(and7(eq7(referralRecords.restaurantId, input.restaurantId), eq7(referralRecords.referredCustomerId, existing[0].customerId), eq7(referralRecords.status, "pending"))).orderBy(referralRecords.createdAt).limit(1))[0];
+        const pendingReferral = (await db.select({ id: referralRecords.id, referrerCustomerId: referralRecords.referrerCustomerId, referredCustomerId: referralRecords.referredCustomerId }).from(referralRecords).where(and8(eq8(referralRecords.restaurantId, input.restaurantId), eq8(referralRecords.referredCustomerId, existing[0].customerId), eq8(referralRecords.status, "pending"))).orderBy(referralRecords.createdAt).limit(1))[0];
         if (pendingReferral) {
-          const rewardUpdate = await db.update(referralRecords).set({ status: "rewarded", qualifyingOrderId: input.orderId, qualifiedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(referralRecords.id, pendingReferral.id), eq7(referralRecords.status, "pending")));
+          const rewardUpdate = await db.update(referralRecords).set({ status: "rewarded", qualifyingOrderId: input.orderId, qualifiedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(referralRecords.id, pendingReferral.id), eq8(referralRecords.status, "pending")));
           if (Number(rewardUpdate[0]?.affectedRows ?? 0) > 0) {
             if (referrerRewardPoints > 0) await addLoyaltyPoints(input.restaurantId, pendingReferral.referrerCustomerId, referrerRewardPoints, "earn", "\u0645\u0643\u0627\u0641\u0623\u0629 \u0625\u062D\u0627\u0644\u0629 \u0628\u0639\u062F \u0623\u0648\u0644 \u0637\u0644\u0628 \u0645\u0624\u0647\u0644", input.orderId);
             if (pendingReferral.referredCustomerId && referredRewardPoints > 0) await addLoyaltyPoints(input.restaurantId, pendingReferral.referredCustomerId, referredRewardPoints, "earn", "\u0645\u0643\u0627\u0641\u0623\u0629 \u0627\u0646\u0636\u0645\u0627\u0645 \u0639\u0628\u0631 \u0625\u062D\u0627\u0644\u0629", input.orderId);
@@ -13294,7 +13372,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const hotel = (await db.select({ id: hotels.id }).from(hotels).where(and7(eq7(hotels.id, input.hotelId), eq7(hotels.restaurantId, input.restaurantId))).limit(1))[0];
+      const hotel = (await db.select({ id: hotels.id }).from(hotels).where(and8(eq8(hotels.id, input.hotelId), eq8(hotels.restaurantId, input.restaurantId))).limit(1))[0];
       if (!hotel) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0641\u0646\u062F\u0642 \u0644\u0627 \u064A\u0646\u062A\u0645\u064A \u0625\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645" });
       const id = await saveManagedHotelRoom(input);
       return { success: true, id };
@@ -13304,7 +13382,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const hotel = (await db.select({ id: hotels.id }).from(hotels).where(and7(eq7(hotels.id, input.hotelId), eq7(hotels.restaurantId, input.restaurantId))).limit(1))[0];
+      const hotel = (await db.select({ id: hotels.id }).from(hotels).where(and8(eq8(hotels.id, input.hotelId), eq8(hotels.restaurantId, input.restaurantId))).limit(1))[0];
       if (!hotel) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0641\u0646\u062F\u0642 \u0644\u0627 \u064A\u0646\u062A\u0645\u064A \u0625\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645" });
       await setManagedHotelRoomActive({ id: input.id, hotelId: input.hotelId, isActive: input.isActive });
       return { success: true };
@@ -13373,7 +13451,7 @@ var appRouter = router({
     deliveryQuote: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), branchId: z3.number().int().positive(), latitude: z3.number().min(-90).max(90), longitude: z3.number().min(-180).max(180), subtotal: z3.number().nonnegative().max(1e5) })).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), eq7(restaurants.status, "active"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), eq8(restaurants.status, "active"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       return calculateDeliveryQuote({ restaurantId: restaurant.id, branchId: input.branchId, latitude: input.latitude, longitude: input.longitude, subtotal: input.subtotal });
     }),
@@ -13384,7 +13462,7 @@ var appRouter = router({
     pickupPoints: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), branchId: z3.number().int().positive() })).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), eq7(restaurants.status, "active"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), eq8(restaurants.status, "active"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       return listPickupPoints(restaurant.id, input.branchId);
     }),
@@ -13415,16 +13493,16 @@ var appRouter = router({
     reservationSlots: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), branchId: z3.number().int().positive() })).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), eq7(restaurants.status, "active"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), eq8(restaurants.status, "active"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
-      const branch = (await db.select({ id: branches.id, restaurantId: branches.restaurantId, status: branches.status }).from(branches).where(and7(eq7(branches.id, input.branchId), eq7(branches.restaurantId, restaurant.id))).limit(1))[0];
+      const branch = (await db.select({ id: branches.id, restaurantId: branches.restaurantId, status: branches.status }).from(branches).where(and8(eq8(branches.id, input.branchId), eq8(branches.restaurantId, restaurant.id))).limit(1))[0];
       if (!branch || branch.status !== "open") return [];
       return listReservationSlots(restaurant.id, input.branchId);
     }),
     reservationBlackoutDates: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), branchId: z3.number().int().positive() })).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), eq7(restaurants.status, "active"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), eq8(restaurants.status, "active"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       return listReservationBlackoutDates(restaurant.id, input.branchId);
     }),
@@ -13475,12 +13553,12 @@ var appRouter = router({
     requestGuestOrderClaimOtp: protectedProcedure.input(z3.object({ guestPhone: z3.string().trim().min(7).max(40) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062A\u062C\u0647\u064A\u0632 \u0627\u0644\u062A\u062D\u0642\u0642 \u062D\u0627\u0644\u064A\u0627\u064B" });
-      const account = (await db.select({ email: users.email, name: users.name }).from(users).where(eq7(users.id, ctx.user.id)).limit(1))[0];
+      const account = (await db.select({ email: users.email, name: users.name }).from(users).where(eq8(users.id, ctx.user.id)).limit(1))[0];
       if (!account?.email) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0623\u0636\u0641 \u0628\u0631\u064A\u062F\u0627\u064B \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0627\u064B \u0625\u0644\u0649 \u062D\u0633\u0627\u0628\u0643 \u0623\u0648\u0644\u0627\u064B \u0644\u0627\u0633\u062A\u0644\u0627\u0645 \u0631\u0645\u0632 \u0627\u0644\u062A\u062D\u0642\u0642" });
       const phone = input.guestPhone.trim();
       const code = String(randomInt2(1e5, 1e6));
       const codeHash = createHash2("sha256").update(`${ctx.user.id}:${phone}:${code}`).digest("hex");
-      await db.delete(guestOrderClaimOtps).where(and7(eq7(guestOrderClaimOtps.userId, ctx.user.id), eq7(guestOrderClaimOtps.guestPhone, phone)));
+      await db.delete(guestOrderClaimOtps).where(and8(eq8(guestOrderClaimOtps.userId, ctx.user.id), eq8(guestOrderClaimOtps.guestPhone, phone)));
       await db.insert(guestOrderClaimOtps).values({ userId: ctx.user.id, guestPhone: phone, codeHash, expiresAt: new Date(Date.now() + 10 * 60 * 1e3), attempts: 0 });
       const delivery = await sendGuestClaimOtpEmail({ to: account.email, customerName: account.name ?? "\u0639\u0645\u064A\u0644 NFOOD", code });
       if (!delivery.sent) throw new TRPCError7({ code: "PRECONDITION_FAILED", message: "\u062A\u0639\u0630\u0631 \u0625\u0631\u0633\u0627\u0644 \u0631\u0645\u0632 \u0627\u0644\u062A\u062D\u0642\u0642 \u062D\u0627\u0644\u064A\u0627\u064B. \u062D\u0627\u0648\u0644 \u0644\u0627\u062D\u0642\u0627\u064B" });
@@ -13490,22 +13568,22 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u0631\u0628\u0637 \u0627\u0644\u0637\u0644\u0628\u0627\u062A \u062D\u0627\u0644\u064A\u0627\u064B" });
       const phone = input.guestPhone.trim();
-      const record = (await db.select().from(guestOrderClaimOtps).where(and7(eq7(guestOrderClaimOtps.userId, ctx.user.id), eq7(guestOrderClaimOtps.guestPhone, phone), isNull4(guestOrderClaimOtps.consumedAt), gt(guestOrderClaimOtps.expiresAt, /* @__PURE__ */ new Date()))).orderBy(desc3(guestOrderClaimOtps.createdAt)).limit(1))[0];
+      const record = (await db.select().from(guestOrderClaimOtps).where(and8(eq8(guestOrderClaimOtps.userId, ctx.user.id), eq8(guestOrderClaimOtps.guestPhone, phone), isNull4(guestOrderClaimOtps.consumedAt), gt(guestOrderClaimOtps.expiresAt, /* @__PURE__ */ new Date()))).orderBy(desc3(guestOrderClaimOtps.createdAt)).limit(1))[0];
       if (!record) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0631\u0645\u0632 \u0627\u0644\u062A\u062D\u0642\u0642 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0623\u0648 \u0645\u0646\u062A\u0647\u064A. \u0627\u0637\u0644\u0628 \u0631\u0645\u0632\u0627\u064B \u062C\u062F\u064A\u062F\u0627\u064B" });
       if (record.attempts >= 5) throw new TRPCError7({ code: "TOO_MANY_REQUESTS", message: "\u062A\u0645 \u062A\u062C\u0627\u0648\u0632 \u0639\u062F\u062F \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0627\u062A. \u0627\u0637\u0644\u0628 \u0631\u0645\u0632\u0627\u064B \u062C\u062F\u064A\u062F\u0627\u064B" });
       const expected = createHash2("sha256").update(`${ctx.user.id}:${phone}:${input.otp}`).digest("hex");
       if (expected !== record.codeHash) {
-        await db.update(guestOrderClaimOtps).set({ attempts: record.attempts + 1 }).where(eq7(guestOrderClaimOtps.id, record.id));
+        await db.update(guestOrderClaimOtps).set({ attempts: record.attempts + 1 }).where(eq8(guestOrderClaimOtps.id, record.id));
         throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0631\u0645\u0632 \u0627\u0644\u062A\u062D\u0642\u0642 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D" });
       }
-      await db.update(guestOrderClaimOtps).set({ consumedAt: /* @__PURE__ */ new Date() }).where(eq7(guestOrderClaimOtps.id, record.id));
+      await db.update(guestOrderClaimOtps).set({ consumedAt: /* @__PURE__ */ new Date() }).where(eq8(guestOrderClaimOtps.id, record.id));
       return claimGuestOrders(ctx.user.id, phone);
     }),
     myReservations: protectedProcedure.input(z3.object({ limit: z3.number().int().min(1).max(100).default(100) }).optional()).query(({ ctx, input }) => listCustomerReservations(ctx.user.id, input?.limit ?? 100)),
     updateMyReservation: protectedProcedure.input(z3.object({ id: z3.number().int().positive(), customerName: z3.string().trim().min(2).max(160), email: z3.string().trim().email().nullable().optional(), phone: z3.string().trim().max(40).nullable().optional(), partySize: z3.number().int().min(1).max(50), childrenCount: z3.number().int().min(0).max(50).default(0), reservedFor: z3.coerce.date(), durationMinutes: z3.number().int().min(15).max(360).default(60), notes: z3.string().trim().max(1e3).nullable().optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: reservations.id, restaurantId: reservations.restaurantId, status: reservations.status, reservedFor: reservations.reservedFor }).from(reservations).where(and7(eq7(reservations.id, input.id), eq7(reservations.customerId, ctx.user.id))).limit(1))[0];
+      const existing = (await db.select({ id: reservations.id, restaurantId: reservations.restaurantId, status: reservations.status, reservedFor: reservations.reservedFor }).from(reservations).where(and8(eq8(reservations.id, input.id), eq8(reservations.customerId, ctx.user.id))).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u062D\u062C\u0632 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const restaurant = await getRestaurantById(existing.restaurantId);
       const remainingMinutes = (existing.reservedFor.getTime() - Date.now()) / 6e4;
@@ -13520,7 +13598,7 @@ var appRouter = router({
     cancelMyReservation: protectedProcedure.input(z3.object({ id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: reservations.id, restaurantId: reservations.restaurantId, status: reservations.status, reservedFor: reservations.reservedFor }).from(reservations).where(and7(eq7(reservations.id, input.id), eq7(reservations.customerId, ctx.user.id))).limit(1))[0];
+      const existing = (await db.select({ id: reservations.id, restaurantId: reservations.restaurantId, status: reservations.status, reservedFor: reservations.reservedFor }).from(reservations).where(and8(eq8(reservations.id, input.id), eq8(reservations.customerId, ctx.user.id))).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u062D\u062C\u0632 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const restaurant = await getRestaurantById(existing.restaurantId);
       const remainingMinutes = (existing.reservedFor.getTime() - Date.now()) / 6e4;
@@ -13549,7 +13627,7 @@ var appRouter = router({
     acceptSharedBillInvite: protectedProcedure.input(z3.object({ groupId: z3.string().trim().min(8).max(80) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const order = (await db.select({ id: orders.id, customerId: orders.customerId, restaurantId: orders.restaurantId }).from(orders).where(eq7(orders.splitBillGroupId, input.groupId)).limit(1))[0];
+      const order = (await db.select({ id: orders.id, customerId: orders.customerId, restaurantId: orders.restaurantId }).from(orders).where(eq8(orders.splitBillGroupId, input.groupId)).limit(1))[0];
       if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u062F\u0639\u0648\u0629 \u0627\u0644\u0641\u0627\u062A\u0648\u0631\u0629 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D\u0629 \u0623\u0648 \u0645\u0646\u062A\u0647\u064A\u0629" });
       if (!order.customerId || order.customerId === ctx.user.id) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0642\u0628\u0648\u0644 \u062F\u0639\u0648\u0629 \u0627\u0644\u0641\u0627\u062A\u0648\u0631\u0629 \u0645\u0646 \u0645\u0627\u0644\u0643\u0647\u0627" });
       await db.insert(notifications).values({ userId: order.customerId, type: "message", title: "\u0627\u0646\u0636\u0645\u0627\u0645 \u0625\u0644\u0649 \u0641\u0627\u062A\u0648\u0631\u0629 \u0645\u0634\u062A\u0631\u0643\u0629", body: `${ctx.user.name ?? "\u0623\u062D\u062F \u0627\u0644\u0623\u0635\u062F\u0642\u0627\u0621"} \u0642\u0628\u0644 \u062F\u0639\u0648\u0629 \u0627\u0644\u0641\u0627\u062A\u0648\u0631\u0629 \u0627\u0644\u0645\u0634\u062A\u0631\u0643\u0629 \u0644\u0644\u0637\u0644\u0628 #${order.id}` });
@@ -13565,7 +13643,7 @@ var appRouter = router({
     notifyWaiterCall: publicProcedure.input(z3.object({ slug: z3.string().min(1).max(160).regex(/^[a-z0-9-]+$/), branchId: z3.number().int().positive(), tableName: z3.string().trim().min(1).max(80), reason: z3.enum(["\u0627\u0644\u062D\u0633\u0627\u0628", "\u0627\u0644\u0637\u0644\u0628", "\u0627\u0644\u0645\u0633\u0627\u0639\u062F\u0629", "\u0627\u0644\u0641\u0627\u062A\u0648\u0631\u0629", "\u0623\u062E\u0631\u0649"]), customerName: z3.string().trim().max(160).optional() })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and7(eq7(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(and8(eq8(restaurants.slug, input.slug), ne2(restaurants.status, "suspended"))).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
       try {
         return await createWaiterCall({ restaurantId: restaurant.id, branchId: input.branchId, tableName: input.tableName, reason: input.reason, customerName: input.customerName });
@@ -13593,7 +13671,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const restaurant = await getRestaurantById(input.restaurantId);
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      const branch = await getDb() ? (await (await getDb()).select({ id: branches.id, name: branches.name }).from(branches).where(and7(eq7(branches.id, input.branchId), eq7(branches.restaurantId, input.restaurantId))).limit(1))[0] : void 0;
+      const branch = await getDb() ? (await (await getDb()).select({ id: branches.id, name: branches.name }).from(branches).where(and8(eq8(branches.id, input.branchId), eq8(branches.restaurantId, input.restaurantId))).limit(1))[0] : void 0;
       if (!branch) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0641\u0631\u0639 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const menuQr = await ensureMenuQrCode({ restaurantId: input.restaurantId, branchId: input.branchId, createdByUserId: ctx.user.id, label: `\u0645\u0646\u064A\u0648 ${restaurant.brandName ?? restaurant.name}` });
       const [codes, tables] = await Promise.all([listQrCodes(input.restaurantId, input.branchId, input.type), listRestaurantTables(input.restaurantId, input.branchId)]);
@@ -13613,7 +13691,7 @@ var appRouter = router({
         const found = existing.find((code) => code.tableId === table.id && code.token === token) ?? existing.find((code) => code.tableId === table.id && code.status === "active");
         if (found) {
           const db = await getDb();
-          if (db && (found.status !== "active" || found.token !== token || found.label !== `\u0637\u0627\u0648\u0644\u0629 ${table.name}` || found.visualConfigJson !== (input.visualConfigJson ?? null))) await db.update(qrCodes).set({ status: "active", purpose: "menu", token, label: `\u0637\u0627\u0648\u0644\u0629 ${table.name}`, tableId: table.id, visualConfigJson: input.visualConfigJson ?? null, updatedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(qrCodes.id, found.id), eq7(qrCodes.restaurantId, input.restaurantId), eq7(qrCodes.branchId, input.branchId)));
+          if (db && (found.status !== "active" || found.token !== token || found.label !== `\u0637\u0627\u0648\u0644\u0629 ${table.name}` || found.visualConfigJson !== (input.visualConfigJson ?? null))) await db.update(qrCodes).set({ status: "active", purpose: "menu", token, label: `\u0637\u0627\u0648\u0644\u0629 ${table.name}`, tableId: table.id, visualConfigJson: input.visualConfigJson ?? null, updatedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(qrCodes.id, found.id), eq8(qrCodes.restaurantId, input.restaurantId), eq8(qrCodes.branchId, input.branchId)));
           created.push(found.id);
           continue;
         }
@@ -13635,7 +13713,7 @@ var appRouter = router({
         const found = existing.find((code) => code.tableId === table.id && code.token === token) ?? existing.find((code) => code.tableId === table.id && code.status === "active");
         if (found) {
           const db = await getDb();
-          if (db && (found.status !== "active" || found.token !== token || found.label !== `\u0627\u0633\u062A\u062F\u0639\u0627\u0621 \u0627\u0644\u0646\u0627\u062F\u0644 \xB7 ${table.name}` || found.visualConfigJson !== (input.visualConfigJson ?? null))) await db.update(qrCodes).set({ status: "active", purpose: "waiter_call", token, label: `\u0627\u0633\u062A\u062F\u0639\u0627\u0621 \u0627\u0644\u0646\u0627\u062F\u0644 \xB7 ${table.name}`, tableId: table.id, visualConfigJson: input.visualConfigJson ?? null, updatedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(qrCodes.id, found.id), eq7(qrCodes.restaurantId, input.restaurantId), eq7(qrCodes.branchId, input.branchId)));
+          if (db && (found.status !== "active" || found.token !== token || found.label !== `\u0627\u0633\u062A\u062F\u0639\u0627\u0621 \u0627\u0644\u0646\u0627\u062F\u0644 \xB7 ${table.name}` || found.visualConfigJson !== (input.visualConfigJson ?? null))) await db.update(qrCodes).set({ status: "active", purpose: "waiter_call", token, label: `\u0627\u0633\u062A\u062F\u0639\u0627\u0621 \u0627\u0644\u0646\u0627\u062F\u0644 \xB7 ${table.name}`, tableId: table.id, visualConfigJson: input.visualConfigJson ?? null, updatedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(qrCodes.id, found.id), eq8(qrCodes.restaurantId, input.restaurantId), eq8(qrCodes.branchId, input.branchId)));
           created.push(found.id);
           continue;
         }
@@ -13657,7 +13735,7 @@ var appRouter = router({
       const existing = (await listQrCodes(input.restaurantId, input.branchId)).find((code) => code.token === token);
       if (existing) {
         const db = await getDb();
-        if (db) await db.update(qrCodes).set({ status: "active", purpose: input.purpose, targetUrl: input.targetUrl ?? null, label: input.label?.trim() || existing.label, tableId: table?.id ?? null, visualConfigJson: input.visualConfigJson ?? existing.visualConfigJson ?? null, updatedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(qrCodes.id, existing.id), eq7(qrCodes.restaurantId, input.restaurantId), eq7(qrCodes.branchId, input.branchId)));
+        if (db) await db.update(qrCodes).set({ status: "active", purpose: input.purpose, targetUrl: input.targetUrl ?? null, label: input.label?.trim() || existing.label, tableId: table?.id ?? null, visualConfigJson: input.visualConfigJson ?? existing.visualConfigJson ?? null, updatedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(qrCodes.id, existing.id), eq8(qrCodes.restaurantId, input.restaurantId), eq8(qrCodes.branchId, input.branchId)));
         return { success: true, id: existing.id, reused: true };
       }
       const purposeLabels = { menu: "\u0645\u0646\u064A\u0648 \u0627\u0644\u0645\u0637\u0639\u0645", table_service: "\u0637\u0627\u0648\u0644\u0629 \u062A\u0646\u0627\u0648\u0644 \u0637\u0639\u0627\u0645", waiter_call: "\u0646\u062F\u0627\u0621 \u0627\u0644\u0646\u0627\u062F\u0644", google_reviews: "\u062A\u0642\u064A\u064A\u0645\u0627\u062A Google", custom: "\u0631\u0627\u0628\u0637 \u0645\u062E\u0635\u0635" };
@@ -13671,7 +13749,7 @@ var appRouter = router({
       if (!actorId) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644" });
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const order = (await db.select({ id: orders.id, total: orders.total, branchId: orders.branchId, restaurantId: orders.restaurantId }).from(orders).where(and7(eq7(orders.id, input.orderId), eq7(orders.restaurantId, input.restaurantId), eq7(orders.branchId, input.branchId))).limit(1))[0];
+      const order = (await db.select({ id: orders.id, total: orders.total, branchId: orders.branchId, restaurantId: orders.restaurantId }).from(orders).where(and8(eq8(orders.id, input.orderId), eq8(orders.restaurantId, input.restaurantId), eq8(orders.branchId, input.branchId))).limit(1))[0];
       if (!order) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0641\u064A \u0647\u0630\u0627 \u0627\u0644\u0641\u0631\u0639" });
       const existing = (await listQrCodes(input.restaurantId, input.branchId, "order")).find((code) => code.orderId === order.id && code.status === "active");
       if (existing) return { success: true, id: existing.id, reused: true };
@@ -13688,7 +13766,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const result = await db.update(qrCodes).set({ status: "disabled", updatedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(qrCodes.restaurantId, input.restaurantId), eq7(qrCodes.branchId, input.branchId)));
+      const result = await db.update(qrCodes).set({ status: "disabled", updatedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(qrCodes.restaurantId, input.restaurantId), eq8(qrCodes.branchId, input.branchId)));
       return { success: true, disabled: Number(result[0].affectedRows ?? 0) };
     })
   }),
@@ -13698,7 +13776,7 @@ var appRouter = router({
     markRead: protectedProcedure.input(z3.object({ notificationId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      await db.update(notifications).set({ readAt: /* @__PURE__ */ new Date() }).where(and7(eq7(notifications.id, input.notificationId), eq7(notifications.userId, ctx.user.id)));
+      await db.update(notifications).set({ readAt: /* @__PURE__ */ new Date() }).where(and8(eq8(notifications.id, input.notificationId), eq8(notifications.userId, ctx.user.id)));
       return { success: true };
     }),
     markAllRead: protectedProcedure.mutation(({ ctx }) => markAllNotificationsRead(ctx.user.id)),
@@ -13706,15 +13784,15 @@ var appRouter = router({
     pushSubscribe: protectedProcedure.input(z3.object({ endpoint: z3.string().url().max(1e3), keys: z3.object({ p256dh: z3.string().min(16).max(255), auth: z3.string().min(8).max(255) }), userAgent: z3.string().max(500).optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).where(eq7(pushSubscriptions.endpoint, input.endpoint)).limit(1))[0];
-      if (existing) await db.update(pushSubscriptions).set({ userId: ctx.user.id, p256dh: input.keys.p256dh, auth: input.keys.auth, userAgent: input.userAgent ?? null, lastSeenAt: /* @__PURE__ */ new Date() }).where(eq7(pushSubscriptions.id, existing.id));
+      const existing = (await db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).where(eq8(pushSubscriptions.endpoint, input.endpoint)).limit(1))[0];
+      if (existing) await db.update(pushSubscriptions).set({ userId: ctx.user.id, p256dh: input.keys.p256dh, auth: input.keys.auth, userAgent: input.userAgent ?? null, lastSeenAt: /* @__PURE__ */ new Date() }).where(eq8(pushSubscriptions.id, existing.id));
       else await db.insert(pushSubscriptions).values({ userId: ctx.user.id, endpoint: input.endpoint, p256dh: input.keys.p256dh, auth: input.keys.auth, userAgent: input.userAgent ?? null });
       return { success: true };
     }),
     pushUnsubscribe: protectedProcedure.input(z3.object({ endpoint: z3.string().url().max(1e3) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      await db.delete(pushSubscriptions).where(and7(eq7(pushSubscriptions.endpoint, input.endpoint), eq7(pushSubscriptions.userId, ctx.user.id)));
+      await db.delete(pushSubscriptions).where(and8(eq8(pushSubscriptions.endpoint, input.endpoint), eq8(pushSubscriptions.userId, ctx.user.id)));
       return { success: true };
     })
   }),
@@ -13727,16 +13805,16 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const worker = (await db.select().from(remoteWorkers).where(and7(eq7(remoteWorkers.restaurantId, input.restaurantId), eq7(remoteWorkers.userId, ctx.user.id))).limit(1))[0];
+      const worker = (await db.select().from(remoteWorkers).where(and8(eq8(remoteWorkers.restaurantId, input.restaurantId), eq8(remoteWorkers.userId, ctx.user.id))).limit(1))[0];
       return worker ?? null;
     }),
     createWorker: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), userId: z3.number().int().positive(), role: z3.string().min(2).max(80), isAvailable: z3.boolean().default(true) })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const user = await db.select({ id: users.id }).from(users).where(eq7(users.id, input.userId)).limit(1);
+      const user = await db.select({ id: users.id }).from(users).where(eq8(users.id, input.userId)).limit(1);
       if (!user[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      const existing = await db.select({ id: remoteWorkers.id }).from(remoteWorkers).where(and7(eq7(remoteWorkers.restaurantId, input.restaurantId), eq7(remoteWorkers.userId, input.userId))).limit(1);
+      const existing = await db.select({ id: remoteWorkers.id }).from(remoteWorkers).where(and8(eq8(remoteWorkers.restaurantId, input.restaurantId), eq8(remoteWorkers.userId, input.userId))).limit(1);
       if (existing[0]) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0641\u0639\u0644 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       const result = await db.insert(remoteWorkers).values(input);
       return { success: true, id: Number(result[0].insertId) };
@@ -13745,19 +13823,19 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = await db.select({ restaurantId: remoteWorkers.restaurantId }).from(remoteWorkers).where(eq7(remoteWorkers.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: remoteWorkers.restaurantId }).from(remoteWorkers).where(eq8(remoteWorkers.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0639\u0627\u0645\u0644 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       const { id: _id, restaurantId: _restaurantId, compensationType, commissionRate, salaryAmount, ...changes } = input;
-      await db.update(remoteWorkers).set({ ...changes, ...compensationType && compensationType !== "none" ? { compensationType } : {}, ...commissionRate !== void 0 ? { commissionRate: commissionRate.toFixed(2) } : {}, ...salaryAmount !== void 0 ? { salaryAmount: salaryAmount.toFixed(2) } : {} }).where(eq7(remoteWorkers.id, input.id));
+      await db.update(remoteWorkers).set({ ...changes, ...compensationType && compensationType !== "none" ? { compensationType } : {}, ...commissionRate !== void 0 ? { commissionRate: commissionRate.toFixed(2) } : {}, ...salaryAmount !== void 0 ? { salaryAmount: salaryAmount.toFixed(2) } : {} }).where(eq8(remoteWorkers.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteWorker: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = await db.select({ restaurantId: remoteWorkers.restaurantId }).from(remoteWorkers).where(eq7(remoteWorkers.id, input.id)).limit(1);
+      const existing = await db.select({ restaurantId: remoteWorkers.restaurantId }).from(remoteWorkers).where(eq8(remoteWorkers.id, input.id)).limit(1);
       if (!existing[0] || existing[0].restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0639\u0627\u0645\u0644 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
-      await db.delete(remoteWorkers).where(eq7(remoteWorkers.id, input.id));
+      await db.delete(remoteWorkers).where(eq8(remoteWorkers.id, input.id));
       return { success: true, id: input.id };
     }),
     tasks: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive() })).query(({ ctx, input }) => {
@@ -13771,9 +13849,9 @@ var appRouter = router({
     applyAsRemoteWorker: protectedProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), role: z3.string().min(2).max(80), message: z3.string().max(2e3).optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      const existing = (await db.select({ id: remoteWorkerApplications.id, status: remoteWorkerApplications.status }).from(remoteWorkerApplications).where(and7(eq7(remoteWorkerApplications.restaurantId, input.restaurantId), eq7(remoteWorkerApplications.applicantUserId, ctx.user.id))).limit(1))[0];
+      const existing = (await db.select({ id: remoteWorkerApplications.id, status: remoteWorkerApplications.status }).from(remoteWorkerApplications).where(and8(eq8(remoteWorkerApplications.restaurantId, input.restaurantId), eq8(remoteWorkerApplications.applicantUserId, ctx.user.id))).limit(1))[0];
       if (existing?.status === "pending" || existing?.status === "approved") throw new TRPCError7({ code: "CONFLICT", message: "\u0644\u062F\u064A\u0643 \u0637\u0644\u0628 \u0642\u0627\u0626\u0645 \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0637\u0639\u0645" });
       const result = await db.insert(remoteWorkerApplications).values({ restaurantId: input.restaurantId, applicantUserId: ctx.user.id, role: input.role, message: input.message ?? null, status: "pending" });
       return { success: true, id: Number(result[0].insertId), status: "pending" };
@@ -13781,26 +13859,26 @@ var appRouter = router({
     myWorkerApplications: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      return db.select({ id: remoteWorkerApplications.id, restaurantId: remoteWorkerApplications.restaurantId, role: remoteWorkerApplications.role, message: remoteWorkerApplications.message, status: remoteWorkerApplications.status, createdAt: remoteWorkerApplications.createdAt, restaurantName: restaurants.name }).from(remoteWorkerApplications).innerJoin(restaurants, eq7(remoteWorkerApplications.restaurantId, restaurants.id)).where(eq7(remoteWorkerApplications.applicantUserId, ctx.user.id));
+      return db.select({ id: remoteWorkerApplications.id, restaurantId: remoteWorkerApplications.restaurantId, role: remoteWorkerApplications.role, message: remoteWorkerApplications.message, status: remoteWorkerApplications.status, createdAt: remoteWorkerApplications.createdAt, restaurantName: restaurants.name }).from(remoteWorkerApplications).innerJoin(restaurants, eq8(remoteWorkerApplications.restaurantId, restaurants.id)).where(eq8(remoteWorkerApplications.applicantUserId, ctx.user.id));
     }),
     workerApplications: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      return db.select({ id: remoteWorkerApplications.id, applicantUserId: remoteWorkerApplications.applicantUserId, role: remoteWorkerApplications.role, message: remoteWorkerApplications.message, status: remoteWorkerApplications.status, createdAt: remoteWorkerApplications.createdAt, applicantName: users.name, applicantEmail: users.email }).from(remoteWorkerApplications).innerJoin(users, eq7(remoteWorkerApplications.applicantUserId, users.id)).where(eq7(remoteWorkerApplications.restaurantId, input.restaurantId));
+      return db.select({ id: remoteWorkerApplications.id, applicantUserId: remoteWorkerApplications.applicantUserId, role: remoteWorkerApplications.role, message: remoteWorkerApplications.message, status: remoteWorkerApplications.status, createdAt: remoteWorkerApplications.createdAt, applicantName: users.name, applicantEmail: users.email }).from(remoteWorkerApplications).innerJoin(users, eq8(remoteWorkerApplications.applicantUserId, users.id)).where(eq8(remoteWorkerApplications.restaurantId, input.restaurantId));
     }),
     reviewWorkerApplication: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), applicationId: z3.number().int().positive(), status: z3.enum(["approved", "rejected"]) })).mutation(async ({ ctx, input }) => {
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const application = (await db.select().from(remoteWorkerApplications).where(eq7(remoteWorkerApplications.id, input.applicationId)).limit(1))[0];
+      const application = (await db.select().from(remoteWorkerApplications).where(eq8(remoteWorkerApplications.id, input.applicationId)).limit(1))[0];
       if (!application || application.restaurantId !== input.restaurantId) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0637\u0644\u0628 \u0627\u0644\u062A\u0642\u062F\u064A\u0645 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       if (application.status !== "pending") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u062A\u0645\u062A \u0645\u0631\u0627\u062C\u0639\u0629 \u0647\u0630\u0627 \u0627\u0644\u0637\u0644\u0628 \u0645\u0633\u0628\u0642\u064B\u0627" });
       if (input.status === "approved") {
-        const linked = (await db.select({ id: remoteWorkers.id }).from(remoteWorkers).where(and7(eq7(remoteWorkers.restaurantId, input.restaurantId), eq7(remoteWorkers.userId, application.applicantUserId))).limit(1))[0];
+        const linked = (await db.select({ id: remoteWorkers.id }).from(remoteWorkers).where(and8(eq8(remoteWorkers.restaurantId, input.restaurantId), eq8(remoteWorkers.userId, application.applicantUserId))).limit(1))[0];
         if (!linked) await db.insert(remoteWorkers).values({ restaurantId: input.restaurantId, userId: application.applicantUserId, role: application.role, isAvailable: true });
       }
-      await db.update(remoteWorkerApplications).set({ status: input.status, reviewedByUserId: ctx.user.id, reviewedAt: /* @__PURE__ */ new Date() }).where(eq7(remoteWorkerApplications.id, input.applicationId));
+      await db.update(remoteWorkerApplications).set({ status: input.status, reviewedByUserId: ctx.user.id, reviewedAt: /* @__PURE__ */ new Date() }).where(eq8(remoteWorkerApplications.id, input.applicationId));
       return { success: true, status: input.status };
     }),
     createTask: testRoleProcedure("restaurant_admin").input(z3.object({ restaurantId: z3.number().int().positive(), assignedWorkerId: z3.number().int().positive().optional(), type: z3.enum(["orders", "reservations", "social", "support", "marketing", "other"]), title: z3.string().min(2).max(180), description: z3.string().max(5e3).optional(), amount: z3.string().regex(/^\d+(\.\d{1,2})?$/), currency: z3.string().default("SAR"), paymentMethod: z3.enum(["manual", "bank_transfer", "wallet", "pending_gateway"]).default("manual"), dueAt: z3.string().datetime().optional() })).mutation(async ({ ctx, input }) => {
@@ -13810,7 +13888,7 @@ var appRouter = router({
       const taskId = Number(result[0].insertId);
       let recipientUserId = ctx.user.id;
       if (input.assignedWorkerId) {
-        const worker = (await db.select({ userId: remoteWorkers.userId }).from(remoteWorkers).where(eq7(remoteWorkers.id, input.assignedWorkerId)).limit(1))[0];
+        const worker = (await db.select({ userId: remoteWorkers.userId }).from(remoteWorkers).where(eq8(remoteWorkers.id, input.assignedWorkerId)).limit(1))[0];
         recipientUserId = worker?.userId ?? recipientUserId;
       }
       await db.insert(notifications).values({ userId: recipientUserId, taskId, type: "task", title: "\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u0645\u0647\u0645\u0629", body: `\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u0645\u0647\u0645\u0629: ${input.title}` });
@@ -13820,22 +13898,22 @@ var appRouter = router({
     acceptTask: testRoleProcedure("restaurant_admin", "waiter", "kitchen", "cashier", "driver").input(z3.object({ taskId: z3.number().int().positive(), workerId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const access = await getRemoteTaskAccess(ctx, input.taskId);
       if (ctx.user?.testRole !== "restaurant_admin" && (!access.worker || access.worker.id !== input.workerId)) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u064A\u0645\u0643\u0646\u0643 \u0642\u0628\u0648\u0644 \u0627\u0644\u0645\u0647\u0645\u0629 \u0628\u0647\u0630\u0627 \u0627\u0644\u0639\u0627\u0645\u0644" });
-      const worker = (await access.db.select().from(remoteWorkers).where(and7(eq7(remoteWorkers.id, input.workerId), eq7(remoteWorkers.restaurantId, access.task.restaurantId))).limit(1))[0];
+      const worker = (await access.db.select().from(remoteWorkers).where(and8(eq8(remoteWorkers.id, input.workerId), eq8(remoteWorkers.restaurantId, access.task.restaurantId))).limit(1))[0];
       if (!worker) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0627\u0644\u0639\u0627\u0645\u0644 \u063A\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       if (access.task.status !== "published") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0642\u0628\u0648\u0644 \u0627\u0644\u0645\u0647\u0645\u0629 \u0641\u064A \u062D\u0627\u0644\u062A\u0647\u0627 \u0627\u0644\u062D\u0627\u0644\u064A\u0629" });
-      await access.db.update(remoteTasks).set({ assignedWorkerId: input.workerId, status: "accepted" }).where(eq7(remoteTasks.id, input.taskId));
+      await access.db.update(remoteTasks).set({ assignedWorkerId: input.workerId, status: "accepted" }).where(eq8(remoteTasks.id, input.taskId));
       return { success: true, status: "accepted" };
     }),
     updateTaskStatus: testRoleProcedure("restaurant_admin", "waiter", "kitchen", "cashier", "driver").input(z3.object({ taskId: z3.number().int().positive(), status: z3.enum(["published", "reviewing", "accepted", "in_progress", "submitted", "completed", "cancelled"]) })).mutation(async ({ ctx, input }) => {
       const access = await getRemoteTaskAccess(ctx, input.taskId);
       const isAdmin = isAdminContext(ctx);
       assertRemoteTaskTransition(access.task.status, input.status, isAdmin);
-      await access.db.update(remoteTasks).set({ status: input.status }).where(eq7(remoteTasks.id, input.taskId));
+      await access.db.update(remoteTasks).set({ status: input.status }).where(eq8(remoteTasks.id, input.taskId));
       return { success: true, status: input.status };
     }),
     sendMessage: protectedProcedure.input(z3.object({ taskId: z3.number().int().positive(), body: z3.string().min(1).max(5e3) })).mutation(async ({ ctx, input }) => {
       const access = await getRemoteTaskAccess(ctx, input.taskId);
-      const assignedWorkerUserId = access.task.assignedWorkerId ? (await access.db.select({ userId: remoteWorkers.userId }).from(remoteWorkers).where(eq7(remoteWorkers.id, access.task.assignedWorkerId)).limit(1))[0]?.userId ?? null : null;
+      const assignedWorkerUserId = access.task.assignedWorkerId ? (await access.db.select({ userId: remoteWorkers.userId }).from(remoteWorkers).where(eq8(remoteWorkers.id, access.task.assignedWorkerId)).limit(1))[0]?.userId ?? null : null;
       const recipientUserId = getTaskNotificationRecipient({ createdByUserId: access.task.createdByUserId, assignedWorkerUserId }, ctx.user.id);
       const result = await access.db.insert(taskMessages).values({ taskId: input.taskId, senderUserId: ctx.user.id, body: input.body });
       await access.db.insert(notifications).values({ userId: recipientUserId, taskId: input.taskId, type: "message", title: "\u0631\u0633\u0627\u0644\u0629 \u0645\u0647\u0645\u0629 \u062C\u062F\u064A\u062F\u0629", body: input.body });
@@ -13849,13 +13927,13 @@ var appRouter = router({
     revokeSession: protectedProcedure.input(z3.object({ sessionId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(authSessions.id, input.sessionId), eq7(authSessions.userId, ctx.user.id)));
+      await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(authSessions.id, input.sessionId), eq8(authSessions.userId, ctx.user.id)));
       return { success: true };
     }),
     revokeAllSessions: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(eq7(authSessions.userId, ctx.user.id));
+      await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(eq8(authSessions.userId, ctx.user.id));
       return { success: true };
     }),
     setTwoFactor: protectedProcedure.input(z3.object({ enabled: z3.boolean() })).mutation(async ({ ctx, input }) => {
@@ -13885,10 +13963,10 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ plan: restaurants.plan, status: restaurants.status }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1))[0];
-      const subscription = (await db.select().from(subscriptions).where(eq7(subscriptions.restaurantId, input.restaurantId)).orderBy(desc3(subscriptions.id)).limit(1))[0] ?? null;
-      const plans = await db.select().from(packagePlans).where(eq7(packagePlans.isActive, true)).orderBy(packagePlans.id);
-      const links = await db.select({ planId: packagePlanFeatures.planId, key: featureDefinitions.key, label: featureDefinitions.label, enabled: packagePlanFeatures.enabled, featureLimit: packagePlanFeatures.featureLimit }).from(packagePlanFeatures).innerJoin(featureDefinitions, eq7(packagePlanFeatures.featureId, featureDefinitions.id));
+      const restaurant = (await db.select({ plan: restaurants.plan, status: restaurants.status }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1))[0];
+      const subscription = (await db.select().from(subscriptions).where(eq8(subscriptions.restaurantId, input.restaurantId)).orderBy(desc3(subscriptions.id)).limit(1))[0] ?? null;
+      const plans = await db.select().from(packagePlans).where(eq8(packagePlans.isActive, true)).orderBy(packagePlans.id);
+      const links = await db.select({ planId: packagePlanFeatures.planId, key: featureDefinitions.key, label: featureDefinitions.label, enabled: packagePlanFeatures.enabled, featureLimit: packagePlanFeatures.featureLimit }).from(packagePlanFeatures).innerJoin(featureDefinitions, eq8(packagePlanFeatures.featureId, featureDefinitions.id));
       const legacyPlanMap = { Free: "hospitality_basic", Starter: "hospitality_basic", Growth: "hospitality_pro", Enterprise: "hospitality_enterprise", "All Features": "hospitality_enterprise" };
       const rawPlan = subscription?.plan ?? restaurant?.plan ?? "Free";
       const activePlanKey = legacyPlanMap[rawPlan] ?? rawPlan;
@@ -13903,9 +13981,9 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = await db.select().from(restaurantFeatures).where(and7(eq7(restaurantFeatures.restaurantId, input.restaurantId), eq7(restaurantFeatures.featureId, input.featureId))).limit(1);
+      const existing = await db.select().from(restaurantFeatures).where(and8(eq8(restaurantFeatures.restaurantId, input.restaurantId), eq8(restaurantFeatures.featureId, input.featureId))).limit(1);
       const values = { enabled: input.enabled, overrideLimit: input.limit ?? null, overrideValue: input.value ?? null };
-      if (existing[0]) await db.update(restaurantFeatures).set(values).where(eq7(restaurantFeatures.id, existing[0].id));
+      if (existing[0]) await db.update(restaurantFeatures).set(values).where(eq8(restaurantFeatures.id, existing[0].id));
       else await db.insert(restaurantFeatures).values({ restaurantId: input.restaurantId, featureId: input.featureId, ...values });
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "feature.override.update", entityType: "feature", entityId: String(input.featureId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ enabled: input.enabled, limit: input.limit ?? null }) });
       return { success: true };
@@ -13926,14 +14004,14 @@ var appRouter = router({
     setRestaurantNotificationControl: adminProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), enabled: z3.boolean() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      let definition = (await db.select({ id: featureDefinitions.id }).from(featureDefinitions).where(eq7(featureDefinitions.key, "notifications.order_push")).limit(1))[0];
+      let definition = (await db.select({ id: featureDefinitions.id }).from(featureDefinitions).where(eq8(featureDefinitions.key, "notifications.order_push")).limit(1))[0];
       if (!definition) {
         await db.insert(featureDefinitions).values({ key: "notifications.order_push", label: "\u0625\u0634\u0639\u0627\u0631\u0627\u062A \u0627\u0644\u0637\u0644\u0628\u0627\u062A \u0644\u0644\u0645\u0637\u0639\u0645", description: "\u0625\u0634\u0639\u0627\u0631 \u0641\u0648\u0631\u064A \u0648\u0635\u0648\u062A\u064A \u0639\u0646\u062F \u0648\u0635\u0648\u0644 \u0637\u0644\u0628 \u062C\u062F\u064A\u062F\u060C \u0645\u0639 \u062A\u062D\u0643\u0645 Super Admin \u0644\u0643\u0644 \u0645\u0637\u0639\u0645.", dependencyKey: null, defaultLimit: null, isAddOn: false, addonPrice: null });
-        definition = (await db.select({ id: featureDefinitions.id }).from(featureDefinitions).where(eq7(featureDefinitions.key, "notifications.order_push")).limit(1))[0];
+        definition = (await db.select({ id: featureDefinitions.id }).from(featureDefinitions).where(eq8(featureDefinitions.key, "notifications.order_push")).limit(1))[0];
       }
       if (!definition) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "\u062A\u0639\u0630\u0631 \u062A\u0647\u064A\u0626\u0629 \u0645\u064A\u0632\u0629 \u0625\u0634\u0639\u0627\u0631\u0627\u062A \u0627\u0644\u0637\u0644\u0628\u0627\u062A" });
-      const existing = (await db.select({ id: restaurantFeatures.id }).from(restaurantFeatures).where(and7(eq7(restaurantFeatures.restaurantId, input.restaurantId), eq7(restaurantFeatures.featureId, definition.id))).limit(1))[0];
-      if (existing) await db.update(restaurantFeatures).set({ enabled: input.enabled }).where(eq7(restaurantFeatures.id, existing.id));
+      const existing = (await db.select({ id: restaurantFeatures.id }).from(restaurantFeatures).where(and8(eq8(restaurantFeatures.restaurantId, input.restaurantId), eq8(restaurantFeatures.featureId, definition.id))).limit(1))[0];
+      if (existing) await db.update(restaurantFeatures).set({ enabled: input.enabled }).where(eq8(restaurantFeatures.id, existing.id));
       else await db.insert(restaurantFeatures).values({ restaurantId: input.restaurantId, featureId: definition.id, enabled: input.enabled });
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: "admin", action: "admin.restaurant.notifications.updated", entityType: "restaurant", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ orderPushEnabled: input.enabled }) });
       return { success: true, enabled: input.enabled };
@@ -13957,9 +14035,9 @@ var appRouter = router({
     reviewDriverApplication: adminProcedure.input(z3.object({ id: z3.number().int().positive(), status: z3.enum(["approved", "rejected"]), reviewNote: z3.string().max(1e3).optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: driverApplications.id, fullName: driverApplications.fullName, email: driverApplications.email }).from(driverApplications).where(eq7(driverApplications.id, input.id)).limit(1))[0];
+      const existing = (await db.select({ id: driverApplications.id, fullName: driverApplications.fullName, email: driverApplications.email }).from(driverApplications).where(eq8(driverApplications.id, input.id)).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0637\u0644\u0628 \u0627\u0644\u0633\u0627\u0626\u0642 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      await db.update(driverApplications).set({ status: input.status, reviewNote: input.reviewNote ?? null, reviewedAt: /* @__PURE__ */ new Date() }).where(eq7(driverApplications.id, input.id));
+      await db.update(driverApplications).set({ status: input.status, reviewNote: input.reviewNote ?? null, reviewedAt: /* @__PURE__ */ new Date() }).where(eq8(driverApplications.id, input.id));
       return { success: true, id: input.id, status: input.status, reviewedBy: ctx.user?.id ?? null, demoEmailPreview: { to: existing.email, recipientName: existing.fullName, subject: input.status === "approved" ? "\u0645\u0639\u0627\u064A\u0646\u0629 \u0642\u0628\u0648\u0644 \u0637\u0644\u0628 \u0627\u0644\u0627\u0646\u0636\u0645\u0627\u0645 \u0625\u0644\u0649 NFOOD" : "\u0645\u0639\u0627\u064A\u0646\u0629 \u062A\u062D\u062F\u064A\u062B \u0637\u0644\u0628 \u0627\u0644\u0627\u0646\u0636\u0645\u0627\u0645 \u0625\u0644\u0649 NFOOD", status: "preview", sent: false, provider: "SMTP Demo", message: "\u0644\u0645 \u064A\u062A\u0645 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0628\u0631\u064A\u062F. \u0627\u0633\u062A\u0628\u062F\u0644 DEMO_REPLACE_SMTP_HOST \u0648\u0645\u0641\u0627\u062A\u064A\u062D SMTP \u0642\u0628\u0644 \u0627\u0644\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0641\u0639\u0644\u064A." } };
     }),
     createRestaurant: platformAdminProcedure.input(z3.object({ name: z3.string().min(2), slug: z3.string().min(2).max(160), plan: z3.string().min(2).default("Growth"), email: z3.string().trim().email().max(320).optional(), password: z3.string().min(6).max(160).optional(), countryCode: z3.string().length(2).default("SA"), currencyCode: z3.string().length(3).optional(), primaryLanguage: z3.enum(["ar", "en", "fr", "ur", "es", "de", "tr"]).default("ar"), timezone: z3.string().trim().min(3).max(64).default("Asia/Riyadh") })).mutation(async ({ input }) => {
@@ -13967,7 +14045,7 @@ var appRouter = router({
       if (!db) throw new Error("Database is not available");
       const email = (input.email ?? `restaurant-${nanoid4(10)}@nfood.local`).toLowerCase();
       const password = input.password ?? String(randomInt2(1e5, 1e6));
-      const duplicate = await db.select({ id: testAccounts.id }).from(testAccounts).where(eq7(testAccounts.email, email)).limit(1);
+      const duplicate = await db.select({ id: testAccounts.id }).from(testAccounts).where(eq8(testAccounts.email, email)).limit(1);
       if (duplicate[0]) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0644\u062D\u0633\u0627\u0628 \u0622\u062E\u0631" });
       const { email: _email, password: _password, currencyCode: _currencyCode, ...restaurantInput } = input;
       const country = COUNTRIES.find((item) => item.code === input.countryCode);
@@ -13995,15 +14073,15 @@ var appRouter = router({
     resetRestaurantPassword: adminProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), password: z3.string().min(6).max(160) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id, name: restaurants.name }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id, name: restaurants.name }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      const account = (await db.select({ id: testAccounts.id, email: testAccounts.email }).from(testAccounts).where(and7(eq7(testAccounts.restaurantId, input.restaurantId), eq7(testAccounts.role, "restaurant_admin"))).limit(1))[0];
+      const account = (await db.select({ id: testAccounts.id, email: testAccounts.email }).from(testAccounts).where(and8(eq8(testAccounts.restaurantId, input.restaurantId), eq8(testAccounts.role, "restaurant_admin"))).limit(1))[0];
       if (!account) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u062D\u0633\u0627\u0628 \u0645\u062F\u064A\u0631 \u0645\u0631\u062A\u0628\u0637 \u0628\u0627\u0644\u0645\u0637\u0639\u0645" });
       const salt = randomBytes2(16).toString("base64");
       const passwordHash = "scrypt$" + salt + "$" + scryptSync2(input.password, Buffer.from(salt, "base64"), 64).toString("base64");
-      await db.update(testAccounts).set({ passwordHash, isActive: true }).where(eq7(testAccounts.id, account.id));
-      const linkedUser = (await db.select({ id: users.id }).from(users).where(eq7(users.openId, "test_" + account.id)).limit(1))[0];
-      if (linkedUser) await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(authSessions.userId, linkedUser.id), ne2(authSessions.sessionTokenHash, "")));
+      await db.update(testAccounts).set({ passwordHash, isActive: true }).where(eq8(testAccounts.id, account.id));
+      const linkedUser = (await db.select({ id: users.id }).from(users).where(eq8(users.openId, "test_" + account.id)).limit(1))[0];
+      if (linkedUser) await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(authSessions.userId, linkedUser.id), ne2(authSessions.sessionTokenHash, "")));
       await insertAuditLog({ actorUserId: ctx.user.id, actorRole: "admin", action: "admin.restaurant.password_reset", entityType: "restaurant", entityId: String(input.restaurantId), restaurantId: input.restaurantId, metadata: JSON.stringify({ accountEmail: account.email }) });
       return { success: true, restaurantId: input.restaurantId, email: account.email, temporaryPassword: input.password };
     }),
@@ -14012,7 +14090,7 @@ var appRouter = router({
       assertRestaurantAccess(ctx, input.restaurantId);
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ id: restaurants.id, defaultDiscountPercent: restaurants.defaultDiscountPercent, taxPercent: restaurants.taxPercent, countryCode: restaurants.countryCode, currencyCode: restaurants.currencyCode, currencyDecimals: restaurants.currencyDecimals, integrationMode: restaurants.integrationMode }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1);
+      const existing = await db.select({ id: restaurants.id, defaultDiscountPercent: restaurants.defaultDiscountPercent, taxPercent: restaurants.taxPercent, countryCode: restaurants.countryCode, currencyCode: restaurants.currencyCode, currencyDecimals: restaurants.currencyDecimals, integrationMode: restaurants.integrationMode }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       const countryCode = input.countryCode ?? existing[0].countryCode;
       const currencyCode = input.currencyCode ?? existing[0].currencyCode;
@@ -14022,27 +14100,27 @@ var appRouter = router({
       if (!currency) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0631\u0645\u0632 \u0627\u0644\u0639\u0645\u0644\u0629 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645" });
       const after = { defaultDiscountPercent: Number(input.defaultDiscountPercent.toFixed(2)), taxPercent: Number(input.taxPercent.toFixed(2)), countryCode: country.code, currencyCode: currency.code, currencyDecimals: currency.decimals, integrationMode: input.integrationMode ?? existing[0].integrationMode };
       const before = { defaultDiscountPercent: Number(existing[0].defaultDiscountPercent), taxPercent: Number(existing[0].taxPercent), countryCode: existing[0].countryCode, currencyCode: existing[0].currencyCode, currencyDecimals: existing[0].currencyDecimals, integrationMode: existing[0].integrationMode };
-      await db.update(restaurants).set({ defaultDiscountPercent: after.defaultDiscountPercent.toFixed(2), taxPercent: after.taxPercent.toFixed(2), countryCode: after.countryCode, currencyCode: after.currencyCode, currencyDecimals: after.currencyDecimals, integrationMode: after.integrationMode }).where(eq7(restaurants.id, input.restaurantId));
+      await db.update(restaurants).set({ defaultDiscountPercent: after.defaultDiscountPercent.toFixed(2), taxPercent: after.taxPercent.toFixed(2), countryCode: after.countryCode, currencyCode: after.currencyCode, currencyDecimals: after.currencyDecimals, integrationMode: after.integrationMode }).where(eq8(restaurants.id, input.restaurantId));
       await insertAuditLog({ restaurantId: input.restaurantId, actorUserId: ctx.user?.id ?? null, actorRole: ctx.user?.testRole ?? ctx.user?.role ?? null, action: "restaurant.pricing.updated", entityType: "restaurant_pricing", entityId: String(input.restaurantId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ before, after }) });
       return { success: true, restaurantId: input.restaurantId, ...after };
     }),
     updateRestaurant: adminProcedure.input(z3.object({ id: z3.number().int().positive(), name: z3.string().min(2).max(160).optional(), slug: z3.string().min(2).max(160).optional(), plan: z3.string().min(2).optional(), status: z3.enum(["active", "trial", "suspended"]).optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ id: restaurants.id, name: restaurants.name, status: restaurants.status, plan: restaurants.plan }).from(restaurants).where(eq7(restaurants.id, input.id)).limit(1);
+      const existing = await db.select({ id: restaurants.id, name: restaurants.name, status: restaurants.status, plan: restaurants.plan }).from(restaurants).where(eq8(restaurants.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Restaurant not found" });
       const { id: _id, ...changes } = input;
       let resolvedPlan;
       if (input.plan) {
-        const selectedPlan = (await db.select({ key: packagePlans.key, name: packagePlans.name }).from(packagePlans).where(and7(or4(eq7(packagePlans.key, input.plan), eq7(packagePlans.name, input.plan)), eq7(packagePlans.isActive, true))).limit(1))[0];
+        const selectedPlan = (await db.select({ key: packagePlans.key, name: packagePlans.name }).from(packagePlans).where(and8(or5(eq8(packagePlans.key, input.plan), eq8(packagePlans.name, input.plan)), eq8(packagePlans.isActive, true))).limit(1))[0];
         if (!selectedPlan) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u0644\u0628\u0627\u0642\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629 \u0623\u0648 \u063A\u064A\u0631 \u0645\u0641\u0639\u0644\u0629" });
         resolvedPlan = selectedPlan.key;
         changes.plan = resolvedPlan;
       }
-      await db.update(restaurants).set(changes).where(eq7(restaurants.id, input.id));
+      await db.update(restaurants).set(changes).where(eq8(restaurants.id, input.id));
       if (resolvedPlan) {
-        const activeSubscription = (await db.select({ id: subscriptions.id }).from(subscriptions).where(and7(eq7(subscriptions.restaurantId, input.id), inArray4(subscriptions.status, ["active", "trial"]))).orderBy(desc3(subscriptions.id)).limit(1))[0];
-        if (activeSubscription) await db.update(subscriptions).set({ plan: resolvedPlan }).where(eq7(subscriptions.id, activeSubscription.id));
+        const activeSubscription = (await db.select({ id: subscriptions.id }).from(subscriptions).where(and8(eq8(subscriptions.restaurantId, input.id), inArray5(subscriptions.status, ["active", "trial"]))).orderBy(desc3(subscriptions.id)).limit(1))[0];
+        if (activeSubscription) await db.update(subscriptions).set({ plan: resolvedPlan }).where(eq8(subscriptions.id, activeSubscription.id));
       }
       if (input.status === "active" && existing[0].status !== "active" && ctx.user?.id) {
         const branches2 = await listBranches(input.id);
@@ -14054,7 +14132,7 @@ var appRouter = router({
     deleteRestaurant: adminProcedure.input(z3.object({ id: z3.number().int().positive() })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ id: restaurants.id }).from(restaurants).where(eq7(restaurants.id, input.id)).limit(1);
+      const existing = await db.select({ id: restaurants.id }).from(restaurants).where(eq8(restaurants.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Restaurant not found" });
       await db.transaction(async (tx) => {
         await tx.execute(sql3`SET FOREIGN_KEY_CHECKS = 0`);
@@ -14114,7 +14192,7 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       if (input.email) {
-        const duplicate = await db.select({ id: users.id }).from(users).where(eq7(users.email, input.email.trim().toLowerCase())).limit(1);
+        const duplicate = await db.select({ id: users.id }).from(users).where(eq8(users.email, input.email.trim().toLowerCase())).limit(1);
         if (duplicate[0]) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u0628\u0642\u064B\u0627" });
       }
       const result = await db.insert(users).values({ openId: `manual_${nanoid4(24)}`, name: input.name.trim(), email: input.email?.trim().toLowerCase() || null, loginMethod: "admin_created", role: "user" });
@@ -14126,9 +14204,9 @@ var appRouter = router({
     updateCustomer: adminProcedure.input(z3.object({ id: z3.number().int().positive(), name: z3.string().min(2).max(160) })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = await db.select({ id: users.id }).from(users).where(eq7(users.id, input.id)).limit(1);
+      const existing = await db.select({ id: users.id }).from(users).where(eq8(users.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Customer not found" });
-      await db.update(users).set({ name: input.name.trim() }).where(eq7(users.id, input.id));
+      await db.update(users).set({ name: input.name.trim() }).where(eq8(users.id, input.id));
       return { success: true, id: input.id };
     }),
     accountDirectory: adminProcedure.query(() => listManagedTestAccounts()),
@@ -14140,17 +14218,17 @@ var appRouter = router({
       if (!target) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u062D\u0633\u0627\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       if (target.role === "customer" && input.email.trim().toLowerCase() !== target.email.trim().toLowerCase()) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0628\u0631\u064A\u062F \u0627\u0644\u0639\u0645\u064A\u0644 \u0645\u062D\u0645\u064A \u0648\u0644\u0627 \u064A\u064F\u0639\u062F\u0651\u0644 \u0645\u0646 \u0627\u0644\u0625\u062F\u0627\u0631\u0629" });
       if (ctx.user?.testRole === "restaurant_admin" && target.role === "customer" && input.password) throw new TRPCError7({ code: "FORBIDDEN", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u0644\u0623\u062F\u0645\u0646 \u0627\u0644\u0645\u0637\u0639\u0645 \u062A\u063A\u064A\u064A\u0631 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631 \u0627\u0644\u0639\u0645\u064A\u0644" });
-      const duplicate = await db.select({ id: testAccounts.id }).from(testAccounts).where(and7(eq7(testAccounts.email, input.email.toLowerCase()), ne2(testAccounts.id, input.id))).limit(1);
+      const duplicate = await db.select({ id: testAccounts.id }).from(testAccounts).where(and8(eq8(testAccounts.email, input.email.toLowerCase()), ne2(testAccounts.id, input.id))).limit(1);
       if (duplicate[0]) throw new TRPCError7({ code: "CONFLICT", message: "\u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0644\u062D\u0633\u0627\u0628 \u0622\u062E\u0631" });
       const passwordHash = input.password ? (() => {
         const salt = randomBytes2(16).toString("base64");
         return `scrypt$${salt}$${scryptSync2(input.password, Buffer.from(salt, "base64"), 64).toString("base64")}`;
       })() : void 0;
       await updateManagedTestAccount(input.id, { email: input.email.toLowerCase(), displayName: input.displayName, role: input.role, isActive: input.isActive, ...passwordHash ? { passwordHash } : {} });
-      const linkedUser = (await db.select({ id: users.id }).from(users).where(eq7(users.openId, `test_${input.id}`)).limit(1))[0];
+      const linkedUser = (await db.select({ id: users.id }).from(users).where(eq8(users.openId, `test_${input.id}`)).limit(1))[0];
       if (linkedUser) {
-        await db.update(users).set({ name: input.displayName, email: input.email.toLowerCase(), role: input.role === "admin" ? "admin" : "user" }).where(eq7(users.id, linkedUser.id));
-        if (!input.isActive || passwordHash) await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and7(eq7(authSessions.userId, linkedUser.id), ne2(authSessions.sessionTokenHash, "")));
+        await db.update(users).set({ name: input.displayName, email: input.email.toLowerCase(), role: input.role === "admin" ? "admin" : "user" }).where(eq8(users.id, linkedUser.id));
+        if (!input.isActive || passwordHash) await db.update(authSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and8(eq8(authSessions.userId, linkedUser.id), ne2(authSessions.sessionTokenHash, "")));
       }
       await insertAuditLog({ actorUserId: ctx.user.id, action: "admin.account.update", entityType: "testAccount", entityId: String(input.id), restaurantId: target.restaurantId ?? null, metadata: JSON.stringify({ role: input.role, isActive: input.isActive, passwordChanged: Boolean(passwordHash) }) });
       return { success: true, id: input.id };
@@ -14158,18 +14236,18 @@ var appRouter = router({
     enterRestaurantAccount: adminProcedure.input(z3.object({ id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const restaurant = (await db.select({ id: restaurants.id, name: restaurants.name, slug: restaurants.slug }).from(restaurants).where(eq7(restaurants.id, input.id)).limit(1))[0];
+      const restaurant = (await db.select({ id: restaurants.id, name: restaurants.name, slug: restaurants.slug }).from(restaurants).where(eq8(restaurants.id, input.id)).limit(1))[0];
       if (!restaurant) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      const member = (await db.select({ email: users.email, name: users.name }).from(restaurantMembers).innerJoin(users, eq7(restaurantMembers.userId, users.id)).where(eq7(restaurantMembers.restaurantId, input.id)).limit(1))[0];
+      const member = (await db.select({ email: users.email, name: users.name }).from(restaurantMembers).innerJoin(users, eq8(restaurantMembers.userId, users.id)).where(eq8(restaurantMembers.restaurantId, input.id)).limit(1))[0];
       const fallbackEmail = `restaurant-${restaurant.id}@nfood.local`;
       const targetEmail = member?.email?.toLowerCase() ?? fallbackEmail;
-      let target = (await db.select().from(testAccounts).where(eq7(testAccounts.email, targetEmail)).limit(1))[0];
+      let target = (await db.select().from(testAccounts).where(eq8(testAccounts.email, targetEmail)).limit(1))[0];
       if (!target) {
         const created = await db.insert(testAccounts).values({ restaurantId: restaurant.id, email: targetEmail, displayName: member?.name ?? `\u0645\u062F\u064A\u0631 ${restaurant.name}`, role: "restaurant_admin", passwordHash: "scrypt$Ke89BlsJJa45L/5mz+r4yg==$7H6Z0FmUuzmpJS8AvEW4zw/z2mYsvIdhEF9ZDJBj6NmHJEzW9g1iz8GUdipDUe+PI60ecQJajl9NmtX4kSiVxg==" });
-        target = (await db.select().from(testAccounts).where(eq7(testAccounts.id, Number(created[0].insertId))).limit(1))[0];
+        target = (await db.select().from(testAccounts).where(eq8(testAccounts.id, Number(created[0].insertId))).limit(1))[0];
       } else if (target.restaurantId !== restaurant.id || target.role !== "restaurant_admin") {
-        await db.update(testAccounts).set({ restaurantId: restaurant.id, role: "restaurant_admin", isActive: true }).where(eq7(testAccounts.id, target.id));
-        target = (await db.select().from(testAccounts).where(eq7(testAccounts.id, target.id)).limit(1))[0];
+        await db.update(testAccounts).set({ restaurantId: restaurant.id, role: "restaurant_admin", isActive: true }).where(eq8(testAccounts.id, target.id));
+        target = (await db.select().from(testAccounts).where(eq8(testAccounts.id, target.id)).limit(1))[0];
       }
       if (!target?.isActive) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u062D\u0633\u0627\u0628 \u0627\u0644\u0645\u0637\u0639\u0645 \u063A\u064A\u0631 \u0645\u0641\u0639\u0644" });
       const sourceCookieName = getRequestCookie(ctx.req, TEST_SESSION_COOKIE) ? TEST_SESSION_COOKIE : COOKIE_NAME;
@@ -14179,8 +14257,8 @@ var appRouter = router({
       const returnPayload = Buffer.from(JSON.stringify({ cookieName: sourceCookieName, token: sourceToken }), "utf8").toString("base64url");
       const targetToken = await sdk.signSession({ openId: `test_${target.id}`, appId: `admin_restaurant_${nanoid4(12)}`, name: target.displayName });
       ctx.res.cookie(ADMIN_RETURN_COOKIE, returnPayload, { ...cookieOptions, httpOnly: true, maxAge: 1e3 * 60 * 30 });
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      ctx.res.clearCookie(TEST_SESSION_COOKIE, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(COOKIE_NAME, cookieOptions);
+      ctx.res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       ctx.res.cookie(TEST_SESSION_COOKIE, targetToken, { ...cookieOptions, httpOnly: true, maxAge: 1e3 * 60 * 60 * 12 });
       await insertAuditLog({ actorUserId: ctx.user.id, action: "admin.restaurant.enter", entityType: "restaurant", entityId: String(restaurant.id), restaurantId: restaurant.id, metadata: JSON.stringify({ slug: restaurant.slug, targetAccountId: target.id }) });
       return { success: true, role: target.role, name: target.displayName, restaurantId: restaurant.id };
@@ -14188,8 +14266,8 @@ var appRouter = router({
     enterCustomerAccount: platformAdminProcedure.input(z3.object({ userId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const target = (await db.select({ id: users.id, openId: users.openId, name: users.name, email: users.email, role: users.role, deletedAt: users.deletedAt }).from(users).where(eq7(users.id, input.userId)).limit(1))[0];
-      const customerProfile = (await db.select({ userId: customerProfiles.userId }).from(customerProfiles).where(eq7(customerProfiles.userId, input.userId)).limit(1))[0];
+      const target = (await db.select({ id: users.id, openId: users.openId, name: users.name, email: users.email, role: users.role, deletedAt: users.deletedAt }).from(users).where(eq8(users.id, input.userId)).limit(1))[0];
+      const customerProfile = (await db.select({ userId: customerProfiles.userId }).from(customerProfiles).where(eq8(customerProfiles.userId, input.userId)).limit(1))[0];
       if (!target || !customerProfile || target.deletedAt || target.role === "admin") throw new TRPCError7({ code: "BAD_REQUEST", message: "\u062D\u0633\u0627\u0628 \u0627\u0644\u0639\u0645\u064A\u0644 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0644\u0644\u062A\u0645\u062B\u064A\u0644" });
       const sourceCookieName = getRequestCookie(ctx.req, TEST_SESSION_COOKIE) ? TEST_SESSION_COOKIE : COOKIE_NAME;
       const sourceToken = getRequestCookie(ctx.req, sourceCookieName);
@@ -14199,8 +14277,8 @@ var appRouter = router({
       const targetToken = await sdk.signSession({ openId: target.openId, appId: `admin_customer_${nanoid4(12)}`, name: target.name ?? target.email ?? "Customer" });
       await db.insert(authSessions).values({ userId: target.id, sessionTokenHash: createHash2("sha256").update(targetToken).digest("hex"), deviceLabel: "\u062F\u062E\u0648\u0644 Admin \u0645\u0624\u0642\u062A \u0644\u0644\u0639\u0645\u064A\u0644", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60) });
       ctx.res.cookie(ADMIN_RETURN_COOKIE, returnPayload, { ...cookieOptions, httpOnly: true, maxAge: 1e3 * 60 * 30 });
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      ctx.res.clearCookie(TEST_SESSION_COOKIE, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(COOKIE_NAME, cookieOptions);
+      ctx.res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       ctx.res.cookie(TEST_SESSION_COOKIE, targetToken, { ...cookieOptions, httpOnly: true, maxAge: 1e3 * 60 * 60 });
       await insertAuditLog({ actorUserId: ctx.user.id, action: "admin.customer.enter", entityType: "user", entityId: String(target.id), metadata: JSON.stringify({ targetEmail: target.email, expiresInMinutes: 60, reason: "support_and_testing" }) });
       return { success: true, userId: target.id, name: target.name ?? target.email ?? "Customer", expiresAt: new Date(Date.now() + 1e3 * 60 * 60) };
@@ -14220,8 +14298,8 @@ var appRouter = router({
       const targetToken = await sdk.signSession({ openId: `test_${target.id}`, appId: `admin_impersonation_${nanoid4(12)}`, name: target.displayName });
       if (targetUser) await db.insert(authSessions).values({ userId: targetUser.id, sessionTokenHash: createHash2("sha256").update(targetToken).digest("hex"), deviceLabel: "\u062F\u062E\u0648\u0644 Admin \u0645\u0624\u0642\u062A", userAgent: ctx.req.get("user-agent") ?? null, ipAddress: ctx.req.ip ?? null, expiresAt: new Date(Date.now() + 1e3 * 60 * 60) });
       ctx.res.cookie(ADMIN_RETURN_COOKIE, returnPayload, { ...cookieOptions, httpOnly: true, maxAge: 1e3 * 60 * 30 });
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      ctx.res.clearCookie(TEST_SESSION_COOKIE, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(COOKIE_NAME, cookieOptions);
+      ctx.res.clearCookie(TEST_SESSION_COOKIE, cookieOptions);
       ctx.res.cookie(TEST_SESSION_COOKIE, targetToken, { ...cookieOptions, httpOnly: true, maxAge: 1e3 * 60 * 60 * 12 });
       await insertAuditLog({ actorUserId: ctx.user.id, action: "admin.account.enter", entityType: "testAccount", entityId: String(target.id), restaurantId: target.restaurantId ?? null, metadata: JSON.stringify({ role: target.role }) });
       return { success: true, role: target.role, name: target.displayName };
@@ -14236,13 +14314,13 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const plans = await db.select().from(packagePlans).orderBy(packagePlans.id);
-      const links = await db.select({ planId: packagePlanFeatures.planId, featureId: packagePlanFeatures.featureId, enabled: packagePlanFeatures.enabled, featureLimit: packagePlanFeatures.featureLimit, key: featureDefinitions.key }).from(packagePlanFeatures).innerJoin(featureDefinitions, eq7(packagePlanFeatures.featureId, featureDefinitions.id));
+      const links = await db.select({ planId: packagePlanFeatures.planId, featureId: packagePlanFeatures.featureId, enabled: packagePlanFeatures.enabled, featureLimit: packagePlanFeatures.featureLimit, key: featureDefinitions.key }).from(packagePlanFeatures).innerJoin(featureDefinitions, eq8(packagePlanFeatures.featureId, featureDefinitions.id));
       return plans.map((plan) => ({ ...plan, features: links.filter((link) => link.planId === plan.id) }));
     }),
     createPackagePlan: adminProcedure.input(z3.object({ key: z3.string().trim().min(2).max(80).regex(/^[a-z0-9_-]+$/), name: z3.string().trim().min(2).max(120), description: z3.string().trim().max(500).optional(), planType: z3.enum(["free", "monthly", "yearly", "trial", "enterprise"]).default("monthly"), monthlyPrice: z3.string().regex(/^\d+(\.\d{1,2})?$/, "\u0623\u062F\u062E\u0644 \u0645\u0628\u0644\u063A\u064B\u0627 \u0635\u062D\u064A\u062D\u064B\u0627 \u0628\u062D\u062F \u0623\u0642\u0635\u0649 \u0645\u0646\u0632\u0644\u062A\u064A\u0646 \u0639\u0634\u0631\u064A\u062A\u064A\u0646").default("0"), yearlyPrice: z3.string().regex(/^\d+(\.\d{1,2})?$/, "\u0623\u062F\u062E\u0644 \u0645\u0628\u0644\u063A\u064B\u0627 \u0635\u062D\u064A\u062D\u064B\u0627 \u0628\u062D\u062F \u0623\u0642\u0635\u0649 \u0645\u0646\u0632\u0644\u062A\u064A\u0646 \u0639\u0634\u0631\u064A\u062A\u064A\u0646").default("0") })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const duplicate = await db.select({ id: packagePlans.id }).from(packagePlans).where(eq7(packagePlans.key, input.key)).limit(1);
+      const duplicate = await db.select({ id: packagePlans.id }).from(packagePlans).where(eq8(packagePlans.key, input.key)).limit(1);
       if (duplicate[0]) throw new TRPCError7({ code: "CONFLICT", message: "\u0645\u0641\u062A\u0627\u062D \u0627\u0644\u0628\u0627\u0642\u0629 \u0645\u0633\u062A\u062E\u062F\u0645" });
       const result = await db.insert(packagePlans).values(input);
       await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "package.plan.create", entityType: "package_plan", entityId: String(result[0].insertId), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ key: input.key, name: input.name }) });
@@ -14251,37 +14329,37 @@ var appRouter = router({
     updatePackagePlan: adminProcedure.input(z3.object({ id: z3.number().int().positive(), name: z3.string().trim().min(2).max(120).optional(), description: z3.string().trim().max(500).nullable().optional(), planType: z3.enum(["free", "monthly", "yearly", "trial", "enterprise"]).optional(), monthlyPrice: z3.string().regex(/^\d+(\.\d{1,2})?$/, "\u0623\u062F\u062E\u0644 \u0645\u0628\u0644\u063A\u064B\u0627 \u0635\u062D\u064A\u062D\u064B\u0627 \u0628\u062D\u062F \u0623\u0642\u0635\u0649 \u0645\u0646\u0632\u0644\u062A\u064A\u0646 \u0639\u0634\u0631\u064A\u062A\u064A\u0646").optional(), yearlyPrice: z3.string().regex(/^\d+(\.\d{1,2})?$/, "\u0623\u062F\u062E\u0644 \u0645\u0628\u0644\u063A\u064B\u0627 \u0635\u062D\u064A\u062D\u064B\u0627 \u0628\u062D\u062F \u0623\u0642\u0635\u0649 \u0645\u0646\u0632\u0644\u062A\u064A\u0646 \u0639\u0634\u0631\u064A\u062A\u064A\u0646").optional(), isActive: z3.boolean().optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = await db.select({ id: packagePlans.id }).from(packagePlans).where(eq7(packagePlans.id, input.id)).limit(1);
+      const existing = await db.select({ id: packagePlans.id }).from(packagePlans).where(eq8(packagePlans.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Package plan not found" });
       const { id, ...inputChanges } = input;
       const changes = Object.fromEntries(Object.entries(inputChanges).filter(([, value]) => value !== void 0));
-      if (Object.keys(changes).length > 0) await db.update(packagePlans).set(changes).where(eq7(packagePlans.id, id));
+      if (Object.keys(changes).length > 0) await db.update(packagePlans).set(changes).where(eq8(packagePlans.id, id));
       await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "package.plan.update", entityType: "package_plan", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify(changes) });
       return { success: true, id };
     }),
     deletePackagePlan: adminProcedure.input(z3.object({ id: z3.number().int().positive(), reason: z3.string().trim().min(5, "\u0633\u0628\u0628 \u0627\u0644\u062D\u0630\u0641 \u0645\u0637\u0644\u0648\u0628 (5 \u0623\u062D\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644)").max(500) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const plan = (await db.select({ id: packagePlans.id, key: packagePlans.key, name: packagePlans.name }).from(packagePlans).where(eq7(packagePlans.id, input.id)).limit(1))[0];
+      const plan = (await db.select({ id: packagePlans.id, key: packagePlans.key, name: packagePlans.name }).from(packagePlans).where(eq8(packagePlans.id, input.id)).limit(1))[0];
       if (!plan) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0628\u0627\u0642\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
       const legacyNames = { hospitality_basic: ["Free", "Starter"], hospitality_pro: ["Growth"], hospitality_enterprise: ["Enterprise", "All Features"] };
       const subscriptionPlanNames = [plan.key, plan.name, ...legacyNames[plan.key] ?? []];
-      const used = await db.select({ id: subscriptions.id }).from(subscriptions).where(inArray4(subscriptions.plan, subscriptionPlanNames)).limit(1);
+      const used = await db.select({ id: subscriptions.id }).from(subscriptions).where(inArray5(subscriptions.plan, subscriptionPlanNames)).limit(1);
       if (used[0]) throw new TRPCError7({ code: "CONFLICT", message: "\u0644\u0627 \u064A\u0645\u0643\u0646 \u062D\u0630\u0641 \u0628\u0627\u0642\u0629 \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A. \u0623\u0648\u0642\u0641 \u0627\u0644\u0628\u0627\u0642\u0629 \u0628\u062F\u0644 \u062D\u0630\u0641\u0647\u0627." });
-      await db.delete(packagePlanFeatures).where(eq7(packagePlanFeatures.planId, input.id));
-      await db.delete(packagePlans).where(eq7(packagePlans.id, input.id));
+      await db.delete(packagePlanFeatures).where(eq8(packagePlanFeatures.planId, input.id));
+      await db.delete(packagePlans).where(eq8(packagePlans.id, input.id));
       await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "package.plan.delete", entityType: "package_plan", entityId: String(input.id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ key: plan.key, name: plan.name, reason: input.reason }) });
       return { success: true, id: input.id };
     }),
     setPackagePlanFeature: adminProcedure.input(z3.object({ planId: z3.number().int().positive(), featureId: z3.number().int().positive(), enabled: z3.boolean(), featureLimit: z3.number().int().nonnegative().nullable().optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const plan = await db.select({ id: packagePlans.id }).from(packagePlans).where(eq7(packagePlans.id, input.planId)).limit(1);
-      const feature = await db.select({ id: featureDefinitions.id }).from(featureDefinitions).where(eq7(featureDefinitions.id, input.featureId)).limit(1);
+      const plan = await db.select({ id: packagePlans.id }).from(packagePlans).where(eq8(packagePlans.id, input.planId)).limit(1);
+      const feature = await db.select({ id: featureDefinitions.id }).from(featureDefinitions).where(eq8(featureDefinitions.id, input.featureId)).limit(1);
       if (!plan[0] || !feature[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Package or feature not found" });
-      const existing = await db.select({ id: packagePlanFeatures.id }).from(packagePlanFeatures).where(and7(eq7(packagePlanFeatures.planId, input.planId), eq7(packagePlanFeatures.featureId, input.featureId))).limit(1);
+      const existing = await db.select({ id: packagePlanFeatures.id }).from(packagePlanFeatures).where(and8(eq8(packagePlanFeatures.planId, input.planId), eq8(packagePlanFeatures.featureId, input.featureId))).limit(1);
       const values = { enabled: input.enabled, featureLimit: input.featureLimit ?? null };
-      if (existing[0]) await db.update(packagePlanFeatures).set(values).where(eq7(packagePlanFeatures.id, existing[0].id));
+      if (existing[0]) await db.update(packagePlanFeatures).set(values).where(eq8(packagePlanFeatures.id, existing[0].id));
       else await db.insert(packagePlanFeatures).values({ planId: input.planId, featureId: input.featureId, ...values });
       await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "package.feature.update", entityType: "package_plan_feature", entityId: `${input.planId}:${input.featureId}`, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify(values) });
       return { success: true };
@@ -14289,11 +14367,11 @@ var appRouter = router({
     updateFeatureDefinition: adminProcedure.input(z3.object({ id: z3.number().int().positive(), label: z3.string().trim().min(2).max(160).optional(), category: z3.string().trim().min(2).max(80).optional(), description: z3.string().trim().max(1e3).nullable().optional(), status: z3.enum(["ON", "OFF", "LIMITED", "ADD_ON", "ENTERPRISE_ONLY"]).optional(), dependencyKey: z3.string().trim().max(120).nullable().optional(), defaultLimit: z3.number().int().nonnegative().nullable().optional(), isAddOn: z3.boolean().optional(), addonPrice: z3.string().regex(/^\d+(\.\d{1,2})?$/).nullable().optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = await db.select({ id: featureDefinitions.id }).from(featureDefinitions).where(eq7(featureDefinitions.id, input.id)).limit(1);
+      const existing = await db.select({ id: featureDefinitions.id }).from(featureDefinitions).where(eq8(featureDefinitions.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Feature definition not found" });
       const { id, ...inputChanges } = input;
       const changes = Object.fromEntries(Object.entries(inputChanges).filter(([, value]) => value !== void 0));
-      if (Object.keys(changes).length > 0) await db.update(featureDefinitions).set(changes).where(eq7(featureDefinitions.id, id));
+      if (Object.keys(changes).length > 0) await db.update(featureDefinitions).set(changes).where(eq8(featureDefinitions.id, id));
       await insertAuditLog({ restaurantId: null, actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "feature.definition.update", entityType: "feature_definition", entityId: String(id), outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify(changes) });
       return { success: true, id };
     }),
@@ -14305,8 +14383,8 @@ var appRouter = router({
     exportSubscriptionTransferReceiptsCsv: adminProcedure.input(z3.object({ status: z3.enum(["pending", "approved", "rejected"]).optional(), from: z3.coerce.date().optional(), to: z3.coerce.date().optional() }).optional()).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const conditions = [input?.status ? eq7(subscriptionTransferReceipts.status, input.status) : void 0, input?.from ? gte3(subscriptionTransferReceipts.createdAt, input.from) : void 0, input?.to ? lte3(subscriptionTransferReceipts.createdAt, input.to) : void 0].filter((condition) => Boolean(condition));
-      const rows = await db.select().from(subscriptionTransferReceipts).where(conditions.length ? and7(...conditions) : void 0).orderBy(desc3(subscriptionTransferReceipts.createdAt)).limit(2e3);
+      const conditions = [input?.status ? eq8(subscriptionTransferReceipts.status, input.status) : void 0, input?.from ? gte3(subscriptionTransferReceipts.createdAt, input.from) : void 0, input?.to ? lte3(subscriptionTransferReceipts.createdAt, input.to) : void 0].filter((condition) => Boolean(condition));
+      const rows = await db.select().from(subscriptionTransferReceipts).where(conditions.length ? and8(...conditions) : void 0).orderBy(desc3(subscriptionTransferReceipts.createdAt)).limit(2e3);
       const header = ["id", "email", "plan", "billing_cycle", "amount", "status", "review_note", "created_at", "reviewed_at"];
       const cell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
       const csv = `\uFEFF${[header, ...rows.map((row) => [row.id, row.email, row.plan, row.billingCycle, row.amount, row.status, row.reviewNote, row.createdAt, row.reviewedAt].map(cell))].map((row) => row.join(",")).join("\r\n")}\r
@@ -14316,8 +14394,8 @@ var appRouter = router({
     exportSubscriptionTransferReceiptsExcel: adminProcedure.input(z3.object({ status: z3.enum(["pending", "approved", "rejected"]).optional(), from: z3.coerce.date().optional(), to: z3.coerce.date().optional() }).optional()).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const conditions = [input?.status ? eq7(subscriptionTransferReceipts.status, input.status) : void 0, input?.from ? gte3(subscriptionTransferReceipts.createdAt, input.from) : void 0, input?.to ? lte3(subscriptionTransferReceipts.createdAt, input.to) : void 0].filter((condition) => Boolean(condition));
-      const rows = await db.select().from(subscriptionTransferReceipts).where(conditions.length ? and7(...conditions) : void 0).orderBy(desc3(subscriptionTransferReceipts.createdAt)).limit(2e3);
+      const conditions = [input?.status ? eq8(subscriptionTransferReceipts.status, input.status) : void 0, input?.from ? gte3(subscriptionTransferReceipts.createdAt, input.from) : void 0, input?.to ? lte3(subscriptionTransferReceipts.createdAt, input.to) : void 0].filter((condition) => Boolean(condition));
+      const rows = await db.select().from(subscriptionTransferReceipts).where(conditions.length ? and8(...conditions) : void 0).orderBy(desc3(subscriptionTransferReceipts.createdAt)).limit(2e3);
       const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
       const cells = (row) => `<tr>${row.map((value) => `<td>${esc(value)}</td>`).join("")}</tr>`;
       const excel = `\uFEFF<html><meta charset="utf-8"><style>body{font-family:Tahoma;direction:rtl}table{border-collapse:collapse}td,th{border:1px solid #ddd;padding:6px}</style><table><tr>${["id", "email", "plan", "billing_cycle", "amount", "status", "review_note", "created_at", "reviewed_at"].map((value) => `<th>${value}</th>`).join("")}</tr>${rows.map((row) => cells([row.id, row.email, row.plan, row.billingCycle, row.amount, row.status, row.reviewNote, row.createdAt, row.reviewedAt])).join("")}</table></html>`;
@@ -14326,9 +14404,9 @@ var appRouter = router({
     reviewSubscriptionTransferReceipt: adminProcedure.input(z3.object({ id: z3.number().int().positive(), status: z3.enum(["approved", "rejected"]), reviewNote: z3.string().trim().max(1e3).optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = await db.select({ id: subscriptionTransferReceipts.id, restaurantId: subscriptionTransferReceipts.restaurantId, email: subscriptionTransferReceipts.email, plan: subscriptionTransferReceipts.plan, billingCycle: subscriptionTransferReceipts.billingCycle, amount: subscriptionTransferReceipts.amount, status: subscriptionTransferReceipts.status }).from(subscriptionTransferReceipts).where(eq7(subscriptionTransferReceipts.id, input.id)).limit(1);
+      const existing = await db.select({ id: subscriptionTransferReceipts.id, restaurantId: subscriptionTransferReceipts.restaurantId, email: subscriptionTransferReceipts.email, plan: subscriptionTransferReceipts.plan, billingCycle: subscriptionTransferReceipts.billingCycle, amount: subscriptionTransferReceipts.amount, status: subscriptionTransferReceipts.status }).from(subscriptionTransferReceipts).where(eq8(subscriptionTransferReceipts.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0625\u064A\u0635\u0627\u0644 \u0627\u0644\u062A\u062D\u0648\u064A\u0644 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
-      await db.update(subscriptionTransferReceipts).set({ status: input.status, reviewNote: input.reviewNote?.trim() || null, reviewedByUserId: ctx.user.id, reviewedAt: /* @__PURE__ */ new Date() }).where(eq7(subscriptionTransferReceipts.id, input.id));
+      await db.update(subscriptionTransferReceipts).set({ status: input.status, reviewNote: input.reviewNote?.trim() || null, reviewedByUserId: ctx.user.id, reviewedAt: /* @__PURE__ */ new Date() }).where(eq8(subscriptionTransferReceipts.id, input.id));
       await insertAuditLog({ restaurantId: existing[0].restaurantId ?? null, actorUserId: ctx.user.id, actorRole: ctx.user.role ?? "admin", action: "subscription.transfer.reviewed", entityType: "subscription_transfer_receipt", entityId: String(input.id), outcome: input.status === "approved" ? "success" : "denied", requestId: nanoid4(12), metadata: JSON.stringify({ status: input.status, plan: existing[0].plan, billingCycle: existing[0].billingCycle, amount: existing[0].amount }) });
       if (input.status === "approved" && existing[0].restaurantId) {
         await createFinancialLedgerEntry({ restaurantId: existing[0].restaurantId, createdByUserId: ctx.user.id, section: "subscriptions", entryType: "payment", direction: "credit", amount: existing[0].amount, currencyCode: "SAR", referenceType: "subscription_transfer_receipt", referenceId: input.id, idempotencyKey: `subscription-transfer:${input.id}:approved`, note: `Subscription ${existing[0].plan} (${existing[0].billingCycle})` });
@@ -14336,14 +14414,14 @@ var appRouter = router({
         const renewsAt = new Date(now);
         if (existing[0].billingCycle === "yearly") renewsAt.setFullYear(renewsAt.getFullYear() + 1);
         else renewsAt.setMonth(renewsAt.getMonth() + 1);
-        const matchedPlan = (await db.select({ key: packagePlans.key, name: packagePlans.name }).from(packagePlans).where(and7(or4(eq7(packagePlans.key, existing[0].plan), eq7(packagePlans.name, existing[0].plan)), eq7(packagePlans.isActive, true))).limit(1))[0];
+        const matchedPlan = (await db.select({ key: packagePlans.key, name: packagePlans.name }).from(packagePlans).where(and8(or5(eq8(packagePlans.key, existing[0].plan), eq8(packagePlans.name, existing[0].plan)), eq8(packagePlans.isActive, true))).limit(1))[0];
         const activePlan = matchedPlan?.key ?? existing[0].plan;
         const monthlyPrice = existing[0].billingCycle === "monthly" ? existing[0].amount : (Number(existing[0].amount) / 12).toFixed(2);
-        const currentSubscription = (await db.select({ id: subscriptions.id }).from(subscriptions).where(eq7(subscriptions.restaurantId, existing[0].restaurantId)).orderBy(desc3(subscriptions.id)).limit(1))[0];
+        const currentSubscription = (await db.select({ id: subscriptions.id }).from(subscriptions).where(eq8(subscriptions.restaurantId, existing[0].restaurantId)).orderBy(desc3(subscriptions.id)).limit(1))[0];
         await db.transaction(async (tx) => {
-          if (currentSubscription) await tx.update(subscriptions).set({ plan: activePlan, status: "active", monthlyPrice, cancelledAt: null, renewsAt }).where(eq7(subscriptions.id, currentSubscription.id));
+          if (currentSubscription) await tx.update(subscriptions).set({ plan: activePlan, status: "active", monthlyPrice, cancelledAt: null, renewsAt }).where(eq8(subscriptions.id, currentSubscription.id));
           else await tx.insert(subscriptions).values({ restaurantId: existing[0].restaurantId, plan: activePlan, status: "active", monthlyPrice, startedAt: now, renewsAt });
-          await tx.update(restaurants).set({ plan: activePlan, status: "active" }).where(eq7(restaurants.id, existing[0].restaurantId));
+          await tx.update(restaurants).set({ plan: activePlan, status: "active" }).where(eq8(restaurants.id, existing[0].restaurantId));
         });
         void sendTemplatedEmail({ to: existing[0].email, restaurantId: existing[0].restaurantId, eventKey: "subscription.activated", data: { plan: existing[0].plan, periodEnd: renewsAt.toLocaleDateString("en-CA"), invoiceNumber: `SUB-${input.id}`, total: `${existing[0].amount} SAR` } }).catch(() => void 0);
       }
@@ -14352,7 +14430,7 @@ var appRouter = router({
     featureUsageMetrics: adminProcedure.query(async () => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const rows = await db.select({ featureId: featureDefinitions.id, key: featureDefinitions.key, label: featureDefinitions.label, enabled: restaurantFeatures.enabled, restaurantId: restaurantFeatures.restaurantId }).from(featureDefinitions).leftJoin(restaurantFeatures, eq7(restaurantFeatures.featureId, featureDefinitions.id));
+      const rows = await db.select({ featureId: featureDefinitions.id, key: featureDefinitions.key, label: featureDefinitions.label, enabled: restaurantFeatures.enabled, restaurantId: restaurantFeatures.restaurantId }).from(featureDefinitions).leftJoin(restaurantFeatures, eq8(restaurantFeatures.featureId, featureDefinitions.id));
       const byFeature = /* @__PURE__ */ new Map();
       for (const row of rows) {
         const current = byFeature.get(row.featureId) ?? { featureId: row.featureId, key: row.key, label: row.label, configuredRestaurants: /* @__PURE__ */ new Set(), enabledRestaurants: /* @__PURE__ */ new Set() };
@@ -14439,6 +14517,15 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const rows = await db.select({ status: subscriptions.status, plan: subscriptions.plan, monthlyPrice: subscriptions.monthlyPrice, cancelledAt: subscriptions.cancelledAt }).from(subscriptions);
+      const startOfToday = /* @__PURE__ */ new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const orderRows = await db.select({ total: orders.total, createdAt: orders.createdAt, status: orders.status }).from(orders);
+      const billableOrders = orderRows.filter((row) => row.status !== "cancelled");
+      const totalSales = billableOrders.reduce((sum, row) => sum + Number(row.total || 0), 0);
+      const todayOrderRows = billableOrders.filter((row) => row.createdAt.getTime() >= startOfToday.getTime());
+      const ordersToday = todayOrderRows.length;
+      const salesToday = todayOrderRows.reduce((sum, row) => sum + Number(row.total || 0), 0);
+      const averageOrder = billableOrders.length ? totalSales / billableOrders.length : 0;
       const activeRows = rows.filter((row) => row.status === "active");
       const mrr = activeRows.reduce((sum, row) => sum + Number(row.monthlyPrice || 0), 0);
       const recentCutoff = Date.now() - 30 * 24 * 60 * 60 * 1e3;
@@ -14452,7 +14539,7 @@ var appRouter = router({
         }
         return acc;
       }, {});
-      return { currency: "SAR", mrr, arr: mrr * 12, activeSubscriptions: activeRows.length, trialSubscriptions: rows.filter((row) => row.status === "trial").length, pastDueSubscriptions: rows.filter((row) => row.status === "past_due").length, cancelledLast30Days, churnRate: churnBase ? cancelledLast30Days / churnBase * 100 : 0, byPlan };
+      return { currency: "SAR", mrr, arr: mrr * 12, totalSales, salesToday, ordersToday, averageOrder, activeSubscriptions: activeRows.length, trialSubscriptions: rows.filter((row) => row.status === "trial").length, pastDueSubscriptions: rows.filter((row) => row.status === "past_due").length, cancelledLast30Days, churnRate: churnBase ? cancelledLast30Days / churnBase * 100 : 0, byPlan };
     }),
     profileGovernance: platformAdminProcedure.query(async () => {
       const db = await getDb();
@@ -14476,7 +14563,7 @@ var appRouter = router({
       } catch {
         plans = [];
       }
-      const [codeStats, bindings] = await Promise.all([db.select({ status: vcardCardCodes.status, total: sql3`count(*)` }).from(vcardCardCodes).groupBy(vcardCardCodes.status), db.select({ id: vcardCardBindings.id, codeId: vcardCardBindings.codeId, userId: vcardCardBindings.userId, customerProfileId: vcardCardBindings.customerProfileId, restaurantId: vcardCardBindings.restaurantId, targetRole: vcardCardBindings.targetRole, createdAt: vcardCardBindings.createdAt, profileDisplayName: customerProfiles.displayName, profileSlug: customerProfiles.slug, profileIsPublic: customerProfiles.isPublic }).from(vcardCardBindings).leftJoin(customerProfiles, eq7(vcardCardBindings.customerProfileId, customerProfiles.id)).orderBy(desc3(vcardCardBindings.createdAt)).limit(30)]);
+      const [codeStats, bindings] = await Promise.all([db.select({ status: vcardCardCodes.status, total: sql3`count(*)` }).from(vcardCardCodes).groupBy(vcardCardCodes.status), db.select({ id: vcardCardBindings.id, codeId: vcardCardBindings.codeId, userId: vcardCardBindings.userId, customerProfileId: vcardCardBindings.customerProfileId, restaurantId: vcardCardBindings.restaurantId, targetRole: vcardCardBindings.targetRole, createdAt: vcardCardBindings.createdAt, profileDisplayName: customerProfiles.displayName, profileSlug: customerProfiles.slug, profileIsPublic: customerProfiles.isPublic }).from(vcardCardBindings).leftJoin(customerProfiles, eq8(vcardCardBindings.customerProfileId, customerProfiles.id)).orderBy(desc3(vcardCardBindings.createdAt)).limit(30)]);
       return { policies: { customer: settings.profileCustomerEnabled === "true", restaurant: settings.profileRestaurantEnabled === "true", driver: settings.profileDriverEnabled === "true" }, overrides, plans, codeStats: codeStats.map((row) => ({ status: row.status, total: Number(row.total ?? 0) })), bindings };
     }),
     updateProfileGovernance: platformAdminProcedure.input(z3.object({ profileCustomerEnabled: z3.boolean(), profileRestaurantEnabled: z3.boolean(), profileDriverEnabled: z3.boolean(), profilePlans: z3.array(z3.object({ key: z3.string().trim().min(2).max(60), label: z3.string().trim().min(2).max(120), role: z3.enum(["customer", "restaurant", "driver"]), enabled: z3.boolean(), price: z3.string().regex(/^\d+(\.\d{1,2})?$/) })).max(12), profileAccountOverrides: z3.array(z3.object({ userId: z3.number().int().positive(), role: z3.enum(["customer", "restaurant", "driver"]), enabled: z3.boolean() })).max(200) })).mutation(async ({ ctx, input }) => {
@@ -14490,7 +14577,7 @@ var appRouter = router({
     generateProfileKey: platformAdminProcedure.input(z3.object({ targetRole: z3.enum(["customer", "restaurant", "driver"]) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      let product = (await db.select({ id: vcardCardProducts.id }).from(vcardCardProducts).where(and7(eq7(vcardCardProducts.targetRole, input.targetRole), eq7(vcardCardProducts.isActive, true))).orderBy(desc3(vcardCardProducts.createdAt)).limit(1))[0];
+      let product = (await db.select({ id: vcardCardProducts.id }).from(vcardCardProducts).where(and8(eq8(vcardCardProducts.targetRole, input.targetRole), eq8(vcardCardProducts.isActive, true))).orderBy(desc3(vcardCardProducts.createdAt)).limit(1))[0];
       if (!product) {
         const productResult = await db.insert(vcardCardProducts).values({ name: `Profile NFC \xB7 ${input.targetRole}`, description: "\u0645\u0641\u062A\u0627\u062D Profile \u0645\u0648\u0644\u062F \u0645\u0646 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0646\u0635\u0629", price: "0.00", currency: "SAR", targetRole: input.targetRole, isActive: true });
         product = { id: Number(productResult[0].insertId) };
@@ -14504,11 +14591,11 @@ var appRouter = router({
     bindProfileKey: platformAdminProcedure.input(z3.object({ code: z3.string().trim().min(8).max(160), userId: z3.number().int().positive(), targetRole: z3.enum(["customer", "restaurant", "driver"]), customerProfileId: z3.number().int().positive().optional(), restaurantId: z3.number().int().positive().optional() })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const target = (await db.select({ id: users.id }).from(users).where(eq7(users.id, input.userId)).limit(1))[0];
+      const target = (await db.select({ id: users.id }).from(users).where(eq8(users.id, input.userId)).limit(1))[0];
       if (!target) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u062D\u0633\u0627\u0628 \u0627\u0644\u0645\u0633\u062A\u0647\u062F\u0641 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
       if (input.targetRole === "customer") {
         if (!input.customerProfileId) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u062E\u062A\u0631 Profile \u0627\u0644\u0639\u0645\u064A\u0644 \u0642\u0628\u0644 \u0627\u0644\u0631\u0628\u0637" });
-        const profile = (await db.select({ id: customerProfiles.id }).from(customerProfiles).where(and7(eq7(customerProfiles.id, input.customerProfileId), eq7(customerProfiles.userId, input.userId))).limit(1))[0];
+        const profile = (await db.select({ id: customerProfiles.id }).from(customerProfiles).where(and8(eq8(customerProfiles.id, input.customerProfileId), eq8(customerProfiles.userId, input.userId))).limit(1))[0];
         if (!profile) throw new TRPCError7({ code: "BAD_REQUEST", message: "Profile \u0627\u0644\u0639\u0645\u064A\u0644 \u0644\u0627 \u064A\u0637\u0627\u0628\u0642 \u0627\u0644\u062D\u0633\u0627\u0628" });
       }
       if (input.targetRole === "restaurant" && !input.restaurantId) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u0627\u062E\u062A\u0631 \u0627\u0644\u0645\u0637\u0639\u0645 \u0642\u0628\u0644 \u0627\u0644\u0631\u0628\u0637" });
@@ -14543,14 +14630,14 @@ var appRouter = router({
     createSubscription: platformAdminProcedure.input(z3.object({ restaurantId: z3.number().int().positive(), plan: z3.string().min(2).max(64), monthlyPrice: z3.string().regex(/^\d+(\.\d{1,2})?$/).default("0"), status: z3.enum(["trial", "active", "past_due", "cancelled"]).default("trial") })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const restaurant = await db.select({ id: restaurants.id }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1);
+      const restaurant = await db.select({ id: restaurants.id }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1);
       if (!restaurant[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Restaurant not found" });
-      const plan = (await db.select({ key: packagePlans.key, name: packagePlans.name, planType: packagePlans.planType }).from(packagePlans).where(and7(or4(eq7(packagePlans.key, input.plan), eq7(packagePlans.name, input.plan)), eq7(packagePlans.isActive, true))).limit(1))[0];
+      const plan = (await db.select({ key: packagePlans.key, name: packagePlans.name, planType: packagePlans.planType }).from(packagePlans).where(and8(or5(eq8(packagePlans.key, input.plan), eq8(packagePlans.name, input.plan)), eq8(packagePlans.isActive, true))).limit(1))[0];
       const normalizedStatus = plan && plan.planType !== "trial" && input.status === "trial" ? "active" : input.status;
       const result = await db.transaction(async (tx) => {
         const inserted = await tx.insert(subscriptions).values({ ...input, plan: plan?.key ?? input.plan, status: normalizedStatus, cancelledAt: normalizedStatus === "cancelled" ? /* @__PURE__ */ new Date() : null });
-        if (normalizedStatus === "active") await tx.update(restaurants).set({ plan: plan?.key ?? input.plan, status: "active" }).where(eq7(restaurants.id, input.restaurantId));
-        else if (normalizedStatus === "trial") await tx.update(restaurants).set({ plan: plan?.key ?? input.plan, status: "trial" }).where(eq7(restaurants.id, input.restaurantId));
+        if (normalizedStatus === "active") await tx.update(restaurants).set({ plan: plan?.key ?? input.plan, status: "active" }).where(eq8(restaurants.id, input.restaurantId));
+        else if (normalizedStatus === "trial") await tx.update(restaurants).set({ plan: plan?.key ?? input.plan, status: "trial" }).where(eq8(restaurants.id, input.restaurantId));
         return inserted;
       });
       return { success: true, id: Number(result[0].insertId), status: normalizedStatus, plan: plan?.key ?? input.plan };
@@ -14558,26 +14645,26 @@ var appRouter = router({
     updateSubscription: platformAdminProcedure.input(z3.object({ id: z3.number().int().positive(), plan: z3.string().min(2).max(64).optional(), monthlyPrice: z3.string().regex(/^\d+(\.\d{1,2})?$/).optional(), status: z3.enum(["trial", "active", "past_due", "cancelled"]).optional() })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ id: subscriptions.id, restaurantId: subscriptions.restaurantId, plan: subscriptions.plan, status: subscriptions.status }).from(subscriptions).where(eq7(subscriptions.id, input.id)).limit(1);
+      const existing = await db.select({ id: subscriptions.id, restaurantId: subscriptions.restaurantId, plan: subscriptions.plan, status: subscriptions.status }).from(subscriptions).where(eq8(subscriptions.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Subscription not found" });
       const requestedPlan = input.plan ?? existing[0].plan;
-      const plan = (await db.select({ key: packagePlans.key, name: packagePlans.name, planType: packagePlans.planType }).from(packagePlans).where(and7(or4(eq7(packagePlans.key, requestedPlan), eq7(packagePlans.name, requestedPlan)), eq7(packagePlans.isActive, true))).limit(1))[0];
+      const plan = (await db.select({ key: packagePlans.key, name: packagePlans.name, planType: packagePlans.planType }).from(packagePlans).where(and8(or5(eq8(packagePlans.key, requestedPlan), eq8(packagePlans.name, requestedPlan)), eq8(packagePlans.isActive, true))).limit(1))[0];
       const requestedStatus = input.status ?? existing[0].status;
       const normalizedStatus = plan && plan.planType !== "trial" && requestedStatus === "trial" ? "active" : requestedStatus;
       const { id: _id, ...changes } = input;
       await db.transaction(async (tx) => {
-        await tx.update(subscriptions).set({ ...changes, plan: plan?.key ?? requestedPlan, status: normalizedStatus, ...input.status ? { cancelledAt: normalizedStatus === "cancelled" ? /* @__PURE__ */ new Date() : null } : {} }).where(eq7(subscriptions.id, input.id));
-        if (normalizedStatus === "active") await tx.update(restaurants).set({ plan: plan?.key ?? requestedPlan, status: "active" }).where(eq7(restaurants.id, existing[0].restaurantId));
-        else if (normalizedStatus === "trial") await tx.update(restaurants).set({ plan: plan?.key ?? requestedPlan, status: "trial" }).where(eq7(restaurants.id, existing[0].restaurantId));
+        await tx.update(subscriptions).set({ ...changes, plan: plan?.key ?? requestedPlan, status: normalizedStatus, ...input.status ? { cancelledAt: normalizedStatus === "cancelled" ? /* @__PURE__ */ new Date() : null } : {} }).where(eq8(subscriptions.id, input.id));
+        if (normalizedStatus === "active") await tx.update(restaurants).set({ plan: plan?.key ?? requestedPlan, status: "active" }).where(eq8(restaurants.id, existing[0].restaurantId));
+        else if (normalizedStatus === "trial") await tx.update(restaurants).set({ plan: plan?.key ?? requestedPlan, status: "trial" }).where(eq8(restaurants.id, existing[0].restaurantId));
       });
       return { success: true, id: input.id, status: normalizedStatus, plan: plan?.key ?? requestedPlan };
     }),
     cancelSubscription: platformAdminProcedure.input(z3.object({ id: z3.number().int().positive() })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ id: subscriptions.id }).from(subscriptions).where(eq7(subscriptions.id, input.id)).limit(1);
+      const existing = await db.select({ id: subscriptions.id }).from(subscriptions).where(eq8(subscriptions.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Subscription not found" });
-      await db.update(subscriptions).set({ status: "cancelled", cancelledAt: /* @__PURE__ */ new Date() }).where(eq7(subscriptions.id, input.id));
+      await db.update(subscriptions).set({ status: "cancelled", cancelledAt: /* @__PURE__ */ new Date() }).where(eq8(subscriptions.id, input.id));
       return { success: true, id: input.id, status: "cancelled" };
     }),
     systemHealth: adminProcedure.query(async () => {
@@ -14646,7 +14733,7 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
       if (input.restaurantId) {
-        const restaurant = await db.select({ id: restaurants.id }).from(restaurants).where(eq7(restaurants.id, input.restaurantId)).limit(1);
+        const restaurant = await db.select({ id: restaurants.id }).from(restaurants).where(eq8(restaurants.id, input.restaurantId)).limit(1);
         if (!restaurant[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Restaurant not found" });
       }
       const result = await db.insert(roles).values({ restaurantId: input.restaurantId ?? null, name: input.name.trim(), scope: input.restaurantId ? "restaurant" : "platform" });
@@ -14655,38 +14742,38 @@ var appRouter = router({
     updateRole: adminProcedure.input(z3.object({ id: z3.number().int().positive(), name: z3.string().min(2).max(80) })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ id: roles.id }).from(roles).where(eq7(roles.id, input.id)).limit(1);
+      const existing = await db.select({ id: roles.id }).from(roles).where(eq8(roles.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Role not found" });
-      await db.update(roles).set({ name: input.name.trim() }).where(eq7(roles.id, input.id));
+      await db.update(roles).set({ name: input.name.trim() }).where(eq8(roles.id, input.id));
       return { success: true, id: input.id };
     }),
     deleteRole: adminProcedure.input(z3.object({ id: z3.number().int().positive() })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const existing = await db.select({ id: roles.id }).from(roles).where(eq7(roles.id, input.id)).limit(1);
+      const existing = await db.select({ id: roles.id }).from(roles).where(eq8(roles.id, input.id)).limit(1);
       if (!existing[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Role not found" });
-      await db.delete(rolePermissions).where(eq7(rolePermissions.roleId, input.id));
-      await db.delete(roles).where(eq7(roles.id, input.id));
+      await db.delete(rolePermissions).where(eq8(rolePermissions.roleId, input.id));
+      await db.delete(roles).where(eq8(roles.id, input.id));
       return { success: true, id: input.id };
     }),
     rolePermissions: adminProcedure.input(z3.object({ roleId: z3.number().int().positive() })).query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const role = await db.select({ id: roles.id }).from(roles).where(eq7(roles.id, input.roleId)).limit(1);
+      const role = await db.select({ id: roles.id }).from(roles).where(eq8(roles.id, input.roleId)).limit(1);
       if (!role[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Role not found" });
-      return db.select({ permissionId: permissions.id, key: permissions.key, label: permissions.label }).from(rolePermissions).innerJoin(permissions, eq7(rolePermissions.permissionId, permissions.id)).where(eq7(rolePermissions.roleId, input.roleId));
+      return db.select({ permissionId: permissions.id, key: permissions.key, label: permissions.label }).from(rolePermissions).innerJoin(permissions, eq8(rolePermissions.permissionId, permissions.id)).where(eq8(rolePermissions.roleId, input.roleId));
     }),
     setRolePermissions: adminProcedure.input(z3.object({ roleId: z3.number().int().positive(), permissionIds: z3.array(z3.number().int().positive()).max(500) })).mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database is not available");
-      const role = await db.select({ id: roles.id }).from(roles).where(eq7(roles.id, input.roleId)).limit(1);
+      const role = await db.select({ id: roles.id }).from(roles).where(eq8(roles.id, input.roleId)).limit(1);
       if (!role[0]) throw new TRPCError7({ code: "NOT_FOUND", message: "Role not found" });
       const uniquePermissionIds = Array.from(new Set(input.permissionIds));
       if (uniquePermissionIds.length) {
-        const existingPermissions = await db.select({ id: permissions.id }).from(permissions).where(inArray4(permissions.id, uniquePermissionIds));
+        const existingPermissions = await db.select({ id: permissions.id }).from(permissions).where(inArray5(permissions.id, uniquePermissionIds));
         if (existingPermissions.length !== uniquePermissionIds.length) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u064A\u0648\u062C\u062F \u0645\u0639\u0631\u0641 \u0635\u0644\u0627\u062D\u064A\u0629 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D" });
       }
-      await db.delete(rolePermissions).where(eq7(rolePermissions.roleId, input.roleId));
+      await db.delete(rolePermissions).where(eq8(rolePermissions.roleId, input.roleId));
       if (uniquePermissionIds.length) await db.insert(rolePermissions).values(uniquePermissionIds.map((permissionId) => ({ roleId: input.roleId, permissionId })));
       return { success: true, roleId: input.roleId, permissionIds: uniquePermissionIds };
     }),
@@ -14721,29 +14808,29 @@ var appRouter = router({
     toggleEntityStatus: adminProcedure.input(z3.object({ entityId: z3.string().trim().min(1).max(30) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: platformEntities.id, customerName: platformEntities.customerName, email: platformEntities.email, sector: platformEntities.sector, status: platformEntities.status, plan: platformEntities.plan, taxId: platformEntities.taxId, licensingFee: platformEntities.licensingFee }).from(platformEntities).where(eq7(platformEntities.id, input.entityId)).limit(1))[0];
+      const existing = (await db.select({ id: platformEntities.id, customerName: platformEntities.customerName, email: platformEntities.email, sector: platformEntities.sector, status: platformEntities.status, plan: platformEntities.plan, taxId: platformEntities.taxId, licensingFee: platformEntities.licensingFee }).from(platformEntities).where(eq8(platformEntities.id, input.entityId)).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0646\u0634\u0623\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
       const nextStatus = !existing.status;
-      await db.update(platformEntities).set({ status: nextStatus }).where(eq7(platformEntities.id, input.entityId));
+      await db.update(platformEntities).set({ status: nextStatus }).where(eq8(platformEntities.id, input.entityId));
       await db.insert(governanceAuditLogs).values({ adminId: String(ctx.user.id), entityId: input.entityId, actionType: nextStatus ? "entity.activated" : "entity.suspended", previousState: JSON.stringify({ status: existing.status }), nextState: JSON.stringify({ status: nextStatus }) });
       return { success: true, entityId: input.entityId, status: nextStatus };
     }),
     upgradeEntityPlan: adminProcedure.input(z3.object({ entityId: z3.string().trim().min(1).max(30), plan: z3.enum(["Basic", "Pro", "Enterprise"]) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: platformEntities.id, plan: platformEntities.plan, status: platformEntities.status }).from(platformEntities).where(eq7(platformEntities.id, input.entityId)).limit(1))[0];
+      const existing = (await db.select({ id: platformEntities.id, plan: platformEntities.plan, status: platformEntities.status }).from(platformEntities).where(eq8(platformEntities.id, input.entityId)).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0646\u0634\u0623\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
       const previousPlan = existing.plan;
-      await db.update(platformEntities).set({ plan: input.plan }).where(eq7(platformEntities.id, input.entityId));
+      await db.update(platformEntities).set({ plan: input.plan }).where(eq8(platformEntities.id, input.entityId));
       await db.insert(governanceAuditLogs).values({ adminId: String(ctx.user.id), entityId: input.entityId, actionType: "entity.plan_changed", previousState: JSON.stringify({ plan: previousPlan, status: existing.status }), nextState: JSON.stringify({ plan: input.plan }) });
       return { success: true, entityId: input.entityId, previousPlan, nextPlan: input.plan };
     }),
     toggleFreelancerCatalog: adminProcedure.input(z3.object({ entityId: z3.string().trim().min(1).max(30) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: platformEntities.id, customerName: platformEntities.customerName, email: platformEntities.email }).from(platformEntities).where(eq7(platformEntities.id, input.entityId)).limit(1))[0];
+      const existing = (await db.select({ id: platformEntities.id, customerName: platformEntities.customerName, email: platformEntities.email }).from(platformEntities).where(eq8(platformEntities.id, input.entityId)).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0646\u0634\u0623\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
-      const current = (await db.select({ id: digitalCatalogs.id, catalogEnabled: digitalCatalogs.catalogEnabled }).from(digitalCatalogs).where(eq7(digitalCatalogs.entityId, input.entityId)).limit(1))[0];
+      const current = (await db.select({ id: digitalCatalogs.id, catalogEnabled: digitalCatalogs.catalogEnabled }).from(digitalCatalogs).where(eq8(digitalCatalogs.entityId, input.entityId)).limit(1))[0];
       let catalog = current;
       if (!catalog) {
         const inserted = await db.insert(digitalCatalogs).values({ entityId: input.entityId, catalogUrl: `https://nfood.io/c/${input.entityId}`, isPublic: true, totalItems: 0, catalogEnabled: false, isFreelancer: true, isPhotographer: false, storageUsed: 0, storageLimit: 5120 });
@@ -14751,16 +14838,16 @@ var appRouter = router({
         catalog = { id: catalogId, catalogEnabled: false };
       }
       const nextEnabled = !catalog.catalogEnabled;
-      await db.update(digitalCatalogs).set({ catalogEnabled: nextEnabled }).where(eq7(digitalCatalogs.id, catalog.id));
+      await db.update(digitalCatalogs).set({ catalogEnabled: nextEnabled }).where(eq8(digitalCatalogs.id, catalog.id));
       await db.insert(governanceAuditLogs).values({ adminId: String(ctx.user.id), entityId: input.entityId, actionType: nextEnabled ? "catalog.enabled" : "catalog.disabled", previousState: JSON.stringify({ catalogEnabled: catalog.catalogEnabled }), nextState: JSON.stringify({ catalogEnabled: nextEnabled }) });
       return { success: true, entityId: input.entityId, catalogEnabled: nextEnabled };
     }),
     upgradeStorageLimit: adminProcedure.input(z3.object({ entityId: z3.string().trim().min(1).max(30), targetLimitMb: z3.coerce.number().int().min(1024).max(1024 * 1024) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
-      const existing = (await db.select({ id: platformEntities.id, customerName: platformEntities.customerName, email: platformEntities.email }).from(platformEntities).where(eq7(platformEntities.id, input.entityId)).limit(1))[0];
+      const existing = (await db.select({ id: platformEntities.id, customerName: platformEntities.customerName, email: platformEntities.email }).from(platformEntities).where(eq8(platformEntities.id, input.entityId)).limit(1))[0];
       if (!existing) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0645\u0646\u0634\u0623\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
-      const current = (await db.select({ id: digitalCatalogs.id, storageLimit: digitalCatalogs.storageLimit, storageUsed: digitalCatalogs.storageUsed, catalogEnabled: digitalCatalogs.catalogEnabled, isFreelancer: digitalCatalogs.isFreelancer, isPhotographer: digitalCatalogs.isPhotographer }).from(digitalCatalogs).where(eq7(digitalCatalogs.entityId, input.entityId)).limit(1))[0];
+      const current = (await db.select({ id: digitalCatalogs.id, storageLimit: digitalCatalogs.storageLimit, storageUsed: digitalCatalogs.storageUsed, catalogEnabled: digitalCatalogs.catalogEnabled, isFreelancer: digitalCatalogs.isFreelancer, isPhotographer: digitalCatalogs.isPhotographer }).from(digitalCatalogs).where(eq8(digitalCatalogs.entityId, input.entityId)).limit(1))[0];
       let catalog = current;
       if (!catalog) {
         const inserted = await db.insert(digitalCatalogs).values({ entityId: input.entityId, catalogUrl: `https://nfood.io/c/${input.entityId}`, isPublic: true, totalItems: 0, catalogEnabled: false, isFreelancer: true, isPhotographer: false, storageUsed: 0, storageLimit: 1024 });
@@ -14772,7 +14859,7 @@ var appRouter = router({
       const extraMb = input.targetLimitMb - previousLimitMb;
       const fee = Number((extraMb / 1024 * 20).toFixed(2));
       const invoiceNumber = `NFOOD-STORAGE-${Date.now()}-${nanoid4(6).toUpperCase()}`;
-      await db.update(digitalCatalogs).set({ storageLimit: input.targetLimitMb }).where(eq7(digitalCatalogs.id, catalog.id));
+      await db.update(digitalCatalogs).set({ storageLimit: input.targetLimitMb }).where(eq8(digitalCatalogs.id, catalog.id));
       await db.insert(governanceAuditLogs).values({ adminId: String(ctx.user.id), entityId: input.entityId, actionType: "storage.limit_upgraded", previousState: JSON.stringify({ storageLimit: previousLimitMb, storageUsed: catalog.storageUsed, catalogEnabled: catalog.catalogEnabled }), nextState: JSON.stringify({ storageLimit: input.targetLimitMb, isFreelancer: catalog.isFreelancer, isPhotographer: catalog.isPhotographer, hidden: false, invoiceNumber, fee, currency: "SAR", extraMb, locked: input.targetLimitMb <= catalog.storageUsed }) });
       return { success: true, entityId: input.entityId, previousLimitMb, nextLimitMb: input.targetLimitMb, extraMb, fee, currency: "SAR", invoiceNumber };
     }),
@@ -14780,7 +14867,7 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const demoIds = ["demo-free-01", "demo-free-02", "demo-free-03", "demo-free-04", "demo-free-05"];
-      const existingDemo = (await db.select({ id: platformEntities.id }).from(platformEntities).where(inArray4(platformEntities.id, [...demoIds])).limit(1))[0];
+      const existingDemo = (await db.select({ id: platformEntities.id }).from(platformEntities).where(inArray5(platformEntities.id, [...demoIds])).limit(1))[0];
       if (existingDemo) return { seeded: false, count: 0, message: "\u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062A\u062C\u0631\u064A\u0628\u064A\u0629 \u0645\u0648\u062C\u0648\u062F\u0629 \u0645\u0633\u0628\u0642\u0627\u064B" };
       const sectors = Object.values(SECTOR_ALIAS);
       const names = ["\u0645\u0635\u0648\u0651\u0631\u0629 \u0623\u0637\u0628\u0627\u0642 \u2014 \u0633\u0627\u0631\u0629", "\u0645\u0628\u062F\u0639 \u0645\u062D\u062A\u0648\u0649 \u0648\u0635\u0641\u0627\u062A \u2014 \u062E\u0627\u0644\u062F", "\u0645\u0635\u0648\u0651\u0631 \u0645\u0646\u064A\u0648 \u2014 \u0641\u064A\u0635\u0644", "\u0635\u0627\u0646\u0639\u0629 \u0623\u0641\u0644\u0627\u0645 \u0645\u0637\u0627\u0639\u0645 \u2014 \u0631\u064A\u0645", "\u0645\u062F\u0648\u0651\u0646\u0629 \u0646\u0643\u0647\u0627\u062A \u2014 \u0646\u0648\u0631\u0629"];
@@ -14834,6 +14921,55 @@ var appRouter = router({
       await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? ctx.user.testRole ?? "admin", action: "sector.meta.updated", entityType: "sector", entityId: input.sectorKey, outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ previous, next: { labelAr: input.labelAr, labelEn: input.labelEn, labelFr: input.labelFr, active: input.active, coverUrl: input.coverUrl } }) });
       return { success: true, sectorKey: input.sectorKey };
     }),
+    listScheduledNotifications: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      return db.select().from(scheduledNotifications).where(ne2(scheduledNotifications.status, "deleted")).orderBy(desc3(scheduledNotifications.createdAt));
+    }),
+    sendCustomNotification: adminProcedure.input(z3.object({ targetType: z3.enum(["all", "customers", "restaurants", "admins", "selected"]), targetUserIds: z3.array(z3.number().int().positive()).max(5e3).optional(), title: z3.string().trim().min(1).max(180), body: z3.string().trim().min(1).max(2e3), type: z3.enum(["task", "message", "payment", "system"]).default("system") })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const recipientIds = await resolveNotificationRecipients(db, input.targetType, JSON.stringify(input.targetUserIds ?? []));
+      const result = await deliverNotification(db, recipientIds, { title: input.title, body: input.body, type: input.type });
+      await insertAuditLog({ actorUserId: ctx.user.id, actorRole: ctx.user.role ?? ctx.user.testRole ?? "admin", action: "notification.custom.sent", entityType: "notification", entityId: "immediate", outcome: "success", requestId: nanoid4(12), metadata: JSON.stringify({ targetType: input.targetType, notified: result.notified, pushSent: result.pushSent }) });
+      return { success: true, ...result };
+    }),
+    createScheduledNotification: adminProcedure.input(z3.object({ targetType: z3.enum(["all", "customers", "restaurants", "admins", "selected"]), targetUserIds: z3.array(z3.number().int().positive()).max(5e3).optional(), title: z3.string().trim().min(1).max(180), body: z3.string().trim().min(1).max(2e3), type: z3.enum(["task", "message", "payment", "system"]).default("system"), cron: z3.string().regex(/^\d+ \d+ \d+ \S+ \S+ \S+$/) })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const result = await db.insert(scheduledNotifications).values({ title: input.title, body: input.body, type: input.type, targetType: input.targetType, targetUserIdsJson: JSON.stringify(input.targetUserIds ?? []), scheduleCron: input.cron, createdByUserId: ctx.user.id });
+      const id = Number(result[0].insertId);
+      const sessionToken = parseCookie(ctx.req.headers.cookie ?? "")[COOKIE_NAME] ?? "";
+      if (!sessionToken) throw new TRPCError7({ code: "UNAUTHORIZED", message: "\u062C\u0644\u0633\u0629 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0644\u0644\u062C\u062F\u0648\u0644\u0629" });
+      try {
+        const job = await createHeartbeatJob({ name: `notification-${id}`, cron: input.cron, path: "/api/scheduled/notification", description: `Scheduled notification ${input.title}` }, sessionToken);
+        await db.update(scheduledNotifications).set({ scheduleCronTaskUid: job.taskUid }).where(eq8(scheduledNotifications.id, id));
+        return { success: true, id, taskUid: job.taskUid };
+      } catch (error) {
+        await db.delete(scheduledNotifications).where(eq8(scheduledNotifications.id, id));
+        throw error;
+      }
+    }),
+    setScheduledNotificationStatus: adminProcedure.input(z3.object({ id: z3.number().int().positive(), status: z3.enum(["scheduled", "paused"]) })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const row = (await db.select().from(scheduledNotifications).where(eq8(scheduledNotifications.id, input.id)).limit(1))[0];
+      if (!row) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 \u0627\u0644\u0645\u062C\u062F\u0648\u0644\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
+      const sessionToken = parseCookie(ctx.req.headers.cookie ?? "")[COOKIE_NAME] ?? "";
+      if (row.scheduleCronTaskUid) await updateHeartbeatJob(row.scheduleCronTaskUid, { enable: input.status === "scheduled" }, sessionToken);
+      await db.update(scheduledNotifications).set({ status: input.status }).where(eq8(scheduledNotifications.id, input.id));
+      return { success: true, id: input.id, status: input.status };
+    }),
+    deleteScheduledNotification: adminProcedure.input(z3.object({ id: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const row = (await db.select({ scheduleCronTaskUid: scheduledNotifications.scheduleCronTaskUid }).from(scheduledNotifications).where(eq8(scheduledNotifications.id, input.id)).limit(1))[0];
+      if (!row) throw new TRPCError7({ code: "NOT_FOUND", message: "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 \u0627\u0644\u0645\u062C\u062F\u0648\u0644\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
+      const sessionToken = parseCookie(ctx.req.headers.cookie ?? "")[COOKIE_NAME] ?? "";
+      if (row.scheduleCronTaskUid && sessionToken) await deleteHeartbeatJob(row.scheduleCronTaskUid, sessionToken);
+      await db.update(scheduledNotifications).set({ status: "deleted" }).where(eq8(scheduledNotifications.id, input.id));
+      return { success: true, id: input.id };
+    }),
     notifySector: adminProcedure.input(z3.object({ sectorKey: z3.string().trim().min(1).max(40), title: z3.string().trim().min(1).max(180), body: z3.string().trim().min(1).max(2e3), type: z3.enum(["task", "message", "payment", "system"]).default("system") })).mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
@@ -14844,10 +14980,10 @@ var appRouter = router({
         const rows = await db.select({ ownerUserId: contentListings.ownerUserId }).from(contentListings);
         recipientUserIds = Array.from(new Set(rows.map((row) => row.ownerUserId)));
       } else {
-        const entityRows = await db.select({ email: platformEntities.email }).from(platformEntities).where(eq7(platformEntities.sector, alias));
+        const entityRows = await db.select({ email: platformEntities.email }).from(platformEntities).where(eq8(platformEntities.sector, alias));
         const emails = entityRows.map((row) => row.email.trim().toLowerCase()).filter(Boolean);
         if (emails.length) {
-          const matched = await db.select({ id: users.id }).from(users).where(inArray4(users.email, emails));
+          const matched = await db.select({ id: users.id }).from(users).where(inArray5(users.email, emails));
           recipientUserIds = matched.map((row) => row.id);
         }
       }
@@ -14866,12 +15002,12 @@ var appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const ids = Array.from(new Set(input.entityIds));
-      const entityRows = await db.select({ id: platformEntities.id, email: platformEntities.email }).from(platformEntities).where(inArray4(platformEntities.id, ids));
+      const entityRows = await db.select({ id: platformEntities.id, email: platformEntities.email }).from(platformEntities).where(inArray5(platformEntities.id, ids));
       if (entityRows.length !== ids.length) throw new TRPCError7({ code: "BAD_REQUEST", message: "\u062A\u0648\u062C\u062F \u0645\u0646\u0634\u0622\u062A \u063A\u064A\u0631 \u0645\u0639\u0631\u0648\u0641\u0629 \u0636\u0645\u0646 \u0627\u0644\u0642\u0627\u0626\u0645\u0629" });
       const emails = entityRows.map((row) => row.email.trim().toLowerCase()).filter(Boolean);
       let recipientUserIds = [];
       if (emails.length) {
-        const matched = await db.select({ id: users.id }).from(users).where(inArray4(users.email, emails));
+        const matched = await db.select({ id: users.id }).from(users).where(inArray5(users.email, emails));
         recipientUserIds = matched.map((row) => row.id);
       }
       if (!recipientUserIds.length) return { success: true, notified: 0, recipients: 0, pushSent: 0 };
@@ -14905,7 +15041,7 @@ async function createContext(opts) {
 }
 
 // server/marketing.ts
-import { and as and8, eq as eq8 } from "drizzle-orm";
+import { and as and9, eq as eq9 } from "drizzle-orm";
 function sameMonthDay(value, now) {
   return value.getUTCMonth() === now.getUTCMonth() && value.getUTCDate() === now.getUTCDate();
 }
@@ -14916,11 +15052,11 @@ async function marketingHeartbeatHandler(req, res) {
     if (!user.isCron || !user.taskUid) return res.status(403).json({ error: "cron-only" });
     const db = await getDb();
     if (!db) return res.status(500).json({ error: "Database is not available", timestamp: timestamp2 });
-    const campaign = (await db.select().from(campaigns).where(eq8(campaigns.scheduleCronTaskUid, user.taskUid)).limit(1))[0];
+    const campaign = (await db.select().from(campaigns).where(eq9(campaigns.scheduleCronTaskUid, user.taskUid)).limit(1))[0];
     if (!campaign) return res.json({ ok: true, skipped: "orphan" });
     const now = /* @__PURE__ */ new Date();
     const customerRows = await db.select({ id: users.id, birthDate: users.birthDate }).from(users);
-    const orderRows = await db.select({ customerId: orders.customerId, createdAt: orders.createdAt }).from(orders).where(and8(eq8(orders.restaurantId, campaign.restaurantId), eq8(orders.paymentStatus, "paid")));
+    const orderRows = await db.select({ customerId: orders.customerId, createdAt: orders.createdAt }).from(orders).where(and9(eq9(orders.restaurantId, campaign.restaurantId), eq9(orders.paymentStatus, "paid")));
     const lastOrderByCustomer = /* @__PURE__ */ new Map();
     for (const order of orderRows) if (order.customerId && order.createdAt && (!lastOrderByCustomer.has(order.customerId) || lastOrderByCustomer.get(order.customerId) < order.createdAt)) lastOrderByCustomer.set(order.customerId, order.createdAt);
     const eligibleCustomerIds = customerRows.filter((customer) => {
@@ -14969,7 +15105,7 @@ function registerReservationHeartbeat(app) {
 }
 
 // server/printerHealth.ts
-import { and as and9, eq as eq9 } from "drizzle-orm";
+import { and as and10, eq as eq10 } from "drizzle-orm";
 async function printerHealthHeartbeatHandler(req, res) {
   const timestamp2 = (/* @__PURE__ */ new Date()).toISOString();
   try {
@@ -14986,7 +15122,7 @@ async function printerHealthHeartbeatHandler(req, res) {
       let latencyMs = null;
       let printDurationMs = null;
       if (section.printerType !== "browser" && section.printerType !== "none") {
-        const gateway = (await db.select({ url: integrationSettings.keyReference }).from(integrationSettings).where(and9(eq9(integrationSettings.scope, "restaurant"), eq9(integrationSettings.restaurantId, section.restaurantId), eq9(integrationSettings.providerKey, "printer_gateway"))).limit(1))[0];
+        const gateway = (await db.select({ url: integrationSettings.keyReference }).from(integrationSettings).where(and10(eq10(integrationSettings.scope, "restaurant"), eq10(integrationSettings.restaurantId, section.restaurantId), eq10(integrationSettings.providerKey, "printer_gateway"))).limit(1))[0];
         const token = await getIntegrationSecret("restaurant", "printer_gateway", section.restaurantId);
         if (gateway?.url && token) {
           try {
@@ -15002,7 +15138,7 @@ async function printerHealthHeartbeatHandler(req, res) {
           }
         }
       }
-      await db.update(kitchenSections).set({ printerStatus: status, printerLastCheckedAt: /* @__PURE__ */ new Date(), printerLastError: status === "offline" ? message : null }).where(eq9(kitchenSections.id, section.id));
+      await db.update(kitchenSections).set({ printerStatus: status, printerLastCheckedAt: /* @__PURE__ */ new Date(), printerLastError: status === "offline" ? message : null }).where(eq10(kitchenSections.id, section.id));
       await db.insert(printerLogs).values({ restaurantId: section.restaurantId, kitchenSectionId: section.id, operation: "health_check", result: status === "connected" ? "success" : "error", message, latencyMs, printDurationMs });
       if (status === "offline" && previousStatus !== "offline") {
         const managerIds = await listRestaurantManagerUserIds(section.restaurantId);
@@ -15023,7 +15159,7 @@ function registerPrinterHealthHeartbeat(app) {
 }
 
 // server/menuTemplateSchedule.ts
-import { eq as eq10 } from "drizzle-orm";
+import { eq as eq11 } from "drizzle-orm";
 async function menuTemplateScheduleHeartbeatHandler(req, res) {
   const timestamp2 = (/* @__PURE__ */ new Date()).toISOString();
   try {
@@ -15031,12 +15167,12 @@ async function menuTemplateScheduleHeartbeatHandler(req, res) {
     if (!user.isCron || !user.taskUid) return res.status(403).json({ error: "cron-only" });
     const db = await getDb();
     if (!db) return res.status(500).json({ error: "Database is not available", timestamp: timestamp2 });
-    const restaurant = (await db.select({ id: restaurants.id, menuTemplate: restaurants.menuTemplate, menuTemplateScheduleJson: restaurants.menuTemplateScheduleJson, menuTemplateScheduleTimezone: restaurants.menuTemplateScheduleTimezone }).from(restaurants).where(eq10(restaurants.menuTemplateScheduleCronTaskUid, user.taskUid)).limit(1))[0];
+    const restaurant = (await db.select({ id: restaurants.id, menuTemplate: restaurants.menuTemplate, menuTemplateScheduleJson: restaurants.menuTemplateScheduleJson, menuTemplateScheduleTimezone: restaurants.menuTemplateScheduleTimezone }).from(restaurants).where(eq11(restaurants.menuTemplateScheduleCronTaskUid, user.taskUid)).limit(1))[0];
     if (!restaurant) return res.json({ ok: true, skipped: "orphan", timestamp: timestamp2 });
     const schedule = normalizeMenuTemplateSchedule(restaurant.menuTemplateScheduleJson);
     const activeTemplate = resolveActiveMenuTemplate({ ...schedule, timezone: restaurant.menuTemplateScheduleTimezone || schedule.timezone });
     if (activeTemplate && activeTemplate !== restaurant.menuTemplate) {
-      await db.update(restaurants).set({ menuTemplate: activeTemplate }).where(eq10(restaurants.id, restaurant.id));
+      await db.update(restaurants).set({ menuTemplate: activeTemplate }).where(eq11(restaurants.id, restaurant.id));
     }
     return res.json({ ok: true, restaurantId: restaurant.id, activeTemplate, changed: activeTemplate !== restaurant.menuTemplate, timestamp: timestamp2 });
   } catch (error) {
@@ -15321,6 +15457,39 @@ async function runDbMigrations() {
     throw error;
   }
 }
+async function ensureWaitlistCompatibility() {
+  if (!process.env.DATABASE_URL) return;
+  const { createConnection } = await import("mysql2/promise");
+  const connection = await createConnection(process.env.DATABASE_URL);
+  try {
+    const [rows] = await connection.query("SHOW COLUMNS FROM `restaurants`");
+    const columns = new Set(rows.map((row) => row.Field));
+    if (!columns.has("waitlistExpiryMinutes")) {
+      await connection.query("ALTER TABLE `restaurants` ADD COLUMN `waitlistExpiryMinutes` int NOT NULL DEFAULT 120 AFTER `reservationNoShowGraceMinutes`");
+      console.info("[Database] Added restaurants.waitlistExpiryMinutes compatibility column");
+    }
+  } finally {
+    await connection.end();
+  }
+}
+async function ensureOrderItemsCompatibility() {
+  if (!process.env.DATABASE_URL) return;
+  const { createConnection } = await import("mysql2/promise");
+  const connection = await createConnection(process.env.DATABASE_URL);
+  try {
+    const [rows] = await connection.query("SHOW COLUMNS FROM `orderItems`");
+    const columns = new Set(rows.map((row) => row.Field));
+    const statements = [];
+    if (!columns.has("sourceType")) statements.push("ALTER TABLE `orderItems` ADD COLUMN `sourceType` enum('menu_item','marketplace_variant') NOT NULL DEFAULT 'menu_item' AFTER `menuItemId`");
+    if (!columns.has("marketplaceVariantId")) statements.push("ALTER TABLE `orderItems` ADD COLUMN `marketplaceVariantId` int NULL AFTER `sourceType`");
+    if (!columns.has("itemNameSnapshot")) statements.push("ALTER TABLE `orderItems` ADD COLUMN `itemNameSnapshot` varchar(240) NULL AFTER `marketplaceVariantId`");
+    if (!columns.has("selectedAddonsJson")) statements.push("ALTER TABLE `orderItems` ADD COLUMN `selectedAddonsJson` text NULL AFTER `unitPrice`");
+    for (const statement of statements) await connection.query(statement);
+    if (statements.length) console.info(`[Database] Repaired orderItems compatibility (${statements.length} column(s))`);
+  } finally {
+    await connection.end();
+  }
+}
 function normalizeMenuLanguage(value) {
   const code = typeof value === "string" ? value.toLowerCase().split("-")[0] : "ar";
   return code === "en" || code === "fr" || code === "ur" ? code : "ar";
@@ -15342,6 +15511,8 @@ async function startServer() {
   } else {
     console.info("[Database] Automated migrations skipped; set RUN_DB_MIGRATIONS=true for an explicit migration run");
   }
+  await ensureOrderItemsCompatibility();
+  await ensureWaitlistCompatibility();
   const app = express2();
   const server = createServer(app);
   attachDisplayRealtime(server);
@@ -15359,6 +15530,7 @@ async function startServer() {
   registerReservationHeartbeat(app);
   registerPrinterHealthHeartbeat(app);
   registerMenuTemplateScheduleHeartbeat(app);
+  registerScheduledNotificationHeartbeat(app);
   const publicOrigin = async (req) => {
     const settings = await getPlatformSettings();
     const configured2 = settings.baseDomain?.trim().replace(/\/+$/, "");
