@@ -7172,3 +7172,86 @@ main.nfood-display-root .nfood-display-image { display: block !important; positi
 }
 
 
+
+
+/* NFOOD 2026 identity overlay — shell-only, preserves application behavior */
+@layer components {
+  .nfood-dashboard-shell,
+  .nfood-dashboard-inset {
+    background:
+      radial-gradient(circle at 100% 0%, color-mix(in oklab, var(--brand-amber) 9%, transparent), transparent 24rem),
+      radial-gradient(circle at 0% 100%, color-mix(in oklab, var(--brand-plum) 8%, transparent), transparent 30rem),
+      var(--background);
+  }
+
+  .nfood-dashboard-main {
+    width: 100%;
+    max-width: 1680px;
+    margin-inline: auto;
+    padding: clamp(.75rem, 1.35vw, 1.25rem);
+  }
+
+  .nfood-unified-sidebar {
+    background:
+      radial-gradient(circle at 50% -8%, rgba(245,158,11,.14), transparent 18rem),
+      linear-gradient(180deg, #081321 0%, #0b1728 48%, #07111e 100%) !important;
+    border-color: rgba(255,255,255,.08) !important;
+    box-shadow: 0 28px 90px rgba(2,8,23,.38);
+  }
+
+  .nfood-unified-sidebar [data-sidebar="menu-button"],
+  .nfood-unified-sidebar button,
+  .nfood-unified-sidebar a {
+    border-radius: .9rem;
+  }
+
+  .nfood-dashboard-shell [data-slot="card"],
+  .nfood-dashboard-inset [data-slot="card"] {
+    border: 1px solid color-mix(in oklab, var(--border) 82%, var(--brand-amber) 18%);
+    background: color-mix(in oklab, var(--card) 96%, transparent);
+    box-shadow: 0 16px 44px -32px color-mix(in oklab, var(--brand-plum) 38%, transparent);
+    backdrop-filter: blur(14px);
+  }
+
+  .nfood-dashboard-shell table,
+  .nfood-dashboard-inset table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .nfood-dashboard-shell thead,
+  .nfood-dashboard-inset thead {
+    background: color-mix(in oklab, var(--muted) 82%, var(--brand-plum) 18%);
+  }
+
+  .nfood-dashboard-shell :is(input,textarea,select),
+  .nfood-dashboard-inset :is(input,textarea,select) {
+    background: color-mix(in oklab, var(--background) 90%, var(--card) 10%);
+    border-color: color-mix(in oklab, var(--border) 88%, var(--brand-amber) 12%);
+  }
+
+  .nfood-dashboard-shell :is([role="dialog"],[data-slot="dialog-content"]),
+  .nfood-dashboard-inset :is([role="dialog"],[data-slot="dialog-content"]) {
+    border-radius: 1.35rem;
+    border-color: color-mix(in oklab, var(--border) 82%, var(--brand-amber) 18%);
+    box-shadow: 0 28px 90px -38px rgba(2,8,23,.52);
+  }
+
+  .dark .nfood-dashboard-shell,
+  .dark .nfood-dashboard-inset {
+    background:
+      radial-gradient(circle at 100% 0%, rgba(245,158,11,.07), transparent 25rem),
+      radial-gradient(circle at 0% 100%, rgba(126,34,206,.08), transparent 32rem),
+      #07111e;
+  }
+
+  @media (max-width: 1023px) {
+    .nfood-dashboard-main { padding: .75rem; }
+  }
+
+  @media (max-width: 639px) {
+    .nfood-dashboard-main { padding: .625rem; }
+    .nfood-dashboard-shell [data-slot="card"],
+    .nfood-dashboard-inset [data-slot="card"] { border-radius: .95rem; }
+  }
+}
