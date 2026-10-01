@@ -81,8 +81,20 @@ import { LegalPage, ContactPage, SubscriptionStatusPage } from "./pages/PublicIn
 import { useAuth } from "./_core/hooks/useAuth";
 
 function PageLoading() {
-  // Route chunks load without a full-page skeleton flash.
-  return null;
+  let config: any = { enabled: true, title: "NFOOD", subtitle: "لحظات ونجهز تجربتك", accent: "#ff7436", effect: "glow", imageUrl: "" };
+  try { config = { ...config, ...JSON.parse(localStorage.getItem("nfood.loading-screen") || "{}") }; } catch {}
+  if (config.enabled === false) return null;
+  return <div className="fixed inset-0 z-[9999] grid place-items-center bg-[#07111d]/95 p-6 backdrop-blur-xl" dir="rtl">
+    <div className="relative flex w-full max-w-sm flex-col items-center overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b1d30] p-8 text-center text-white shadow-2xl">
+      <div className="absolute inset-0 animate-pulse opacity-40" style={{ background: `radial-gradient(circle at 50% 35%, ${config.accent}55, transparent 52%)` }} />
+      <div className={`relative z-10 mb-5 h-24 w-24 overflow-hidden rounded-[1.75rem] border border-white/15 bg-white/10 shadow-2xl ${config.effect === "float" ? "animate-bounce" : config.effect === "pulse" ? "animate-pulse" : ""}`}>
+        {config.imageUrl ? <img src={config.imageUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-2xl font-black">N</div>}
+      </div>
+      <strong className="relative z-10 text-2xl font-black">{config.title}</strong>
+      <span className="relative z-10 mt-2 text-sm text-slate-300">{config.subtitle}</span>
+      <div className="relative z-10 mt-7 h-1.5 w-52 overflow-hidden rounded-full bg-white/10"><div className="h-full w-2/3 animate-pulse rounded-full" style={{ background: config.accent }} /></div>
+    </div>
+  </div>;
 }
 
 function LegacyMenuLink() {
