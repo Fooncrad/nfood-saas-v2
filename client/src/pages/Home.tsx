@@ -253,7 +253,9 @@ export default function Home() {
     updateOrderStatus.mutate({ restaurantId: selectedRestaurantId, orderId: numericId, status: next });
   };
 
-  const cancelOrder = (id: string, reason: string) => { const numericId = Number(id.match(/(\\d+)$/)?.[1] ?? ""); if (!numericId || !reason.trim()) return; updateOrderStatus.mutate({ restaurantId: selectedRestaurantId, orderId: numericId, status: "cancelled", cancellationReason: reason.trim() }); };\n\n  const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success("تم تسجيل الخروج"), notifyError: (message) => toast.error(message) }); };
+  const cancelOrder = (id: string, reason: string) => { const numericId = Number(id.match(/(\\d+)$/)?.[1] ?? ""); if (!numericId || !reason.trim()) return; updateOrderStatus.mutate({ restaurantId: selectedRestaurantId, orderId: numericId, status: "cancelled", cancellationReason: reason.trim() }); };
+
+  const handleLogout = async () => { await executeLogoutFlow({ logout, closeMenu: () => setProfileOpen(false), redirect: () => { window.location.href = "/"; }, notifySuccess: () => toast.success("تم تسجيل الخروج"), notifyError: (message) => toast.error(message) }); };
   const handleSwitchAccount = async () => { await executeSwitchAccountFlow({ logout, closeMenu: () => setProfileOpen(false), startLogin, redirect: () => undefined, notifyError: (message) => toast.error(message) }); };
 
   if (loading) return <div dir="rtl" className="fixed inset-0 bg-[#f6f7f9]" aria-label="جارٍ التحقق من الجلسة" />;
