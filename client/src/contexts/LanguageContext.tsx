@@ -1261,6 +1261,16 @@ function applyOperationalFragments(source: string, language: Language): string {
   return result;
 }
 
+const missingRuntimeTranslations = new Set<string>();
+function reportMissingRuntimeTranslation(source: string, language: Language) {
+  if (typeof window === "undefined" || language === "ar" || !/[\u0600-\u06FF]/.test(source)) return;
+  const key = `${language}:${source}`;
+  if (missingRuntimeTranslations.has(key)) return;
+  missingRuntimeTranslations.add(key);
+  window.dispatchEvent(new CustomEvent("nfood:missing-translation", { detail: { sourceText: source, sourceLanguage: "ar", targetLanguage: language } }));
+  if (import.meta.env.DEV) console.warn("[i18n] Missing runtime translation", { source, language });
+}
+
 type DatabaseTranslationEntry = { translationKey: string; sourceText: string; targetLanguage: string; translatedText: string | null };
 const databaseUiTranslations: Record<UiLanguage, Record<string, string>> = { ar: {}, en: {}, fr: {} };
 export function setDatabaseUiTranslations(entries: DatabaseTranslationEntry[]) {
@@ -1284,7 +1294,13 @@ export function autoTranslateText(source: string, language: Language): string {
   // For dynamic legacy strings, translate only known operational fragments and accept the result
   // only when no Arabic remains. This preserves dynamic values without leaking mixed-language UI.
   const composed = applyOperationalFragments(source, language);
-  return /[\u0600-\u06FF]/.test(composed) ? source : composed;
+  if (!/[\u0600-\u06FF]/.test(composed)) return composed;
+
+  // Never leak Arabic into a non-Arabic UI. New strings can arrive from newly-added
+  // components before their EN/FR entry is published; fail closed until the translation
+  // bridge/database supplies the real value.
+  reportMissingRuntimeTranslation(source, language);
+  return language === "fr" ? "Traduction en attente" : "Translation pending";
 }
 
 export function findUntranslatedArabic(source: string, language: Language): string[] {
