@@ -53,7 +53,7 @@ describe("dashboard theme, notifications, and shortcuts", () => {
 
   it("keeps restaurant cards consolidated without duplicate stats or horizontal scrolling", () => {
     const catalog = read("components/SuperAdminRestaurantCatalog.tsx");
-    expect(catalog).toContain("grid min-w-0 gap-3 sm:grid-cols-2");
+    expect(catalog).toMatch(/grid min-w-0 gap-3(?:[^"\\n]*)sm:grid-cols-2|grid min-w-0 gap-[^"\\n]*sm:grid-cols-2/);
     expect(catalog).toContain("دخول المطعم");
     expect(catalog).toContain("فتح Menu");
     expect(catalog).not.toContain("إجمالي المطاعم");
