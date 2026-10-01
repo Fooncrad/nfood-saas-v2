@@ -81,7 +81,8 @@ import { LegalPage, ContactPage, SubscriptionStatusPage } from "./pages/PublicIn
 import { useAuth } from "./_core/hooks/useAuth";
 
 function PageLoading() {
-  return <div className="min-h-screen bg-background px-4 py-4 text-foreground" aria-live="polite"><div className="mx-auto max-w-7xl space-y-3 opacity-80"><div className="h-10 w-48 animate-pulse rounded-2xl bg-muted" /><div className="grid gap-3 sm:grid-cols-3"><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /><div className="h-24 animate-pulse rounded-2xl bg-muted" /></div></div></div>;
+  // Route chunks load without a full-page skeleton flash.
+  return null;
 }
 
 function LegacyMenuLink() {
