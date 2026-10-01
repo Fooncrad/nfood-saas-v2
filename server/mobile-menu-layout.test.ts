@@ -28,7 +28,8 @@ describe("mobile menu order preferences and notes", () => {
     expect(source).toContain('value="hotel"');
     expect(source).toContain('hotelName.trim()');
     expect(source).toContain('if (!user)');
-    expect(source).toContain('startLogin()');
+    expect(source).toContain('setAccountDialogOpen(true)');
+    expect(source).not.toContain('startLogin(); return;');
   });
 
   it("supports event reservations with a pre-order", () => {
