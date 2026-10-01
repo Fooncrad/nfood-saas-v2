@@ -5,13 +5,13 @@ import { sdk, type AuthenticatedUser } from "./sdk";
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
   res: CreateExpressContextOptions["res"];
-  user: (User & Pick<AuthenticatedUser, "testRole">) | null;
+  user: (User & Pick<AuthenticatedUser, "testRole" | "restaurantId">) | null;
 };
 
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
-  let user: User | null = null;
+  let user: (User & Pick<AuthenticatedUser, "testRole" | "restaurantId">) | null = null;
 
   try {
     user = await sdk.authenticateRequest(opts.req);
