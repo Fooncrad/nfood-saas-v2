@@ -26,8 +26,18 @@ async function googleConfiguration(req: Request) {
   return null;
 }
 
-function oauthNonce(req: Request, res: Response) { const nonce = nanoid(32); res.cookie(OAUTH_STATE_COOKIE, nonce, { ...getSessionCookieOptions(req), maxAge: 600000 }); return nonce; }
-function verifyOauthNonce(req: Request, state: string) { return Boolean(state && state === parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE]); }
+function oauthNonce(req: Request, res: Response) {
+  const nonce = nanoid(32);
+  // OAuth state must survive the cross-site Google -> NFOOD top-level callback.
+  // Keep it host-only, short-lived and Lax; do not depend on proxy/TLS metadata
+  // producing SameSite=None consistently.
+  res.cookie(OAUTH_STATE_COOKIE, nonce, { httpOnly: true, path: "/", maxAge: 600000, sameSite: "lax", secure: true });
+  return nonce;
+}
+function verifyOauthNonce(req: Request, state: string) {
+  const expected = parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE];
+  return Boolean(state && expected && state === expected);
+}
 function safeReturnTo(value: string | undefined): string | null {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\") || /[\r\n]/.test(value)) return null;
   try {
@@ -52,9 +62,14 @@ export function registerOAuthRoutes(app: Express) {
   });
   app.get("/api/oauth/google/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code"); const state = getQueryParam(req, "state");
-    if (!code || !state || !verifyOauthNonce(req, state)) return res.redirect(302, "/login?oauth=invalid_state");
-    res.clearCookie(OAUTH_STATE_COOKIE, getSessionCookieOptions(req));
     const returnTo = safeReturnTo(parseCookieHeader(req.headers.cookie ?? "")[GOOGLE_RETURN_COOKIE]);
+    if (!code || !state || !verifyOauthNonce(req, state)) {
+      const retryTarget = returnTo ?? "/login";
+      const separator = retryTarget.includes("?") ? "&" : "?";
+      return res.redirect(302, `${retryTarget}${separator}oauth=invalid_state`);
+    }
+    res.clearCookie(OAUTH_STATE_COOKIE, { httpOnly: true, path: "/", sameSite: "lax", secure: true });
+
     res.clearCookie(GOOGLE_RETURN_COOKIE, { path: "/" });
     try {
       const config = await googleConfiguration(req); if (!config) return res.redirect(302, "/login?oauth=google_not_configured");
