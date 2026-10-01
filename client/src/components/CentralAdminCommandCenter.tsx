@@ -133,7 +133,7 @@ const COPY_AR = {
   helpBody: "تواصل مع فريق نفود عبر مركز المساعدة أو الدردشة المباشرة.",
   logout: "تسجيل الخروج",
   adminAccount: "حساب الإدارة",
-  editProfile: "تعديل الملف الشخصي",
+  integrationSettings: "إعدادات التكامل",
   publicSite: "الموقع العام",
   publicSiteHint: "عرض واجهة الموقع كما يراها الزوار",
   notifications: "الإشعارات",
@@ -181,7 +181,7 @@ const COPY_EN = {
   helpBody: "Reach the NFOOD team via the help center or live chat.",
   logout: "Sign out",
   adminAccount: "Admin account",
-  editProfile: "Edit profile",
+  integrationSettings: "Integration settings",
   publicSite: "Public site",
   publicSiteHint: "View the site as visitors see it",
   notifications: "Notifications",
@@ -862,7 +862,7 @@ export function CentralAdminCommandCenter({
                   </div>
                   <button type="button" onClick={() => { setProfileOpen(false); onNavigate("settings"); }} className="flex w-full items-center gap-2 border-b px-4 py-3 text-xs font-bold transition hover:bg-orange-500/5" style={{ borderColor: divider }}>
                     <UserRound className="h-4 w-4" />
-                    {copy.editProfile}
+                    {copy.integrationSettings}
                   </button>
                   {onLogout && (
                     <button type="button" onClick={onLogout} className="flex w-full items-center gap-2 px-4 py-3 text-xs font-bold text-red-500 transition hover:bg-red-500/5">
