@@ -196,12 +196,12 @@ export default function MarketplaceLanding() {
     <section className="relative overflow-hidden border-b border-white/5 bg-[#071525] text-white">
       <div className="absolute inset-0 opacity-25" style={{ background: `radial-gradient(circle at 15% 20%, ${accent} 0, transparent 32%), radial-gradient(circle at 85% 10%, ${primary} 0, transparent 28%)` }} />
       {appearance.heroImageUrl && <div className="absolute inset-y-0 end-0 hidden w-[44%] lg:block"><img src={appearance.heroImageUrl} alt="" className="h-full w-full object-cover opacity-35" /><div className="absolute inset-0 bg-gradient-to-r from-[#071525] via-[#071525]/65 to-transparent" /></div>}
-      <div className="relative mx-auto grid min-h-[300px] max-w-7xl items-center gap-6 px-4 py-8 md:px-8 lg:grid-cols-[1.08fr_.92fr]">
+      <div className="relative mx-auto grid min-h-[250px] max-w-7xl items-center gap-5 px-4 py-6 md:px-8 lg:grid-cols-[1.15fr_.85fr]">
         <div className="max-w-3xl">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold text-orange-200"><Compass className="h-4 w-4" />{countryInfo.flag} {countryInfo[lang]} · NFOOD</span>
-          <h1 className="mt-4 text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.35rem]">{heroTitle}</h1>
+          <h1 className="mt-3 text-4xl font-black leading-[1.04] tracking-tight sm:text-5xl lg:text-[3.1rem]">{heroTitle}</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">{heroSubtitle}</p>
-          <div className="mt-5 grid gap-2 rounded-2xl bg-white p-2 shadow-2xl sm:grid-cols-[1fr_190px_auto]">
+          <div className="mt-4 grid gap-2 rounded-2xl border border-white/20 bg-white/95 p-2 shadow-[0_24px_70px_-28px_rgba(0,0,0,.75)] backdrop-blur-xl sm:grid-cols-[1fr_190px_auto]">
             <div className="flex items-center"><Search className="ms-3 h-5 w-5 text-slate-400" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.search} className="h-11 border-0 bg-transparent text-slate-900 shadow-none focus-visible:ring-0" /></div>
             <select value={country} onChange={(event) => chooseCountry(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-900">
               {marketplaceCountries.map((item) => <option key={item.code} value={item.code}>{item.flag} {item[lang]}</option>)}
@@ -213,15 +213,15 @@ export default function MarketplaceLanding() {
             <Link href="/store-marketing" className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-white transition hover:bg-white/10"><Store className="h-3.5 w-3.5" />{t.merchant}</Link>
           </div>
         </div>
-        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-3">
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur"><TrendingUp className="h-7 w-7 text-orange-400" /><p className="mt-8 text-xs font-bold text-slate-400">{t.trending}</p><p className="mt-2 text-2xl font-black">{t.popularHint}</p></div>
-          <div className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur"><Crown className="h-7 w-7 text-blue-400" /><p className="mt-8 text-xs font-bold text-slate-400">{t.best}</p><p className="mt-2 text-2xl font-black">{t.bestHint}</p></div>
+        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-3 lg:self-center">
+          <div className="rounded-[24px] border border-white/10 bg-white/[.07] p-4 shadow-2xl backdrop-blur-xl"><TrendingUp className="h-7 w-7 text-orange-400" /><p className="mt-5 text-xs font-bold text-slate-400">{t.trending}</p><p className="mt-2 text-2xl font-black">{t.popularHint}</p></div>
+          <div className="mt-5 rounded-[24px] border border-white/10 bg-white/[.07] p-4 shadow-2xl backdrop-blur-xl"><Crown className="h-7 w-7 text-blue-400" /><p className="mt-5 text-xs font-bold text-slate-400">{t.best}</p><p className="mt-2 text-2xl font-black">{t.bestHint}</p></div>
         </div>
       </div>
     </section>
 
-    <section id="stores" className="mx-auto max-w-7xl px-4 pb-4 pt-5 md:px-8 md:pb-5 md:pt-5">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-black text-orange-500">NFOOD SELECT</p><h2 className="mt-1 text-2xl font-black sm:text-3xl">{t.stores}</h2><p className={`mt-2 text-sm ${muted}`}>{t.storesHint}</p></div></div>
+    <section id="stores" className="relative z-20 mx-auto -mt-3 max-w-7xl px-4 pb-4 pt-0 md:-mt-5 md:px-8 md:pb-5">
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-white/10 bg-[#071525]/80 px-4 py-3 text-white shadow-xl backdrop-blur-xl"><div><p className="text-xs font-black text-orange-500">NFOOD SELECT</p><h2 className="mt-1 text-2xl font-black sm:text-3xl">{t.stores}</h2><p className={`mt-2 text-sm ${muted}`}>{t.storesHint}</p></div></div>
       {featuredStores.isLoading || stores.isLoading ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{Array.from({ length: 5 }).map((_, index) => <div key={index} className={`h-60 animate-pulse border ${surface}`} style={{ borderRadius: radius }} />)}</div> : featuredRows.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{featuredRows.slice(0, 5).map((store) => {
         const fullStore = storeRows.find((item) => item.entityId === store.entityId);
         const restaurant = fullStore?.restaurant;
