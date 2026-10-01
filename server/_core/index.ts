@@ -59,6 +59,22 @@ async function runDbMigrations() {
   }
 }
 
+async function ensureWaitlistCompatibility() {
+  if (!process.env.DATABASE_URL) return;
+  const { createConnection } = await import("mysql2/promise");
+  const connection = await createConnection(process.env.DATABASE_URL);
+  try {
+    const [rows] = await connection.query("SHOW COLUMNS FROM `restaurants`");
+    const columns = new Set((rows as Array<{ Field: string }>).map((row) => row.Field));
+    if (!columns.has("waitlistExpiryMinutes")) {
+      await connection.query("ALTER TABLE `restaurants` ADD COLUMN `waitlistExpiryMinutes` int NOT NULL DEFAULT 120 AFTER `reservationNoShowGraceMinutes`");
+      console.info("[Database] Added restaurants.waitlistExpiryMinutes compatibility column");
+    }
+  } finally {
+    await connection.end();
+  }
+}
+
 async function ensureOrderItemsCompatibility() {
   if (!process.env.DATABASE_URL) return;
   const { createConnection } = await import("mysql2/promise");
@@ -89,6 +105,7 @@ async function startServer() {
     console.info("[Database] Automated migrations skipped; set RUN_DB_MIGRATIONS=true for an explicit migration run");
   }
   await ensureOrderItemsCompatibility();
+  await ensureWaitlistCompatibility();
   const app = express();
   const server = createServer(app);
   attachDisplayRealtime(server);
