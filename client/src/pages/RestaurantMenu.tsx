@@ -601,8 +601,8 @@ export default function RestaurantMenu() {
   const whatsappTarget = normalizeWhatsAppNumber(restaurant.whatsapp, (restaurant as any).country);
 
   return <main dir={direction} className={`min-h-screen w-full max-w-[100vw] overflow-x-hidden overscroll-x-none touch-pan-y [contain:inline-size] ${dark ? "dark" : ""} ${pageBg}`} style={{ overflowX: "hidden", overscrollBehaviorX: "none", touchAction: "pan-y", fontFamily:restaurant.brandFontFamily || undefined, "--restaurant-primary":primary, "--restaurant-accent":accent } as React.CSSProperties}>
-    <header className={`sticky top-0 z-40 w-full max-w-[100vw] overflow-hidden border-b backdrop-blur-xl ${dark ? "border-white/10 bg-[#071525]/92" : "border-slate-200 bg-white/92"}`}>
-      <div className="mx-auto flex h-16 w-full max-w-7xl min-w-0 items-center justify-between gap-2 overflow-hidden px-3 sm:px-5">
+    <header className={`sticky top-0 z-[100] w-full max-w-[100vw] overflow-visible border-b backdrop-blur-xl ${dark ? "border-white/10 bg-[#071525]/92" : "border-slate-200 bg-white/92"}`}>
+      <div className="mx-auto flex h-16 w-full max-w-7xl min-w-0 items-center justify-between gap-2 overflow-visible px-3 sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
           <button onClick={() => setDrawerOpen(true)} className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`} aria-label="Menu"><Menu className="h-5 w-5" /></button>
           {restaurant.brandLogoUrl ? <img src={restaurant.brandLogoUrl} alt="" className="h-10 w-10 shrink-0 rounded-xl object-cover" /> : <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-500 font-black text-white">{restaurant.name.slice(0,1)}</span>}
@@ -672,7 +672,7 @@ export default function RestaurantMenu() {
       </> : <div className={`rounded-[26px] border border-dashed p-12 text-center ${surface}`}><Search className="mx-auto h-10 w-10 opacity-20" /><p className="mt-3 font-bold">{copy.empty}</p></div>}
     </section>
 
-    {itemCount > 0 && <button onClick={() => setCartOpen(true)} className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[min(92vw,430px)] -translate-x-1/2 items-center justify-between rounded-2xl border border-white/20 px-5 py-3.5 text-white shadow-2xl backdrop-blur-md motion-safe:animate-in motion-safe:slide-in-from-bottom-5 motion-safe:fade-in motion-safe:duration-300 active:scale-[0.98] sm:hidden" style={{ background:primary }}><span className="flex items-center gap-2 font-black"><ShoppingBag className="h-5 w-5" />{copy.cart} · {itemCount}</span><span className="font-black">{formatMoney(subtotal, currency)}</span></button>}
+    {itemCount > 0 && <button onClick={() => setCartOpen(true)} className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[min(92vw,430px)] -translate-x-1/2 items-center justify-between rounded-2xl border border-white/20 px-5 py-3.5 text-white shadow-2xl backdrop-blur-md motion-safe:animate-in motion-safe:slide-in-from-bottom-5 motion-safe:fade-in motion-safe:duration-300 active:scale-[0.98]" style={{ background:primary }}><span className="flex items-center gap-2 font-black"><ShoppingBag className="h-5 w-5" />{copy.cart} · {itemCount}</span><span className="font-black">{formatMoney(subtotal, currency)}</span></button>}
 
     <footer className="bg-[#06101b] px-4 py-8 text-slate-300">
       <div className="mx-auto grid max-w-7xl gap-7 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr]">
