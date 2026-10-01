@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { ArrowRight, Check, Copy, Gift, LayoutDashboard, Loader2, LockKeyhole, Megaphone, Package, Plus, Settings, Sparkles, Tag, Trash2, TrendingUp, WalletCards } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -49,7 +48,7 @@ export default function StoreMarketing() {
   const loyaltySettings = provider.data?.loyaltySettings;
 
   if (loading) return <main dir="rtl" className="min-h-screen bg-[#0b0f17] text-white" />;
-  if (!user) return <main dir="rtl" className="grid min-h-screen place-items-center bg-[#0b0f17] p-5 text-white"><Card className="w-full max-w-md rounded-3xl border-white/10 bg-white/5"><CardContent className="p-8 text-center"><LockKeyhole className="mx-auto h-10 w-10 text-[#E76F3C]" /><h1 className="mt-4 text-2xl font-black">لوحة التاجر</h1><p className="mt-2 text-sm leading-7 text-slate-400">سجّل الدخول للوصول إلى لوحة إدارة المتجر والتسويق.</p><Button type="button" onClick={() => startLogin()} className="mt-5 rounded-xl bg-[#E76F3C]">تسجيل الدخول</Button></CardContent></Card></main>;
+  if (!user) { navigate("/login?next=%2Fstore-marketing", { replace: true }); return null; }
   if (provider.isLoading) return <main dir="rtl" className="min-h-screen bg-[#0b0f17] text-white"><div className="flex items-center justify-center py-32"><Loader2 className="h-8 w-8 animate-spin text-orange-400" /></div></main>;
   if (!entity) return null;
 
