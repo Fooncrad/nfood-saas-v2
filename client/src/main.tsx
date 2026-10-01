@@ -19,6 +19,15 @@ if (analyticsEndpoint && analyticsWebsiteId && typeof document !== "undefined") 
   document.head.appendChild(script);
 }
 
+// Keep the public loading experience synchronized without blocking application startup.
+fetch("/api/trpc/platform.publicSiteMeta?batch=1&input=%7B%7D", { credentials: "same-origin" })
+  .then((response) => response.json())
+  .then((payload) => {
+    const raw = payload?.[0]?.result?.data?.json?.loadingScreenJson ?? payload?.result?.data?.json?.loadingScreenJson;
+    if (typeof raw === "string" && raw.trim()) localStorage.setItem("nfood.loading-screen", raw);
+  })
+  .catch(() => undefined);
+
 const queryClient = new QueryClient({ defaultOptions: queryClientDefaults });
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
