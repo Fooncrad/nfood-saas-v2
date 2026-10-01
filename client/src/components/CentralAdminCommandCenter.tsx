@@ -36,9 +36,9 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { trpc } from "@/lib/trpc";
 import type { Order } from "@/components/homeNavigation";
 
-export type CentralAdminNavKey = "overview" | "superAdmin" | "activities" | "nfc" | "site" | "accounts" | "settings" | "languages" | "files" | "stores" | "packages" | "trend" | "security" | "health" | "devAgent";
+export type CentralAdminNavKey = "overview" | "superAdmin" | "activities" | "nfc" | "site" | "accounts" | "notifications" | "settings" | "languages" | "files" | "stores" | "packages" | "trend" | "security" | "health" | "devAgent";
 
-const NAV_ORDER: CentralAdminNavKey[] = ["overview", "superAdmin", "activities", "stores", "packages", "accounts", "site", "nfc", "trend", "settings", "languages", "files", "devAgent", "security", "health"];
+const NAV_ORDER: CentralAdminNavKey[] = ["overview", "superAdmin", "activities", "stores", "packages", "accounts", "notifications", "site", "nfc", "trend", "settings", "languages", "files", "devAgent", "security", "health"];
 
 const NAV_LABELS: Record<CentralAdminNavKey, { ar: string; en: string }> = {
   overview: { ar: "نظرة عامة", en: "Overview" },
@@ -47,6 +47,7 @@ const NAV_LABELS: Record<CentralAdminNavKey, { ar: string; en: string }> = {
   nfc: { ar: "بطاقات الأعمال NFC", en: "NFC business cards" },
   site: { ar: "صفحات وهوية الموقع", en: "Site pages & identity" },
   accounts: { ar: "الحسابات", en: "Accounts" },
+  notifications: { ar: "رسائل الإشعارات", en: "Notification messages" },
   settings: { ar: "الإعدادات العامة", en: "General settings" },
   languages: { ar: "اللغة والترجمة", en: "Languages" },
   files: { ar: "مكتبة الملفات", en: "Media library" },
@@ -65,6 +66,7 @@ const NAV_ICONS: Record<CentralAdminNavKey, LucideIcon> = {
   nfc: WalletCards,
   site: Globe2,
   accounts: Users,
+  notifications: Bell,
   settings: Settings2,
   languages: Languages,
   files: HardDrive,

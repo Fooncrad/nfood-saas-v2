@@ -14,6 +14,7 @@ import { registerMarketingHeartbeat } from "../marketing";
 import { registerReservationHeartbeat } from "../reservations";
 import { registerPrinterHealthHeartbeat } from "../printerHealth";
 import { registerMenuTemplateScheduleHeartbeat } from "../menuTemplateSchedule";
+import { registerScheduledNotificationHeartbeat } from "../scheduledNotifications";
 import { getPlatformSettings, getPublicRestaurantPage, listPublicRestaurants } from "../db";
 import { serveStatic, setupVite } from "./vite";
 import { attachDisplayRealtime } from "../displayRealtime";
@@ -81,6 +82,7 @@ async function startServer() {
   registerReservationHeartbeat(app);
   registerPrinterHealthHeartbeat(app);
   registerMenuTemplateScheduleHeartbeat(app);
+  registerScheduledNotificationHeartbeat(app);
   const publicOrigin = async (req: express.Request) => {
     const settings = await getPlatformSettings();
     const configured = settings.baseDomain?.trim().replace(/\/+$/, "");

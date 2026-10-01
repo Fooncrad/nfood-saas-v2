@@ -1345,6 +1345,13 @@
       "when": 1790470000000,
       "tag": "0191_menu_template_options",
       "breakpoints": true
+    },
+    {
+      "idx": 192,
+      "version": "5",
+      "when": 1790850000000,
+      "tag": "0197_scheduled_notifications",
+      "breakpoints": true
     }
   ]
 }

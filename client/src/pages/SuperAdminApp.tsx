@@ -15,6 +15,7 @@ import PackagePricingCenter from "@/components/PackagePricingCenter";
 import { SecurityView } from "@/components/SecurityView";
 import { SystemHealthView } from "@/components/SystemHealthView";
 import NfoodDevelopmentAgent from "@/components/NfoodDevelopmentAgent";
+import AdminNotificationsPanel from "@/components/AdminNotificationsPanel";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function SuperAdminApp() {
@@ -26,6 +27,7 @@ export default function SuperAdminApp() {
       case "superAdmin": return <PlatformOverview onNavigate={() => setActive("superAdmin")} />;
       case "activities": return <ActivitiesSectorsAdmin />;
       case "accounts": return <AccountManagementPanel />;
+      case "notifications": return <AdminNotificationsPanel />;
       case "settings": return <PlatformSettingsPanel initialSection="advanced" />;
       case "site": return <PlatformSettingsPanel initialSection="site" />;
       case "languages": return <UiTranslationAdminPanel />;

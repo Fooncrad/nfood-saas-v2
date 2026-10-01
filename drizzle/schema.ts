@@ -1280,6 +1280,22 @@ export const notifications = mysqlTable("notifications", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const scheduledNotifications = mysqlTable("scheduledNotifications", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 180 }).notNull(),
+  body: text("body").notNull(),
+  type: mysqlEnum("type", ["task", "message", "payment", "system"]).default("system").notNull(),
+  targetType: mysqlEnum("targetType", ["all", "customers", "restaurants", "admins", "selected"]).default("all").notNull(),
+  targetUserIdsJson: text("targetUserIdsJson"),
+  scheduleCron: varchar("scheduleCron", { length: 80 }).notNull(),
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
+  status: mysqlEnum("status", ["scheduled", "paused", "deleted"]).default("scheduled").notNull(),
+  createdByUserId: int("createdByUserId").notNull().references(() => users.id),
+  lastRunAt: timestamp("lastRunAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Restaurant = typeof restaurants.$inferSelect;
