@@ -301,6 +301,7 @@ export function ModuleView({
   active,
   orders,
   advanceOrder,
+  cancelOrder,
   orderUpdatePending,
   setActive,
   restaurantId,
@@ -312,6 +313,7 @@ export function ModuleView({
   active: NavKey;
   orders: Order[];
   advanceOrder: (id: string) => void;
+  cancelOrder: (id: string, reason: string) => void;
   orderUpdatePending: boolean;
   setActive: (key: NavKey) => void;
   restaurantId: number;
@@ -481,6 +483,7 @@ export function ModuleView({
         <CompactOrdersBoard
           orders={orders}
           advanceOrder={advanceOrder}
+          cancelOrder={cancelOrder}
           orderUpdatePending={orderUpdatePending}
           ordersLoading={ordersLoading}
           ordersError={ordersError}
