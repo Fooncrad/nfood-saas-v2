@@ -102,7 +102,7 @@ const trpcClient = trpc.createClient({
 const CHUNK_RECOVERY_KEY = "nfood:chunk-recovery";
 const recoverFromStaleChunk = async (reason: unknown) => {
   const message = reason instanceof Error ? reason.message : String(reason ?? "");
-  if (!/dynamically imported module|Importing a module script failed|Failed to fetch/i.test(message)) return;
+  if (!/dynamically imported module|Importing a module script failed|Failed to fetch|JavaScript MIME type|module script.*MIME/i.test(message)) return;
   if (sessionStorage.getItem(CHUNK_RECOVERY_KEY) === "1") return;
   sessionStorage.setItem(CHUNK_RECOVERY_KEY, "1");
   try {
