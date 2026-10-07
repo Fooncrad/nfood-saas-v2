@@ -69,10 +69,16 @@ async function startServer() {
   }
   const app = express();
   const server = createServer(app);
-  attachDisplayRealtime(server);
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // WebSocket upgrades are optional on managed Hostinger proxies. Keep the
+  // main HTTP/API process healthy even when realtime transport is unavailable.
+  if (process.env.DISABLE_DISPLAY_WEBSOCKET !== "true") attachDisplayRealtime(server);
+  app.disable("x-powered-by");
+  // Do not buffer huge request bodies globally. Large global limits amplify
+  // memory pressure and can stall every API route under concurrent traffic.
+  const apiBodyLimit = process.env.API_BODY_LIMIT || "2mb";
+  app.use(express.json({ limit: apiBodyLimit }));
+  app.use(express.urlencoded({ limit: apiBodyLimit, extended: true }));
+  app.get("/api/health", (_req, res) => res.status(200).json({ ok: true, uptime: Math.round(process.uptime()), timestamp: new Date().toISOString() }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerMarketingHeartbeat(app);
@@ -117,12 +123,13 @@ async function startServer() {
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
+  // On managed hosting the reverse proxy targets the exact PORT it provides.
+  // Silently switching ports makes the proxy wait until it returns 504.
+  const port = process.env.PORT ? preferredPort : await findAvailablePort(preferredPort);
 
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-  }
-
+  server.requestTimeout = Number(process.env.HTTP_REQUEST_TIMEOUT_MS || 15_000);
+  server.headersTimeout = Number(process.env.HTTP_HEADERS_TIMEOUT_MS || 10_000);
+  server.keepAliveTimeout = Number(process.env.HTTP_KEEPALIVE_TIMEOUT_MS || 5_000);
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });

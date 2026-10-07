@@ -1,5 +1,6 @@
 import { and, count, desc, eq, gte, inArray, isNull, isNotNull, lte, like, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2";
 import { nanoid } from "nanoid";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
 import { InsertUser, branches, employees, inventoryItems, menuCategories, menuItems, orderItems, orders, kitchenSections, restaurants, users, subscriptions, roles, permissions, restaurantTables, purchases, attendance, campaigns, coupons, remoteWorkers, remoteTasks, taskMessages, notifications, testAccounts, authSessions, userSecurity, featureDefinitions, restaurantFeatures, packagePlans, packagePlanFeatures, auditLogs, platformSettings, integrationSettings, loyaltyAccounts, loyaltyTransactions, walletAccounts, walletTopupRequests, walletTransactions, referralRecords, customerProfiles, supportAgents, supportTickets, restaurantMembers, apiWebhooks, vcardCardProducts, vcardCardOrders, vcardCardCodes, vcardCardBindings, mediaFiles, mediaFolders, translationErrorLogs, translationGlossaryEntries, translationJobs, translationJobErrors, deliveryZones, pickupPoints, reservationSlots, reservations, userPreferences, favoriteMenuItems, restaurantDisplayScreens, restaurantDisplaySlides, campaignContents, contentListings, contentPurchaseOrders, contentPurchaseEntitlements, contentModerationReviews, commerceFundingAccounts, favoriteRestaurants, waiterTableAssignments, contentFoodTags, contentListingInvites, uiTranslationEntries, uiTranslationHistory, receiptTemplates, kitchenSectionSla, orderStatusHistory, menuItemAddons, seatingSections, qrCodes, guestOrderClaimOtps, hotels, hotelRooms, featureRequests, trustedDevices, customerCardRequests, customerBenefitFeatures, customerBenefitPlans, customerBenefitPlanFeatures, customerBenefitSubscriptions, customerBenefitRequests, whiteLabelWorkspaces, restaurantMenuLayoutTemplates, waiterCalls, reservationBlackoutDates } from "../drizzle/schema";
@@ -9,6 +10,7 @@ import { normalizeMenuTemplateSchedule, resolveActiveMenuTemplate } from "../sha
 import { sendPushToUser } from "./push";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _dbPool: mysql.Pool | null = null;
 let _dbUrlWarningShown = false;
 
 function getDatabaseUrl() {
@@ -44,10 +46,28 @@ export async function getDb() {
   if (!databaseUrl) return null;
 
   try {
-    _db = drizzle(databaseUrl);
+    // Use one bounded process-wide pool instead of letting the driver create
+    // opaque connections from the URL. This prevents request pile-ups from
+    // exhausting Hostinger/MySQL and turning a DB stall into site-wide 504s.
+    _dbPool = mysql.createPool({
+      uri: databaseUrl,
+      connectionLimit: Number(process.env.DB_POOL_SIZE || 8),
+      maxIdle: Number(process.env.DB_POOL_SIZE || 8),
+      idleTimeout: 30_000,
+      waitForConnections: true,
+      queueLimit: Number(process.env.DB_QUEUE_LIMIT || 24),
+      connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT_MS || 5_000),
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
+    });
+    _db = drizzle({ client: _dbPool });
   } catch (error) {
     console.warn("[Database] Failed to initialize MySQL:", error instanceof Error ? error.message : String(error));
     _db = null;
+    if (_dbPool) {
+      try { _dbPool.end(); } catch { /* best-effort cleanup after init failure */ }
+    }
+    _dbPool = null;
   }
   return _db;
 }
