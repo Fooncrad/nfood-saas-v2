@@ -64,7 +64,9 @@ export async function getDb() {
   } catch (error) {
     console.warn("[Database] Failed to initialize MySQL:", error instanceof Error ? error.message : String(error));
     _db = null;
-    if (_dbPool) void _dbPool.end().catch(() => undefined);
+    if (_dbPool) {
+      try { _dbPool.end(); } catch { /* best-effort cleanup after init failure */ }
+    }
     _dbPool = null;
   }
   return _db;
