@@ -37,6 +37,10 @@ describe("admin store persistence plan", () => {
       city: "Riyadh",
       timezone: "Asia/Riyadh",
       currencyCode: "SAR",
+      countryCode: "SA",
+      primaryLanguage: "ar",
+      languagesJson: JSON.stringify(["ar", "en", "fr"]),
+      sector: "grocery",
       isActive: true,
       isPrimary: true,
     });
